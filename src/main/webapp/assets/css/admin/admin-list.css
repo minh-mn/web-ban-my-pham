@@ -1,0 +1,191 @@
+/* =========================
+   admin-list.css (FINAL - CLEAN)
+   - Table gọn
+   - Path không bị cắt .p/ng
+   - Status + Actions căn giữa dọc
+   - Actions luôn nằm 1 hàng ngang
+========================= */
+
+.admin-empty{
+  padding: 14px;
+  border: 1px dashed var(--admin-border);
+  border-radius: var(--admin-radius);
+  background: rgba(15, 23, 42, 0.02);
+  color: var(--admin-muted);
+  font-size: 13px;
+}
+
+.admin-inline{ display: inline; }
+
+/* Table compact */
+.admin-table th,
+.admin-table td{
+  padding: 10px 12px;
+  vertical-align: middle;
+}
+
+/* Media cell */
+.admin-media{
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-width: 260px;
+}
+
+.admin-thumb{
+  width: 96px;
+  height: 54px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid var(--admin-border);
+  background: rgba(15, 23, 42, 0.02);
+}
+
+.admin-media__meta{
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* Chip */
+.admin-chip{
+  padding: 3px 9px;
+  font-size: 11px;
+}
+
+/* ✅ PATH: không dùng break-all để tránh .p / ng */
+.admin-path{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  color: var(--admin-muted);
+  line-height: 1.45;
+
+  word-break: normal;
+  overflow-wrap: normal;
+  white-space: normal;
+}
+
+/* Link/chuỗi dài */
+.admin-break{
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Pills */
+.admin-pill{
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 9px;
+  border-radius: 999px;
+  border: 1px solid var(--admin-border);
+  background: rgba(15, 23, 42, 0.03);
+  font-size: 12px;
+  font-weight: 800;
+  color: rgba(15, 23, 42, 0.72);
+}
+
+.admin-pill--ok{
+  border-color: rgba(16, 185, 129, 0.35);
+  background: rgba(16, 185, 129, 0.10);
+  color: #065f46;
+}
+
+.admin-pill--danger{
+  border-color: rgba(220, 38, 38, 0.35);
+  background: rgba(220, 38, 38, 0.10);
+  color: #991b1b;
+}
+
+/* Danger button */
+.admin-btn--danger{
+  border-color: rgba(220, 38, 38, 0.35);
+  color: #b91c1c;
+  background: #fff;
+}
+
+.admin-btn--danger:hover{
+  box-shadow: var(--admin-shadow-sm);
+}
+
+/* =========================
+   FIX chuẩn: Status & Actions không dính cột
+========================= */
+
+/* Trạng thái: chỉ căn giữa badge */
+.admin-status-cell{
+  text-align: center;
+}
+
+/* Thao tác: dùng inline-flex để giữ 1 hàng ngang */
+td.admin-actions{
+  /* giữ nguyên table-cell */
+  text-align: left;
+  white-space: nowrap;
+  min-height: 75px;
+}
+
+.admin-actions{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+/* form không phá layout */
+.admin-actions form{
+  margin: 0;
+}
+
+/* nút gọn trong actions */
+.admin-actions .admin-btn{
+  padding: 8px 10px;
+  font-size: 13px;
+  border-radius: 12px;
+}
+
+/* ===== Toolbar (search/filter) ===== */
+.admin-toolbar{
+  margin-bottom: 12px;
+}
+
+.admin-toolbar__form{
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* input trong toolbar gọn và không quá dài */
+.admin-toolbar__form .admin-input{
+  width: 260px;
+  max-width: 100%;
+}
+
+/* =========================
+   Product Actions (tương tự admin-actions)
+========================= */
+
+td.product-actions{
+  /* giữ nguyên table-cell */
+  text-align: left;
+  white-space: nowrap;
+  min-height: 75px;
+  vertical-align: middle;
+}
+
+/* wrapper bên trong td */
+.product-actions-inner{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+/* nút trong product actions */
+.product-actions-inner .admin-btn{
+  padding: 8px 12px;
+  font-size: 13px;
+  border-radius: 12px;
+}
+

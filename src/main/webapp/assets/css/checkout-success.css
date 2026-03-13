@@ -1,0 +1,118 @@
+/* =========================================================
+   ORDER SUCCESS PAGE
+   Chỉ dùng cho trang đặt hàng thành công
+========================================================= */
+
+/* ===== LAYOUT ===== */
+.success-section {
+  min-height: calc(100vh - 140px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 16px;
+}
+
+.success-box {
+  max-width: 560px;
+  width: 100%;
+  text-align: center;
+  animation: fadeUp 0.6s ease;
+}
+
+/* ===== TITLE ===== */
+.success-title {
+  color: #ff5fa2;
+  font-weight: 900;
+  font-size: 32px;
+  margin-bottom: 12px;
+}
+
+/* ===== DESCRIPTION ===== */
+.success-desc {
+  color: #555;
+  font-size: 16px;
+  margin-bottom: 26px;
+}
+
+/* ===== ORDER CARD ===== */
+.success-card {
+  background: #fff;
+  border-radius: 24px;
+  padding: 26px 30px;
+  margin-bottom: 34px;
+  box-shadow: 0 20px 45px rgba(255,95,162,.18);
+}
+
+.success-card p {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 15px;
+  color: #444;
+  margin-bottom: 12px;
+}
+
+.success-card p:last-child {
+  margin-bottom: 0;
+}
+
+/* ===== PRICE ===== */
+.success-card .success-price {
+  font-size: 18px;
+  font-weight: 900;
+  color: #ff5fa2;
+}
+
+/* ===== BUTTON (CTA) ===== */
+.success-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  height: 52px;
+  padding: 0 38px;
+  border-radius: 999px;
+
+  background: linear-gradient(135deg, #ff5fa2, #ff85bc);
+  color: #fff;
+  text-decoration: none;
+
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+
+  box-shadow: 0 18px 36px rgba(255,95,162,.45);
+  transition: all .3s ease;
+}
+
+.success-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 24px 48px rgba(255,95,162,.6);
+}
+
+/* ===== ANIMATION ===== */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===== MOBILE ===== */
+@media (max-width: 576px) {
+  .success-title {
+    font-size: 26px;
+  }
+
+  .success-card {
+    padding: 20px;
+  }
+
+  .success-card p {
+    font-size: 14px;
+  }
+}

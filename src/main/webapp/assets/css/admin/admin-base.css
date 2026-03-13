@@ -1,0 +1,233 @@
+/* =========================
+   admin-base.css
+   Design tokens + components (tối giản)
+========================= */
+
+:root{
+  /* Colors */
+  --admin-bg: #f6f7fb;
+  --admin-surface: #ffffff;
+  --admin-surface-2: #fbfbfd;
+  --admin-border: rgba(15, 23, 42, 0.10);
+
+  --admin-text: #0f172a;
+  --admin-muted: rgba(15, 23, 42, 0.62);
+
+  --admin-brand: #ff5fa2;
+  --admin-brand-2: #db2777;
+
+  /* Radius / Shadow / Spacing */
+  --admin-radius-sm: 10px;
+  --admin-radius: 14px;
+  --admin-radius-lg: 18px;
+
+  --admin-shadow-sm: 0 6px 18px rgba(2, 6, 23, 0.06);
+  --admin-shadow: 0 10px 26px rgba(2, 6, 23, 0.08);
+
+  --admin-gap: 14px;
+
+  /* Focus ring */
+  --admin-focus: 0 0 0 3px rgba(255, 95, 162, 0.25);
+
+  /* Typography */
+  --admin-font: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+.admin-body{
+  background: var(--admin-bg);
+  color: var(--admin-text);
+  font-family: var(--admin-font);
+}
+
+/* =========================
+   Typography
+========================= */
+.admin-h1{
+  margin: 0;
+  font-weight: 850;
+  font-size: 22px;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.admin-h2{
+  margin: 0;
+  font-weight: 800;
+  font-size: 18px;
+  line-height: 1.25;
+}
+
+.admin-subtext{
+  margin: 6px 0 0;
+  color: var(--admin-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+/* =========================
+   Surfaces (Card/Panel)
+========================= */
+.admin-card{
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-lg);
+  box-shadow: var(--admin-shadow-sm);
+}
+
+.admin-card__body{
+  padding: 16px;
+}
+
+.admin-divider{
+  height: 1px;
+  background: var(--admin-border);
+  border: none;
+  margin: 12px 0;
+}
+
+/* =========================
+   Buttons (tối giản)
+========================= */
+.admin-btn{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--admin-border);
+  background: var(--admin-surface);
+  color: var(--admin-text);
+  text-decoration: none;
+  cursor: pointer;
+
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 1;
+
+  transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+}
+
+.admin-btn:hover{
+  transform: translateY(-1px);
+  box-shadow: var(--admin-shadow-sm);
+}
+
+.admin-btn:focus-visible{
+  outline: none;
+  box-shadow: var(--admin-shadow-sm), var(--admin-focus);
+  border-color: rgba(255, 95, 162, 0.55);
+}
+
+.admin-btn--primary{
+  background: var(--admin-brand);
+  border-color: rgba(255, 95, 162, 0.35);
+  color: #fff;
+}
+
+.admin-btn--primary:hover{
+  box-shadow: var(--admin-shadow);
+}
+
+/* =========================
+   Chip / Badge
+========================= */
+.admin-chip{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--admin-border);
+
+  color: rgba(15, 23, 42, 0.72);
+  background: rgba(15, 23, 42, 0.03);
+}
+
+/* =========================
+   Form (tối giản)
+========================= */
+.admin-field{
+  display: grid;
+  gap: 6px;
+}
+
+.admin-label{
+  font-size: 12px;
+  color: var(--admin-muted);
+  font-weight: 700;
+}
+
+.admin-input,
+.admin-select,
+.admin-textarea{
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--admin-border);
+  background: var(--admin-surface);
+  color: var(--admin-text);
+  font-size: 13px;
+}
+
+.admin-input:focus,
+.admin-select:focus,
+.admin-textarea:focus{
+  outline: none;
+  box-shadow: var(--admin-focus);
+  border-color: rgba(255, 95, 162, 0.55);
+}
+
+/* =========================
+   Table (tối giản, dùng cho list)
+========================= */
+.admin-table{
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-lg);
+  background: var(--admin-surface);
+}
+
+.admin-table th,
+.admin-table td{
+  padding: 12px 12px;
+  font-size: 13px;
+  border-bottom: 1px solid var(--admin-border);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.admin-table th{
+  font-size: 12px;
+  color: rgba(15, 23, 42, 0.70);
+  background: var(--admin-surface-2);
+  font-weight: 800;
+}
+
+.admin-table tr:last-child td{
+  border-bottom: none;
+}
+
+/* =========================
+   Utilities
+========================= */
+.admin-row{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.admin-stack{
+  display: grid;
+  gap: 12px;
+}
+
+.admin-muted{ color: var(--admin-muted); }
+.admin-right{ text-align: right; }
