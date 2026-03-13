@@ -5,34 +5,19 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.io.IOException;
 
+// Class cấu hình thư mục lưu file upload (ảnh banner và ảnh sản phẩm)
 public final class UploadConfig {
 
-    // =========================================================
-    // THƯ MỤC GỐC LƯU FILE UPLOAD
-    // Tất cả ảnh banner và sản phẩm sẽ được lưu tại:
-    // D:/TTLTW/MyCosmeticShopUploads
-    // =========================================================
+    // Thư mục gốc lưu tất cả file upload
     public static final Path BASE_DIR = Paths.get("D:/TTLTW/MyCosmeticShopUploads");
 
-    // =========================================================
-    // THƯ MỤC LƯU ẢNH BANNER
-    // Ví dụ:
-    // D:/TTLTW/MyCosmeticShopUploads/banner/banner1.jpg
-    // =========================================================
+    // Thư mục lưu ảnh banner
     public static final Path BANNER_DIR  = BASE_DIR.resolve("banner");
 
-    // =========================================================
-    // THƯ MỤC LƯU ẢNH SẢN PHẨM
-    // Ví dụ:
-    // D:/TTLTW/MyCosmeticShopUploads/product/product1.jpg
-    // =========================================================
+    // Thư mục lưu ảnh sản phẩm
     public static final Path PRODUCT_DIR = BASE_DIR.resolve("product");
 
-    // =========================================================
-    // STATIC BLOCK
-    // Khi hệ thống khởi động sẽ tự động tạo các thư mục
-    // nếu chúng chưa tồn tại
-    // =========================================================
+    // Khi hệ thống khởi động sẽ tự tạo các thư mục nếu chưa tồn tại
     static {
         try {
             Files.createDirectories(BANNER_DIR);
@@ -42,10 +27,7 @@ public final class UploadConfig {
         }
     }
 
-    // =========================================================
-    // CONSTRUCTOR PRIVATE
-    // Không cho phép tạo object từ class này
-    // vì đây chỉ là class cấu hình (config class)
-    // =========================================================
+    // Constructor private để không cho tạo object
+    // vì đây chỉ là class cấu hình
     private UploadConfig() {}
 }
