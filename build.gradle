@@ -25,9 +25,9 @@ war {
 
 remotes {
     host {
-        host = '192.168.101.129'
-        user = 'cnna'
-        password = '123456'
+        host = 'IP máy tính cá nhân'
+        user = 'TK Máy ảo'
+        password = 'MK Máy ảo'
     }
 }
 
