@@ -1,0 +1,656 @@
+/* =========================================================
+   DESIGN TOKENS (BRAND SYSTEM)
+========================================================= */
+:root {
+  --pink-main: #ff5fa2;
+  --pink-dark: #db2777;
+  --pink-soft: #fff0f6;
+  --pink-bg: #fff7fb;
+
+  --text-main: #222;
+  --text-muted: #666;
+
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+
+  --shadow-soft: 0 10px 28px rgba(255,95,162,.18);
+  --shadow-strong: 0 20px 46px rgba(255,95,162,.28);
+}
+
+/* =========================================================
+   GLOBAL RESET
+========================================================= */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+}
+
+html {
+  font-size: clamp(14px, 0.9vw, 18px);
+}
+
+body {
+  background: var(--pink-bg);
+  color: var(--text-main);
+  line-height: 1.65;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+button {
+  font-family: inherit;
+}
+
+/* =========================================================
+   LAYOUT
+========================================================= */
+.site-body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.site-main {
+  padding-top: 70px;
+  flex: 1;
+}
+
+/* =========================================================
+   CONTAINER (tối ưu để không bị dàn trải)
+========================================================= */
+.container {
+  max-width: 1200px;
+  width: min(92%, 1200px);
+  margin: auto;
+  padding: 0 20px;
+}
+
+@media (max-width: 576px) {
+  .container {
+    width: 100%;
+    padding: 0 14px;
+  }
+}
+
+/* =========================================================
+   HEADER
+========================================================= */
+.site-header {
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: 70px;
+  z-index: 1000;
+
+  background:
+    linear-gradient(180deg,
+      rgba(255,235,245,.96),
+      rgba(255,245,250,.92)
+    );
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255,160,200,.25);
+}
+
+/* ===== FIX: dùng GRID để căn 3 cụm cân đối ===== */
+.header-inner {
+  height: 70px;
+
+  display: grid;
+  grid-template-columns: 220px 1fr auto; /* logo | nav | actions */
+  align-items: center;
+  gap: 18px;
+}
+
+/* LOGO */
+.logo {
+  justify-self: start;
+  white-space: nowrap;
+
+  font-size: 30px;
+  font-weight: 900;
+  color: var(--pink-main);
+  letter-spacing: .8px;
+  line-height: 1;
+}
+
+.logo span {
+  color: var(--pink-dark);
+}
+
+/* =========================================================
+   NAVIGATION
+========================================================= */
+.main-nav {
+  justify-self: center;
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.main-nav a {
+  font-size: 15px;
+  font-weight: 500;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  transition: .25s;
+}
+
+.main-nav a:hover {
+  background: rgba(255,95,162,.12);
+  color: var(--pink-main);
+}
+
+/* CART */
+.cart-icon {
+  position: relative;
+  font-size: 20px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.cart-badge {
+  position: absolute;
+  top: -6px;
+  right: -10px;
+  background: var(--pink-main);
+  color: #fff;
+  font-size: 11px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  font-weight: 700;
+  box-shadow: 0 4px 10px rgba(255,95,162,.6);
+}
+
+/* =========================================================
+   HEADER ACTIONS
+========================================================= */
+.header-actions {
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  white-space: nowrap;
+}
+
+/* =========================================================
+   SEARCH
+========================================================= */
+.search-wrapper {
+  position: relative;
+}
+
+.search-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 15px;
+  color: var(--pink-main);
+}
+
+.search-form input {
+  height: 40px;
+  width: 240px;
+  max-width: 240px;
+  padding-left: 42px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,95,162,.35);
+  background: rgba(255,255,255,.95);
+  font-size: 14px;
+  transition: .25s;
+}
+
+.search-form input:focus {
+  outline: none;
+  box-shadow: var(--shadow-soft);
+}
+
+/* SEARCH RESULT */
+.search-results {
+  position: absolute;
+  top: 120%;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-strong);
+  display: none;
+  overflow: hidden;
+  z-index: 999;
+}
+
+.sr-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px 14px;
+  transition: .2s;
+}
+
+.sr-item:hover {
+  background: var(--pink-soft);
+}
+
+.sr-item img {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+}
+
+.sr-title {
+  font-weight: 600;
+}
+
+.sr-price {
+  font-size: 14px;
+  color: var(--pink-main);
+}
+
+/* =========================================================
+   AUTH DROPDOWN (HEADER)
+========================================================= */
+.auth-links {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-dropdown {
+  position: relative;
+}
+
+.user-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  border: 1px solid rgba(255,95,162,.35);
+  padding: 6px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--pink-main);
+  transition: all .25s ease;
+}
+
+.user-btn:hover {
+  background: var(--pink-soft);
+}
+
+.user-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: linear-gradient(135deg,#ff5fa2,#ff86c3);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.user-menu {
+  position: absolute;
+  top: 120%;
+  right: 0;
+  min-width: 190px;
+  background: #fff;
+  border-radius: var(--radius-md);
+  padding: 8px;
+  box-shadow: var(--shadow-strong);
+
+  display: none;
+  flex-direction: column;
+  z-index: 999;
+}
+
+.user-menu.show {
+  display: flex;
+}
+
+.user-menu a,
+.user-menu button {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: none;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  color: var(--text-main);
+  transition: background .2s, color .2s;
+}
+
+.user-menu a:hover,
+.user-menu button:hover {
+  background: var(--pink-soft);
+  color: var(--pink-main);
+}
+
+.menu-divider {
+  height: 1px;
+  background: #eee;
+  margin: 6px 0;
+}
+
+.logout-btn {
+  color: #e53935;
+  font-weight: 700;
+}
+
+.logout-btn:hover {
+  background: #fdecea;
+  color: #c62828;
+}
+
+/* =========================================================
+   MOBILE
+========================================================= */
+.menu-toggle {
+  display: none;
+  font-size: 26px;
+  background: none;
+  border: none;
+  color: var(--pink-main);
+  cursor: pointer;
+}
+
+/* ===== responsive header ===== */
+@media (max-width: 992px) {
+  .header-inner {
+    grid-template-columns: 1fr auto; /* logo | actions */
+  }
+
+  .main-nav {
+    display: none;
+  }
+
+  .search-form input {
+    width: 210px;
+    max-width: 210px;
+  }
+}
+
+@media (max-width: 768px) {
+  .menu-toggle {
+    display: block;
+  }
+
+  .search-form input {
+    width: 170px;
+    max-width: 170px;
+  }
+}
+
+/* =========================================================
+   MOBILE NAV
+========================================================= */
+.mobile-nav {
+  position: fixed;
+  top: 70px;
+  left: 0;
+  right: 0;
+
+  background: #fff;
+  padding: 18px 20px;
+
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+
+  box-shadow: var(--shadow-strong);
+  z-index: 999;
+}
+
+.mobile-nav.active {
+  display: flex;
+}
+
+.mobile-nav a,
+.mobile-nav button {
+  font-size: 16px;
+  font-weight: 600;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.mobile-nav a:hover,
+.mobile-nav button:hover {
+  background: var(--pink-soft);
+  color: var(--pink-main);
+}
+
+/* =========================================================
+   AUTH BUTTONS
+========================================================= */
+.auth-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-auth {
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  border: 1.5px solid rgba(255,95,162,.55);
+  background: #fff;
+  color: var(--pink-main);
+  transition: all .25s ease;
+}
+
+.btn-auth:hover {
+  background: var(--pink-soft);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg,#ff5fa2,#ff86c3);
+  color: #fff;
+  box-shadow: 0 6px 18px rgba(255,95,162,.45);
+  border: none;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 26px rgba(255,95,162,.55);
+}
+
+/* REGISTER – primary CTA */
+.btn-login {
+  padding: 7px 18px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+
+  color: #fff;
+  background: linear-gradient(135deg,#ff5fa2,#ff86c3);
+
+  box-shadow: 0 6px 18px rgba(255,95,162,.45);
+  transition: all .25s ease;
+}
+
+.btn-loginr:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 26px rgba(255,95,162,.55);
+}
+
+/* REGISTER – primary CTA */
+.btn-register {
+  padding: 7px 18px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+
+  color: #fff;
+  background: linear-gradient(135deg,#ff5fa2,#ff86c3);
+
+  box-shadow: 0 6px 18px rgba(255,95,162,.45);
+  transition: all .25s ease;
+}
+
+.btn-register:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 26px rgba(255,95,162,.55);
+}
+
+/* =========================================================
+   FOOTER
+========================================================= */
+.site-footer {
+  background: #ffe3ef;
+  padding: 24px 0;
+  text-align: center;
+  font-size: 14px;
+  color: var(--text-muted);
+  border-top: 1px solid rgba(255,95,162,.25);
+}
+
+/* =========================================================
+   AUTH PAGES (Forgot/Reset/Login/Register)
+   FIX: đổi class để không đè .auth-links ở header
+========================================================= */
+.auth-wrap {
+  padding: 44px 0;
+}
+
+.auth-card {
+  max-width: 440px;
+  margin: 0 auto;
+  background: rgba(255,255,255,.96);
+  border: 1px solid rgba(255,95,162,.22);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+  padding: 18px 18px 16px;
+}
+
+.auth-title {
+  margin: 0 0 6px 0;
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: .2px;
+}
+
+.auth-desc {
+  margin: 0 0 14px 0;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.auth-alert {
+  margin: 10px 0 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  border: 1px solid transparent;
+}
+
+.auth-alert--error {
+  background: #fdecea;
+  border-color: rgba(229,57,53,.25);
+  color: #b00020;
+}
+
+.auth-alert--success {
+  background: #eaf7ee;
+  border-color: rgba(46,125,50,.20);
+  color: #0a7a2f;
+}
+
+.auth-form label {
+  display: block;
+  margin-top: 10px;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.auth-input {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  margin-top: 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,95,162,.35);
+  background: rgba(255,255,255,.98);
+  font-size: 14px;
+  transition: .25s;
+}
+
+.auth-input:focus {
+  outline: none;
+  box-shadow: var(--shadow-soft);
+}
+
+.auth-actions {
+  margin-top: 12px;
+}
+
+.auth-submit {
+  width: 100%;
+  height: 44px;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 14px;
+
+  color: #fff;
+  background: linear-gradient(135deg,#ff5fa2,#ff86c3);
+  box-shadow: 0 8px 22px rgba(255,95,162,.42);
+  transition: all .25s ease;
+}
+
+.auth-submit:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 30px rgba(255,95,162,.52);
+}
+
+/* đổi tên để không đè header */
+.auth-links-page {
+  margin-top: 12px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.auth-links-page a {
+  color: var(--pink-main);
+  font-weight: 800;
+}
+
+.auth-links-page a:hover {
+  text-decoration: underline;
+}
+
+.auth-cta {
+  display: block;
+  width: 100%;
+  height: 44px;
+  line-height: 44px;
+  text-align: center;
+  border-radius: 999px;
+  font-weight: 800;
+
+  color: #fff;
+  background: linear-gradient(135deg,#ff5fa2,#ff86c3);
+  box-shadow: 0 8px 22px rgba(255,95,162,.42);
+  transition: all .25s ease;
+}
+
+.auth-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 30px rgba(255,95,162,.52);
+}

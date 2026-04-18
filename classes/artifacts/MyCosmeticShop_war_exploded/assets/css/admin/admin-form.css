@@ -1,0 +1,65 @@
+/* admin-form.css: dùng chung cho các trang form CRUD */
+
+.admin-form{
+  display: grid;
+  gap: 14px;
+}
+
+.admin-grid-2{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+@media (max-width: 900px){
+  .admin-grid-2{ grid-template-columns: 1fr; }
+}
+
+.admin-help{
+  font-size: 12px;
+  color: var(--admin-muted);
+  line-height: 1.45;
+}
+
+/* Actions bar chuẩn (đã gộp, không trùng) */
+.admin-actions{
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.admin-preview{
+  display: grid;
+  gap: 10px;
+}
+
+.admin-preview__img{
+  width: 100%;
+  max-width: 560px;
+  border-radius: 14px;
+  border: 1px solid var(--admin-border);
+  background: rgba(15, 23, 42, 0.02);
+}
+
+/* Form narrow cho các form đơn giản */
+.admin-form--narrow{
+  max-width: 520px;
+}
+
+/* Alert (đồng bộ admin) */
+.admin-alert{
+  padding: 12px 14px;
+  border-radius: var(--admin-radius);
+  border: 1px solid var(--admin-border);
+  background: rgba(15, 23, 42, 0.03);
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+.admin-alert--danger{
+  border-color: rgba(220, 38, 38, 0.35);
+  background: rgba(220, 38, 38, 0.08);
+  color: #991b1b;
+}

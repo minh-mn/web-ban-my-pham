@@ -1,0 +1,498 @@
+/* =========================================================
+   SECTION
+========================================================= */
+.section {
+	padding: 40px 0;
+}
+
+/* =========================================================
+   PAGE HEADER
+========================================================= */
+.page-header {
+	text-align: center;
+	margin-bottom: 24px;
+}
+
+.page-header p {
+	margin-bottom: 0;
+}
+
+.section-title {
+	font-size: 32px;
+	font-weight: 900;
+	color: #ff5fa2;
+	margin-bottom: 12px;
+}
+
+.page-desc {
+	font-size: 16px;
+	color: #666;
+	max-width: 640px;
+	margin: auto;
+	line-height: 1.6;
+}
+
+/* =========================================================
+   PAGE LAYOUT (SIDEBAR + CONTENT)
+========================================================= */
+.product-page {
+	display: grid;
+	grid-template-columns: 260px 1fr;
+	gap: 24px;
+	align-items: start;
+}
+
+/* =========================================================
+   SIDEBAR FILTER
+========================================================= */
+.filter-sidebar {
+	border-right: 1px solid #eee;
+	padding-right: 16px;
+	position: sticky;
+	top: 90px;
+	height: fit-content;
+	max-height: calc(100vh - 120px);
+	overflow-y: auto;
+}
+
+.filter-title {
+	font-size: 18px;
+	font-weight: 700;
+	margin-bottom: 12px;
+}
+
+.filter-note {
+	font-size: 13px;
+	color: #888;
+	margin-bottom: 12px;
+}
+
+/* Scrollbar */
+.filter-sidebar::-webkit-scrollbar {
+	width: 4px;
+}
+
+.filter-sidebar::-webkit-scrollbar-thumb {
+	background: #ffd1e3;
+	border-radius: 4px;
+}
+
+/* =========================================================
+   CATEGORY GROUP (CHA / CON)
+========================================================= */
+.category-group {
+	margin-bottom: 18px;
+}
+
+.category-parent {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	font-weight: 600;
+	font-size: 14px;
+	cursor: pointer;
+	padding: 8px 0;
+	text-transform: uppercase;
+}
+
+.category-parent .arrow {
+	font-size: 12px;
+	transition: transform .25s ease;
+}
+
+.category-children {
+	display: none;
+	list-style: none;
+	padding-left: 12px;
+	margin-top: 8px;
+}
+
+.category-group.open .category-children {
+	display: block;
+}
+
+.category-group.open .arrow {
+	transform: rotate(180deg);
+}
+
+.category-children li {
+	margin-bottom: 6px;
+}
+
+/* ===== Legacy link style (nếu còn dùng <a>) ===== */
+.category-children li a {
+	display: block;
+	padding: 4px 0;
+	font-size: 14px;
+	color: #555;
+	text-decoration: none;
+}
+
+.category-children li a:hover {
+	color: #ff5c8a;
+}
+
+.category-children li a.active {
+	color: #ff5c8a;
+	font-weight: 600;
+}
+
+/* ===== NEW: button category-link (vì JSP đã đổi sang <button>) ===== */
+.category-children li .category-link {
+	display: block;
+	width: 100%;
+	text-align: left;
+	background: transparent;
+	border: 0;
+	padding: 4px 0;
+	font-size: 14px;
+	color: #555;
+	cursor: pointer;
+	/* đảm bảo nút không bị style mặc định */
+	appearance: none;
+	-webkit-appearance: none;
+}
+
+.category-children li .category-link:hover {
+	color: #ff5c8a;
+}
+
+.category-children li .category-link.active {
+	color: #ff5c8a;
+	font-weight: 600;
+}
+
+/* =========================================================
+   PRICE PILL FILTER
+========================================================= */
+.price-pill-group {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-bottom: 18px;
+}
+
+.price-pill {
+	cursor: pointer;
+}
+
+.price-pill input {
+	display: none;
+}
+
+.price-pill span {
+	display: block;
+	padding: 9px 14px;
+	border-radius: 999px;
+	border: 1px solid #ddd;
+	text-align: center;
+	font-size: 14px;
+	transition: all .2s ease;
+}
+
+.price-pill span:hover {
+	border-color: #ff5fa2;
+	color: #ff5fa2;
+}
+
+.price-pill input:checked+span {
+	background: #ff5fa2;
+	color: #fff;
+	border-color: #ff5fa2;
+	box-shadow: 0 6px 18px rgba(255, 95, 162, .35);
+}
+
+/* =========================================================
+   BRAND FILTER
+========================================================= */
+.brand-item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 14px;
+	margin-bottom: 8px;
+	cursor: pointer;
+}
+
+.brand-item input {
+	accent-color: #ff5fa2;
+}
+
+/* =========================================================
+   RESET FILTER BUTTON
+========================================================= */
+.filter-reset-wrap {
+	margin-top: 18px;
+}
+
+.btn-reset-filter {
+	display: block;
+	width: 100%;
+	padding: 10px 14px;
+	border-radius: 999px;
+	text-align: center;
+	font-weight: 600;
+	font-size: 14px;
+	text-decoration: none;
+	background: #fff0f6;
+	color: #ff3f8e;
+	border: 1px dashed #ff5fa2;
+	transition: all .25s ease;
+}
+
+.btn-reset-filter:hover {
+	background: #ff5fa2;
+	color: #fff;
+	border-color: #ff5fa2;
+	box-shadow: 0 6px 18px rgba(255, 95, 162, .35);
+	transform: translateY(-2px);
+}
+
+/* =========================================================
+   PRODUCT GRID
+========================================================= */
+.product-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+	gap: clamp(18px, 2vw, 28px);
+}
+
+/* =========================================================
+   PRODUCT CARD
+========================================================= */
+.product-card {
+	background: #fff;
+	border-radius: 26px;
+	padding: 20px;
+	text-align: center;
+	position: relative;
+	transition: .25s;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	min-height: 420px;
+}
+
+.product-card:hover {
+	transform: translateY(-4px);
+	box-shadow: 0 14px 36px rgba(255, 95, 162, .18);
+}
+
+/* =========================================================
+   PRODUCT IMAGE
+========================================================= */
+.product-img-box img {
+	width: 100%;
+	height: 220px;
+	object-fit: cover;
+	border-radius: 20px;
+	margin-bottom: 14px;
+	background: #fff0f6;
+}
+
+.product-img-box .no-image {
+	height: 220px;
+	border-radius: 20px;
+	background: #fff0f6;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: #999;
+	margin-bottom: 14px;
+}
+
+/* =========================================================
+   PRODUCT TITLE
+========================================================= */
+.product-card h3 {
+	font-size: 16px;
+	font-weight: 600;
+	margin: 6px 0 10px;
+	min-height: 44px;
+}
+
+/* =========================================================
+   PRICE
+========================================================= */
+.price {
+	margin: 10px 0 12px;
+	font-size: 18px;
+	font-weight: 800;
+	color: #ff5fa2;
+}
+
+.old-price {
+	font-size: 14px;
+	color: #aaa;
+	text-decoration: line-through;
+	margin-right: 6px;
+}
+
+.sale-price {
+	font-size: 18px;
+	font-weight: 900;
+	color: #ff5fa2;
+}
+
+/* =========================================================
+   BADGES
+========================================================= */
+.badge-sale {
+	position: absolute;
+	top: 14px;
+	right: 14px;
+	background: linear-gradient(135deg, #ff5fa2, #ff85bc);
+	color: #fff;
+	padding: 6px 10px;
+	font-size: 12px;
+	border-radius: 999px;
+	font-weight: 700;
+	z-index: 3;
+}
+
+/* =========================================================
+   STOCK STATUS
+========================================================= */
+.badge-out {
+	font-size: 13px;
+	color: #e53935;
+	font-weight: 600;
+}
+
+.badge-low {
+	font-size: 13px;
+	color: #f9a825;
+	font-weight: 600;
+}
+
+.stock-ok {
+	font-size: 13px;
+	color: #2e7d32;
+	font-weight: 600;
+}
+
+/* =========================================================
+   CTA BUTTON
+========================================================= */
+.product-card .btn-outline {
+	background: #ff5fa2;
+	color: #fff;
+	border: none;
+	border-radius: 999px;
+	padding: 10px 18px;
+	font-weight: 600;
+	text-decoration: none;
+	transition: .25s;
+}
+
+.product-card .btn-outline:hover {
+	background: #ff3f8e;
+	transform: translateY(-2px);
+	box-shadow: 0 8px 20px rgba(255, 95, 162, .35);
+}
+
+/* =========================================================
+   PAGINATION (PINK THEME)
+========================================================= */
+.pagination-wrap {
+	display: flex;
+	justify-content: center;
+	margin-top: -40px;
+	margin-bottom: 20px;
+}
+
+.pagination-pill {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	padding: 12px 22px;
+	background: #fff;
+	border-radius: 999px;
+	box-shadow: 0 10px 30px rgba(255, 95, 162, .22);
+}
+
+/* ===== PAGINATION BAR ===== */
+.pagination {
+	display: flex;
+	gap: 8px;
+	justify-content: center;
+	align-items: center;
+	margin-top: 24px;
+	flex-wrap: wrap;
+}
+
+/* ===== BUTTON / NUMBER ===== */
+.pg-btn, .pg-num {
+	min-width: 38px;
+	height: 38px;
+	padding: 0 12px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 12px;
+	border: 1px solid #ffd1e3;
+	text-decoration: none;
+	font-size: 14px;
+	font-weight: 600;
+	color: #ff3f8e;
+	background: #fff0f6;
+	transition: all .25s ease;
+}
+
+/* ===== HOVER ===== */
+.pg-btn:hover, .pg-num:hover {
+	background: #ff5fa2;
+	color: #fff;
+	border-color: #ff5fa2;
+	transform: translateY(-2px);
+	box-shadow: 0 6px 18px rgba(255, 95, 162, .35);
+}
+
+/* ===== ACTIVE PAGE ===== */
+.pg-num.active {
+	background: linear-gradient(135deg, #ff5fa2, #ff85bc);
+	color: #fff;
+	border-color: #ff5fa2;
+	box-shadow: 0 8px 20px rgba(255, 95, 162, .45);
+	cursor: default;
+}
+
+/* ===== DISABLED ===== */
+.pg-btn.disabled {
+	opacity: .45;
+	cursor: not-allowed;
+	background: #ffe6f0;
+	color: #ff9fc6;
+	border-color: #ffd1e3;
+	box-shadow: none;
+}
+
+.pg-btn.disabled:hover {
+	transform: none;
+	background: #ffe6f0;
+	color: #ff9fc6;
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+@media ( max-width : 992px) {
+	.product-page {
+		grid-template-columns: 1fr;
+	}
+	.filter-sidebar {
+		position: relative;
+		border-right: none;
+		padding-right: 0;
+		margin-bottom: 24px;
+	}
+}
+
+@media ( max-width : 576px) {
+	.product-grid {
+		grid-template-columns: 1fr;
+	}
+	.section-title {
+		font-size: 26px;
+	}
+}

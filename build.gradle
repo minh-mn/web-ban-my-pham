@@ -1,0 +1,53 @@
+plugins {
+    id 'java'
+    id 'war'
+    id "org.hidetake.ssh" version "2.11.2"
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compileOnly 'jakarta.servlet:jakarta.servlet-api:6.0.0'
+    compileOnly 'jakarta.servlet.jsp:jakarta.servlet.jsp-api:3.1.1'
+    implementation 'jakarta.servlet.jsp.jstl:jakarta.servlet.jsp.jstl-api:3.0.0'
+    implementation 'org.glassfish.web:jakarta.servlet.jsp.jstl:3.0.1'
+    implementation 'jakarta.mail:jakarta.mail-api:2.1.2'
+    implementation 'org.eclipse.angus:jakarta.mail:2.0.2'
+    implementation 'org.mindrot:jbcrypt:0.4'
+}
+
+// Thêm đoạn này để xử lý lỗi Duplicate
+war {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+remotes {
+    host {
+        host = '192.168.101.129'
+        user = 'cnna'
+        password = '123456'
+    }
+}
+
+ssh.settings {
+    knownHosts = allowAnyHosts
+}
+
+task docker_deploy {
+    dependsOn 'war'
+    doLast {
+        ssh.run {
+            session(remotes.host) {
+                // Đẩy file lên
+                put from: "${project.projectDir}/build/libs/MyCosmeticShop.war", into: "/usr/deploy/MyCosmeticShop.war"
+
+                // Lệnh này: Xóa container cũ (nếu có), sau đó chạy cái mới
+                // Thêm echo password | sudo -S để chạy quyền root mà không bị dừng hỏi pass
+                execute "echo '${remotes.host.password}' | sudo -S docker rm -f tomcat10 || true"
+                execute "echo '${remotes.host.password}' | sudo -S docker run -d --name tomcat10 -v /usr/deploy:/usr/local/tomcat/webapps -p 80:8080 tomcat:10.1"
+            }
+        }
+    }
+}
