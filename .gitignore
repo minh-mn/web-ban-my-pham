@@ -1,0 +1,21 @@
+# IDE folders and files
+.idea/
+.settings/
+.project
+.classpath
+.factorypath
+
+# Build and temporary folders
+build/
+.gradle/
+bin/
+out/
+
+# Database and backup files
+*.db
+*.bak
+*.log
+
+# Operating system files
+Thumbs.db
+.DS_Store
