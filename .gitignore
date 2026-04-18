@@ -19,3 +19,6 @@ out/
 # Operating system files
 Thumbs.db
 .DS_Store
+
+classes/
+mycosmetic_shop_db
