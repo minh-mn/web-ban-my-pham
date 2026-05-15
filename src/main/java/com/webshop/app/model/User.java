@@ -14,6 +14,24 @@ public class User {
     private boolean active;
     private Timestamp createdAt;
 
+    private String googleId;
+    private String facebookId;
+
+    public String getGoogleId() {
+        return googleId;
+    }
+
+    public void setGoogleId(String googleId) {
+        this.googleId = googleId;
+    }
+
+    public String getFacebookId() {
+        return facebookId;
+    }
+
+    public void setFacebookId(String facebookId) {
+        this.facebookId = facebookId;
+    }
     /* ================= GETTER / SETTER ================= */
 
     public int getId() {
