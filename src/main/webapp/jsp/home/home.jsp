@@ -58,7 +58,7 @@
 
 <jsp:include page="/jsp/product/flash-sale.jsp" />
 
-<jsp:include page="/jsp/store-events.jsp" />
+<jsp:include page="/jsp/common/store-events.jsp" />
 
 <section class="section">
 	<div class="container">
