@@ -242,3 +242,97 @@ for (var k = 0; k < toggleBtns.length; k++) {
     }
   });
 }
+
+document.addEventListener("DOMContentLoaded", function () {
+
+  const input = document.getElementById("search-input");
+  const box = document.getElementById("search-results");
+
+  if (!input || !box) return;
+
+  let timer = null;
+
+  input.addEventListener("input", function () {
+
+    const keyword = this.value.trim();
+
+    clearTimeout(timer);
+
+    if (keyword.length < 2) {
+      box.style.display = "none";
+      box.innerHTML = "";
+      return;
+    }
+
+    timer = setTimeout(() => {
+
+      fetch(`${window.APP_CTX}/api/search-suggest?q=${encodeURIComponent(keyword)}`)
+          .then(async res => {
+            const text = await res.text();
+            try {
+              return JSON.parse(text);
+            } catch (e) {
+              console.log("Invalid JSON:", text);
+              return [];
+            }
+          })
+          .then(data => render(data, keyword))
+          .catch(err => console.error(err));
+
+    }, 200);
+  });
+
+  function highlight(text, keyword) {
+    if (!keyword) return text;
+    return text.replace(
+        new RegExp(keyword, "gi"),
+        match => `<b style="color:#ee4d2d">${match}</b>`
+    );
+  }
+
+  function render(products, keyword) {
+
+    if (!products || products.length === 0) {
+      box.innerHTML = `<div class="suggest-empty">Không tìm thấy sản phẩm</div>`;
+      box.style.display = "block";
+      return;
+    }
+
+    let html = "";
+
+    products.forEach(p => {
+
+      const url = `${window.APP_CTX}/product/${p.slug}`;
+      const img = p.image
+          ? `${window.APP_CTX}/${p.image}`
+          : `${window.APP_CTX}/assets/img/default-product.jpg`;
+
+      const price = new Intl.NumberFormat("vi-VN", {
+        style: "currency",
+        currency: "VND"
+      }).format(p.price || 0);
+
+      html += `
+        <a href="${url}" class="suggest-item">
+            <img src="${img}" class="suggest-item-img" />
+            <div class="suggest-item-info">
+                <div class="suggest-item-title">
+                    ${highlight(p.title, keyword)}
+                </div>
+                <div class="suggest-item-price">${price}</div>
+            </div>
+        </a>
+      `;
+    });
+
+    box.innerHTML = html;
+    box.style.display = "block";
+  }
+
+  document.addEventListener("click", function (e) {
+    if (!input.contains(e.target) && !box.contains(e.target)) {
+      box.style.display = "none";
+    }
+  });
+
+});
