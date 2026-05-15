@@ -21,6 +21,18 @@ public class AuthFilter implements Filter {
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse resp = (HttpServletResponse) response;
 
+        String uri = req.getRequestURI();
+        if (uri.equals("/login") ||
+            uri.equals("/register") ||
+                uri.equals("/send-otp") ||
+                uri.equals("/verify-otp") ||
+                uri.equals("/css") ||
+                uri.equals("/js") ||
+                uri.equals("/images")) {
+            chain.doFilter(request, response);
+            return;
+        }
+
         HttpSession session = req.getSession(false);
         User user = (session != null) ? (User) session.getAttribute("user") : null;
 
