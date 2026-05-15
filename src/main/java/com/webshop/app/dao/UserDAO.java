@@ -328,4 +328,84 @@ public class UserDAO {
             return null;
         }
     }
+
+    /* ================= SOCIAL LOGIN METHODS ================= */
+
+    // 1. Tìm user dựa trên Google ID hoặc Facebook ID
+    public User findBySocialId(String provider, String socialId) {
+        // Tùy vào provider mà chọn cột google_id hoặc facebook_id trong DB
+        String column = "google".equals(provider) ? "google_id" : "facebook_id";
+        String sql = "SELECT id, username, role, full_name, email, phone, active, created_at "
+                + "FROM users WHERE " + column + " = ?";
+
+        try (Connection c = DBConnection.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, socialId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return null;
+                return mapUser(rs);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("UserDAO.findBySocialId error", e);
+        }
+    }
+
+    // 2. Tạo User mới khi ĐĂNG KÝ bằng Social
+    public void saveSocialUser(User u, String provider, String socialId) {
+        String column = "google".equals(provider) ? "google_id" : "facebook_id";
+        String sql = "INSERT INTO users (username, role, full_name, email, active, " + column + ") "
+                + "VALUES (?, ?, ?, ?, ?, ?)";
+
+        try (Connection c = DBConnection.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, u.getUsername()); // Có thể dùng email làm username
+            ps.setString(2, "USER");         // Role mặc định
+            ps.setString(3, u.getFullName());
+            ps.setString(4, u.getEmail());
+            ps.setBoolean(5, true);          // Mặc định active
+            ps.setString(6, socialId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("UserDAO.saveSocialUser error", e);
+        }
+    }
+
+    // 3. Cập nhật Social ID vào tài khoản hiện có (Liên kết tài khoản)
+    public void updateSocialId(int userId, String provider, String socialId) {
+        String column = "google".equals(provider) ? "google_id" : "facebook_id";
+        String sql = "UPDATE users SET " + column + " = ? WHERE id = ?";
+        try (Connection c = DBConnection.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, socialId);
+            ps.setInt(2, userId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("UserDAO.updateSocialId error", e);
+        }
+    }
+
+    public boolean insert(User user) {
+        String sql = "INSERT INTO [Users] (userName, password, email, fullName, phone, birthday, gender, roleId, status) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        DBConnection DBContext = null;
+        try (Connection conn = DBContext.getConnection(); // Hoặc cách lấy connection của bạn
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, user.getUsername());
+            ps.setString(2, user.getPassword()); // Lưu ý: Nên dùng mật khẩu đã mã hóa
+            ps.setString(3, user.getEmail());
+            ps.setString(4, user.getFullName());
+            ps.setString(5, user.getPhone());
+            //ps.setDate(6, new java.sql.Date(user.getBirthday().getTime()));
+            //ps.setString(7, user.getGender());
+            ps.setInt(8, 2); // Giả sử roleId = 2 là Khách hàng (Customer)
+            ps.setInt(9, 1); // status = 1 là Active (Hoạt động)
+
+            int rowAffected = ps.executeUpdate();
+            return rowAffected > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
 }
