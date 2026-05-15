@@ -54,79 +54,11 @@
     </div>
 </section>
 
-<section class="section hot-categories">
-	<div class="container">
-		<h2 class="section-title">DANH MỤC HOT</h2>
-		<div class="category-circle-grid">
-			<div class="category-item">
-				<div class="icon-box">
-					<img
-						src="${pageContext.request.contextPath}/assets/images/icons/serum.png"
-						alt="Serum">
-				</div>
-				<span>Serum</span>
-			</div>
-			<div class="category-item">
-				<div class="icon-box">
-					<img
-						src="${pageContext.request.contextPath}/assets/images/icons/mask.png"
-						alt="Mặt nạ">
-				</div>
-				<span>Mặt nạ</span>
-			</div>
-			<div class="category-item">
-				<div class="icon-box">
-					<img
-						src="${pageContext.request.contextPath}/assets/images/icons/sunscreen.png"
-						alt="Chống nắng">
-				</div>
-				<span>Chống nắng</span>
-			</div>
-			<div class="category-item">
-				<div class="icon-box">
-					<img
-						src="${pageContext.request.contextPath}/assets/images/icons/cleanser.png"
-						alt="Sữa rửa mặt">
-				</div>
-				<span>Sữa rửa mặt</span>
-			</div>
-		</div>
-	</div>
-</section>
+<jsp:include page="/jsp/product/hot-categories.jsp" />
 
-<section class="section flash-deal">
-	<div class="container">
-		<div class="deal-header">
-			<h2 class="section-title">
-				<i class="fa-solid fa-bolt"></i> FLASH DEAL
-			</h2>
-			<div id="countdown">
-				Kết thúc sau: <span id="timer">00 : 00 : 00</span>
-			</div>
-		</div>
-		<div class="product-grid">
-			<c:forEach var="product" items="${products}" end="3">
-				<div class="product-card">
-					<div class="badge-sale">-${product.discountPercent}%</div>
-					<div class="product-img-box">
-						<img src="${pageContext.request.contextPath}${product.imageUrl}"
-							alt="${product.title}">
-					</div>
-					<h3 class="product-title">${product.title}</h3>
-					<div class="price">
-						<span class="sale-price"><fmt:formatNumber
-								value="${product.finalPrice}" type="number" groupingUsed="true" />
-							₫</span>
-					</div>
-					<div class="deal-progress">
-						<div class="progress-bar" style="width: 75%;"></div>
-						<span>Sắp cháy hàng</span>
-					</div>
-				</div>
-			</c:forEach>
-		</div>
-	</div>
-</section>
+<jsp:include page="/jsp/product/flash-sale.jsp" />
+
+<jsp:include page="/jsp/store-events.jsp" />
 
 <section class="section">
 	<div class="container">
@@ -253,9 +185,6 @@
 	</div>
 </section>
 
-<jsp:include page="footer.jsp" />
-
-
 <script>
 document.addEventListener("DOMContentLoaded", function () {
 	const slides = document.querySelectorAll(".slide");
@@ -338,21 +267,29 @@ document.addEventListener("DOMContentLoaded", function () {
 	});
 
 // Logic Countdown Flash Deal
-function startTimer(duration, display) {
-    var timer = duration, hours, minutes, seconds;
-    setInterval(function () {
-        hours = parseInt(timer / 3600, 10);
-        minutes = parseInt((timer % 3600) / 60, 10);
-        seconds = parseInt(timer % 60, 10);
+function startFlashSale(endTimeStr) {
+	const countDownDate = new Date(endTimeStr).getTime();
 
-        hours = hours < 10 ? "0" + hours : hours;
-        minutes = minutes < 10 ? "0" + minutes : minutes;
-        seconds = seconds < 10 ? "0" + seconds : seconds;
+	const x = setInterval(function() {
+		const now = new Date().getTime();
+		const distance = countDownDate - now;
 
-        display.textContent = hours + " : " + minutes + " : " + seconds;
+		// Tính toán Giờ, Phút, Giây
+		const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+		const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+		const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
-        if (--timer < 0) { timer = duration; }
-    }, 1000);
+		// Hiển thị ra ID 'timer'
+		document.getElementById("timer").innerHTML =
+				(hours < 10 ? "0" + hours : hours) + " : " +
+				(minutes < 10 ? "0" + minutes : minutes) + " : " +
+				(seconds < 10 ? "0" + seconds : seconds);
+
+		if (distance < 0) {
+			clearInterval(x);
+			document.getElementById("timer").innerHTML = "SỰ KIỆN KẾT THÚC";
+		}
+	}, 1000);
 }
 
 window.onload = function () {
@@ -362,23 +299,37 @@ window.onload = function () {
 };
 
 function saveVoucher(btn) {
-	// Lấy trạng thái đăng nhập từ attribute của nút
-    const isLoggedIn = btn.getAttribute('data-loggedin') === 'true';
+	const isLoggedIn = btn.getAttribute('data-loggedin') === 'true';
+	if (!isLoggedIn) {
+		alert("Vui lòng đăng nhập để lưu mã giảm giá này!");
+		window.location.href = window.APP_CTX + "/login";
+		return;
+	}
 
-    if (!isLoggedIn) {
-        // Nếu chưa đăng nhập: Thông báo và chuyển hướng
-        alert("Vui lòng đăng nhập để lưu mã giảm giá này!");
-        window.location.href = "${pageContext.request.contextPath}/login"; 
-        return;
-    }
+	// Vô hiệu hóa nút trong lúc gọi API
+	btn.disabled = true;
+	btn.innerText = "Đang lưu...";
 
-    // Nếu đã đăng nhập: Thực hiện logic lưu voucher
-    btn.innerText = "Đã lưu";
-    btn.classList.add("saved"); // Bạn có thể thêm CSS để đổi màu nút
-    btn.disabled = true;
-    
-    // Gửi AJAX hoặc điều hướng đến Controller để lưu vào DB
-    console.log("Đã lưu voucher thành công cho người dùng.");
-    alert("Chúc mừng! Mã giảm giá đã được lưu vào ví của bạn.");
+	// Gọi API đã có sẵn của bạn
+	fetch(window.APP_CTX + '/ajax/apply-coupon?code=TGSF10K')
+			.then(response => response.json())
+			.then(data => {
+				if(data.success) {
+					btn.innerText = "Đã lưu";
+					btn.classList.add("saved");
+					btn.style.backgroundColor = "#ccc"; // Đổi màu xám
+					alert(data.message + " Bạn được giảm " + data.discount + "đ.");
+				} else {
+					btn.disabled = false;
+					btn.innerText = "Lưu";
+					alert("Lỗi: " + data.message);
+				}
+			})
+			.catch(err => {
+				console.error("Lỗi:", err);
+				btn.disabled = false;
+				btn.innerText = "Lưu";
+				alert("Có lỗi xảy ra, vui lòng thử lại!");
+			});
 }
 </script>
