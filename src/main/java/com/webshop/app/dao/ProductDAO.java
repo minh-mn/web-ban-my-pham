@@ -35,7 +35,7 @@ public class ProductDAO {
 				+ "LEFT JOIN store_brand b ON p.brand_id = b.id " + "WHERE p.is_active = 1 ");
 
 		if (keyword != null && !keyword.isBlank()) {
-			sql.append("AND (p.title LIKE ? OR p.description LIKE ?) ");
+			sql.append("AND (p.title COLLATE Latin1_General_CI_AI LIKE ? OR p.description COLLATE Latin1_General_CI_AI LIKE ?) ");
 		}
 		if (categoryId != null)
 			sql.append("AND p.category_id = ? ");
@@ -112,46 +112,51 @@ public class ProductDAO {
 	 * Đếm tổng số sản phẩm theo filter để tính totalPages.
 	 */
 	public int countProducts(String keyword, Integer categoryId, Integer brandId, String priceRange,
-			Integer minRating) {
+	                         Integer minRating) {
 
-		// Để đếm đúng khi có join review + lọc minRating, ta group theo product_id
-		// trước rồi COUNT ngoài.
 		StringBuilder sql = new StringBuilder(
-				"SELECT COUNT(*) AS total " + "FROM ( " + "   SELECT p.id " + "   FROM store_product p "
-						+ "   LEFT JOIN store_review r ON p.id = r.product_id " + "   WHERE p.is_active = 1 ");
+				"SELECT COUNT(*) FROM ( " +
+						" SELECT p.id " +
+						" FROM store_product p " +
+						" LEFT JOIN store_review r ON p.id = r.product_id " +
+						" WHERE p.is_active = 1 "
+		);
 
 		if (keyword != null && !keyword.isBlank()) {
-			sql.append("AND (p.title LIKE ? OR p.description LIKE ?) ");
+			sql.append("AND (p.title COLLATE Latin1_General_CI_AI LIKE ? "
+					+ "OR p.description COLLATE Latin1_General_CI_AI LIKE ?) ");
 		}
+
 		if (categoryId != null)
 			sql.append("AND p.category_id = ? ");
+
 		if (brandId != null)
 			sql.append("AND p.brand_id = ? ");
 
 		if (priceRange != null) {
 			switch (priceRange) {
-			case "lt500":
-				sql.append("AND p.price < 500000 ");
-				break;
-			case "500_1000":
-				sql.append("AND p.price BETWEEN 500000 AND 1000000 ");
-				break;
-			case "gt1000":
-				sql.append("AND p.price > 1000000 ");
-				break;
+				case "lt500":
+					sql.append("AND p.price < 500000 ");
+					break;
+				case "500_1000":
+					sql.append("AND p.price BETWEEN 500000 AND 1000000 ");
+					break;
+				case "gt1000":
+					sql.append("AND p.price > 1000000 ");
+					break;
 			}
 		}
 
 		sql.append("GROUP BY p.id ");
 
-		// minRating: nếu null thì không HAVING
 		if (minRating != null) {
 			sql.append("HAVING COALESCE(AVG(CAST(r.rating AS float)), 0) >= ? ");
 		}
 
 		sql.append(") x");
 
-		try (Connection c = DBConnection.getConnection(); PreparedStatement ps = c.prepareStatement(sql.toString())) {
+		try (Connection c = DBConnection.getConnection();
+		     PreparedStatement ps = c.prepareStatement(sql.toString())) {
 
 			int idx = 1;
 
@@ -160,20 +165,17 @@ public class ProductDAO {
 				ps.setString(idx++, like);
 				ps.setString(idx++, like);
 			}
-			if (categoryId != null)
-				ps.setInt(idx++, categoryId);
-			if (brandId != null)
-				ps.setInt(idx++, brandId);
-			if (minRating != null)
-				ps.setInt(idx++, minRating);
 
-			try (ResultSet rs = ps.executeQuery()) {
-				rs.next();
-				return rs.getInt(1);
-			}
+			if (categoryId != null) ps.setInt(idx++, categoryId);
+			if (brandId != null) ps.setInt(idx++, brandId);
+			if (minRating != null) ps.setInt(idx++, minRating);
+
+			ResultSet rs = ps.executeQuery();
+			rs.next();
+			return rs.getInt(1);
 
 		} catch (SQLException e) {
-			throw new RuntimeException("ProductDAO.countProducts error", e);
+			throw new RuntimeException(e);
 		}
 	}
 
@@ -200,8 +202,10 @@ public class ProductDAO {
 				+ "LEFT JOIN store_brand b ON p.brand_id = b.id " + "WHERE p.is_active = 1 ");
 
 		if (keyword != null && !keyword.isBlank()) {
-			sql.append("AND (p.title LIKE ? OR p.description LIKE ?) ");
+			sql.append("AND (p.title COLLATE Latin1_General_CI_AI LIKE ? "
+					+ "OR p.description COLLATE Latin1_General_CI_AI LIKE ?) ");
 		}
+
 		if (categoryId != null)
 			sql.append("AND p.category_id = ? ");
 		if (brandId != null)
@@ -435,39 +439,48 @@ public class ProductDAO {
 	 */
 	public List<Product> searchByKeyword(String keyword) {
 
-		String sql = "SELECT id, title, slug, description, price, stock, image, discount_percent "
-				+ "FROM dbo.store_product " + "WHERE is_active = 1 AND (title LIKE ? OR slug LIKE ?) "
-				+ "ORDER BY id DESC";
-
 		List<Product> list = new ArrayList<>();
 
-		try (Connection c = DBConnection.getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+		String sql =
+				"SELECT TOP 8 " +
+						"id, title, slug, price, image, " +
+						"CASE " +
+						"   WHEN title LIKE ? THEN 0 " +
+						"   WHEN title LIKE ? THEN 1 " +
+						"   ELSE 2 " +
+						"END AS relevance " +
+						"FROM store_product " +
+						"WHERE is_active = 1 " +
+						"AND (title LIKE ? OR description LIKE ?) " +
+						"ORDER BY relevance ASC, id DESC";
 
-			String like = "%" + (keyword == null ? "" : keyword.trim()) + "%";
-			ps.setString(1, like);
-			ps.setString(2, like);
+		try (Connection c = DBConnection.getConnection();
+		     PreparedStatement ps = c.prepareStatement(sql)) {
 
-			try (ResultSet rs = ps.executeQuery()) {
-				while (rs.next()) {
-					Product p = new Product();
-					p.setId(rs.getInt("id"));
-					p.setTitle(rs.getString("title"));
-					p.setSlug(rs.getString("slug"));
-					p.setDescription(rs.getString("description"));
-					p.setPrice(rs.getBigDecimal("price"));
-					p.setStock(rs.getInt("stock"));
-					p.setImage(rs.getString("image"));
-					p.setDiscountPercent(rs.getInt("discount_percent"));
-					applyFinalPrice(p);
-					list.add(p);
-				}
+			String like = "%" + keyword.trim() + "%";
+
+			ps.setString(1, like); // title full match priority
+			ps.setString(2, keyword.trim() + "%"); // starts-with
+			ps.setString(3, like);
+			ps.setString(4, like);
+
+			ResultSet rs = ps.executeQuery();
+
+			while (rs.next()) {
+				Product p = new Product();
+				p.setId(rs.getInt("id"));
+				p.setTitle(rs.getString("title"));
+				p.setSlug(rs.getString("slug"));
+				p.setPrice(rs.getBigDecimal("price"));
+				p.setImage(rs.getString("image"));
+				list.add(p);
 			}
 
-			return list;
-
-		} catch (SQLException e) {
-			throw new RuntimeException("ProductDAO.searchByKeyword error", e);
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
+
+		return list;
 	}
 
 	/*
