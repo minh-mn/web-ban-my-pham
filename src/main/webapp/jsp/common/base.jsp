@@ -44,108 +44,60 @@
 
 			<a class="logo" href="${pageContext.request.contextPath}/">MyCosmetic</a>
 
-			<!-- DESKTOP NAV -->
-			<nav class="main-nav">
-				<a href="${pageContext.request.contextPath}/products">Sản phẩm</a> <a
-					href="#">Blog</a> <a href="#">Liên hệ</a> <a
-					href="${pageContext.request.contextPath}/cart" class="cart-icon">
-					🛒 <c:if test="${not empty sessionScope.CART}">
-						<c:set var="cartQty" value="0" />
-						<c:forEach var="e" items="${sessionScope.CART}">
-							<c:set var="cartQty" value="${cartQty + e.value.quantity}" />
-						</c:forEach>
+			<div class="header-actions" style="display: flex; align-items: center; gap: 20px;">
 
-						<c:if test="${cartQty > 0}">
-							<span class="cart-badge">${cartQty}</span>
-						</c:if>
-					</c:if>
-				</a>
-			</nav>
-
-			<!-- ACTIONS -->
-			<div class="header-actions">
-
-				<!-- SEARCH -->
 				<div class="search-wrapper">
-					<form action="${pageContext.request.contextPath}/search"
-						method="get" class="search-form">
-						<span class="search-icon">🔍</span> <input id="search-input"
-							name="q" placeholder="Tìm sản phẩm..." autocomplete="off"
-							value="${param.q}">
+					<form action="${pageContext.request.contextPath}/search" method="get" class="search-form">
+						<span class="search-icon">🔍</span>
+						<input id="search-input" name="q" placeholder="Tìm sản phẩm..." autocomplete="off" value="${param.q}">
 					</form>
 					<div id="search-results" class="search-results"></div>
 				</div>
 
-				<!-- AUTH -->
 				<div class="auth-links">
 					<c:choose>
 						<c:when test="${not empty sessionScope.user}">
 							<div class="user-dropdown">
-								<button class="user-btn" type="button" aria-haspopup="menu"
-									aria-expanded="false">
+								<button class="user-btn" type="button" aria-haspopup="menu" aria-expanded="false">
 									<span class="user-icon">👤</span> <span class="user-name">${sessionScope.user.username}</span>
 								</button>
-
 								<div class="user-menu">
-									<a href="${pageContext.request.contextPath}/account">👤 Tài
-										khoản</a> <a href="${pageContext.request.contextPath}/orders">📦
-										Đơn hàng</a>
-
+									<a href="${pageContext.request.contextPath}/account">👤 Tài khoản</a>
+									<a href="${pageContext.request.contextPath}/orders">📦 Đơn hàng</a>
 									<div class="menu-divider"></div>
-
-									<form method="post"
-										action="${pageContext.request.contextPath}/logout">
-										<!-- ✅ CSRF token -->
-										<input type="hidden" name="csrf_token"
-											value="<c:out value='${sessionScope.CSRF_TOKEN}'/>">
+									<form method="post" action="${pageContext.request.contextPath}/logout">
+										<input type="hidden" name="csrf_token" value="<c:out value='${sessionScope.CSRF_TOKEN}'/>">
 										<button type="submit" class="logout-btn">🚪 Đăng xuất</button>
 									</form>
 								</div>
 							</div>
 						</c:when>
-
 						<c:otherwise>
 							<div class="auth-buttons">
-								<a href="${pageContext.request.contextPath}/login"
-									class="btn-login">Đăng nhập</a> <a
-									href="${pageContext.request.contextPath}/register"
-									class="btn-register">Đăng ký</a>
+								<a href="${pageContext.request.contextPath}/login" class="btn-login">Đăng nhập</a>
+								<a href="${pageContext.request.contextPath}/register" class="btn-register">Đăng ký</a>
 							</div>
 						</c:otherwise>
 					</c:choose>
 				</div>
 
-				<button class="menu-toggle" id="menu-toggle" type="button">☰</button>
+				<a href="${pageContext.request.contextPath}/cart" class="cart-icon" style="font-size: 24px; text-decoration: none; position: relative; margin-left: 10px;">
+					🛒
+					<c:if test="${not empty sessionScope.CART}">
+						<c:set var="cartQty" value="0" />
+						<c:forEach var="e" items="${sessionScope.CART}">
+							<c:set var="cartQty" value="${cartQty + e.value.quantity}" />
+						</c:forEach>
+						<c:if test="${cartQty > 0}">
+							<span class="cart-badge" style="position: absolute; top: -8px; right: -12px; background: var(--pink-main); color: white; border-radius: 50%; padding: 2px 6px; font-size: 11px; font-weight: bold;">${cartQty}</span>
+						</c:if>
+					</c:if>
+				</a>
+
 			</div>
 		</div>
 
-		<!-- MOBILE NAV -->
-		<nav class="mobile-nav" id="mobile-nav">
-			<a href="${pageContext.request.contextPath}/products">Sản phẩm</a> <a
-				href="#">Blog</a> <a href="#">Liên hệ</a> <a
-				href="${pageContext.request.contextPath}/cart">Giỏ hàng</a>
-
-			<c:choose>
-				<c:when test="${not empty sessionScope.user}">
-					<a href="${pageContext.request.contextPath}/account">Tài khoản</a>
-					<form method="post"
-						action="${pageContext.request.contextPath}/logout">
-						<!-- ✅ CSRF token -->
-						<input type="hidden" name="csrf_token"
-							value="<c:out value='${sessionScope.CSRF_TOKEN}'/>">
-						<button type="submit">Đăng xuất</button>
-					</form>
-				</c:when>
-				<c:otherwise>
-					<div class="auth-buttons">
-						<a href="${pageContext.request.contextPath}/login"
-							class="btn-login">Đăng nhập</a> <a
-							href="${pageContext.request.contextPath}/register"
-							class="btn-register">Đăng ký</a>
-					</div>
-				</c:otherwise>
-			</c:choose>
-		</nav>
+		<jsp:include page="/jsp/common/header.jsp" />
 	</header>
 
 	<!-- ================= MAIN ================= -->
@@ -165,6 +117,10 @@
 			</c:otherwise>
 		</c:choose>
 	</main>
+	
+	<jsp:include page="/jsp/common/footer.jsp" />
+
+	<script defer src="${pageContext.request.contextPath}/assets/js/main.js"></script>
 
 </body>
 </html>
