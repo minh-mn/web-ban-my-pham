@@ -1,17 +1,20 @@
 package com.webshop.app.controller.AuthController;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
 
 import com.webshop.app.dao.UserDAO;
 import com.webshop.app.model.User;
+import com.webshop.app.utils.EmailUtil;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 @WebServlet("/register")
 public class RegisterServlet extends HttpServlet {
@@ -21,16 +24,8 @@ public class RegisterServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
-
-        req.setCharacterEncoding("UTF-8");
-        resp.setCharacterEncoding("UTF-8");
-
+        // Hiển thị trang đăng ký
         req.setAttribute("pageTitle", "MyCosmetic | Đăng ký");
-
-        // (Tuỳ kiến trúc) Nếu base.jsp đang load pageCss theo contextPath/assets/css/${pageCss}
-        // thì bật dòng dưới. Nếu register.jsp đã tự link register.css như bạn đưa thì có thể bỏ.
-        req.setAttribute("pageCss", "register.css");
-
         req.setAttribute("pageContent", "/jsp/auth/register.jsp");
         req.getRequestDispatcher("/jsp/common/base.jsp").forward(req, resp);
     }
@@ -40,87 +35,96 @@ public class RegisterServlet extends HttpServlet {
             throws ServletException, IOException {
 
         req.setCharacterEncoding("UTF-8");
-        resp.setCharacterEncoding("UTF-8");
+        Map<String, String> errors = new HashMap<>();
 
-        String username = req.getParameter("username");
-        String fullName = req.getParameter("fullName");
-        String email    = req.getParameter("email");
-        String phone    = req.getParameter("phone");
-
+        // 1. Lấy dữ liệu từ form
+        String email = req.getParameter("email");
         String password = req.getParameter("password");
-        String confirm  = req.getParameter("confirmPassword");
+        String confirmPassword = req.getParameter("confirmPassword");
+        String fullName = req.getParameter("fullName");
+        String userName = req.getParameter("userName");
+        String phone = req.getParameter("phone");
+        String birthday = req.getParameter("birthday");
+        String gender = req.getParameter("gender");
 
-        List<String> errors = new ArrayList<>();
-
-        // ===== NORMALIZE (tránh lỗi "   ") =====
-        String uName = (username != null) ? username.trim() : null;
-        String fName = (fullName != null) ? fullName.trim() : null;
-        String mail  = (email != null) ? email.trim() : null;
-        String ph    = (phone != null) ? phone.trim() : null;
-
-        // ===== VALIDATION =====
-        if (uName == null || uName.isBlank()) {
-            errors.add("Tên đăng nhập không được để trống");
+        // 2. Validate dữ liệu cơ bản (Server-side validation)
+        if (email == null || !email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+            errors.put("email", "Email không đúng định dạng.");
+        }
+        if (password == null || password.length() < 8) {
+            errors.put("password", "Mật khẩu phải từ 8 ký tự.");
+        }
+        if (!password.equals(confirmPassword)) {
+            errors.put("confirmPassword", "Mật khẩu xác nhận không khớp.");
+        }
+        if (userName == null || userName.length() < 3) {
+            errors.put("userName", "Tên đăng nhập quá ngắn.");
         }
 
-        if (fName == null || fName.isBlank()) {
-            errors.add("Họ tên không được để trống");
+        // 3. Kiểm tra trùng lặp trong Database
+        if (errors.isEmpty()) {
+            if (userDAO.findByEmail(email) != null) {
+                errors.put("email", "Email này đã được sử dụng.");
+            }
+            if (userDAO.findByUsername(userName) != null) {
+                errors.put("userName", "Tên đăng nhập này đã tồn tại.");
+            }
         }
 
-        if (mail == null || mail.isBlank()) {
-            errors.add("Email không được để trống");
-        } else if (!mail.matches("^[\\w._%+-]+@[\\w.-]+\\.[A-Za-z]{2,}$")) {
-            errors.add("Email không hợp lệ");
-        }
-
-        if (ph == null || ph.isBlank()) {
-            errors.add("Số điện thoại không được để trống");
-        } else if (!ph.matches("^\\d{9,11}$")) {
-            errors.add("Số điện thoại không hợp lệ (9–11 chữ số)");
-        }
-
-        if (password == null || password.length() < 6) {
-            errors.add("Mật khẩu phải có ít nhất 6 ký tự");
-        }
-
-        if (confirm == null || password == null || !password.equals(confirm)) {
-            errors.add("Mật khẩu xác nhận không khớp");
-        }
-
-        // ===== DUPLICATE CHECK (chỉ check khi input hợp lệ tối thiểu) =====
-        if (uName != null && !uName.isBlank() && userDAO.findByUsername(uName) != null) {
-            errors.add("Tên đăng nhập đã tồn tại");
-        }
-
-        if (mail != null && !mail.isBlank() && userDAO.findByEmail(mail) != null) {
-            errors.add("Email đã được sử dụng");
-        }
-
+        // 4. Xử lý kết quả validate
         if (!errors.isEmpty()) {
+            // Có lỗi -> Quay lại trang đăng ký và hiển thị lỗi
             req.setAttribute("errors", errors);
-
-            req.setAttribute("pageTitle", "MyCosmetic | Đăng ký");
-            req.setAttribute("pageCss", "register.css");
-            req.setAttribute("pageContent", "/jsp/auth/register.jsp"); // ✅ ĐÚNG đường dẫn
-
-            // Lưu ý: JSP của bạn đang dùng ${param.fullName}... nên tự giữ dữ liệu nhập được rồi.
-            // Không cần old_username/old_email/old_phone...
-
+            // Giữ lại các giá trị cũ để user không phải nhập lại (trừ password)
+            req.setAttribute("oldEmail", email);
+            req.setAttribute("oldFullName", fullName);
+            req.setAttribute("pageContent", "/jsp/auth/register.jsp");
             req.getRequestDispatcher("/jsp/common/base.jsp").forward(req, resp);
             return;
         }
 
-        // ===== CREATE USER =====
-        User u = new User();
-        u.setUsername(uName);
-        u.setFullName(fName);
-        u.setEmail(mail);
-        u.setPhone(ph);
-        u.setRole("USER");
-        u.setActive(true);
+        // 5. Nếu mọi thứ OK -> Chuẩn bị User tạm thời
+        User pendingUser = new User();
+        pendingUser.setEmail(email);
+        pendingUser.setUsername(userName);
+        pendingUser.setPassword(password); // Nên BCrypt.hashpw(...) trước khi set
+        pendingUser.setFullName(fullName);
+        pendingUser.setPhone(phone);
+       // pendingUser.setBirthday(java.sql.Date.valueOf(birthday));
+        //pendingUser.setGender(gender);
 
-        userDAO.create(u, password); // BCrypt hash bên trong DAO
+        // 6. Tạo mã OTP (6 chữ số)
+        String otp = String.format("%06d", new Random().nextInt(999999));
 
-        resp.sendRedirect(req.getContextPath() + "/login?register=success");
+        // 7. Lưu User và OTP vào Session
+        HttpSession session = req.getSession();
+        session.setAttribute("pendingUser", pendingUser);
+        String otpp = String.format("%06d", new Random().nextInt(1000000));
+        session.setAttribute("REGISTER_OTP", otp);
+        session.setAttribute("OTP-TIME", System.currentTimeMillis());
+        session.setAttribute("OTP_ATTEMPTS", 0);
+        session.setAttribute("LAST_OTP_SENT", System.currentTimeMillis());
+
+
+        // 8. Gửi OTP qua Email
+        try {
+            String subject = "Mã xác thực đăng ký tài khoản MyCosmetic";
+            String content = "<h2>Xác thực tài khoản</h2>"
+                    + "<p>Chào " + fullName + ",</p>"
+                    + "<p>Mã OTP của bạn là: <b style='font-size: 20px; color: #d81b60;'>" + otp + "</b></p>"
+                    + "<p>Mã này có hiệu lực trong 5 phút. Vui lòng không chia sẻ mã này cho bất kỳ ai.</p>";
+
+            EmailUtil.sendHtml(email, subject, content);
+
+            // Chuyển hướng sang trang nhập OTP
+            resp.sendRedirect(req.getContextPath() + "/verify-otp");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            req.setAttribute("status", "fail");
+            req.setAttribute("message", "Lỗi gửi email: " + e.getMessage());
+            req.setAttribute("pageContent", "/jsp/auth/register.jsp");
+            req.getRequestDispatcher("/jsp/common/base.jsp").forward(req, resp);
+        }
     }
 }
