@@ -1,3 +1,5 @@
+import org.hidetake.groovy.ssh.core.Remote
+
 plugins {
     id 'java'
     id 'war'
@@ -14,8 +16,19 @@ dependencies {
     implementation 'jakarta.servlet.jsp.jstl:jakarta.servlet.jsp.jstl-api:3.0.0'
     implementation 'org.glassfish.web:jakarta.servlet.jsp.jstl:3.0.1'
     implementation 'jakarta.mail:jakarta.mail-api:2.1.2'
-    implementation 'org.eclipse.angus:jakarta.mail:2.0.2'
+    implementation 'org.eclipse.angus:jakarta.mail:2.0.4'
     implementation 'org.mindrot:jbcrypt:0.4'
+    // 1. Google API Client (Để xác thực Google Token)
+    implementation 'com.google.api-client:google-api-client:2.2.0'
+
+    // 2. RestFB (Thư viện cực tốt để làm việc với Facebook)
+    implementation 'com.restfb:restfb:2023.10.0'
+
+    // 3. Jackson (Để parse JSON nếu cần)
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
+
+    // 4. OkHttp (Để gọi API thủ công nếu không muốn dùng thư viện trên)
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
 }
 
 // Thêm đoạn này để xử lý lỗi Duplicate
@@ -25,9 +38,9 @@ war {
 
 remotes {
     host {
-        host = 'IP máy tính cá nhân'
-        user = 'TK Máy ảo'
-        password = 'MK Máy ảo'
+        host = '192.168.101.128'
+        user = 'cnna'
+        password = '123456'
     }
 }
 
