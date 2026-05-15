@@ -354,4 +354,35 @@ public class CategoryDAO {
             throw new RuntimeException("CategoryDAO.existsBySlugExceptId error", e);
         }
     }
+
+    public List<Category> findActiveForMenu() {
+
+        List<Category> list = new ArrayList<>();
+
+        String sql =
+                "SELECT id, name, slug " +
+                        "FROM store_category " +
+                        "WHERE is_active = 1 " +
+                        "ORDER BY name ASC";
+
+        try (Connection c = DBConnection.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+
+                Category cat = new Category();
+                cat.setId(rs.getInt("id"));
+                cat.setName(rs.getString("name"));
+                cat.setSlug(rs.getString("slug"));
+
+                list.add(cat);
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("findActiveForMenu error", e);
+        }
+
+        return list;
+    }
 }
