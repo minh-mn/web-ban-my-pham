@@ -718,4 +718,21 @@ public class ProductDAO {
 
 		p.setFinalPrice(finalPrice);
 	}
+
+	public List<Product> searchByName(String keyword) {
+		List<Product> list = new ArrayList<>();
+		String sql = "SELECT * FROM products WHERE title LIKE ? COLLATE utf8mb4_general_ci";
+
+		try (Connection c = DBConnection.getConnection();
+		     PreparedStatement ps = c.prepareStatement(sql)) {
+			ps.setString(1, "%" + keyword + "%");
+			ResultSet rs = ps.executeQuery();
+			while (rs.next()) {
+				list.add(mapRowList(rs));
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return list;
+	}
 }
