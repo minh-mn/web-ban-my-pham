@@ -10,24 +10,15 @@ public class Coupon {
     private int discountPercent;
     private BigDecimal maxDiscountAmount;
 
-    // ✅ BẮT BUỘC (map với store_coupon.max_uses NOT NULL)
     private int maxUses;
-
     private int usedCount;
+    
     private boolean active;
+    
     private LocalDate startDate;
     private LocalDate endDate;
 
-    /* ================= BUSINESS ================= */
-
-    public boolean isValid(LocalDate today) {
-        return active &&
-               (startDate == null || !today.isBefore(startDate)) &&
-               (endDate == null || !today.isAfter(endDate)) &&
-               (maxUses <= 0 || usedCount < maxUses);
-    }
-
-    /* ================= GET / SET ================= */
+    /* GET / SET */
 
     public int getId() {
         return id;
