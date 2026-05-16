@@ -6,6 +6,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,8 +39,10 @@ public class CouponDAO {
     }
 
     public void increaseUsedCount(Connection conn, int couponId) throws SQLException {
-        try (PreparedStatement ps = conn.prepareStatement(
-            "UPDATE store_coupon SET used_count = used_count + 1 WHERE id = ?")) {
+
+        String sql = "UPDATE store_coupon SET used_count = used_count + 1 WHERE id = ?";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, couponId);
             ps.executeUpdate();
         }
@@ -212,4 +215,42 @@ public class CouponDAO {
 
         return cp;
     }
+
+    public boolean existsByCode(String code) {
+
+        String sql = "SELECT 1 FROM store_coupon WHERE code = ?";
+
+        try (Connection c = DBConnection.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+
+            ps.setString(1, code);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public boolean isValid(Coupon cp) {
+
+        LocalDate now = LocalDate.now();
+
+        if (cp == null) return false;
+        if (!cp.isActive()) return false;
+
+        if (cp.getStartDate() != null && now.isBefore(cp.getStartDate()))
+            return false;
+
+        if (cp.getEndDate() != null && now.isAfter(cp.getEndDate()))
+            return false;
+
+        if (cp.getMaxUses() > 0 && cp.getUsedCount() >= cp.getMaxUses())
+            return false;
+
+        return true;
+    }
+
 }
