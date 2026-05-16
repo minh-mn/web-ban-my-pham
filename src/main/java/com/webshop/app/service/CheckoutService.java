@@ -22,6 +22,7 @@ public class CheckoutService {
 	private final OrderDAO orderDAO = new OrderDAO();
 	private final OrderItemDAO itemDAO = new OrderItemDAO();
 	private final CouponDAO couponDAO = new CouponDAO();
+	private final CouponService couponService = new CouponService();
 
 	public int checkout(int userId, Map<Integer, CartItem> cart, String fullName, String phone, String address,
 			String paymentMethod, String couponCode) {
@@ -41,11 +42,17 @@ public class CheckoutService {
 
 		BigDecimal total = subtotal;
 
+		CouponService couponService = new CouponService();
+
 		Coupon coupon = null;
+		BigDecimal discount = BigDecimal.ZERO;
+
 		if (couponCode != null && !couponCode.isBlank()) {
-			coupon = couponDAO.findByCode(couponCode.trim());
-			if (coupon != null && coupon.isValid(LocalDate.now())) {
-				BigDecimal discount = calculateDiscountFromCoupon(coupon, subtotal);
+
+			coupon = couponService.validateCoupon(couponCode, subtotal);
+
+			if (coupon != null) {
+				discount = couponService.calculateDiscount(coupon, subtotal);
 				total = total.subtract(discount);
 			}
 		}
@@ -215,7 +222,7 @@ public class CheckoutService {
 			// ===== COUPON USED =====
 			if (couponCode != null && !couponCode.isBlank()) {
 				Coupon coupon = couponDAO.findByCode(couponCode.trim());
-				if (coupon != null && coupon.isValid(LocalDate.now())) {
+				if (coupon != null) {
 					couponDAO.increaseUsedCount(conn, coupon.getId());
 				}
 			}
@@ -237,19 +244,20 @@ public class CheckoutService {
 	public BigDecimal calculateCouponDiscount(String couponCode, BigDecimal subTotal) {
 
 		if (couponCode == null || couponCode.isBlank())
-			return null;
-		if (subTotal == null || subTotal.compareTo(BigDecimal.ZERO) <= 0)
-			return null;
+			return BigDecimal.ZERO;
 
-		Coupon coupon = couponDAO.findByCode(couponCode.trim());
+		if (subTotal == null || subTotal.compareTo(BigDecimal.ZERO) <= 0)
+			return BigDecimal.ZERO;
+
+		Coupon coupon = couponService.validateCoupon(couponCode, subTotal);
+
 		if (coupon == null)
-			return null;
-		if (!coupon.isValid(LocalDate.now()))
-			return null;
+			return BigDecimal.ZERO;
 
 		BigDecimal discount = calculateDiscountFromCoupon(coupon, subTotal);
-		if (discount == null || discount.compareTo(BigDecimal.ZERO) <= 0)
-			return null;
+
+		if (discount.compareTo(BigDecimal.ZERO) <= 0)
+			return BigDecimal.ZERO;
 
 		return discount.setScale(0, RoundingMode.HALF_UP);
 	}
