@@ -45,7 +45,6 @@ public class SearchSuggestServlet extends HttpServlet {
                 item.put("title", p.getTitle());
                 item.put("slug", p.getSlug());
 
-                // FIX QUAN TRỌNG: dùng image chứ không phải thumbnail
                 item.put("image", p.getImage());
 
                 item.put("price", p.getPrice());
