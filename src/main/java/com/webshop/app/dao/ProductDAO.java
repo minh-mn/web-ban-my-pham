@@ -732,20 +732,50 @@ public class ProductDAO {
 		p.setFinalPrice(finalPrice);
 	}
 
-	public List<Product> searchByName(String keyword) {
+	public List<Product> searchSuggestions(String keyword) {
+
 		List<Product> list = new ArrayList<>();
-		String sql = "SELECT * FROM products WHERE title LIKE ? COLLATE utf8mb4_general_ci";
+
+		String sql =
+				"SELECT TOP 8 " +
+						" id, title, slug, price, image, " +
+						" CASE " +
+						"   WHEN title LIKE ? THEN 0 " +      // bắt đầu bằng keyword
+						"   WHEN title LIKE ? THEN 1 " +      // chứa keyword
+						"   ELSE 2 " +
+						" END AS score " +
+						"FROM store_product " +
+						"WHERE is_active = 1 " +
+						"AND (title LIKE ? OR description LIKE ?) " +
+						"ORDER BY score ASC, id DESC";
 
 		try (Connection c = DBConnection.getConnection();
 		     PreparedStatement ps = c.prepareStatement(sql)) {
-			ps.setString(1, "%" + keyword + "%");
+
+			String likeAll = "%" + keyword + "%";
+			String likeStart = keyword + "%";
+
+			ps.setString(1, likeStart);
+			ps.setString(2, likeAll);
+			ps.setString(3, likeAll);
+			ps.setString(4, likeAll);
+
 			ResultSet rs = ps.executeQuery();
+
 			while (rs.next()) {
-				list.add(mapRowList(rs));
+				Product p = new Product();
+				p.setId(rs.getInt("id"));
+				p.setTitle(rs.getString("title"));
+				p.setSlug(rs.getString("slug"));
+				p.setPrice(rs.getBigDecimal("price"));
+				p.setImage(rs.getString("image"));
+				list.add(p);
 			}
-		} catch (SQLException e) {
+
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
+
 		return list;
 	}
 }
