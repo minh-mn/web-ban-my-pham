@@ -1,5 +1,6 @@
 package com.webshop.app.dao;
 
+import com.webshop.app.utils.DBConnection;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -7,95 +8,86 @@ import java.sql.ResultSet;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
-import com.webshop.app.utils.DBConnection;
-
 public class RememberTokenDAO {
 
-    /**
-     * Token hợp lệ khi:
-     *  - token tồn tại
-     *  - revoked = 0/false
-     *  - expires_at > NOW()
-     */
     public Integer findUserIdByToken(String token) {
         String sql =
                 "SELECT user_id " +
-                "FROM remember_tokens " +
-                "WHERE token = ? " +
-                "  AND revoked = 0 " +
-                "  AND expires_at > ?";
+                        "FROM remember_tokens " +
+                        "WHERE token = ? " +
+                        "  AND revoked = 0 " +
+                        "  AND expires_at > ?";
 
-        try (Connection con = DBConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            ps.setString(1, token);
-            ps.setTimestamp(2, Timestamp.valueOf(LocalDateTime.now()));
+            statement.setString(1, token);
+            statement.setTimestamp(2, Timestamp.valueOf(LocalDateTime.now()));
 
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return rs.getInt("user_id");
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getInt("user_id");
+                }
             }
 
         } catch (Exception e) {
-            System.out.println("[RememberTokenDAO] findUserIdByToken error: " + e.getMessage());
+            throw new RuntimeException("RememberTokenDAO.findUserIdByToken error", e);
         }
+
         return null;
     }
 
-    /**
-     * Lưu token mới (revoked mặc định = 0)
-     */
     public void saveToken(int userId, String token, LocalDateTime expiresAt) {
         String sql =
                 "INSERT INTO remember_tokens(token, user_id, expires_at, revoked, created_at) " +
-                "VALUES (?, ?, ?, 0, ?)";
+                        "VALUES (?, ?, ?, 0, ?)";
 
-        try (Connection con = DBConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            ps.setString(1, token);
-            ps.setInt(2, userId);
-            ps.setTimestamp(3, Timestamp.valueOf(expiresAt));
-            ps.setTimestamp(4, Timestamp.valueOf(LocalDateTime.now()));
+            statement.setString(1, token);
+            statement.setInt(2, userId);
+            statement.setTimestamp(3, Timestamp.valueOf(expiresAt));
+            statement.setTimestamp(4, Timestamp.valueOf(LocalDateTime.now()));
 
-            ps.executeUpdate();
+            statement.executeUpdate();
 
         } catch (Exception e) {
-            System.out.println("[RememberTokenDAO] saveToken error: " + e.getMessage());
+            throw new RuntimeException("RememberTokenDAO.saveToken error", e);
         }
     }
 
-    /**
-     * Revoke token (khi logout hoặc token invalid)
-     */
     public void revokeToken(String token) {
-        String sql = "UPDATE remember_tokens SET revoked = 1 WHERE token = ?";
+        String sql =
+                "UPDATE remember_tokens " +
+                        "SET revoked = 1 " +
+                        "WHERE token = ?";
 
-        try (Connection con = DBConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            ps.setString(1, token);
-            ps.executeUpdate();
+            statement.setString(1, token);
+            statement.executeUpdate();
 
         } catch (Exception e) {
-            System.out.println("[RememberTokenDAO] revokeToken error: " + e.getMessage());
+            throw new RuntimeException("RememberTokenDAO.revokeToken error", e);
         }
     }
 
-    /**
-     * (Tuỳ chọn) dọn token hết hạn để DB gọn
-     */
     public int deleteExpiredTokens() {
-        String sql = "DELETE FROM remember_tokens WHERE expires_at <= ?";
+        String sql =
+                "DELETE FROM remember_tokens " +
+                        "WHERE expires_at <= ?";
 
-        try (Connection con = DBConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            ps.setTimestamp(1, Timestamp.valueOf(LocalDateTime.now()));
-            return ps.executeUpdate();
+            statement.setTimestamp(1, Timestamp.valueOf(LocalDateTime.now()));
+
+            return statement.executeUpdate();
 
         } catch (Exception e) {
-            System.out.println("[RememberTokenDAO] deleteExpiredTokens error: " + e.getMessage());
+            throw new RuntimeException("RememberTokenDAO.deleteExpiredTokens error", e);
         }
-        return 0;
     }
 }
