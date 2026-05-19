@@ -1,5 +1,8 @@
 package com.webshop.app.dao;
 
+import com.webshop.app.model.ProductImage;
+import com.webshop.app.utils.DBConnection;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -7,17 +10,14 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.webshop.app.model.ProductImage;
-import com.webshop.app.utils.DBConnection;
-
 public class ProductImageDAO {
 
     public List<ProductImage> findByProductId(int productId) {
         String sql =
-            "SELECT id, image, [order], product_id " +
-            "FROM store_productimage " +
-            "WHERE product_id = ? " +
-            "ORDER BY [order] ASC, id ASC";
+                "SELECT id, image, `order`, product_id " +
+                        "FROM store_productimage " +
+                        "WHERE product_id = ? " +
+                        "ORDER BY `order` ASC, id ASC";
 
         List<ProductImage> list = new ArrayList<>();
 
@@ -31,7 +31,7 @@ public class ProductImageDAO {
                     ProductImage pi = new ProductImage();
                     pi.setId(rs.getLong("id"));
                     pi.setImage(rs.getString("image"));
-                    pi.setOrder(rs.getInt("order"));        // label "order" OK dù SQL dùng [order]
+                    pi.setOrder(rs.getInt("order"));
                     pi.setProductId(rs.getInt("product_id"));
                     list.add(pi);
                 }
@@ -46,8 +46,8 @@ public class ProductImageDAO {
 
     public void insert(ProductImage img) {
         String sql =
-            "INSERT INTO store_productimage (image, [order], product_id) " +
-            "VALUES (?, ?, ?)";
+                "INSERT INTO store_productimage (image, `order`, product_id) " +
+                        "VALUES (?, ?, ?)";
 
         try (Connection c = DBConnection.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
@@ -65,9 +65,11 @@ public class ProductImageDAO {
 
     public void insert(int productId, String image, int order) {
         ProductImage img = new ProductImage();
+
         img.setProductId(productId);
         img.setImage(image);
         img.setOrder(order);
+
         insert(img);
     }
 
@@ -100,15 +102,22 @@ public class ProductImageDAO {
     }
 
     public void replaceAll(int productId, List<String> images) {
-        // Xoá hết ảnh cũ rồi insert lại theo thứ tự mới
         deleteByProductId(productId);
 
         int order = 0;
+
         for (String imgPath : images) {
-            if (imgPath == null) continue;
-            String t = imgPath.trim();
-            if (t.isEmpty()) continue;
-            insert(productId, t, order++);
+            if (imgPath == null) {
+                continue;
+            }
+
+            String trimmedPath = imgPath.trim();
+
+            if (trimmedPath.isEmpty()) {
+                continue;
+            }
+
+            insert(productId, trimmedPath, order++);
         }
     }
 }
