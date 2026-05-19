@@ -6,34 +6,62 @@ plugins {
     id "org.hidetake.ssh" version "2.11.2"
 }
 
+group = 'com.webshop.app'
+version = '1.0-SNAPSHOT'
+
 repositories {
     mavenCentral()
 }
 
 dependencies {
+    // Servlet / JSP - Tomcat 10.1 dùng Jakarta
     compileOnly 'jakarta.servlet:jakarta.servlet-api:6.0.0'
     compileOnly 'jakarta.servlet.jsp:jakarta.servlet.jsp-api:3.1.1'
+
+    // JSTL
     implementation 'jakarta.servlet.jsp.jstl:jakarta.servlet.jsp.jstl-api:3.0.0'
     implementation 'org.glassfish.web:jakarta.servlet.jsp.jstl:3.0.1'
+
+    // MySQL JDBC
+    implementation 'com.mysql:mysql-connector-j:9.1.0'
+
+    // Mail
     implementation 'jakarta.mail:jakarta.mail-api:2.1.2'
     implementation 'org.eclipse.angus:jakarta.mail:2.0.4'
+
+    // BCrypt
     implementation 'org.mindrot:jbcrypt:0.4'
-    // 1. Google API Client (Để xác thực Google Token)
+
+    // Google login
     implementation 'com.google.api-client:google-api-client:2.2.0'
 
-    // 2. RestFB (Thư viện cực tốt để làm việc với Facebook)
+    // Facebook login
     implementation 'com.restfb:restfb:2023.10.0'
 
-    // 3. Jackson (Để parse JSON nếu cần)
+    // JSON
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
 
-    // 4. OkHttp (Để gọi API thủ công nếu không muốn dùng thư viện trên)
+    // HTTP client
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+
+    // Test
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
-// Thêm đoạn này để xử lý lỗi Duplicate
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
 war {
+    archiveFileName = 'MyCosmeticShop.war'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+test {
+    useJUnitPlatform()
 }
 
 remotes {
@@ -48,16 +76,15 @@ ssh.settings {
     knownHosts = allowAnyHosts
 }
 
-task docker_deploy {
+tasks.register('docker_deploy') {
     dependsOn 'war'
+
     doLast {
         ssh.run {
             session(remotes.host) {
-                // Đẩy file lên
-                put from: "${project.projectDir}/build/libs/MyCosmeticShop.war", into: "/usr/deploy/MyCosmeticShop.war"
+                put from: "${project.projectDir}/build/libs/MyCosmeticShop.war",
+                        into: "/usr/deploy/MyCosmeticShop.war"
 
-                // Lệnh này: Xóa container cũ (nếu có), sau đó chạy cái mới
-                // Thêm echo password | sudo -S để chạy quyền root mà không bị dừng hỏi pass
                 execute "echo '${remotes.host.password}' | sudo -S docker rm -f tomcat10 || true"
                 execute "echo '${remotes.host.password}' | sudo -S docker run -d --name tomcat10 -v /usr/deploy:/usr/local/tomcat/webapps -p 80:8080 tomcat:10.1"
             }
