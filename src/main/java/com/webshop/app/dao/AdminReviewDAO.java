@@ -1,55 +1,55 @@
 package com.webshop.app.dao;
 
+import com.webshop.app.model.Review;
+import com.webshop.app.utils.DBConnection;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.webshop.app.model.Review;
-import com.webshop.app.utils.DBConnection;
-
 public class AdminReviewDAO {
 
-    private static final String TABLE = "dbo.store_review";
+    private static final String TABLE = "store_review";
 
     public List<Review> search(Integer rating, Long productId, Long authorId) {
-
-        List<Review> list = new ArrayList<>();
+        List<Review> reviews = new ArrayList<>();
 
         StringBuilder sql = new StringBuilder();
         sql.append("SELECT id, rating, comment, created_at, author_id, product_id, has_emoji, sentiment ");
-        sql.append("FROM ").append(TABLE).append(" WHERE 1=1 ");
+        sql.append("FROM ").append(TABLE).append(" WHERE 1 = 1 ");
 
         List<Object> params = new ArrayList<>();
 
         if (rating != null) {
-            sql.append(" AND rating = ? ");
+            sql.append("AND rating = ? ");
             params.add(rating);
         }
+
         if (productId != null) {
-            sql.append(" AND product_id = ? ");
+            sql.append("AND product_id = ? ");
             params.add(productId);
         }
+
         if (authorId != null) {
-            sql.append(" AND author_id = ? ");
+            sql.append("AND author_id = ? ");
             params.add(authorId);
         }
 
-        sql.append(" ORDER BY created_at DESC, id DESC");
+        sql.append("ORDER BY created_at DESC, id DESC");
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql.toString())) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql.toString())) {
 
-            bindParams(ps, params);
+            bindParams(statement, params);
 
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    list.add(mapRow(rs));
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    reviews.add(mapRow(resultSet));
                 }
             }
 
@@ -57,22 +57,25 @@ public class AdminReviewDAO {
             throw new RuntimeException("AdminReviewDAO.search error", e);
         }
 
-        return list;
+        return reviews;
     }
 
     public Review findById(long id) {
+        String sql = """
+                SELECT id, rating, comment, created_at, author_id, product_id, has_emoji, sentiment
+                FROM store_review
+                WHERE id = ?
+                """;
 
-        String sql =
-            "SELECT id, rating, comment, created_at, author_id, product_id, has_emoji, sentiment " +
-            "FROM " + TABLE + " WHERE id = ?";
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+            statement.setLong(1, id);
 
-            ps.setLong(1, id);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return mapRow(rs);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return mapRow(resultSet);
+                }
             }
 
         } catch (SQLException e) {
@@ -82,69 +85,66 @@ public class AdminReviewDAO {
         return null;
     }
 
-    public void delete(long id) {
+    public boolean delete(long id) {
+        String sql = """
+                DELETE FROM store_review
+                WHERE id = ?
+                """;
 
-        String sql = "DELETE FROM " + TABLE + " WHERE id = ?";
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
-
-            ps.setLong(1, id);
-            ps.executeUpdate();
+            statement.setLong(1, id);
+            return statement.executeUpdate() > 0;
 
         } catch (SQLException e) {
             throw new RuntimeException("AdminReviewDAO.delete error", e);
         }
     }
 
-    /* ===================== MAPPER ===================== */
+    private Review mapRow(ResultSet resultSet) throws SQLException {
+        Review review = new Review();
 
-    private Review mapRow(ResultSet rs) throws SQLException {
-        Review r = new Review();
+        review.setId(safeToInt(resultSet.getLong("id")));
+        review.setAuthorId(safeToInt(resultSet.getLong("author_id")));
+        review.setProductId(safeToInt(resultSet.getLong("product_id")));
+        review.setRating(resultSet.getInt("rating"));
+        review.setComment(resultSet.getString("comment"));
+        review.setHasEmoji(resultSet.getBoolean("has_emoji"));
+        review.setSentiment(resultSet.getInt("sentiment"));
+        review.setCreatedAt(toLocalDateTime(resultSet.getTimestamp("created_at")));
 
-        long id = rs.getLong("id");
-        long authorId = rs.getLong("author_id");
-        long productId = rs.getLong("product_id");
-
-        // Model của bạn đang dùng int -> ép kiểu an toàn
-        r.setId(safeToInt(id));
-        r.setAuthorId(safeToInt(authorId));
-        r.setProductId(safeToInt(productId));
-
-        r.setRating(rs.getInt("rating"));
-        r.setComment(rs.getString("comment"));
-        r.setHasEmoji(rs.getBoolean("has_emoji"));
-        r.setSentiment(rs.getInt("sentiment"));
-
-        // created_at là datetimeoffset -> ưu tiên lấy OffsetDateTime
-        LocalDateTime created = null;
-        try {
-            OffsetDateTime odt = rs.getObject("created_at", OffsetDateTime.class);
-            if (odt != null) created = odt.toLocalDateTime();
-        } catch (Exception ignore) {
-            // fallback nếu driver không hỗ trợ
-            Timestamp ts = rs.getTimestamp("created_at");
-            if (ts != null) created = ts.toLocalDateTime();
-        }
-        r.setCreatedAt(created);
-
-        // authorName không có trong store_review schema -> để null
-        return r;
+        return review;
     }
 
-    private void bindParams(PreparedStatement ps, List<Object> params) throws SQLException {
+    private void bindParams(PreparedStatement statement, List<Object> params) throws SQLException {
         for (int i = 0; i < params.size(); i++) {
-            Object v = params.get(i);
-            int idx = i + 1;
-            if (v instanceof Integer) ps.setInt(idx, (Integer) v);
-            else if (v instanceof Long) ps.setLong(idx, (Long) v);
-            else ps.setString(idx, String.valueOf(v));
+            Object value = params.get(i);
+            int parameterIndex = i + 1;
+
+            if (value instanceof Integer) {
+                statement.setInt(parameterIndex, (Integer) value);
+            } else if (value instanceof Long) {
+                statement.setLong(parameterIndex, (Long) value);
+            } else {
+                statement.setString(parameterIndex, String.valueOf(value));
+            }
         }
     }
 
-    private int safeToInt(long v) {
-        if (v > Integer.MAX_VALUE) return Integer.MAX_VALUE;
-        if (v < Integer.MIN_VALUE) return Integer.MIN_VALUE;
-        return (int) v;
+    private LocalDateTime toLocalDateTime(Timestamp timestamp) {
+        return timestamp == null ? null : timestamp.toLocalDateTime();
+    }
+
+    private int safeToInt(long value) {
+        if (value > Integer.MAX_VALUE) {
+            return Integer.MAX_VALUE;
+        }
+
+        if (value < Integer.MIN_VALUE) {
+            return Integer.MIN_VALUE;
+        }
+
+        return (int) value;
     }
 }
