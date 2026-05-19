@@ -1,5 +1,8 @@
 package com.webshop.app.dao;
 
+import com.webshop.app.model.Coupon;
+import com.webshop.app.utils.DBConnection;
+
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -10,27 +13,30 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.webshop.app.model.Coupon;
-import com.webshop.app.utils.DBConnection;
-
 public class CouponDAO {
 
     /* ===================== FRONTEND ===================== */
 
     public Coupon findByCode(String code) {
-        String sql =
-            "SELECT id, code, discount_percent, max_discount_amount, max_uses, used_count, is_active, start_date, end_date " +
-            "FROM store_coupon " +
-            "WHERE code = ? AND is_active = 1";
+        String sql = """
+                SELECT id, code, discount_percent, max_discount_amount,
+                       max_uses, used_count, is_active, start_date, end_date
+                FROM store_coupon
+                WHERE code = ?
+                  AND is_active = 1
+                """;
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            ps.setString(1, code);
+            statement.setString(1, code);
 
-            try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) return null;
-                return mapRow(rs);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (!resultSet.next()) {
+                    return null;
+                }
+
+                return mapRow(resultSet);
             }
 
         } catch (SQLException e) {
@@ -38,125 +44,132 @@ public class CouponDAO {
         }
     }
 
-    public void increaseUsedCount(Connection conn, int couponId) throws SQLException {
+    public void increaseUsedCount(Connection connection, int couponId) throws SQLException {
+        String sql = """
+                UPDATE store_coupon
+                SET used_count = used_count + 1
+                WHERE id = ?
+                """;
 
-        String sql = "UPDATE store_coupon SET used_count = used_count + 1 WHERE id = ?";
-
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, couponId);
-            ps.executeUpdate();
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, couponId);
+            statement.executeUpdate();
         }
     }
 
     /* ===================== ADMIN ===================== */
 
     public List<Coupon> findAll() {
-        List<Coupon> list = new ArrayList<>();
+        List<Coupon> coupons = new ArrayList<>();
 
-        String sql =
-            "SELECT id, code, discount_percent, max_discount_amount, max_uses, used_count, is_active, start_date, end_date " +
-            "FROM store_coupon " +
-            "ORDER BY id DESC";
+        String sql = """
+                SELECT id, code, discount_percent, max_discount_amount,
+                       max_uses, used_count, is_active, start_date, end_date
+                FROM store_coupon
+                ORDER BY id DESC
+                """;
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet resultSet = statement.executeQuery()) {
 
-            while (rs.next()) {
-                list.add(mapRow(rs));
+            while (resultSet.next()) {
+                coupons.add(mapRow(resultSet));
             }
 
         } catch (SQLException e) {
             throw new RuntimeException("CouponDAO.findAll error", e);
         }
 
-        return list;
+        return coupons;
     }
 
     public Coupon findById(int id) {
-        String sql =
-            "SELECT id, code, discount_percent, max_discount_amount, max_uses, used_count, is_active, start_date, end_date " +
-            "FROM store_coupon " +
-            "WHERE id = ?";
+        String sql = """
+                SELECT id, code, discount_percent, max_discount_amount,
+                       max_uses, used_count, is_active, start_date, end_date
+                FROM store_coupon
+                WHERE id = ?
+                """;
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            ps.setInt(1, id);
+            statement.setInt(1, id);
 
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return mapRow(rs);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return mapRow(resultSet);
+                }
+
+                return null;
             }
 
         } catch (SQLException e) {
             throw new RuntimeException("CouponDAO.findById error", e);
         }
-
-        return null;
     }
 
-    public void create(Coupon cp) {
-        String sql =
-            "INSERT INTO store_coupon " +
-            "(code, discount_percent, max_discount_amount, max_uses, used_count, is_active, start_date, end_date) " +
-            "VALUES (?, ?, ?, ?, 0, ?, ?, ?)";
+    public void create(Coupon coupon) {
+        String sql = """
+                INSERT INTO store_coupon
+                (
+                    code,
+                    discount_percent,
+                    max_discount_amount,
+                    max_uses,
+                    used_count,
+                    is_active,
+                    start_date,
+                    end_date
+                )
+                VALUES (?, ?, ?, ?, 0, ?, ?, ?)
+                """;
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            ps.setString(1, cp.getCode());
-            ps.setInt(2, cp.getDiscountPercent());
+            statement.setString(1, coupon.getCode());
+            statement.setInt(2, coupon.getDiscountPercent());
+            setNullableBigDecimal(statement, 3, coupon.getMaxDiscountAmount());
+            statement.setInt(4, coupon.getMaxUses());
+            statement.setBoolean(5, coupon.isActive());
+            setNullableDate(statement, 6, coupon.getStartDate());
+            setNullableDate(statement, 7, coupon.getEndDate());
 
-            // max_discount_amount: nullable
-            if (cp.getMaxDiscountAmount() == null) ps.setNull(3, Types.DECIMAL);
-            else ps.setBigDecimal(3, cp.getMaxDiscountAmount());
-
-            // max_uses: NOT NULL (DB constraint)
-            ps.setInt(4, cp.getMaxUses());
-
-            ps.setBoolean(5, cp.isActive());
-
-            if (cp.getStartDate() == null) ps.setNull(6, Types.DATE);
-            else ps.setDate(6, Date.valueOf(cp.getStartDate()));
-
-            if (cp.getEndDate() == null) ps.setNull(7, Types.DATE);
-            else ps.setDate(7, Date.valueOf(cp.getEndDate()));
-
-            ps.executeUpdate();
+            statement.executeUpdate();
 
         } catch (SQLException e) {
             throw new RuntimeException("CouponDAO.create error", e);
         }
     }
 
-    public void update(Coupon cp) {
-        String sql =
-            "UPDATE store_coupon " +
-            "SET code = ?, discount_percent = ?, max_discount_amount = ?, max_uses = ?, is_active = ?, start_date = ?, end_date = ? " +
-            "WHERE id = ?";
+    public void update(Coupon coupon) {
+        String sql = """
+                UPDATE store_coupon
+                SET code = ?,
+                    discount_percent = ?,
+                    max_discount_amount = ?,
+                    max_uses = ?,
+                    is_active = ?,
+                    start_date = ?,
+                    end_date = ?
+                WHERE id = ?
+                """;
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            ps.setString(1, cp.getCode());
-            ps.setInt(2, cp.getDiscountPercent());
+            statement.setString(1, coupon.getCode());
+            statement.setInt(2, coupon.getDiscountPercent());
+            setNullableBigDecimal(statement, 3, coupon.getMaxDiscountAmount());
+            statement.setInt(4, coupon.getMaxUses());
+            statement.setBoolean(5, coupon.isActive());
+            setNullableDate(statement, 6, coupon.getStartDate());
+            setNullableDate(statement, 7, coupon.getEndDate());
+            statement.setInt(8, coupon.getId());
 
-            if (cp.getMaxDiscountAmount() == null) ps.setNull(3, Types.DECIMAL);
-            else ps.setBigDecimal(3, cp.getMaxDiscountAmount());
-
-            ps.setInt(4, cp.getMaxUses());
-
-            ps.setBoolean(5, cp.isActive());
-
-            if (cp.getStartDate() == null) ps.setNull(6, Types.DATE);
-            else ps.setDate(6, Date.valueOf(cp.getStartDate()));
-
-            if (cp.getEndDate() == null) ps.setNull(7, Types.DATE);
-            else ps.setDate(7, Date.valueOf(cp.getEndDate()));
-
-            ps.setInt(8, cp.getId());
-
-            ps.executeUpdate();
+            statement.executeUpdate();
 
         } catch (SQLException e) {
             throw new RuntimeException("CouponDAO.update error", e);
@@ -164,13 +177,16 @@ public class CouponDAO {
     }
 
     public void delete(int id) {
-        String sql = "DELETE FROM store_coupon WHERE id = ?";
+        String sql = """
+                DELETE FROM store_coupon
+                WHERE id = ?
+                """;
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            ps.setInt(1, id);
-            ps.executeUpdate();
+            statement.setInt(1, id);
+            statement.executeUpdate();
 
         } catch (SQLException e) {
             throw new RuntimeException("CouponDAO.delete error", e);
@@ -178,79 +194,114 @@ public class CouponDAO {
     }
 
     public void toggleActive(int id) {
-        String sql =
-            "UPDATE store_coupon " +
-            "SET is_active = CASE WHEN is_active = 1 THEN 0 ELSE 1 END " +
-            "WHERE id = ?";
+        String sql = """
+                UPDATE store_coupon
+                SET is_active = CASE
+                    WHEN is_active = 1 THEN 0
+                    ELSE 1
+                END
+                WHERE id = ?
+                """;
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            ps.setInt(1, id);
-            ps.executeUpdate();
+            statement.setInt(1, id);
+            statement.executeUpdate();
 
         } catch (SQLException e) {
             throw new RuntimeException("CouponDAO.toggleActive error", e);
         }
     }
 
-    /* ===================== MAPPER ===================== */
-
-    private Coupon mapRow(ResultSet rs) throws SQLException {
-        Coupon cp = new Coupon();
-
-        cp.setId(rs.getInt("id"));
-        cp.setCode(rs.getString("code"));
-        cp.setDiscountPercent(rs.getInt("discount_percent"));
-        cp.setMaxDiscountAmount(rs.getBigDecimal("max_discount_amount"));
-        cp.setMaxUses(rs.getInt("max_uses"));
-        cp.setUsedCount(rs.getInt("used_count"));
-        cp.setActive(rs.getBoolean("is_active"));
-
-        Date sd = rs.getDate("start_date");
-        Date ed = rs.getDate("end_date");
-
-        cp.setStartDate(sd == null ? null : sd.toLocalDate());
-        cp.setEndDate(ed == null ? null : ed.toLocalDate());
-
-        return cp;
-    }
-
     public boolean existsByCode(String code) {
+        String sql = """
+                SELECT 1
+                FROM store_coupon
+                WHERE code = ?
+                """;
 
-        String sql = "SELECT 1 FROM store_coupon WHERE code = ?";
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+            statement.setString(1, code);
 
-            ps.setString(1, code);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next();
+            try (ResultSet resultSet = statement.executeQuery()) {
+                return resultSet.next();
             }
 
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("CouponDAO.existsByCode error", e);
         }
     }
 
-    public boolean isValid(Coupon cp) {
-
-        LocalDate now = LocalDate.now();
-
-        if (cp == null) return false;
-        if (!cp.isActive()) return false;
-
-        if (cp.getStartDate() != null && now.isBefore(cp.getStartDate()))
+    public boolean isValid(Coupon coupon) {
+        if (coupon == null) {
             return false;
+        }
 
-        if (cp.getEndDate() != null && now.isAfter(cp.getEndDate()))
+        if (!coupon.isActive()) {
             return false;
+        }
 
-        if (cp.getMaxUses() > 0 && cp.getUsedCount() >= cp.getMaxUses())
+        LocalDate today = LocalDate.now();
+
+        if (coupon.getStartDate() != null && today.isBefore(coupon.getStartDate())) {
             return false;
+        }
 
-        return true;
+        if (coupon.getEndDate() != null && today.isAfter(coupon.getEndDate())) {
+            return false;
+        }
+
+        return coupon.getMaxUses() <= 0 || coupon.getUsedCount() < coupon.getMaxUses();
     }
 
+    /* ===================== MAPPER / HELPER ===================== */
+
+    private Coupon mapRow(ResultSet resultSet) throws SQLException {
+        Coupon coupon = new Coupon();
+
+        coupon.setId(resultSet.getInt("id"));
+        coupon.setCode(resultSet.getString("code"));
+        coupon.setDiscountPercent(resultSet.getInt("discount_percent"));
+        coupon.setMaxDiscountAmount(resultSet.getBigDecimal("max_discount_amount"));
+        coupon.setMaxUses(resultSet.getInt("max_uses"));
+        coupon.setUsedCount(resultSet.getInt("used_count"));
+        coupon.setActive(resultSet.getBoolean("is_active"));
+
+        Date startDate = resultSet.getDate("start_date");
+        Date endDate = resultSet.getDate("end_date");
+
+        coupon.setStartDate(startDate == null ? null : startDate.toLocalDate());
+        coupon.setEndDate(endDate == null ? null : endDate.toLocalDate());
+
+        return coupon;
+    }
+
+    private void setNullableDate(
+            PreparedStatement statement,
+            int index,
+            LocalDate date
+    ) throws SQLException {
+
+        if (date == null) {
+            statement.setNull(index, Types.DATE);
+        } else {
+            statement.setDate(index, Date.valueOf(date));
+        }
+    }
+
+    private void setNullableBigDecimal(
+            PreparedStatement statement,
+            int index,
+            java.math.BigDecimal value
+    ) throws SQLException {
+
+        if (value == null) {
+            statement.setNull(index, Types.DECIMAL);
+        } else {
+            statement.setBigDecimal(index, value);
+        }
+    }
 }
