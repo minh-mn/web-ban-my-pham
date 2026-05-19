@@ -1,5 +1,8 @@
 package com.webshop.app.dao;
 
+import com.webshop.app.model.Category;
+import com.webshop.app.utils.DBConnection;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -10,49 +13,47 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.webshop.app.model.Category;
-import com.webshop.app.utils.DBConnection;
-
 public class CategoryDAO {
 
+    private static final int MYSQL_FOREIGN_KEY_CONSTRAINT_ERROR = 1451;
+
     /* =====================================================
-       FRONTEND: CÂY DANH MỤC (CHA + CON, ACTIVE)
+       FRONTEND: CATEGORY TREE
     ===================================================== */
 
-    /** Lấy danh mục cha (active) + danh mục con (active) + productCount */
     public List<Category> findParents() {
 
         Map<Integer, Integer> countMap = countActiveProductsByCategory();
+
         List<Category> parents = new ArrayList<>();
 
-        String sql =
-            "SELECT id, name, slug, is_active " +
-            "FROM store_category " +
-            "WHERE parent_id IS NULL AND is_active = 1 " +
-            "ORDER BY name ASC";
+        String sql = """
+                SELECT id, name, slug, is_active
+                FROM store_category
+                WHERE parent_id IS NULL
+                  AND is_active = 1
+                ORDER BY name ASC
+                """;
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet resultSet = statement.executeQuery()) {
 
-            while (rs.next()) {
-                Category parent = new Category();
-                int parentId = rs.getInt("id");
+            while (resultSet.next()) {
 
-                parent.setId(parentId);
-                parent.setName(rs.getString("name"));
-                parent.setSlug(rs.getString("slug"));
-                parent.setParentId(null);
-                parent.setActive(true);
+                Category parent = mapCategory(resultSet);
 
-                List<Category> children = findChildren(parentId, countMap);
-                parent.setChildren(children);
+                int parentId = parent.getId();
 
-                int sum = 0;
-                for (Category ch : children) {
-                    sum += ch.getProductCount();
+                parent.setChildren(findChildren(parentId, countMap));
+
+                int totalProducts = 0;
+
+                for (Category child : parent.getChildren()) {
+                    totalProducts += child.getProductCount();
                 }
-                parent.setProductCount(sum);
+
+                parent.setProductCount(totalProducts);
 
                 parents.add(parent);
             }
@@ -64,33 +65,37 @@ public class CategoryDAO {
         return parents;
     }
 
-    /** Lấy danh mục con (active) theo parent */
-    private List<Category> findChildren(int parentId, Map<Integer, Integer> countMap) {
+    private List<Category> findChildren(
+            int parentId,
+            Map<Integer, Integer> countMap
+    ) {
 
         List<Category> children = new ArrayList<>();
 
-        String sql =
-            "SELECT id, name, slug, is_active " +
-            "FROM store_category " +
-            "WHERE parent_id = ? AND is_active = 1 " +
-            "ORDER BY name ASC";
+        String sql = """
+                SELECT id, name, slug, is_active
+                FROM store_category
+                WHERE parent_id = ?
+                  AND is_active = 1
+                ORDER BY name ASC
+                """;
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            ps.setInt(1, parentId);
+            statement.setInt(1, parentId);
 
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    Category child = new Category();
-                    int id = rs.getInt("id");
+            try (ResultSet resultSet = statement.executeQuery()) {
 
-                    child.setId(id);
-                    child.setName(rs.getString("name"));
-                    child.setSlug(rs.getString("slug"));
+                while (resultSet.next()) {
+
+                    Category child = mapCategory(resultSet);
+
                     child.setParentId(parentId);
-                    child.setActive(true);
-                    child.setProductCount(countMap.getOrDefault(id, 0));
+
+                    child.setProductCount(
+                            countMap.getOrDefault(child.getId(), 0)
+                    );
 
                     children.add(child);
                 }
@@ -103,189 +108,200 @@ public class CategoryDAO {
         return children;
     }
 
-    /** Đếm số product ACTIVE theo category */
     private Map<Integer, Integer> countActiveProductsByCategory() {
 
-        Map<Integer, Integer> map = new HashMap<>();
+        Map<Integer, Integer> productCountMap = new HashMap<>();
 
-        String sql =
-            "SELECT category_id, COUNT(*) AS cnt " +
-            "FROM store_product " +
-            "WHERE is_active = 1 " +
-            "GROUP BY category_id";
+        String sql = """
+                SELECT category_id, COUNT(*) AS cnt
+                FROM store_product
+                WHERE is_active = 1
+                GROUP BY category_id
+                """;
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet resultSet = statement.executeQuery()) {
 
-            while (rs.next()) {
-                map.put(rs.getInt("category_id"), rs.getInt("cnt"));
+            while (resultSet.next()) {
+
+                productCountMap.put(
+                        resultSet.getInt("category_id"),
+                        resultSet.getInt("cnt")
+                );
             }
 
         } catch (SQLException e) {
-            throw new RuntimeException("CategoryDAO.countActiveProductsByCategory error", e);
+            throw new RuntimeException(
+                    "CategoryDAO.countActiveProductsByCategory error",
+                    e
+            );
         }
 
-        return map;
+        return productCountMap;
     }
 
     /* =====================================================
-       ADMIN: LIST / CRUD
+       ADMIN CRUD
     ===================================================== */
 
-    /** Admin list: lấy toàn bộ category (cha + con, active + inactive) */
     public List<Category> findAll() {
 
         Map<Integer, Integer> countMap = countActiveProductsByCategory();
-        List<Category> list = new ArrayList<>();
 
-        String sql =
-            "SELECT id, name, slug, parent_id, is_active " +
-            "FROM store_category " +
-            "ORDER BY parent_id ASC, name ASC";
+        List<Category> categories = new ArrayList<>();
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+        String sql = """
+                SELECT id, name, slug, parent_id, is_active
+                FROM store_category
+                ORDER BY parent_id ASC, name ASC
+                """;
 
-            while (rs.next()) {
-                Category cat = new Category();
-                int id = rs.getInt("id");
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet resultSet = statement.executeQuery()) {
 
-                cat.setId(id);
-                cat.setName(rs.getString("name"));
-                cat.setSlug(rs.getString("slug"));
+            while (resultSet.next()) {
 
-                int pid = rs.getInt("parent_id");
-                cat.setParentId(rs.wasNull() ? null : pid);
+                Category category = mapCategory(resultSet);
 
-                cat.setActive(rs.getBoolean("is_active"));
-                cat.setProductCount(countMap.getOrDefault(id, 0));
+                int parentId = resultSet.getInt("parent_id");
 
-                list.add(cat);
+                category.setParentId(
+                        resultSet.wasNull() ? null : parentId
+                );
+
+                category.setProductCount(
+                        countMap.getOrDefault(category.getId(), 0)
+                );
+
+                categories.add(category);
             }
 
         } catch (SQLException e) {
             throw new RuntimeException("CategoryDAO.findAll error", e);
         }
 
-        return list;
+        return categories;
     }
 
     public Category findById(int id) {
 
-        String sql =
-            "SELECT id, name, slug, parent_id, is_active " +
-            "FROM store_category " +
-            "WHERE id = ?";
+        String sql = """
+                SELECT id, name, slug, parent_id, is_active
+                FROM store_category
+                WHERE id = ?
+                """;
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            ps.setInt(1, id);
+            statement.setInt(1, id);
 
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    Category cat = new Category();
-                    cat.setId(rs.getInt("id"));
-                    cat.setName(rs.getString("name"));
-                    cat.setSlug(rs.getString("slug"));
+            try (ResultSet resultSet = statement.executeQuery()) {
 
-                    int pid = rs.getInt("parent_id");
-                    cat.setParentId(rs.wasNull() ? null : pid);
-
-                    cat.setActive(rs.getBoolean("is_active"));
-                    return cat;
+                if (!resultSet.next()) {
+                    return null;
                 }
+
+                Category category = mapCategory(resultSet);
+
+                int parentId = resultSet.getInt("parent_id");
+
+                category.setParentId(
+                        resultSet.wasNull() ? null : parentId
+                );
+
+                return category;
             }
 
         } catch (SQLException e) {
             throw new RuntimeException("CategoryDAO.findById error", e);
         }
-
-        return null;
     }
 
-    /** Dropdown admin: lấy danh mục cha (kể cả inactive) */
     public List<Category> findAllParents() {
 
-        List<Category> list = new ArrayList<>();
+        List<Category> parents = new ArrayList<>();
 
-        String sql =
-            "SELECT id, name, slug, is_active " +
-            "FROM store_category " +
-            "WHERE parent_id IS NULL " +
-            "ORDER BY name ASC";
+        String sql = """
+                SELECT id, name, slug, is_active
+                FROM store_category
+                WHERE parent_id IS NULL
+                ORDER BY name ASC
+                """;
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet resultSet = statement.executeQuery()) {
 
-            while (rs.next()) {
-                Category cat = new Category();
-                cat.setId(rs.getInt("id"));
-                cat.setName(rs.getString("name"));
-                cat.setSlug(rs.getString("slug"));
-                cat.setParentId(null);
-                cat.setActive(rs.getBoolean("is_active"));
-                list.add(cat);
+            while (resultSet.next()) {
+                parents.add(mapCategory(resultSet));
             }
 
         } catch (SQLException e) {
             throw new RuntimeException("CategoryDAO.findAllParents error", e);
         }
 
-        return list;
+        return parents;
     }
 
-    public void create(Category cat) {
+    public void create(Category category) {
 
-        String sql =
-            "INSERT INTO store_category (name, slug, parent_id, is_active) " +
-            "VALUES (?, ?, ?, ?)";
+        String sql = """
+                INSERT INTO store_category
+                (name, slug, parent_id, is_active)
+                VALUES (?, ?, ?, ?)
+                """;
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            ps.setString(1, cat.getName());
-            ps.setString(2, cat.getSlug());
+            statement.setString(1, category.getName());
+            statement.setString(2, category.getSlug());
 
-            if (cat.getParentId() == null) {
-                ps.setNull(3, Types.INTEGER);
+            if (category.getParentId() == null) {
+                statement.setNull(3, Types.INTEGER);
             } else {
-                ps.setInt(3, cat.getParentId());
+                statement.setInt(3, category.getParentId());
             }
 
-            ps.setBoolean(4, cat.isActive());
-            ps.executeUpdate();
+            statement.setBoolean(4, category.isActive());
+
+            statement.executeUpdate();
 
         } catch (SQLException e) {
             throw new RuntimeException("CategoryDAO.create error", e);
         }
     }
 
-    public void update(Category cat) {
+    public void update(Category category) {
 
-        String sql =
-            "UPDATE store_category " +
-            "SET name = ?, slug = ?, parent_id = ?, is_active = ? " +
-            "WHERE id = ?";
+        String sql = """
+                UPDATE store_category
+                SET name = ?,
+                    slug = ?,
+                    parent_id = ?,
+                    is_active = ?
+                WHERE id = ?
+                """;
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            ps.setString(1, cat.getName());
-            ps.setString(2, cat.getSlug());
+            statement.setString(1, category.getName());
+            statement.setString(2, category.getSlug());
 
-            if (cat.getParentId() == null) {
-                ps.setNull(3, Types.INTEGER);
+            if (category.getParentId() == null) {
+                statement.setNull(3, Types.INTEGER);
             } else {
-                ps.setInt(3, cat.getParentId());
+                statement.setInt(3, category.getParentId());
             }
 
-            ps.setBoolean(4, cat.isActive());
-            ps.setInt(5, cat.getId());
-            ps.executeUpdate();
+            statement.setBoolean(4, category.isActive());
+            statement.setInt(5, category.getId());
+
+            statement.executeUpdate();
 
         } catch (SQLException e) {
             throw new RuntimeException("CategoryDAO.update error", e);
@@ -294,21 +310,28 @@ public class CategoryDAO {
 
     public void delete(int id) {
 
-        String sql = "DELETE FROM store_category WHERE id = ?";
+        String sql = """
+                DELETE FROM store_category
+                WHERE id = ?
+                """;
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            ps.setInt(1, id);
-            ps.executeUpdate();
+            statement.setInt(1, id);
+
+            statement.executeUpdate();
 
         } catch (SQLException e) {
-            if (e.getErrorCode() == 547) {
+
+            if (e.getErrorCode() == MYSQL_FOREIGN_KEY_CONSTRAINT_ERROR) {
+
                 throw new RuntimeException(
-                    "Không thể xóa danh mục vì đang có sản phẩm hoặc danh mục con.",
-                    e
+                        "Không thể xóa danh mục vì đang có sản phẩm hoặc danh mục con.",
+                        e
                 );
             }
+
             throw new RuntimeException("CategoryDAO.delete error", e);
         }
     }
@@ -319,15 +342,19 @@ public class CategoryDAO {
 
     public boolean existsBySlug(String slug) {
 
-        String sql = "SELECT 1 FROM store_category WHERE slug = ?";
+        String sql = """
+                SELECT 1
+                FROM store_category
+                WHERE slug = ?
+                """;
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            ps.setString(1, slug);
+            statement.setString(1, slug);
 
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next();
+            try (ResultSet resultSet = statement.executeQuery()) {
+                return resultSet.next();
             }
 
         } catch (SQLException e) {
@@ -337,52 +364,85 @@ public class CategoryDAO {
 
     public boolean existsBySlugExceptId(String slug, int id) {
 
-        String sql =
-            "SELECT 1 FROM store_category WHERE slug = ? AND id <> ?";
+        String sql = """
+                SELECT 1
+                FROM store_category
+                WHERE slug = ?
+                  AND id <> ?
+                """;
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            ps.setString(1, slug);
-            ps.setInt(2, id);
+            statement.setString(1, slug);
+            statement.setInt(2, id);
 
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next();
+            try (ResultSet resultSet = statement.executeQuery()) {
+                return resultSet.next();
             }
 
         } catch (SQLException e) {
-            throw new RuntimeException("CategoryDAO.existsBySlugExceptId error", e);
+            throw new RuntimeException(
+                    "CategoryDAO.existsBySlugExceptId error",
+                    e
+            );
         }
     }
 
     public List<Category> findActiveForMenu() {
 
-        List<Category> list = new ArrayList<>();
+        List<Category> categories = new ArrayList<>();
 
-        String sql =
-                "SELECT id, name, slug " +
-                        "FROM store_category " +
-                        "WHERE is_active = 1 " +
-                        "ORDER BY name ASC";
+        String sql = """
+                SELECT id, name, slug
+                FROM store_category
+                WHERE is_active = 1
+                ORDER BY name ASC
+                """;
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet resultSet = statement.executeQuery()) {
 
-            while (rs.next()) {
+            while (resultSet.next()) {
 
-                Category cat = new Category();
-                cat.setId(rs.getInt("id"));
-                cat.setName(rs.getString("name"));
-                cat.setSlug(rs.getString("slug"));
+                Category category = new Category();
 
-                list.add(cat);
+                category.setId(resultSet.getInt("id"));
+                category.setName(resultSet.getString("name"));
+                category.setSlug(resultSet.getString("slug"));
+
+                categories.add(category);
             }
 
         } catch (SQLException e) {
-            throw new RuntimeException("findActiveForMenu error", e);
+            throw new RuntimeException(
+                    "CategoryDAO.findActiveForMenu error",
+                    e
+            );
         }
 
-        return list;
+        return categories;
+    }
+
+    /* =====================================================
+       MAPPER
+    ===================================================== */
+
+    private Category mapCategory(ResultSet resultSet)
+            throws SQLException {
+
+        Category category = new Category();
+
+        category.setId(resultSet.getInt("id"));
+        category.setName(resultSet.getString("name"));
+        category.setSlug(resultSet.getString("slug"));
+
+        try {
+            category.setActive(resultSet.getBoolean("is_active"));
+        } catch (SQLException ignored) {
+        }
+
+        return category;
     }
 }
