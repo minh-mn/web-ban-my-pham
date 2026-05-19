@@ -1,5 +1,9 @@
 package com.webshop.app.dao;
 
+import com.webshop.app.model.User;
+import com.webshop.app.utils.DBConnection;
+import com.webshop.app.utils.PasswordUtils;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -8,57 +12,50 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.webshop.app.model.User;
-import com.webshop.app.utils.DBConnection;
-import com.webshop.app.utils.PasswordUtils;
-
 public class AdminUserDAO {
 
-    private static final String T_USERS = "dbo.users";
+    private static final String T_USERS = "users";
 
-    /* ===================== SEARCH (ADMIN LIST) ===================== */
-    // active: null = không lọc, 1 = active, 0 = disabled
     public List<User> search(String q, String role, String rank, Integer active) {
-
-        List<User> list = new ArrayList<>();
+        List<User> users = new ArrayList<>();
 
         StringBuilder sql = new StringBuilder();
         sql.append("SELECT id, username, role, full_name, email, phone, active, created_at ");
         sql.append("FROM ").append(T_USERS).append(" ");
-        sql.append("WHERE 1=1 ");
+        sql.append("WHERE 1 = 1 ");
 
         List<Object> params = new ArrayList<>();
 
         if (q != null && !q.isBlank()) {
-            // tìm theo username/full_name/email/phone cho tiện quản trị
-            sql.append(" AND (username LIKE ? OR full_name LIKE ? OR email LIKE ? OR phone LIKE ?) ");
-            String like = "%" + q.trim() + "%";
-            params.add(like);
-            params.add(like);
-            params.add(like);
-            params.add(like);
+            sql.append("AND (username LIKE ? OR full_name LIKE ? OR email LIKE ? OR phone LIKE ?) ");
+            String keyword = "%" + q.trim() + "%";
+
+            params.add(keyword);
+            params.add(keyword);
+            params.add(keyword);
+            params.add(keyword);
         }
 
         if (role != null && !role.isBlank()) {
-            sql.append(" AND role = ? ");
+            sql.append("AND role = ? ");
             params.add(role.trim());
         }
 
         if (active != null) {
-            sql.append(" AND active = ? ");
+            sql.append("AND active = ? ");
             params.add(active);
         }
 
-        sql.append(" ORDER BY id DESC");
+        sql.append("ORDER BY id DESC");
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql.toString())) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql.toString())) {
 
-            bind(ps, params);
+            bind(statement, params);
 
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    list.add(mapRow(rs));
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    users.add(mapRow(resultSet));
                 }
             }
 
@@ -66,24 +63,25 @@ public class AdminUserDAO {
             throw new RuntimeException("AdminUserDAO.search error", e);
         }
 
-        return list;
+        return users;
     }
 
-    /* ===================== FIND BY ID (ADMIN EDIT/DETAIL) ===================== */
     public User findById(int id) {
+        String sql = """
+                SELECT id, username, role, full_name, email, phone, active, created_at
+                FROM users
+                WHERE id = ?
+                """;
 
-        String sql =
-            "SELECT id, username, role, full_name, email, phone, active, created_at " +
-            "FROM " + T_USERS + " " +
-            "WHERE id = ?";
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+            statement.setInt(1, id);
 
-            ps.setLong(1, (long) id);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return mapRow(rs);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return mapRow(resultSet);
+                }
             }
 
         } catch (SQLException e) {
@@ -93,104 +91,98 @@ public class AdminUserDAO {
         return null;
     }
 
-    /* ===================== UPDATE INFO (ADMIN) ===================== */
-    public boolean updateInfoAdmin(User u) {
+    public boolean updateInfoAdmin(User user) {
+        String sql = """
+                UPDATE users
+                SET full_name = ?, email = ?, phone = ?, role = ?, active = ?
+                WHERE id = ?
+                """;
 
-        String sql =
-            "UPDATE " + T_USERS + " " +
-            "SET full_name = ?, email = ?, phone = ?, role = ?, active = ? " +
-            "WHERE id = ?";
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+            statement.setString(1, user.getFullName());
+            statement.setString(2, user.getEmail());
+            statement.setString(3, user.getPhone());
+            statement.setString(4, user.getRole());
+            statement.setInt(5, user.isActive() ? 1 : 0);
+            statement.setInt(6, user.getId());
 
-            ps.setString(1, u.getFullName());
-            ps.setString(2, u.getEmail());
-            ps.setString(3, u.getPhone());
-            ps.setString(4, u.getRole());
-            ps.setInt(5, u.isActive() ? 1 : 0);
-            ps.setLong(6, (long) u.getId());
-
-            return ps.executeUpdate() > 0;
+            return statement.executeUpdate() > 0;
 
         } catch (SQLException e) {
             throw new RuntimeException("AdminUserDAO.updateInfoAdmin error", e);
         }
     }
 
-    /* ===================== UPDATE PASSWORD (ADMIN RESET) ===================== */
     public boolean updatePasswordAdmin(int id, String newPlainPassword) {
+        String sql = """
+                UPDATE users
+                SET password = ?
+                WHERE id = ?
+                """;
 
-        String sql =
-            "UPDATE " + T_USERS + " " +
-            "SET password = ? " +
-            "WHERE id = ?";
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+            statement.setString(1, PasswordUtils.hash(newPlainPassword));
+            statement.setInt(2, id);
 
-            ps.setString(1, PasswordUtils.hash(newPlainPassword));
-            ps.setLong(2, (long) id);
-
-            return ps.executeUpdate() > 0;
+            return statement.executeUpdate() > 0;
 
         } catch (SQLException e) {
             throw new RuntimeException("AdminUserDAO.updatePasswordAdmin error", e);
         }
     }
 
-    /* ===================== DELETE / DISABLE (NEW) ===================== */
-
-    /**
-     * Khuyến nghị: "xóa mềm" để tránh lỗi FK (orders, tokens, ...)
-     * Đổi active = 0.
-     */
     public boolean disableById(int id) {
+        String sql = """
+                UPDATE users
+                SET active = 0
+                WHERE id = ?
+                """;
 
-        String sql = "UPDATE " + T_USERS + " SET active = 0 WHERE id = ?";
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
-
-            ps.setLong(1, (long) id);
-            return ps.executeUpdate() > 0;
+            statement.setInt(1, id);
+            return statement.executeUpdate() > 0;
 
         } catch (SQLException e) {
             throw new RuntimeException("AdminUserDAO.disableById error", e);
         }
     }
 
-    /**
-     * Xóa thật user khỏi DB.
-     * Chỉ dùng nếu chắc chắn không bị FK (hoặc DB đã ON DELETE CASCADE).
-     */
     public boolean deleteById(int id) {
+        String sql = """
+                DELETE FROM users
+                WHERE id = ?
+                """;
 
-        String sql = "DELETE FROM " + T_USERS + " WHERE id = ?";
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
-
-            ps.setLong(1, (long) id);
-            return ps.executeUpdate() > 0;
+            statement.setInt(1, id);
+            return statement.executeUpdate() > 0;
 
         } catch (SQLException e) {
             throw new RuntimeException("AdminUserDAO.deleteById error", e);
         }
     }
 
-    /* ===================== OLD METHODS (KEEP IF YOU STILL USE) ===================== */
-
     public void updateRole(int id, String role) {
+        String sql = """
+                UPDATE users
+                SET role = ?
+                WHERE id = ?
+                """;
 
-        String sql = "UPDATE " + T_USERS + " SET role = ? WHERE id = ?";
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
-
-            ps.setString(1, role);
-            ps.setLong(2, (long) id);
-            ps.executeUpdate();
+            statement.setString(1, role);
+            statement.setInt(2, id);
+            statement.executeUpdate();
 
         } catch (SQLException e) {
             throw new RuntimeException("AdminUserDAO.updateRole error", e);
@@ -199,47 +191,39 @@ public class AdminUserDAO {
 
     public void toggleLock(int id) {
         throw new UnsupportedOperationException(
-            "toggleLock chưa hỗ trợ vì chưa xác nhận dbo.users có cột is_locked."
+                "toggleLock chưa hỗ trợ vì bảng users chưa xác nhận có cột is_locked."
         );
     }
 
-    /* ===================== MAPPER ===================== */
+    private User mapRow(ResultSet resultSet) throws SQLException {
+        User user = new User();
 
-    private User mapRow(ResultSet rs) throws SQLException {
+        user.setId(resultSet.getInt("id"));
+        user.setUsername(resultSet.getString("username"));
+        user.setRole(resultSet.getString("role"));
+        user.setFullName(resultSet.getString("full_name"));
+        user.setEmail(resultSet.getString("email"));
+        user.setPhone(resultSet.getString("phone"));
+        user.setActive(resultSet.getBoolean("active"));
+        user.setCreatedAt(resultSet.getTimestamp("created_at"));
 
-        User u = new User();
-
-        long rawId = rs.getLong("id");
-        if (rawId > Integer.MAX_VALUE || rawId < Integer.MIN_VALUE) {
-            throw new RuntimeException("User id vượt quá giới hạn int: " + rawId);
-        }
-
-        u.setId((int) rawId);
-        u.setUsername(rs.getString("username"));
-        u.setRole(rs.getString("role"));
-
-        u.setFullName(rs.getString("full_name"));
-        u.setEmail(rs.getString("email"));
-        u.setPhone(rs.getString("phone"));
-        u.setActive(rs.getBoolean("active"));
-        u.setCreatedAt(rs.getTimestamp("created_at"));
-
-        return u;
+        return user;
     }
 
-    private void bind(PreparedStatement ps, List<Object> params) throws SQLException {
+    private void bind(PreparedStatement statement, List<Object> params) throws SQLException {
         for (int i = 0; i < params.size(); i++) {
-            Object v = params.get(i);
-            int idx = i + 1;
+            Object value = params.get(i);
+            int parameterIndex = i + 1;
 
-            if (v == null) {
-                ps.setNull(idx, Types.VARCHAR);
-                continue;
+            if (value == null) {
+                statement.setNull(parameterIndex, Types.VARCHAR);
+            } else if (value instanceof Integer) {
+                statement.setInt(parameterIndex, (Integer) value);
+            } else if (value instanceof Long) {
+                statement.setLong(parameterIndex, (Long) value);
+            } else {
+                statement.setString(parameterIndex, String.valueOf(value));
             }
-
-            if (v instanceof Integer) ps.setInt(idx, (Integer) v);
-            else if (v instanceof Long) ps.setLong(idx, (Long) v);
-            else ps.setString(idx, String.valueOf(v));
         }
     }
 }
