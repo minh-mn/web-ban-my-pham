@@ -1,109 +1,130 @@
 package com.webshop.app.dao;
 
+import com.webshop.app.model.PasswordResetToken;
+import com.webshop.app.utils.DBConnection;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
-import com.webshop.app.model.PasswordResetToken;
-import com.webshop.app.utils.DBConnection;
-
 public class PasswordResetTokenDAO {
 
-    /**
-     * (Tuỳ chọn - khuyến nghị) Khi tạo token mới, vô hiệu hoá token cũ của user
-     * để tránh user có nhiều link reset còn hiệu lực.
-     */
     public void invalidateAllActiveTokensOfUser(int userId) {
-        String sql = "UPDATE password_reset_tokens SET used = 1 WHERE user_id = ? AND used = 0";
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setInt(1, userId);
-            ps.executeUpdate();
+        String sql = """
+                UPDATE password_reset_tokens
+                SET used = 1
+                WHERE user_id = ?
+                  AND used = 0
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setInt(1, userId);
+            statement.executeUpdate();
+
         } catch (Exception e) {
-            throw new RuntimeException("Invalidate old reset tokens failed", e);
+            throw new RuntimeException("PasswordResetTokenDAO.invalidateAllActiveTokensOfUser error", e);
         }
     }
 
-    /**
-     * Tạo token reset.
-     * Nếu bạn dùng invalidateAllActiveTokensOfUser(userId) thì gọi trước create().
-     */
     public void create(int userId, String token, LocalDateTime expiresAt) {
-        String sql = "INSERT INTO password_reset_tokens(user_id, token, expires_at, used) VALUES(?,?,?,0)";
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setInt(1, userId);
-            ps.setString(2, token);
-            ps.setTimestamp(3, Timestamp.valueOf(expiresAt));
-            ps.executeUpdate();
+        String sql = """
+                INSERT INTO password_reset_tokens
+                (user_id, token, expires_at, used)
+                VALUES (?, ?, ?, 0)
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setInt(1, userId);
+            statement.setString(2, token);
+            statement.setTimestamp(3, Timestamp.valueOf(expiresAt));
+            statement.executeUpdate();
+
         } catch (Exception e) {
-            throw new RuntimeException("Create reset token failed", e);
+            throw new RuntimeException("PasswordResetTokenDAO.create error", e);
         }
     }
 
-    /**
-     * Tìm token theo chuỗi token.
-     * Khuyến nghị: lọc used=0 để token đã dùng không thể dùng lại.
-     */
     public PasswordResetToken findByToken(String token) {
-        String sql = "SELECT id, user_id, token, expires_at, used " +
-                     "FROM password_reset_tokens " +
-                     "WHERE token = ? AND used = 0";
+        String sql = """
+                SELECT id, user_id, token, expires_at, used
+                FROM password_reset_tokens
+                WHERE token = ?
+                  AND used = 0
+                """;
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            ps.setString(1, token);
+            statement.setString(1, token);
 
-            try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) return null;
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (!resultSet.next()) {
+                    return null;
+                }
 
-                PasswordResetToken t = new PasswordResetToken();
-                t.setId(rs.getInt("id"));
-                t.setUserId(rs.getInt("user_id"));
-                t.setToken(rs.getString("token"));
-                t.setExpiresAt(rs.getTimestamp("expires_at").toLocalDateTime());
-                t.setUsed(rs.getBoolean("used"));
-                return t;
+                return mapRow(resultSet);
             }
 
         } catch (Exception e) {
-            throw new RuntimeException("Find reset token failed", e);
+            throw new RuntimeException("PasswordResetTokenDAO.findByToken error", e);
         }
     }
 
-    /**
-     * Đánh dấu token đã dùng.
-     * Dùng WHERE id=? AND used=0 để tránh update thừa.
-     */
     public boolean markUsed(int id) {
-        String sql = "UPDATE password_reset_tokens SET used = 1 WHERE id = ? AND used = 0";
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setInt(1, id);
-            return ps.executeUpdate() > 0;
+        String sql = """
+                UPDATE password_reset_tokens
+                SET used = 1
+                WHERE id = ?
+                  AND used = 0
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setInt(1, id);
+            return statement.executeUpdate() > 0;
+
         } catch (Exception e) {
-            throw new RuntimeException("Mark token used failed", e);
+            throw new RuntimeException("PasswordResetTokenDAO.markUsed error", e);
         }
     }
 
-    /**
-     * Cleanup token:
-     * - Xoá token đã dùng
-     * - Xoá token hết hạn (expires_at < now)
-     *
-     * Nên chạy định kỳ (hoặc gọi nhẹ mỗi khi requestReset).
-     */
     public int cleanupExpiredOrUsed() {
-        String sql = "DELETE FROM password_reset_tokens WHERE used = 1 OR expires_at < ?";
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setTimestamp(1, Timestamp.valueOf(LocalDateTime.now()));
-            return ps.executeUpdate();
+        String sql = """
+                DELETE FROM password_reset_tokens
+                WHERE used = 1
+                   OR expires_at < ?
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setTimestamp(1, Timestamp.valueOf(LocalDateTime.now()));
+            return statement.executeUpdate();
+
         } catch (Exception e) {
-            throw new RuntimeException("Cleanup reset tokens failed", e);
+            throw new RuntimeException("PasswordResetTokenDAO.cleanupExpiredOrUsed error", e);
         }
+    }
+
+    private PasswordResetToken mapRow(ResultSet resultSet) throws Exception {
+        PasswordResetToken token = new PasswordResetToken();
+
+        token.setId(resultSet.getInt("id"));
+        token.setUserId(resultSet.getInt("user_id"));
+        token.setToken(resultSet.getString("token"));
+
+        Timestamp expiresAt = resultSet.getTimestamp("expires_at");
+        token.setExpiresAt(expiresAt == null ? null : expiresAt.toLocalDateTime());
+
+        token.setUsed(resultSet.getBoolean("used"));
+
+        return token;
     }
 }
