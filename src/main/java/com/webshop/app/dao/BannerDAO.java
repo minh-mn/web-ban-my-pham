@@ -1,5 +1,8 @@
 package com.webshop.app.dao;
 
+import com.webshop.app.model.Banner;
+import com.webshop.app.utils.DBConnection;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -7,67 +10,77 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.webshop.app.model.Banner;
-import com.webshop.app.utils.DBConnection;
-
 public class BannerDAO {
 
 	// ================= USER SIDE =================
+
 	public List<Banner> findActiveBanners() {
-		List<Banner> list = new ArrayList<>();
+		List<Banner> banners = new ArrayList<>();
 
-		String sql = "SELECT id, title, image, link, is_active, [order] " + "FROM store_banner "
-				+ "WHERE is_active = 1 " + "ORDER BY [order] ASC";
+		String sql = """
+                SELECT id, title, image, link, is_active, `order`
+                FROM store_banner
+                WHERE is_active = 1
+                ORDER BY `order` ASC
+                """;
 
-		try (Connection c = DBConnection.getConnection();
-				PreparedStatement ps = c.prepareStatement(sql);
-				ResultSet rs = ps.executeQuery()) {
+		try (Connection connection = DBConnection.getConnection();
+			 PreparedStatement statement = connection.prepareStatement(sql);
+			 ResultSet resultSet = statement.executeQuery()) {
 
-			while (rs.next()) {
-				list.add(mapRow(rs));
+			while (resultSet.next()) {
+				banners.add(mapRow(resultSet));
 			}
 
 		} catch (SQLException e) {
 			throw new RuntimeException("BannerDAO.findActiveBanners error", e);
 		}
 
-		return list;
+		return banners;
 	}
 
 	// ================= ADMIN SIDE =================
 
-	/** Admin list: lấy tất cả banner (active + inactive) */
 	public List<Banner> findAll() {
-		List<Banner> list = new ArrayList<>();
+		List<Banner> banners = new ArrayList<>();
 
-		String sql = "SELECT id, title, image, link, is_active, [order] " + "FROM store_banner "
-				+ "ORDER BY [order] ASC, id DESC";
+		String sql = """
+                SELECT id, title, image, link, is_active, `order`
+                FROM store_banner
+                ORDER BY `order` ASC, id DESC
+                """;
 
-		try (Connection c = DBConnection.getConnection();
-				PreparedStatement ps = c.prepareStatement(sql);
-				ResultSet rs = ps.executeQuery()) {
+		try (Connection connection = DBConnection.getConnection();
+			 PreparedStatement statement = connection.prepareStatement(sql);
+			 ResultSet resultSet = statement.executeQuery()) {
 
-			while (rs.next()) {
-				list.add(mapRow(rs));
+			while (resultSet.next()) {
+				banners.add(mapRow(resultSet));
 			}
 
 		} catch (SQLException e) {
 			throw new RuntimeException("BannerDAO.findAll error", e);
 		}
 
-		return list;
+		return banners;
 	}
 
 	public Banner findById(int id) {
-		String sql = "SELECT id, title, image, link, is_active, [order] " + "FROM store_banner " + "WHERE id = ?";
+		String sql = """
+                SELECT id, title, image, link, is_active, `order`
+                FROM store_banner
+                WHERE id = ?
+                """;
 
-		try (Connection c = DBConnection.getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+		try (Connection connection = DBConnection.getConnection();
+			 PreparedStatement statement = connection.prepareStatement(sql)) {
 
-			ps.setInt(1, id);
+			statement.setInt(1, id);
 
-			try (ResultSet rs = ps.executeQuery()) {
-				if (rs.next())
-					return mapRow(rs);
+			try (ResultSet resultSet = statement.executeQuery()) {
+				if (resultSet.next()) {
+					return mapRow(resultSet);
+				}
 			}
 
 		} catch (SQLException e) {
@@ -77,37 +90,48 @@ public class BannerDAO {
 		return null;
 	}
 
-	public void create(Banner b) {
-		String sql = "INSERT INTO store_banner (title, image, link, is_active, [order], created_at) "
-				+ "VALUES (?, ?, ?, ?, " + "        COALESCE((SELECT MAX([order]) + 1 FROM store_banner), 1), "
-				+ "        SYSDATETIME())";
+	public void create(Banner banner) {
+		String sql = """
+                INSERT INTO store_banner (title, image, link, is_active, `order`, created_at)
+                VALUES (
+                    ?, ?, ?, ?,
+                    COALESCE((SELECT MAX(b.`order`) + 1 FROM store_banner b), 1),
+                    NOW()
+                )
+                """;
 
-		try (Connection c = DBConnection.getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+		try (Connection connection = DBConnection.getConnection();
+			 PreparedStatement statement = connection.prepareStatement(sql)) {
 
-			ps.setString(1, b.getTitle());
-			ps.setString(2, b.getImageUrl());
-			ps.setString(3, b.getLink());
-			ps.setBoolean(4, b.isActive());
+			statement.setString(1, banner.getTitle());
+			statement.setString(2, banner.getImageUrl());
+			statement.setString(3, banner.getLink());
+			statement.setBoolean(4, banner.isActive());
 
-			ps.executeUpdate();
+			statement.executeUpdate();
 
 		} catch (SQLException e) {
 			throw new RuntimeException("BannerDAO.create error", e);
 		}
 	}
 
-	public void update(Banner b) {
-		String sql = "UPDATE store_banner " + "SET title = ?, image = ?, link = ?, is_active = ? " + "WHERE id = ?";
+	public void update(Banner banner) {
+		String sql = """
+                UPDATE store_banner
+                SET title = ?, image = ?, link = ?, is_active = ?
+                WHERE id = ?
+                """;
 
-		try (Connection c = DBConnection.getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+		try (Connection connection = DBConnection.getConnection();
+			 PreparedStatement statement = connection.prepareStatement(sql)) {
 
-			ps.setString(1, b.getTitle());
-			ps.setString(2, b.getImageUrl());
-			ps.setString(3, b.getLink());
-			ps.setBoolean(4, b.isActive());
-			ps.setInt(5, b.getId());
+			statement.setString(1, banner.getTitle());
+			statement.setString(2, banner.getImageUrl());
+			statement.setString(3, banner.getLink());
+			statement.setBoolean(4, banner.isActive());
+			statement.setInt(5, banner.getId());
 
-			ps.executeUpdate();
+			statement.executeUpdate();
 
 		} catch (SQLException e) {
 			throw new RuntimeException("BannerDAO.update error", e);
@@ -115,58 +139,52 @@ public class BannerDAO {
 	}
 
 	public void delete(int id) {
-		String sql = "DELETE FROM store_banner WHERE id = ?";
+		String sql = """
+                DELETE FROM store_banner
+                WHERE id = ?
+                """;
 
-		try (Connection c = DBConnection.getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+		try (Connection connection = DBConnection.getConnection();
+			 PreparedStatement statement = connection.prepareStatement(sql)) {
 
-			ps.setInt(1, id);
-			ps.executeUpdate();
+			statement.setInt(1, id);
+			statement.executeUpdate();
 
 		} catch (SQLException e) {
 			throw new RuntimeException("BannerDAO.delete error", e);
 		}
 	}
 
-	/** Toggle is_active theo trạng thái hiện tại */
 	public void toggleActive(int id) {
-		String sql = "UPDATE store_banner " + "SET is_active = CASE WHEN is_active = 1 THEN 0 ELSE 1 END "
-				+ "WHERE id = ?";
+		String sql = """
+                UPDATE store_banner
+                SET is_active = CASE WHEN is_active = 1 THEN 0 ELSE 1 END
+                WHERE id = ?
+                """;
 
-		try (Connection c = DBConnection.getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+		try (Connection connection = DBConnection.getConnection();
+			 PreparedStatement statement = connection.prepareStatement(sql)) {
 
-			ps.setInt(1, id);
-			ps.executeUpdate();
+			statement.setInt(1, id);
+			statement.executeUpdate();
 
 		} catch (SQLException e) {
 			throw new RuntimeException("BannerDAO.toggleActive error", e);
 		}
 	}
 
-	// ================= MAPPING =================
-	private Banner mapRow(ResultSet rs) throws SQLException {
-		Banner b = new Banner();
-		b.setId(rs.getInt("id"));
-		b.setTitle(rs.getString("title"));
+	private Banner mapRow(ResultSet resultSet) throws SQLException {
+		Banner banner = new Banner();
 
-		// DB image -> Java imageUrl
-		b.setImageUrl(rs.getString("image"));
+		banner.setId(resultSet.getInt("id"));
+		banner.setTitle(resultSet.getString("title"));
+		banner.setImageUrl(resultSet.getString("image"));
+		banner.setLink(resultSet.getString("link"));
+		banner.setActive(resultSet.getBoolean("is_active"));
 
-		b.setLink(rs.getString("link"));
+		// Nếu model Banner sau này có setOrder(int), có thể mở dòng dưới:
+		// banner.setOrder(resultSet.getInt("order"));
 
-		// is_active + order nếu model có
-		try {
-			b.setActive(rs.getBoolean("is_active"));
-		} catch (SQLException ignore) {
-			// nếu model/DB thiếu cột thì bỏ qua
-		}
-
-		// nếu Banner model có setOrder(int)
-		try {
-			int orderVal = rs.getInt("order"); // với SQL Server alias "order" vẫn ok vì select [order]
-			// b.setOrder(orderVal);
-		} catch (SQLException ignore) {
-		}
-
-		return b;
+		return banner;
 	}
 }
