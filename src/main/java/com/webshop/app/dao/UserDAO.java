@@ -1,5 +1,9 @@
 package com.webshop.app.dao;
 
+import com.webshop.app.model.User;
+import com.webshop.app.utils.DBConnection;
+import com.webshop.app.utils.PasswordUtils;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -9,25 +13,40 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.webshop.app.model.User;
-import com.webshop.app.utils.DBConnection;
-import com.webshop.app.utils.PasswordUtils;
-
 public class UserDAO {
 
     /* ================= INTERNAL MAPPER (users table) ================= */
     private User mapUser(ResultSet rs) throws SQLException {
         User u = new User();
-        u.setId(rs.getInt("id"));                 // ✅ ALWAYS users.id
+
+        u.setId(rs.getInt("id"));
         u.setUsername(rs.getString("username"));
         u.setRole(rs.getString("role"));
 
-        // optional columns
-        try { u.setFullName(rs.getString("full_name")); } catch (SQLException ignored) {}
-        try { u.setEmail(rs.getString("email")); } catch (SQLException ignored) {}
-        try { u.setPhone(rs.getString("phone")); } catch (SQLException ignored) {}
-        try { u.setActive(rs.getBoolean("active")); } catch (SQLException ignored) {}
-        try { u.setCreatedAt(rs.getTimestamp("created_at")); } catch (SQLException ignored) {}
+        try {
+            u.setFullName(rs.getString("full_name"));
+        } catch (SQLException ignored) {
+        }
+
+        try {
+            u.setEmail(rs.getString("email"));
+        } catch (SQLException ignored) {
+        }
+
+        try {
+            u.setPhone(rs.getString("phone"));
+        } catch (SQLException ignored) {
+        }
+
+        try {
+            u.setActive(rs.getBoolean("active"));
+        } catch (SQLException ignored) {
+        }
+
+        try {
+            u.setCreatedAt(rs.getTimestamp("created_at"));
+        } catch (SQLException ignored) {
+        }
 
         return u;
     }
@@ -35,14 +54,18 @@ public class UserDAO {
     /* ================= FIND BY USERNAME (users) ================= */
     public User findByUsername(String username) {
         String sql = "SELECT id, username, role, full_name, email, phone, active, created_at "
-                   + "FROM users WHERE username = ?";
+                + "FROM users WHERE username = ?";
 
         try (Connection c = DBConnection.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
 
             ps.setString(1, username);
+
             try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) return null;
+                if (!rs.next()) {
+                    return null;
+                }
+
                 return mapUser(rs);
             }
 
@@ -54,14 +77,18 @@ public class UserDAO {
     /* ================= FIND BY ID (users.id) ================= */
     public User findById(int id) {
         String sql = "SELECT id, username, role, full_name, email, phone, active, created_at "
-                   + "FROM users WHERE id = ?";
+                + "FROM users WHERE id = ?";
 
         try (Connection c = DBConnection.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
 
             ps.setInt(1, id);
+
             try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) return null;
+                if (!rs.next()) {
+                    return null;
+                }
+
                 return mapUser(rs);
             }
 
@@ -73,7 +100,7 @@ public class UserDAO {
     /* ================= FIND ALL ================= */
     public List<User> findAll() {
         String sql = "SELECT id, username, role, full_name, email, phone, active, created_at "
-                   + "FROM users ORDER BY id DESC";
+                + "FROM users ORDER BY id DESC";
 
         List<User> list = new ArrayList<>();
 
@@ -81,7 +108,10 @@ public class UserDAO {
              PreparedStatement ps = c.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
 
-            while (rs.next()) list.add(mapUser(rs));
+            while (rs.next()) {
+                list.add(mapUser(rs));
+            }
+
             return list;
 
         } catch (SQLException e) {
@@ -92,7 +122,7 @@ public class UserDAO {
     /* ================= LOGIN ================= */
     public User login(String username, String plainPassword) {
         String sql = "SELECT id, username, password, role, full_name, email, phone, active, created_at "
-                   + "FROM users WHERE username = ?";
+                + "FROM users WHERE username = ?";
 
         try (Connection c = DBConnection.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
@@ -100,13 +130,20 @@ public class UserDAO {
             ps.setString(1, username);
 
             try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) return null;
-                if (!rs.getBoolean("active")) return null;
+                if (!rs.next()) {
+                    return null;
+                }
+
+                if (!rs.getBoolean("active")) {
+                    return null;
+                }
 
                 String hashed = rs.getString("password");
-                if (!PasswordUtils.verify(plainPassword, hashed)) return null;
 
-                // ✅ trả users.id
+                if (!PasswordUtils.verify(plainPassword, hashed)) {
+                    return null;
+                }
+
                 return mapUser(rs);
             }
 
@@ -123,8 +160,12 @@ public class UserDAO {
              PreparedStatement ps = c.prepareStatement(sql)) {
 
             ps.setString(1, username);
+
             try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) return false;
+                if (!rs.next()) {
+                    return false;
+                }
+
                 return PasswordUtils.verify(plainPassword, rs.getString("password"));
             }
 
@@ -141,8 +182,12 @@ public class UserDAO {
              PreparedStatement ps = c.prepareStatement(sql)) {
 
             ps.setInt(1, userId);
+
             try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) return false;
+                if (!rs.next()) {
+                    return false;
+                }
+
                 return PasswordUtils.verify(plainPassword, rs.getString("password"));
             }
 
@@ -175,6 +220,7 @@ public class UserDAO {
 
             ps.setString(1, PasswordUtils.hash(newPlainPassword));
             ps.setInt(2, userId);
+
             return ps.executeUpdate() > 0;
 
         } catch (SQLException e) {
@@ -206,7 +252,7 @@ public class UserDAO {
     /* ================= REGISTER ================= */
     public void create(User u, String plainPassword) {
         String sqlUsers = "INSERT INTO users (username, password, role, full_name, email, phone, active) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, ?)";
+                + "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection c = DBConnection.getConnection();
              PreparedStatement ps = c.prepareStatement(sqlUsers)) {
@@ -228,7 +274,7 @@ public class UserDAO {
     /* ================= FIND BY EMAIL ================= */
     public User findByEmail(String email) {
         String sql = "SELECT id, username, role, full_name, email, phone, active, created_at "
-                   + "FROM users WHERE email = ?";
+                + "FROM users WHERE email = ?";
 
         try (Connection c = DBConnection.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
@@ -236,8 +282,14 @@ public class UserDAO {
             ps.setString(1, email);
 
             try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) return null;
-                if (!rs.getBoolean("active")) return null;
+                if (!rs.next()) {
+                    return null;
+                }
+
+                if (!rs.getBoolean("active")) {
+                    return null;
+                }
+
                 return mapUser(rs);
             }
 
@@ -248,26 +300,31 @@ public class UserDAO {
 
     public boolean updateContact(int userId, String email, String phone) {
         String sql = "UPDATE users SET email = ?, phone = ? WHERE id = ?";
+
         try (Connection c = DBConnection.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
+
             ps.setString(1, email);
             ps.setString(2, phone);
             ps.setInt(3, userId);
+
             return ps.executeUpdate() > 0;
+
         } catch (SQLException e) {
             throw new RuntimeException("UserDAO.updateContact error", e);
         }
     }
 
     /* =========================================================
-       LEGACY REMEMBER TOKEN (user_tokens) - KHUYẾN NGHỊ NGƯNG DÙNG
-       Nếu bạn đã chuyển sang RememberMeService + remember_tokens,
-       bạn nên xoá flow cũ khỏi LoginServlet/LogoutServlet.
+       LEGACY REMEMBER TOKEN (user_tokens)
        ========================================================= */
 
     public void saveRememberTokenByUsername(String username, String token, LocalDateTime expiredAt) {
         Integer usersId = findUsersIdByUsername(username);
-        if (usersId == null) throw new RuntimeException("UserDAO.saveRememberToken: usersId not found for " + username);
+
+        if (usersId == null) {
+            throw new RuntimeException("UserDAO.saveRememberToken: usersId not found for " + username);
+        }
 
         String sql = "INSERT INTO user_tokens (user_id, token, expired_at) VALUES (?, ?, ?)";
 
@@ -286,10 +343,13 @@ public class UserDAO {
 
     public void deleteRememberToken(String token) {
         String sql = "DELETE FROM user_tokens WHERE token = ?";
+
         try (Connection c = DBConnection.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
+
             ps.setString(1, token);
             ps.executeUpdate();
+
         } catch (SQLException e) {
             throw new RuntimeException("UserDAO.deleteRememberToken error", e);
         }
@@ -297,17 +357,24 @@ public class UserDAO {
 
     public User findByRememberToken(String token) {
         String sql = "SELECT u.id, u.username, u.role, u.full_name, u.email, u.phone, u.active, u.created_at "
-                   + "FROM user_tokens t JOIN users u ON u.id = t.user_id "
-                   + "WHERE t.token = ? AND t.expired_at > GETDATE()";
+                + "FROM user_tokens t JOIN users u ON u.id = t.user_id "
+                + "WHERE t.token = ? AND t.expired_at > NOW()";
 
         try (Connection c = DBConnection.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
 
             ps.setString(1, token);
+
             try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) return null;
-                if (!rs.getBoolean("active")) return null;
-                return mapUser(rs); // ✅ users.id
+                if (!rs.next()) {
+                    return null;
+                }
+
+                if (!rs.getBoolean("active")) {
+                    return null;
+                }
+
+                return mapUser(rs);
             }
 
         } catch (SQLException e) {
@@ -317,13 +384,20 @@ public class UserDAO {
 
     private Integer findUsersIdByUsername(String username) {
         String sql = "SELECT id FROM users WHERE username = ?";
+
         try (Connection c = DBConnection.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
+
             ps.setString(1, username);
+
             try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) return null;
+                if (!rs.next()) {
+                    return null;
+                }
+
                 return rs.getInt(1);
             }
+
         } catch (SQLException e) {
             return null;
         }
@@ -331,81 +405,66 @@ public class UserDAO {
 
     /* ================= SOCIAL LOGIN METHODS ================= */
 
-    // 1. Tìm user dựa trên Google ID hoặc Facebook ID
     public User findBySocialId(String provider, String socialId) {
-        // Tùy vào provider mà chọn cột google_id hoặc facebook_id trong DB
         String column = "google".equals(provider) ? "google_id" : "facebook_id";
+
         String sql = "SELECT id, username, role, full_name, email, phone, active, created_at "
                 + "FROM users WHERE " + column + " = ?";
 
         try (Connection c = DBConnection.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
+
             ps.setString(1, socialId);
+
             try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) return null;
+                if (!rs.next()) {
+                    return null;
+                }
+
                 return mapUser(rs);
             }
+
         } catch (SQLException e) {
             throw new RuntimeException("UserDAO.findBySocialId error", e);
         }
     }
 
-    // 2. Tạo User mới khi ĐĂNG KÝ bằng Social
     public void saveSocialUser(User u, String provider, String socialId) {
         String column = "google".equals(provider) ? "google_id" : "facebook_id";
+
         String sql = "INSERT INTO users (username, role, full_name, email, active, " + column + ") "
                 + "VALUES (?, ?, ?, ?, ?, ?)";
 
         try (Connection c = DBConnection.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setString(1, u.getUsername()); // Có thể dùng email làm username
-            ps.setString(2, "USER");         // Role mặc định
+
+            ps.setString(1, u.getUsername());
+            ps.setString(2, "USER");
             ps.setString(3, u.getFullName());
             ps.setString(4, u.getEmail());
-            ps.setBoolean(5, true);          // Mặc định active
+            ps.setBoolean(5, true);
             ps.setString(6, socialId);
             ps.executeUpdate();
+
         } catch (SQLException e) {
             throw new RuntimeException("UserDAO.saveSocialUser error", e);
         }
     }
 
-    // 3. Cập nhật Social ID vào tài khoản hiện có (Liên kết tài khoản)
     public void updateSocialId(int userId, String provider, String socialId) {
         String column = "google".equals(provider) ? "google_id" : "facebook_id";
+
         String sql = "UPDATE users SET " + column + " = ? WHERE id = ?";
+
         try (Connection c = DBConnection.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
+
             ps.setString(1, socialId);
             ps.setInt(2, userId);
             ps.executeUpdate();
+
         } catch (SQLException e) {
             throw new RuntimeException("UserDAO.updateSocialId error", e);
         }
-    }
-
-    public boolean insert(User user) {
-        String sql = "INSERT INTO [Users] (userName, password, email, fullName, phone, birthday, gender, roleId, status) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        DBConnection DBContext = null;
-        try (Connection conn = DBContext.getConnection(); // Hoặc cách lấy connection của bạn
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setString(1, user.getUsername());
-            ps.setString(2, user.getPassword()); // Lưu ý: Nên dùng mật khẩu đã mã hóa
-            ps.setString(3, user.getEmail());
-            ps.setString(4, user.getFullName());
-            ps.setString(5, user.getPhone());
-            //ps.setDate(6, new java.sql.Date(user.getBirthday().getTime()));
-            //ps.setString(7, user.getGender());
-            ps.setInt(8, 2); // Giả sử roleId = 2 là Khách hàng (Customer)
-            ps.setInt(9, 1); // status = 1 là Active (Hoạt động)
-
-            int rowAffected = ps.executeUpdate();
-            return rowAffected > 0;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return false;
     }
 }
