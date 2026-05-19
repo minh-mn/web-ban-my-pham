@@ -467,4 +467,26 @@ public class UserDAO {
             throw new RuntimeException("UserDAO.updateSocialId error", e);
         }
     }
+
+    public boolean insert(User user) {
+        String sql = "INSERT INTO users (username, password, role, full_name, email, phone, active) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?)";
+
+        try (Connection c = DBConnection.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+
+            ps.setString(1, user.getUsername());
+            ps.setString(2, user.getPassword());
+            ps.setString(3, user.getRole() != null ? user.getRole() : "USER");
+            ps.setString(4, user.getFullName());
+            ps.setString(5, user.getEmail());
+            ps.setString(6, user.getPhone());
+            ps.setBoolean(7, user.isActive());
+
+            return ps.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("UserDAO.insert error", e);
+        }
+    }
 }
