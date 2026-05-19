@@ -6,104 +6,113 @@ import com.webshop.app.utils.DBConnection;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class PolicyDAO {
 
     public String getFileNameBySlug(String slug) {
-        String fileName = null;
-        String sql = "SELECT file_name FROM policies WHERE slug = ?";
+        String sql = """
+                SELECT file_name
+                FROM policies
+                WHERE slug = ?
+                """;
 
-        // Sử dụng Try-with-resources để tự động đóng kết nối
-        try (Connection conn = new DBConnection().getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            ps.setString(1, slug);
-            ResultSet rs = ps.executeQuery();
+            statement.setString(1, slug);
 
-            if (rs.next()) {
-                fileName = rs.getString("file_name");
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return fileName;
-    }
-
-    public Policy getPolicyBySlug(String slug) {
-
-        String sql = "SELECT id, title, file_name, slug FROM policies WHERE slug = ?";
-
-        try (Connection conn = new DBConnection().getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setString(1, slug);
-
-            ResultSet rs = ps.executeQuery();
-
-            if (rs.next()) {
-
-                Policy p = new Policy();
-                p.setId(rs.getInt("id"));
-                p.setTitle(rs.getString("title"));
-                p.setFileName(rs.getString("file_name"));
-                p.setSlug(rs.getString("slug"));
-
-                return p;
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getString("file_name");
+                }
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new RuntimeException("PolicyDAO.getFileNameBySlug error", e);
         }
 
         return null;
     }
 
-    public void insert(Policy p) {
-        String sql = "INSERT INTO policies(title, slug, file_name) VALUES (?, ?, ?)";
+    public Policy getPolicyBySlug(String slug) {
+        String sql = """
+                SELECT id, title, file_name, slug
+                FROM policies
+                WHERE slug = ?
+                """;
 
-        try (Connection conn = new DBConnection().getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            ps.setString(1, p.getTitle());
-            ps.setString(2, p.getSlug());
-            ps.setString(3, p.getFileName());
+            statement.setString(1, slug);
 
-            ps.executeUpdate();
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return mapRow(resultSet);
+                }
+            }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new RuntimeException("PolicyDAO.getPolicyBySlug error", e);
+        }
+
+        return null;
+    }
+
+    public void insert(Policy policy) {
+        String sql = """
+                INSERT INTO policies(title, slug, file_name)
+                VALUES (?, ?, ?)
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, policy.getTitle());
+            statement.setString(2, policy.getSlug());
+            statement.setString(3, policy.getFileName());
+
+            statement.executeUpdate();
+
+        } catch (Exception e) {
+            throw new RuntimeException("PolicyDAO.insert error", e);
         }
     }
 
     public List<Policy> getAllPolicies() {
+        List<Policy> policies = new ArrayList<>();
 
-        List<Policy> list = new ArrayList<>();
+        String sql = """
+                SELECT id, title, slug, file_name
+                FROM policies
+                ORDER BY id ASC
+                """;
 
-        String sql = "SELECT * FROM policies";
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet resultSet = statement.executeQuery()) {
 
-        try (Connection conn = new DBConnection().getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-
-            while (rs.next()) {
-                Policy p = new Policy();
-                p.setId(rs.getInt("id"));
-                p.setTitle(rs.getString("title"));
-                p.setSlug(rs.getString("slug"));
-                p.setFileName(rs.getString("file_name"));
-
-                list.add(p);
+            while (resultSet.next()) {
+                policies.add(mapRow(resultSet));
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new RuntimeException("PolicyDAO.getAllPolicies error", e);
         }
 
-        return list;
+        return policies;
+    }
+
+    private Policy mapRow(ResultSet resultSet) throws Exception {
+        Policy policy = new Policy();
+
+        policy.setId(resultSet.getInt("id"));
+        policy.setTitle(resultSet.getString("title"));
+        policy.setSlug(resultSet.getString("slug"));
+        policy.setFileName(resultSet.getString("file_name"));
+
+        return policy;
     }
 }
