@@ -2,38 +2,33 @@ package com.webshop.app.utils;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.SQLException;
 
 public class DBConnection {
 
-    // ====== DỊCH TỪ DJANGO settings.py ======
     private static final String URL =
-        "jdbc:sqlserver://192.168.101.1:1433;"
-      + "databaseName=mycosmetic_shop_db;"
-      + "encrypt=false;"
-      + "trustServerCertificate=true";
+            "jdbc:mysql://localhost:3306/mycosmetic_shop"
+                    + "?useSSL=false"
+                    + "&serverTimezone=Asia/Ho_Chi_Minh"
+                    + "&allowPublicKeyRetrieval=true"
+                    + "&characterEncoding=UTF-8";
 
-    private static final String USER = "sa";
+    private static final String USER = "root";
     private static final String PASSWORD = "123456";
 
-    // ====== LOAD DRIVER (thay cho ODBC Driver 17) ======
     static {
         try {
-            Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+            Class.forName("com.mysql.cj.jdbc.Driver");
         } catch (ClassNotFoundException e) {
-            throw new RuntimeException(
-                "❌ Không tìm thấy SQL Server JDBC Driver", e
-            );
+            throw new RuntimeException("Không tìm thấy MySQL JDBC Driver", e);
         }
     }
 
-    // ====== GET CONNECTION ======
     public static Connection getConnection() {
         try {
             return DriverManager.getConnection(URL, USER, PASSWORD);
-        } catch (Exception e) {
-            throw new RuntimeException(
-                "❌ Không kết nối được SQL Server", e
-            );
+        } catch (SQLException e) {
+            throw new RuntimeException("Không kết nối được MySQL", e);
         }
     }
 }
