@@ -1,5 +1,8 @@
 package com.webshop.app.dao;
 
+import com.webshop.app.model.OrderDiscount;
+import com.webshop.app.utils.DBConnection;
+
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.Date;
@@ -12,17 +15,14 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.webshop.app.model.OrderDiscount;
-import com.webshop.app.utils.DBConnection;
-
 public class OrderDiscountDAO {
 
     public List<OrderDiscount> findAll() {
         String sql =
-            "SELECT id, name, min_order_value, discount_percent, max_discount_amount, " +
-            "       start_date, end_date, active " +
-            "FROM order_discounts " +
-            "ORDER BY id DESC";
+                "SELECT id, name, min_order_value, discount_percent, max_discount_amount, " +
+                        "       start_date, end_date, active " +
+                        "FROM order_discounts " +
+                        "ORDER BY id DESC";
 
         List<OrderDiscount> list = new ArrayList<>();
 
@@ -30,7 +30,10 @@ public class OrderDiscountDAO {
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
 
-            while (rs.next()) list.add(mapRow(rs));
+            while (rs.next()) {
+                list.add(mapRow(rs));
+            }
+
             return list;
 
         } catch (SQLException e) {
@@ -40,10 +43,10 @@ public class OrderDiscountDAO {
 
     public OrderDiscount findById(int id) {
         String sql =
-            "SELECT id, name, min_order_value, discount_percent, max_discount_amount, " +
-            "       start_date, end_date, active " +
-            "FROM order_discounts " +
-            "WHERE id = ?";
+                "SELECT id, name, min_order_value, discount_percent, max_discount_amount, " +
+                        "       start_date, end_date, active " +
+                        "FROM order_discounts " +
+                        "WHERE id = ?";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -61,9 +64,9 @@ public class OrderDiscountDAO {
 
     public int create(OrderDiscount d) {
         String sql =
-            "INSERT INTO order_discounts " +
-            " (name, min_order_value, discount_percent, max_discount_amount, start_date, end_date, active) " +
-            "VALUES (?, ?, ?, ?, ?, ?, ?)";
+                "INSERT INTO order_discounts " +
+                        " (name, min_order_value, discount_percent, max_discount_amount, start_date, end_date, active) " +
+                        "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -72,8 +75,11 @@ public class OrderDiscountDAO {
             ps.setBigDecimal(2, nz(d.getMinOrderValue()));
             ps.setBigDecimal(3, nz(d.getDiscountPercent()));
 
-            if (d.getMaxDiscountAmount() == null) ps.setNull(4, Types.DECIMAL);
-            else ps.setBigDecimal(4, d.getMaxDiscountAmount());
+            if (d.getMaxDiscountAmount() == null) {
+                ps.setNull(4, Types.DECIMAL);
+            } else {
+                ps.setBigDecimal(4, d.getMaxDiscountAmount());
+            }
 
             ps.setDate(5, Date.valueOf(d.getStartDate()));
             ps.setDate(6, Date.valueOf(d.getEndDate()));
@@ -92,15 +98,15 @@ public class OrderDiscountDAO {
 
     public boolean update(OrderDiscount d) {
         String sql =
-            "UPDATE order_discounts SET " +
-            " name = ?, " +
-            " min_order_value = ?, " +
-            " discount_percent = ?, " +
-            " max_discount_amount = ?, " +
-            " start_date = ?, " +
-            " end_date = ?, " +
-            " active = ? " +
-            "WHERE id = ?";
+                "UPDATE order_discounts SET " +
+                        " name = ?, " +
+                        " min_order_value = ?, " +
+                        " discount_percent = ?, " +
+                        " max_discount_amount = ?, " +
+                        " start_date = ?, " +
+                        " end_date = ?, " +
+                        " active = ? " +
+                        "WHERE id = ?";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -109,8 +115,11 @@ public class OrderDiscountDAO {
             ps.setBigDecimal(2, nz(d.getMinOrderValue()));
             ps.setBigDecimal(3, nz(d.getDiscountPercent()));
 
-            if (d.getMaxDiscountAmount() == null) ps.setNull(4, Types.DECIMAL);
-            else ps.setBigDecimal(4, d.getMaxDiscountAmount());
+            if (d.getMaxDiscountAmount() == null) {
+                ps.setNull(4, Types.DECIMAL);
+            } else {
+                ps.setBigDecimal(4, d.getMaxDiscountAmount());
+            }
 
             ps.setDate(5, Date.valueOf(d.getStartDate()));
             ps.setDate(6, Date.valueOf(d.getEndDate()));
@@ -140,20 +149,21 @@ public class OrderDiscountDAO {
 
     public OrderDiscount findActiveForToday(LocalDate today) {
         String sql =
-            "SELECT TOP 1 id, name, min_order_value, discount_percent, max_discount_amount, " +
-            "       start_date, end_date, active " +
-            "FROM order_discounts " +
-            "WHERE active = 1 " +
-            "  AND start_date <= ? " +
-            "  AND end_date >= ? " +
-            "ORDER BY discount_percent DESC, min_order_value ASC, id DESC";
+                "SELECT id, name, min_order_value, discount_percent, max_discount_amount, " +
+                        "       start_date, end_date, active " +
+                        "FROM order_discounts " +
+                        "WHERE active = 1 " +
+                        "  AND start_date <= ? " +
+                        "  AND end_date >= ? " +
+                        "ORDER BY discount_percent DESC, min_order_value ASC, id DESC " +
+                        "LIMIT 1";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            Date d = Date.valueOf(today);
-            ps.setDate(1, d);
-            ps.setDate(2, d);
+            Date date = Date.valueOf(today);
+            ps.setDate(1, date);
+            ps.setDate(2, date);
 
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next() ? mapRow(rs) : null;
@@ -166,26 +176,29 @@ public class OrderDiscountDAO {
 
     private OrderDiscount mapRow(ResultSet rs) throws SQLException {
         OrderDiscount d = new OrderDiscount();
+
         d.setId(rs.getInt("id"));
         d.setName(rs.getString("name"));
         d.setMinOrderValue(rs.getBigDecimal("min_order_value"));
         d.setDiscountPercent(rs.getBigDecimal("discount_percent"));
         d.setMaxDiscountAmount(rs.getBigDecimal("max_discount_amount"));
 
-        Date s = rs.getDate("start_date");
-        Date e = rs.getDate("end_date");
-        d.setStartDate(s != null ? s.toLocalDate() : null);
-        d.setEndDate(e != null ? e.toLocalDate() : null);
+        Date startDate = rs.getDate("start_date");
+        Date endDate = rs.getDate("end_date");
+
+        d.setStartDate(startDate != null ? startDate.toLocalDate() : null);
+        d.setEndDate(endDate != null ? endDate.toLocalDate() : null);
 
         d.setActive(rs.getBoolean("active"));
+
         return d;
     }
 
-    private BigDecimal nz(BigDecimal v) {
-        return v == null ? BigDecimal.ZERO : v;
+    private BigDecimal nz(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO : value;
     }
 
-    private String safeText(String s) {
-        return (s == null) ? "" : s.trim();
+    private String safeText(String text) {
+        return text == null ? "" : text.trim();
     }
 }
