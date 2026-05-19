@@ -1,5 +1,7 @@
 package com.webshop.app.dao;
 
+import com.webshop.app.utils.DBConnection;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.Connection;
@@ -9,32 +11,40 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.webshop.app.utils.DBConnection;
-
 public class AdminStatsDAO {
 
     private static final String PAID = "PAID";
 
-    // Chuẩn hoá tiền VND: không lẻ, làm tròn HALF_UP
-    private static BigDecimal vnd0(BigDecimal x) {
-        if (x == null) return BigDecimal.ZERO;
-        return x.setScale(0, RoundingMode.HALF_UP);
+    private static BigDecimal vnd0(BigDecimal value) {
+        if (value == null) {
+            return BigDecimal.ZERO;
+        }
+
+        return value.setScale(0, RoundingMode.HALF_UP);
     }
 
     /* ================= BASIC ================= */
 
-    // Tổng đơn: nếu muốn "tổng đơn đã thanh toán" thì lọc PAID (khuyến nghị cho dashboard tiền)
     public int countOrders() {
-        String sql = "SELECT COUNT(*) FROM dbo.store_order WHERE payment_status = ?";
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        String sql = """
+                SELECT COUNT(*)
+                FROM store_order
+                WHERE payment_status = ?
+                """;
 
-            ps.setString(1, PAID);
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            ResultSet rs = ps.executeQuery();
-            rs.next();
-            return rs.getInt(1);
+            statement.setString(1, PAID);
+
+            ResultSet resultSet = statement.executeQuery();
+
+            if (resultSet.next()) {
+                return resultSet.getInt(1);
+            }
+
+            return 0;
 
         } catch (SQLException e) {
             throw new RuntimeException("AdminStatsDAO.countOrders error", e);
@@ -42,81 +52,96 @@ public class AdminStatsDAO {
     }
 
     public BigDecimal totalRevenueVnd() {
-        String sql =
-                "SELECT COALESCE(SUM(total), 0) " +
-                "FROM dbo.store_order " +
-                "WHERE payment_status = ?";
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        String sql = """
+                SELECT COALESCE(SUM(total), 0)
+                FROM store_order
+                WHERE payment_status = ?
+                """;
 
-            ps.setString(1, PAID);
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            ResultSet rs = ps.executeQuery();
-            rs.next();
-            return vnd0(rs.getBigDecimal(1));
+            statement.setString(1, PAID);
+
+            ResultSet resultSet = statement.executeQuery();
+
+            if (resultSet.next()) {
+                return vnd0(resultSet.getBigDecimal(1));
+            }
+
+            return BigDecimal.ZERO;
 
         } catch (SQLException e) {
             throw new RuntimeException("AdminStatsDAO.totalRevenueVnd error", e);
         }
     }
 
-    /**
-     * AOV: tính theo PAID để đồng nhất với revenue.
-     * AOV = SUM(PAID total) / COUNT(PAID orders)
-     */
     public BigDecimal averageOrderValueVnd() {
+
         BigDecimal revenue = totalRevenueVnd();
         int orders = countOrders();
 
-        if (orders <= 0) return BigDecimal.ZERO;
+        if (orders <= 0) {
+            return BigDecimal.ZERO;
+        }
 
         return revenue
                 .divide(BigDecimal.valueOf(orders), 2, RoundingMode.HALF_UP)
                 .setScale(0, RoundingMode.HALF_UP);
     }
 
-    /* ================= ROLLING 30 DAYS (giữ lại nếu bạn cần) ================= */
+    /* ================= LAST 30 DAYS ================= */
 
-    // 30 ngày gần nhất
     public BigDecimal last30DaysRevenue() {
-        String sql =
-                "SELECT COALESCE(SUM(total), 0) " +
-                "FROM dbo.store_order " +
-                "WHERE payment_status = ? " +
-                "AND created_at >= DATEADD(day, -30, SYSDATETIMEOFFSET())";
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        String sql = """
+                SELECT COALESCE(SUM(total), 0)
+                FROM store_order
+                WHERE payment_status = ?
+                AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+                """;
 
-            ps.setString(1, PAID);
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            ResultSet rs = ps.executeQuery();
-            rs.next();
-            return vnd0(rs.getBigDecimal(1));
+            statement.setString(1, PAID);
+
+            ResultSet resultSet = statement.executeQuery();
+
+            if (resultSet.next()) {
+                return vnd0(resultSet.getBigDecimal(1));
+            }
+
+            return BigDecimal.ZERO;
 
         } catch (SQLException e) {
             throw new RuntimeException("AdminStatsDAO.last30DaysRevenue error", e);
         }
     }
 
-    // 30 ngày trước đó: [-60, -30)
     public BigDecimal prev30DaysRevenue() {
-        String sql =
-                "SELECT COALESCE(SUM(total), 0) " +
-                "FROM dbo.store_order " +
-                "WHERE payment_status = ? " +
-                "AND created_at >= DATEADD(day, -60, SYSDATETIMEOFFSET()) " +
-                "AND created_at <  DATEADD(day, -30, SYSDATETIMEOFFSET())";
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        String sql = """
+                SELECT COALESCE(SUM(total), 0)
+                FROM store_order
+                WHERE payment_status = ?
+                AND created_at >= DATE_SUB(NOW(), INTERVAL 60 DAY)
+                AND created_at < DATE_SUB(NOW(), INTERVAL 30 DAY)
+                """;
 
-            ps.setString(1, PAID);
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            ResultSet rs = ps.executeQuery();
-            rs.next();
-            return vnd0(rs.getBigDecimal(1));
+            statement.setString(1, PAID);
+
+            ResultSet resultSet = statement.executeQuery();
+
+            if (resultSet.next()) {
+                return vnd0(resultSet.getBigDecimal(1));
+            }
+
+            return BigDecimal.ZERO;
 
         } catch (SQLException e) {
             throw new RuntimeException("AdminStatsDAO.prev30DaysRevenue error", e);
@@ -128,34 +153,44 @@ public class AdminStatsDAO {
     }
 
     public int rollingGrowthPercent() {
-        BigDecimal prev = prev30DaysRevenue();
-        if (prev.compareTo(BigDecimal.ZERO) <= 0) return 0;
 
-        BigDecimal diff = last30DaysRevenue().subtract(prev);
-        return diff.multiply(BigDecimal.valueOf(100))
-                   .divide(prev, 0, RoundingMode.HALF_UP)
-                   .intValue();
+        BigDecimal previous = prev30DaysRevenue();
+
+        if (previous.compareTo(BigDecimal.ZERO) <= 0) {
+            return 0;
+        }
+
+        BigDecimal difference = last30DaysRevenue().subtract(previous);
+
+        return difference.multiply(BigDecimal.valueOf(100))
+                .divide(previous, 0, RoundingMode.HALF_UP)
+                .intValue();
     }
 
-    /* ================= CALENDAR MONTH (THÁNG LỊCH) ================= */
+    /* ================= THIS MONTH ================= */
 
     public BigDecimal thisMonthRevenue() {
-        String sql =
-                "DECLARE @startThisMonth datetime2 = DATEFROMPARTS(YEAR(SYSDATETIME()), MONTH(SYSDATETIME()), 1); " +
-                "DECLARE @startNextMonth datetime2 = DATEADD(MONTH, 1, @startThisMonth); " +
-                "SELECT COALESCE(SUM(total), 0) " +
-                "FROM dbo.store_order " +
-                "WHERE payment_status = ? " +
-                "AND created_at >= @startThisMonth " +
-                "AND created_at <  @startNextMonth";
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        String sql = """
+                SELECT COALESCE(SUM(total), 0)
+                FROM store_order
+                WHERE payment_status = ?
+                AND YEAR(created_at) = YEAR(CURDATE())
+                AND MONTH(created_at) = MONTH(CURDATE())
+                """;
 
-            ps.setString(1, PAID);
-            ResultSet rs = ps.executeQuery();
-            rs.next();
-            return vnd0(rs.getBigDecimal(1));
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, PAID);
+
+            ResultSet resultSet = statement.executeQuery();
+
+            if (resultSet.next()) {
+                return vnd0(resultSet.getBigDecimal(1));
+            }
+
+            return BigDecimal.ZERO;
 
         } catch (SQLException e) {
             throw new RuntimeException("AdminStatsDAO.thisMonthRevenue error", e);
@@ -163,47 +198,58 @@ public class AdminStatsDAO {
     }
 
     public BigDecimal prevMonthRevenueCalendar() {
-        String sql =
-                "DECLARE @startThisMonth datetime2 = DATEFROMPARTS(YEAR(SYSDATETIME()), MONTH(SYSDATETIME()), 1); " +
-                "DECLARE @startPrevMonth datetime2 = DATEADD(MONTH, -1, @startThisMonth); " +
-                "SELECT COALESCE(SUM(total), 0) " +
-                "FROM dbo.store_order " +
-                "WHERE payment_status = ? " +
-                "AND created_at >= @startPrevMonth " +
-                "AND created_at <  @startThisMonth";
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        String sql = """
+                SELECT COALESCE(SUM(total), 0)
+                FROM store_order
+                WHERE payment_status = ?
+                AND YEAR(created_at) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))
+                AND MONTH(created_at) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))
+                """;
 
-            ps.setString(1, PAID);
-            ResultSet rs = ps.executeQuery();
-            rs.next();
-            return vnd0(rs.getBigDecimal(1));
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, PAID);
+
+            ResultSet resultSet = statement.executeQuery();
+
+            if (resultSet.next()) {
+                return vnd0(resultSet.getBigDecimal(1));
+            }
+
+            return BigDecimal.ZERO;
 
         } catch (SQLException e) {
             throw new RuntimeException("AdminStatsDAO.prevMonthRevenueCalendar error", e);
         }
     }
 
-    /* ================= CHART (MONTHLY) ================= */
+    /* ================= CHART ================= */
 
     public List<String> chartLabels() {
-        String sql =
-                "SELECT FORMAT(CAST(created_at AS datetime2), 'MM/yyyy') AS label " +
-                "FROM dbo.store_order " +
-                "WHERE payment_status = ? " +
-                "GROUP BY FORMAT(CAST(created_at AS datetime2), 'MM/yyyy') " +
-                "ORDER BY MIN(CAST(created_at AS datetime2))";
+
+        String sql = """
+                SELECT DATE_FORMAT(created_at, '%m/%Y') AS label
+                FROM store_order
+                WHERE payment_status = ?
+                GROUP BY DATE_FORMAT(created_at, '%m/%Y')
+                ORDER BY MIN(created_at)
+                """;
 
         List<String> labels = new ArrayList<>();
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            ps.setString(1, PAID);
+            statement.setString(1, PAID);
 
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) labels.add(rs.getString("label"));
+            ResultSet resultSet = statement.executeQuery();
+
+            while (resultSet.next()) {
+                labels.add(resultSet.getString("label"));
+            }
+
             return labels;
 
         } catch (SQLException e) {
@@ -212,22 +258,28 @@ public class AdminStatsDAO {
     }
 
     public List<BigDecimal> chartValues() {
-        String sql =
-                "SELECT COALESCE(SUM(total), 0) AS revenue " +
-                "FROM dbo.store_order " +
-                "WHERE payment_status = ? " +
-                "GROUP BY FORMAT(CAST(created_at AS datetime2), 'MM/yyyy') " +
-                "ORDER BY MIN(CAST(created_at AS datetime2))";
+
+        String sql = """
+                SELECT COALESCE(SUM(total), 0) AS revenue
+                FROM store_order
+                WHERE payment_status = ?
+                GROUP BY DATE_FORMAT(created_at, '%m/%Y')
+                ORDER BY MIN(created_at)
+                """;
 
         List<BigDecimal> values = new ArrayList<>();
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            ps.setString(1, PAID);
+            statement.setString(1, PAID);
 
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) values.add(vnd0(rs.getBigDecimal("revenue")));
+            ResultSet resultSet = statement.executeQuery();
+
+            while (resultSet.next()) {
+                values.add(vnd0(resultSet.getBigDecimal("revenue")));
+            }
+
             return values;
 
         } catch (SQLException e) {
@@ -238,34 +290,40 @@ public class AdminStatsDAO {
     /* ================= TOP PRODUCTS ================= */
 
     public List<Object[]> topSellingProducts() {
-        String sql =
-                "SELECT TOP 5 " +
-                "  p.title AS name, " +
-                "  COALESCE(SUM(oi.quantity), 0) AS sold, " +
-                "  COALESCE(SUM(oi.quantity * oi.price), 0) AS revenue " +
-                "FROM dbo.store_orderitem oi " +
-                "JOIN dbo.store_product p ON p.id = oi.product_id " +
-                "JOIN dbo.store_order o ON o.id = oi.order_id " +
-                "WHERE o.payment_status = ? " +
-                "GROUP BY p.title " +
-                "ORDER BY sold DESC";
 
-        List<Object[]> list = new ArrayList<>();
+        String sql = """
+                SELECT
+                    p.title AS name,
+                    COALESCE(SUM(oi.quantity), 0) AS sold,
+                    COALESCE(SUM(oi.quantity * oi.price), 0) AS revenue
+                FROM store_orderitem oi
+                JOIN store_product p ON p.id = oi.product_id
+                JOIN store_order o ON o.id = oi.order_id
+                WHERE o.payment_status = ?
+                GROUP BY p.title
+                ORDER BY sold DESC
+                LIMIT 5
+                """;
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        List<Object[]> products = new ArrayList<>();
 
-            ps.setString(1, PAID);
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                list.add(new Object[]{
-                        rs.getString("name"),
-                        rs.getInt("sold"),
-                        vnd0(rs.getBigDecimal("revenue"))
+            statement.setString(1, PAID);
+
+            ResultSet resultSet = statement.executeQuery();
+
+            while (resultSet.next()) {
+
+                products.add(new Object[]{
+                        resultSet.getString("name"),
+                        resultSet.getInt("sold"),
+                        vnd0(resultSet.getBigDecimal("revenue"))
                 });
             }
-            return list;
+
+            return products;
 
         } catch (SQLException e) {
             throw new RuntimeException("AdminStatsDAO.topSellingProducts error", e);
