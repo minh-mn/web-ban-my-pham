@@ -1,5 +1,8 @@
 package com.webshop.app.dao;
 
+import com.webshop.app.model.Order;
+import com.webshop.app.utils.DBConnection;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -8,66 +11,51 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.webshop.app.model.Order;
-import com.webshop.app.utils.DBConnection;
-
 public class AdminOrderDAO {
 
     public List<Order> findAll() {
-        List<Order> list = new ArrayList<>();
+        List<Order> orders = new ArrayList<>();
 
-        String sql =
-            "SELECT id, user_id, full_name, total, status, created_at " +
-            "FROM store_order " +
-            "ORDER BY created_at DESC";
+        String sql = """
+                SELECT id, user_id, full_name, total, status, created_at
+                FROM store_order
+                ORDER BY created_at DESC
+                """;
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet resultSet = statement.executeQuery()) {
 
-            while (rs.next()) {
-                list.add(mapRowBasic(rs));
+            while (resultSet.next()) {
+                orders.add(mapRowBasic(resultSet));
             }
 
         } catch (SQLException e) {
             throw new RuntimeException("AdminOrderDAO.findAll error", e);
         }
 
-        return list;
+        return orders;
     }
 
-    // ===== DETAIL: lấy đầy đủ cột cho trang chi tiết =====
     public Order findById(int id) {
-        String sql =
-            "SELECT id, user_id, full_name, phone, address, total, " +
-            "       payment_method, payment_status, status, vnp_txn_ref, created_at " +
-            "FROM store_order " +
-            "WHERE id = ?";
+        String sql = """
+                SELECT id, user_id, full_name, phone, address, total,
+                       payment_method, payment_status, status, vnp_txn_ref, created_at
+                FROM store_order
+                WHERE id = ?
+                """;
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            ps.setInt(1, id);
+            statement.setInt(1, id);
 
-            try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) return null;
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (!resultSet.next()) {
+                    return null;
+                }
 
-                Order o = new Order();
-                o.setId(rs.getInt("id"));
-                o.setUserId(rs.getInt("user_id"));
-                o.setFullName(rs.getString("full_name"));
-                o.setPhone(rs.getString("phone"));
-                o.setAddress(rs.getString("address"));
-                o.setTotal(rs.getBigDecimal("total"));
-                o.setPaymentMethod(rs.getString("payment_method"));
-                o.setPaymentStatus(rs.getString("payment_status"));
-                o.setStatus(rs.getString("status"));
-                o.setVnpTxnRef(rs.getString("vnp_txn_ref"));
-
-                Timestamp ts = rs.getTimestamp("created_at");
-                o.setCreatedAt(ts == null ? null : ts.toLocalDateTime());
-
-                return o;
+                return mapRowDetail(resultSet);
             }
 
         } catch (SQLException e) {
@@ -75,34 +63,62 @@ public class AdminOrderDAO {
         }
     }
 
-    // ===== UPDATE STATUS =====
     public boolean updateStatus(int id, String status) {
-        String sql = "UPDATE store_order SET status = ? WHERE id = ?";
+        String sql = """
+                UPDATE store_order
+                SET status = ?
+                WHERE id = ?
+                """;
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            ps.setString(1, status);
-            ps.setInt(2, id);
+            statement.setString(1, status);
+            statement.setInt(2, id);
 
-            return ps.executeUpdate() > 0;
+            return statement.executeUpdate() > 0;
 
         } catch (SQLException e) {
             throw new RuntimeException("AdminOrderDAO.updateStatus error", e);
         }
     }
 
-    private Order mapRowBasic(ResultSet rs) throws SQLException {
-        Order o = new Order();
-        o.setId(rs.getInt("id"));
-        o.setUserId(rs.getInt("user_id"));
-        o.setFullName(rs.getString("full_name"));
-        o.setTotal(rs.getBigDecimal("total"));
-        o.setStatus(rs.getString("status"));
+    private Order mapRowBasic(ResultSet resultSet) throws SQLException {
+        Order order = new Order();
 
-        Timestamp ts = rs.getTimestamp("created_at");
-        o.setCreatedAt(ts == null ? null : ts.toLocalDateTime());
+        order.setId(resultSet.getInt("id"));
+        setNullableUserId(order, resultSet);
+        order.setFullName(resultSet.getString("full_name"));
+        order.setTotal(resultSet.getBigDecimal("total"));
+        order.setStatus(resultSet.getString("status"));
+        order.setCreatedAt(toLocalDateTime(resultSet.getTimestamp("created_at")));
 
-        return o;
+        return order;
+    }
+
+    private Order mapRowDetail(ResultSet resultSet) throws SQLException {
+        Order order = mapRowBasic(resultSet);
+
+        order.setPhone(resultSet.getString("phone"));
+        order.setAddress(resultSet.getString("address"));
+        order.setPaymentMethod(resultSet.getString("payment_method"));
+        order.setPaymentStatus(resultSet.getString("payment_status"));
+        order.setVnpTxnRef(resultSet.getString("vnp_txn_ref"));
+
+        return order;
+    }
+
+    private void setNullableUserId(Order order, ResultSet resultSet) throws SQLException {
+        int userId = resultSet.getInt("user_id");
+
+        if (resultSet.wasNull()) {
+            order.setUserId(0);
+        } else {
+            order.setUserId(userId);
+        }
+    }
+
+    private java.time.LocalDateTime toLocalDateTime(Timestamp timestamp) {
+        return timestamp == null ? null : timestamp.toLocalDateTime();
     }
 }
