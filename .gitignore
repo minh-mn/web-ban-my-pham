@@ -14,9 +14,6 @@ out/
 classes/
 target/
 
-# Gradle wrapper generated files
-.gradle/
-
 # WAR / generated deploy files
 *.war
 *.ear
@@ -44,3 +41,24 @@ Thumbs.db
 
 # Old/local database folder or file
 mycosmetic_shop_db
+
+# Uploaded runtime files
+MyCosmeticShopUploads/**
+!MyCosmeticShopUploads/
+!MyCosmeticShopUploads/.gitkeep
+
+!MyCosmeticShopUploads/banner/
+MyCosmeticShopUploads/banner/**
+!MyCosmeticShopUploads/banner/.gitkeep
+
+!MyCosmeticShopUploads/product/
+MyCosmeticShopUploads/product/**
+!MyCosmeticShopUploads/product/.gitkeep
+
+!MyCosmeticShopUploads/product/gallery/
+MyCosmeticShopUploads/product/gallery/**
+!MyCosmeticShopUploads/product/gallery/.gitkeep
+
+!MyCosmeticShopUploads/policy/
+MyCosmeticShopUploads/policy/**
+!MyCosmeticShopUploads/policy/.gitkeep
