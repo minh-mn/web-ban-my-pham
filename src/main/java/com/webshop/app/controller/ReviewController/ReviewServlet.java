@@ -55,54 +55,64 @@ public class ReviewServlet extends HttpServlet {
             return;
         }
 
-        if (rating < 1) rating = 1;
-        if (rating > 5) rating = 5;
+        if (rating < 1) {
+            rating = 1;
+        }
 
-        if (comment == null) comment = "";
+        if (rating > 5) {
+            rating = 5;
+        }
+
+        if (comment == null) {
+            comment = "";
+        }
+
         comment = comment.trim();
 
         // =========================================================
-        // ✅ FIX CHÍNH:
-        // 1) ƯU TIÊN DÙNG authorId TRONG SESSION (user.getId()).
-        // 2) KHÔNG BAO GIỜ set lại session user id theo "resolver" (tránh nhảy admin).
+        // FIX:
+        // 1) Ưu tiên dùng authorId trong session: user.getId().
+        // 2) Không set lại session user id theo resolver để tránh nhảy nhầm user/admin.
+        // 3) Database hiện tại dùng bảng users, không dùng dbo.auth_user.
         // =========================================================
         int authorId = user.getId();
 
-        // Nếu id trong session hợp lệ và tồn tại => dùng luôn
-        if (authorId > 0 && existsAuthUserId(authorId)) {
-            // ok
+        // Nếu id trong session hợp lệ và tồn tại trong bảng users thì dùng luôn
+        if (authorId > 0 && existsUserId(authorId)) {
+            // OK
         } else {
-            // ===== OPTIONAL FALLBACK (chỉ để tránh FK) =====
-            // Nếu bạn muốn an toàn tuyệt đối không nhảy role/user,
-            // thì thay đoạn fallback này bằng: redirect login.
-            Integer resolved = resolveAuthUserIdNoSessionOverwrite(user);
+            // Fallback chỉ dùng để tránh lỗi khóa ngoại author_id
+            Integer resolved = resolveUserIdNoSessionOverwrite(user);
 
             if (resolved == null || resolved <= 0) {
-                // Không resolve được => bắt login lại (đúng chuẩn)
-                if (session != null) session.removeAttribute("user");
+                // Không resolve được user hợp lệ thì bắt đăng nhập lại
+                if (session != null) {
+                    session.removeAttribute("user");
+                }
+
                 resp.sendRedirect(req.getContextPath() + "/login");
                 return;
             }
 
-            // ✅ dùng resolved authorId cho lần review này
-            // ❌ KHÔNG set user.setId(...) và KHÔNG set session lại
+            // Dùng resolved authorId cho lần review này
+            // Không update lại session user
             authorId = resolved;
         }
 
         // ===== BUILD REVIEW =====
-        Review r = new Review();
-        r.setProductId(productId);
-        r.setAuthorId(authorId);
-        r.setRating(rating);
-        r.setComment(comment);
+        Review review = new Review();
+        review.setProductId(productId);
+        review.setAuthorId(authorId);
+        review.setRating(rating);
+        review.setComment(comment);
 
-        r.setHasEmoji(false);
-        r.setSentiment(1);
+        review.setHasEmoji(false);
+        review.setSentiment(1);
 
-        // ✅ chống duplicate: có thì UPDATE, chưa có thì INSERT
-        reviewDAO.createOrUpdate(r);
+        // Chống duplicate: có thì UPDATE, chưa có thì INSERT
+        reviewDAO.createOrUpdate(review);
 
-        // ✅ redirect về đúng trang detail theo slug: /product/{slug}
+        // Redirect về đúng trang chi tiết sản phẩm: /product/{slug}
         if (slug != null && !slug.isBlank()) {
             String encodedSlug = URLEncoder.encode(slug, StandardCharsets.UTF_8.name());
             resp.sendRedirect(req.getContextPath() + "/product/" + encodedSlug);
@@ -112,35 +122,45 @@ public class ReviewServlet extends HttpServlet {
     }
 
     // =========================================================
-    // RESOLVE (NO SESSION OVERWRITE)
+    // RESOLVE USER ID - NO SESSION OVERWRITE
     // Chỉ dùng khi user.getId() không hợp lệ.
-    // Tuyệt đối KHÔNG set lại session user tại đây.
+    // Tuyệt đối không set lại session user tại đây.
     // =========================================================
-    private Integer resolveAuthUserIdNoSessionOverwrite(User user) {
+    private Integer resolveUserIdNoSessionOverwrite(User user) {
 
-        // 1) Try by username
+        // 1) Tìm theo username
         String username = safeString(getUsernameSafe(user));
+
         if (!username.isEmpty()) {
-            Integer found = findAuthUserIdByUsername(username);
-            if (found != null && found > 0) return found;
+            Integer found = findUserIdByUsername(username);
+
+            if (found != null && found > 0) {
+                return found;
+            }
         }
 
-        // 2) Try by email (nếu có)
+        // 2) Tìm theo email
         String email = safeString(getEmailSafe(user));
+
         if (!email.isEmpty()) {
-            Integer found = findAuthUserIdByEmail(email);
-            if (found != null && found > 0) return found;
+            Integer found = findUserIdByEmail(email);
+
+            if (found != null && found > 0) {
+                return found;
+            }
         }
 
         return null;
     }
 
-    private boolean existsAuthUserId(int id) {
-        String sql = "SELECT 1 FROM dbo.auth_user WHERE id = ?";
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+    private boolean existsUserId(int id) {
+        String sql = "SELECT 1 FROM users WHERE id = ?";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, id);
+
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
             }
@@ -150,15 +170,19 @@ public class ReviewServlet extends HttpServlet {
         }
     }
 
-    private Integer findAuthUserIdByUsername(String username) {
-        // Nếu DB bạn không có cột username => đổi lại ở đây (vd: user_name)
-        String sql = "SELECT id FROM dbo.auth_user WHERE username = ?";
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+    private Integer findUserIdByUsername(String username) {
+        String sql = "SELECT id FROM users WHERE username = ?";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, username);
+
             try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) return null;
+                if (!rs.next()) {
+                    return null;
+                }
+
                 return rs.getInt(1);
             }
 
@@ -167,14 +191,19 @@ public class ReviewServlet extends HttpServlet {
         }
     }
 
-    private Integer findAuthUserIdByEmail(String email) {
-        String sql = "SELECT id FROM dbo.auth_user WHERE email = ?";
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+    private Integer findUserIdByEmail(String email) {
+        String sql = "SELECT id FROM users WHERE email = ?";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, email);
+
             try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) return null;
+                if (!rs.next()) {
+                    return null;
+                }
+
                 return rs.getInt(1);
             }
 
@@ -183,10 +212,13 @@ public class ReviewServlet extends HttpServlet {
         }
     }
 
-    // ===== helpers =====
+    // ===== HELPERS =====
     private int parseIntOrDefault(String s, int def) {
         try {
-            if (s == null || s.isBlank()) return def;
+            if (s == null || s.isBlank()) {
+                return def;
+            }
+
             return Integer.parseInt(s.trim());
         } catch (Exception e) {
             return def;
