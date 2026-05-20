@@ -4,21 +4,43 @@
 .project
 .classpath
 .factorypath
+*.iml
 
 # Build and temporary folders
 build/
 .gradle/
 bin/
 out/
+classes/
+target/
+
+# Gradle wrapper generated files
+.gradle/
+
+# WAR / generated deploy files
+*.war
+*.ear
+
+# Manual libraries - dependencies should be managed by Gradle
+src/main/webapp/WEB-INF/lib/*.jar
+
+# Environment and local config files
+.env
+*.env
+local.properties
+gradle-local.properties
+application-local.properties
 
 # Database and backup files
 *.db
 *.bak
 *.log
+*.sql.bak
+*.dump
 
 # Operating system files
 Thumbs.db
 .DS_Store
 
-classes/
+# Old/local database folder or file
 mycosmetic_shop_db
