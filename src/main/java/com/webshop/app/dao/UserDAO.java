@@ -8,8 +8,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -259,11 +257,12 @@ public class UserDAO {
 
             ps.setString(1, u.getUsername());
             ps.setString(2, PasswordUtils.hash(plainPassword));
-            ps.setString(3, u.getRole());
+            ps.setString(3, u.getRole() != null ? u.getRole() : "USER");
             ps.setString(4, u.getFullName());
             ps.setString(5, u.getEmail());
             ps.setString(6, u.getPhone());
             ps.setBoolean(7, u.isActive());
+
             ps.executeUpdate();
 
         } catch (SQLException e) {
@@ -315,96 +314,7 @@ public class UserDAO {
         }
     }
 
-    /* =========================================================
-       LEGACY REMEMBER TOKEN (user_tokens)
-       ========================================================= */
-
-    public void saveRememberTokenByUsername(String username, String token, LocalDateTime expiredAt) {
-        Integer usersId = findUsersIdByUsername(username);
-
-        if (usersId == null) {
-            throw new RuntimeException("UserDAO.saveRememberToken: usersId not found for " + username);
-        }
-
-        String sql = "INSERT INTO user_tokens (user_id, token, expired_at) VALUES (?, ?, ?)";
-
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
-
-            ps.setInt(1, usersId);
-            ps.setString(2, token);
-            ps.setTimestamp(3, Timestamp.valueOf(expiredAt));
-            ps.executeUpdate();
-
-        } catch (SQLException e) {
-            throw new RuntimeException("UserDAO.saveRememberTokenByUsername error", e);
-        }
-    }
-
-    public void deleteRememberToken(String token) {
-        String sql = "DELETE FROM user_tokens WHERE token = ?";
-
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
-
-            ps.setString(1, token);
-            ps.executeUpdate();
-
-        } catch (SQLException e) {
-            throw new RuntimeException("UserDAO.deleteRememberToken error", e);
-        }
-    }
-
-    public User findByRememberToken(String token) {
-        String sql = "SELECT u.id, u.username, u.role, u.full_name, u.email, u.phone, u.active, u.created_at "
-                + "FROM user_tokens t JOIN users u ON u.id = t.user_id "
-                + "WHERE t.token = ? AND t.expired_at > NOW()";
-
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
-
-            ps.setString(1, token);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) {
-                    return null;
-                }
-
-                if (!rs.getBoolean("active")) {
-                    return null;
-                }
-
-                return mapUser(rs);
-            }
-
-        } catch (SQLException e) {
-            throw new RuntimeException("UserDAO.findByRememberToken error", e);
-        }
-    }
-
-    private Integer findUsersIdByUsername(String username) {
-        String sql = "SELECT id FROM users WHERE username = ?";
-
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
-
-            ps.setString(1, username);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) {
-                    return null;
-                }
-
-                return rs.getInt(1);
-            }
-
-        } catch (SQLException e) {
-            return null;
-        }
-    }
-
     /* ================= SOCIAL LOGIN METHODS ================= */
-
     public User findBySocialId(String provider, String socialId) {
         String column = "google".equals(provider) ? "google_id" : "facebook_id";
 
@@ -444,6 +354,7 @@ public class UserDAO {
             ps.setString(4, u.getEmail());
             ps.setBoolean(5, true);
             ps.setString(6, socialId);
+
             ps.executeUpdate();
 
         } catch (SQLException e) {
@@ -461,6 +372,7 @@ public class UserDAO {
 
             ps.setString(1, socialId);
             ps.setInt(2, userId);
+
             ps.executeUpdate();
 
         } catch (SQLException e) {
@@ -468,6 +380,10 @@ public class UserDAO {
         }
     }
 
+    /*
+     * Hàm insert này giữ lại để tương thích với các servlet cũ nếu còn gọi.
+     * Password được hash tại đây để tránh lưu mật khẩu thô vào database.
+     */
     public boolean insert(User user) {
         String sql = "INSERT INTO users (username, password, role, full_name, email, phone, active) "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?)";
@@ -476,7 +392,7 @@ public class UserDAO {
              PreparedStatement ps = c.prepareStatement(sql)) {
 
             ps.setString(1, user.getUsername());
-            ps.setString(2, user.getPassword());
+            ps.setString(2, PasswordUtils.hash(user.getPassword()));
             ps.setString(3, user.getRole() != null ? user.getRole() : "USER");
             ps.setString(4, user.getFullName());
             ps.setString(5, user.getEmail());
