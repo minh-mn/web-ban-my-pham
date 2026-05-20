@@ -20,12 +20,12 @@ public class RememberMeFilter implements Filter {
 
     private RememberMeService rememberMeService;
 
-    
+    @Override
     public void init(FilterConfig filterConfig) {
         this.rememberMeService = new RememberMeService();
     }
 
-    
+    @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
 
@@ -33,37 +33,43 @@ public class RememberMeFilter implements Filter {
         HttpServletResponse resp = (HttpServletResponse) response;
 
         String ctx = req.getContextPath();
-        String path = req.getRequestURI().substring(ctx.length());
+        String uri = req.getRequestURI();
+        String path = uri.substring(ctx.length());
 
-        // 1) Static assets: bỏ qua
+        // 1) Bỏ qua static assets: css, js, images, fonts...
         if (StaticResourceUtil.isStatic(path)) {
             chain.doFilter(request, response);
             return;
         }
 
-        // 2) Skip API/json (nếu cần)
+        // 2) Bỏ qua request API/json nếu cần
         String accept = req.getHeader("Accept");
+
         if (accept != null && accept.contains("application/json")) {
             chain.doFilter(request, response);
             return;
         }
 
         HttpSession session = req.getSession(false);
-        User user = (session != null) ? (User) session.getAttribute("user") : null;
+        User currentUser = (session != null) ? (User) session.getAttribute("user") : null;
 
-        if (user == null) {
+        // Nếu chưa có user trong session thì thử auto-login bằng cookie REMEMBER_ME
+        if (currentUser == null) {
             String token = getCookieValue(req, RememberMeService.COOKIE_NAME);
+
             if (token != null && !token.isBlank()) {
                 try {
-                    User u = rememberMeService.authenticateByToken(token);
-                    if (u != null) {
-                        req.getSession(true).setAttribute("user", u);
+                    User rememberedUser = rememberMeService.authenticateByToken(token);
+
+                    if (rememberedUser != null) {
+                        req.getSession(true).setAttribute("user", rememberedUser);
                     } else {
-                        // token hết hạn/sai -> clear cookie
+                        // Token sai, hết hạn hoặc đã revoked thì xóa cookie REMEMBER_ME
                         rememberMeService.clearCookie(resp);
                     }
+
                 } catch (Exception ex) {
-                    // lỗi hệ thống tạm thời -> log, không clear cookie
+                    // Lỗi hệ thống tạm thời thì không xóa cookie để tránh logout nhầm user
                     System.out.println("[RememberMeFilter] token auth error: " + ex.getMessage());
                 }
             }
@@ -74,15 +80,17 @@ public class RememberMeFilter implements Filter {
 
     private String getCookieValue(HttpServletRequest req, String name) {
         Cookie[] cookies = req.getCookies();
-        if (cookies == null) return null;
-        for (Cookie c : cookies) {
-            if (name.equals(c.getName())) return c.getValue();
+
+        if (cookies == null) {
+            return null;
         }
+
+        for (Cookie cookie : cookies) {
+            if (name.equals(cookie.getName())) {
+                return cookie.getValue();
+            }
+        }
+
         return null;
     }
-
-	public boolean test(int arg0) {
-		// TODO Auto-generated method stub
-		return false;
-	}
 }
