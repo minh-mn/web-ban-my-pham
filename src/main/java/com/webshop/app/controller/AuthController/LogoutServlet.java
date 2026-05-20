@@ -2,7 +2,6 @@ package com.webshop.app.controller.AuthController;
 
 import java.io.IOException;
 
-import com.webshop.app.dao.UserDAO;
 import com.webshop.app.service.RememberMeService;
 
 import jakarta.servlet.ServletException;
@@ -16,8 +15,9 @@ import jakarta.servlet.http.HttpSession;
 @WebServlet("/logout")
 public class LogoutServlet extends HttpServlet {
 
-    private final UserDAO userDAO = new UserDAO(); // dùng để dọn legacy user_tokens
-    private final RememberMeService rememberMeService = new RememberMeService(); // cơ chế mới remember_tokens
+    private static final long serialVersionUID = 1L;
+
+    private final RememberMeService rememberMeService = new RememberMeService();
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
@@ -27,28 +27,25 @@ public class LogoutServlet extends HttpServlet {
         resp.setCharacterEncoding("UTF-8");
 
         // =====================
-        // 1) LOGOUT NEW REMEMBER-ME (remember_tokens + cookie REMEMBER_ME)
+        // 1) LOGOUT NEW REMEMBER ME
         // =====================
-        // - revoke token DB nếu có
-        // - clear cookie REMEMBER_ME
+        // Cơ chế mới:
+        // - revoke token trong bảng remember_tokens
+        // - xóa cookie REMEMBER_ME
         rememberMeService.logoutByRequest(req, resp);
 
         // =====================
-        // 2) CLEANUP LEGACY REMEMBER (user_tokens + cookie REMEMBER_TOKEN)
+        // 2) CLEAR LEGACY COOKIE ONLY
         // =====================
-        String legacyToken = getCookieValue(req, "REMEMBER_TOKEN");
-        if (legacyToken != null && !legacyToken.isBlank()) {
-            try {
-                userDAO.deleteRememberToken(legacyToken);
-            } catch (Exception ignored) {
-            }
-        }
+        // Không còn dùng bảng user_tokens nữa.
+        // Chỉ xóa cookie cũ REMEMBER_TOKEN nếu trình duyệt còn lưu.
         clearCookie(resp, "REMEMBER_TOKEN", req.getContextPath());
 
         // =====================
         // 3) INVALIDATE SESSION
         // =====================
         HttpSession session = req.getSession(false);
+
         if (session != null) {
             session.invalidate();
         }
@@ -62,28 +59,21 @@ public class LogoutServlet extends HttpServlet {
         doPost(req, resp);
     }
 
-    private String getCookieValue(HttpServletRequest req, String name) {
-        Cookie[] cookies = req.getCookies();
-        if (cookies == null) return null;
-        for (Cookie c : cookies) {
-            if (name.equals(c.getName())) return c.getValue();
-        }
-        return null;
-    }
-
     /**
-     * Xóa cookie chắc chắn: clear cả path "/" và contextPath (vì cookie cũ có thể set khác nhau)
+     * Xóa cookie chắc chắn:
+     * - path "/"
+     * - path contextPath
+     *
+     * Lý do: cookie cũ có thể từng được set bằng nhiều path khác nhau.
      */
     private void clearCookie(HttpServletResponse resp, String name, String contextPath) {
 
-        // clear path "/"
         Cookie c1 = new Cookie(name, "");
         c1.setHttpOnly(true);
         c1.setMaxAge(0);
         c1.setPath("/");
         resp.addCookie(c1);
 
-        // clear path contextPath
         Cookie c2 = new Cookie(name, "");
         c2.setHttpOnly(true);
         c2.setMaxAge(0);
