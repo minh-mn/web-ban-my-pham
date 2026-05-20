@@ -30,6 +30,7 @@ public class LoginServlet extends HttpServlet {
         resp.setCharacterEncoding("UTF-8");
 
         HttpSession session = req.getSession(false);
+
         if (session != null && session.getAttribute("user") != null) {
             resp.sendRedirect(req.getContextPath() + "/account");
             return;
@@ -50,10 +51,10 @@ public class LoginServlet extends HttpServlet {
         String username = req.getParameter("username");
         String password = req.getParameter("password");
 
-        // (optional) checkbox name="remember"
+        // Checkbox name="remember"
         String remember = req.getParameter("remember");
 
-        // (optional) redirect back after login (e.g. /checkout)
+        // Redirect back after login, ví dụ: /checkout
         String redirect = req.getParameter("redirect");
 
         if (username == null || username.isBlank() || password == null || password.isBlank()) {
@@ -74,9 +75,9 @@ public class LoginServlet extends HttpServlet {
             return;
         }
 
-        // ✅ QUAN TRỌNG: user.id phải là dbo.users.id (FK store_order.user_id -> dbo.users.id)
+        // user.id phải tồn tại trong bảng users
         if (user.getId() <= 0) {
-            req.setAttribute("error", "Tài khoản không hợp lệ (không tìm thấy users.id).");
+            req.setAttribute("error", "Tài khoản không hợp lệ, không tìm thấy users.id.");
             req.setAttribute("pageTitle", "MyCosmetic | Đăng nhập");
             req.setAttribute("pageContent", "/jsp/auth/login.jsp");
             req.getRequestDispatcher("/jsp/common/base.jsp").forward(req, resp);
@@ -87,22 +88,24 @@ public class LoginServlet extends HttpServlet {
         HttpSession session = req.getSession(true);
         session.setAttribute("user", user);
 
-        // ===== REMEMBER-ME (NEW) =====
+        // ===== REMEMBER ME - NEW VERSION =====
+        // Cơ chế mới dùng bảng remember_tokens và cookie REMEMBER_ME
         boolean rememberMe = "on".equalsIgnoreCase(remember) || "true".equalsIgnoreCase(remember);
 
         if (rememberMe) {
-            rememberMeService.rememberLogin(resp, user.getId()); // users.id
+            rememberMeService.rememberLogin(resp, user.getId());
         } else {
             rememberMeService.clearCookie(resp);
         }
 
-        // ===== CLEAR LEGACY REMEMBER COOKIE (OLD) =====
-        // Nếu trước đây bạn dùng cookie "REMEMBER_TOKEN", xóa để tránh bị nhiễu.
+        // ===== CLEAR LEGACY COOKIE ONLY =====
+        // Không còn dùng bảng user_tokens.
+        // Chỉ xóa cookie cũ REMEMBER_TOKEN nếu trình duyệt còn lưu.
         clearLegacyRememberToken(resp, req.getContextPath());
 
         // ===== REDIRECT =====
-        // Cho phép quay lại trang trước đó nếu có redirect param hợp lệ (nội bộ).
         String ctx = req.getContextPath();
+
         if (redirect != null && !redirect.isBlank()) {
             // Chặn open redirect: chỉ cho redirect nội bộ
             if (redirect.startsWith("/") && !redirect.startsWith("//")) {
@@ -115,14 +118,14 @@ public class LoginServlet extends HttpServlet {
     }
 
     private void clearLegacyRememberToken(HttpServletResponse resp, String contextPath) {
+        // Cookie cũ có thể từng được set path = "/"
         Cookie ck = new Cookie("REMEMBER_TOKEN", "");
         ck.setHttpOnly(true);
         ck.setMaxAge(0);
-
-        // cookie cũ có thể set path = "/" hoặc contextPath => clear cả hai
         ck.setPath("/");
         resp.addCookie(ck);
 
+        // Cookie cũ cũng có thể từng được set path = contextPath
         Cookie ck2 = new Cookie("REMEMBER_TOKEN", "");
         ck2.setHttpOnly(true);
         ck2.setMaxAge(0);
