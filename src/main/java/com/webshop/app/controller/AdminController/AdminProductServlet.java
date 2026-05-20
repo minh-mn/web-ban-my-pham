@@ -48,7 +48,9 @@ public class AdminProductServlet extends HttpServlet {
 
 	/*
 	 * Public URL lưu trong database.
-	 * File vật lý sẽ lưu trong MyCosmeticShopUploads/product và MyCosmeticShopUploads/product/gallery.
+	 * File vật lý sẽ lưu trong:
+	 * - MyCosmeticShopUploads/product
+	 * - MyCosmeticShopUploads/product/gallery
 	 */
 	private static final String PRODUCT_PUBLIC_PREFIX = "/uploads/product";
 	private static final String PRODUCT_GALLERY_PUBLIC_PREFIX = "/uploads/product/gallery";
@@ -217,9 +219,20 @@ public class AdminProductServlet extends HttpServlet {
 					int id = parseInt(req.getParameter("id"), -1);
 
 					if (id > 0) {
-						productDAO.deleteReviewsByProductId(id);
-						productImageDAO.deleteByProductId(id);
-						productDAO.delete(id);
+						ProductDAO.DeleteMode deleteMode = productDAO.deleteOrDeactivateSafely(id);
+
+						if (deleteMode == ProductDAO.DeleteMode.SOFT_DELETED) {
+							resp.sendRedirect(req.getContextPath() + "/admin/products?delete=soft");
+							return;
+						}
+
+						if (deleteMode == ProductDAO.DeleteMode.HARD_DELETED) {
+							resp.sendRedirect(req.getContextPath() + "/admin/products?delete=hard");
+							return;
+						}
+
+						resp.sendRedirect(req.getContextPath() + "/admin/products?delete=not_found");
+						return;
 					}
 
 					resp.sendRedirect(req.getContextPath() + "/admin/products");
