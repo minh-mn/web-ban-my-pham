@@ -12,6 +12,12 @@ import java.util.List;
 
 public class ProductDAO {
 
+	public enum DeleteMode {
+		HARD_DELETED,
+		SOFT_DELETED,
+		NOT_FOUND
+	}
+
 	public List<Product> findProducts(String keyword, Integer categoryId, Integer brandId, String sort,
 									  String priceRange, Integer minRating) {
 
@@ -52,7 +58,7 @@ public class ProductDAO {
 		try (Connection c = DBConnection.getConnection();
 			 PreparedStatement ps = c.prepareStatement(sql.toString())) {
 
-			int idx = bindProductFilters(ps, keyword, categoryId, brandId, minRating, 1);
+			bindProductFilters(ps, keyword, categoryId, brandId, minRating, 1);
 
 			try (ResultSet rs = ps.executeQuery()) {
 				while (rs.next()) {
@@ -206,12 +212,14 @@ public class ProductDAO {
 			 PreparedStatement ps = c.prepareStatement(sql.toString())) {
 
 			int idx = 1;
+
 			if (keyword != null && !keyword.isBlank()) {
 				String like = "%" + keyword.trim() + "%";
 				ps.setString(idx++, like);
 				ps.setString(idx++, like);
 				ps.setString(idx++, like);
 			}
+
 			if (categoryId != null) ps.setInt(idx++, categoryId);
 			if (brandId != null) ps.setInt(idx, brandId);
 
@@ -397,6 +405,102 @@ public class ProductDAO {
 		}
 	}
 
+	/*
+	 * Xóa sản phẩm an toàn:
+	 * - Nếu sản phẩm đã có trong store_orderitem: chỉ ẩn sản phẩm bằng is_active = 0.
+	 * - Nếu sản phẩm chưa có đơn hàng: xóa cứng trong transaction.
+	 */
+	public DeleteMode deleteOrDeactivateSafely(int productId) {
+		String checkProductSql = "SELECT id FROM store_product WHERE id = ?";
+		String checkOrderItemSql = "SELECT 1 FROM store_orderitem WHERE product_id = ? LIMIT 1";
+
+		String softDeleteSql = "UPDATE store_product SET is_active = 0 WHERE id = ?";
+
+		String deleteCartItemsSql = "DELETE FROM cart_items WHERE product_id = ?";
+		String deleteReviewsSql = "DELETE FROM store_review WHERE product_id = ?";
+		String deleteImagesSql = "DELETE FROM store_productimage WHERE product_id = ?";
+		String deleteProductDiscountSql = "DELETE FROM store_productdiscount WHERE product_id = ?";
+		String deleteProductSql = "DELETE FROM store_product WHERE id = ?";
+
+		try (Connection conn = DBConnection.getConnection()) {
+			conn.setAutoCommit(false);
+
+			try {
+				boolean productExists;
+
+				try (PreparedStatement ps = conn.prepareStatement(checkProductSql)) {
+					ps.setInt(1, productId);
+
+					try (ResultSet rs = ps.executeQuery()) {
+						productExists = rs.next();
+					}
+				}
+
+				if (!productExists) {
+					conn.rollback();
+					return DeleteMode.NOT_FOUND;
+				}
+
+				boolean hasOrderItem;
+
+				try (PreparedStatement ps = conn.prepareStatement(checkOrderItemSql)) {
+					ps.setInt(1, productId);
+
+					try (ResultSet rs = ps.executeQuery()) {
+						hasOrderItem = rs.next();
+					}
+				}
+
+				if (hasOrderItem) {
+					try (PreparedStatement ps = conn.prepareStatement(softDeleteSql)) {
+						ps.setInt(1, productId);
+						ps.executeUpdate();
+					}
+
+					conn.commit();
+					return DeleteMode.SOFT_DELETED;
+				}
+
+				try (PreparedStatement ps = conn.prepareStatement(deleteCartItemsSql)) {
+					ps.setInt(1, productId);
+					ps.executeUpdate();
+				}
+
+				try (PreparedStatement ps = conn.prepareStatement(deleteReviewsSql)) {
+					ps.setInt(1, productId);
+					ps.executeUpdate();
+				}
+
+				try (PreparedStatement ps = conn.prepareStatement(deleteImagesSql)) {
+					ps.setInt(1, productId);
+					ps.executeUpdate();
+				}
+
+				try (PreparedStatement ps = conn.prepareStatement(deleteProductDiscountSql)) {
+					ps.setInt(1, productId);
+					ps.executeUpdate();
+				}
+
+				try (PreparedStatement ps = conn.prepareStatement(deleteProductSql)) {
+					ps.setInt(1, productId);
+					ps.executeUpdate();
+				}
+
+				conn.commit();
+				return DeleteMode.HARD_DELETED;
+
+			} catch (Exception e) {
+				conn.rollback();
+				throw e;
+			} finally {
+				conn.setAutoCommit(true);
+			}
+
+		} catch (Exception e) {
+			throw new RuntimeException("ProductDAO.deleteOrDeactivateSafely error", e);
+		}
+	}
+
 	public boolean delete(int id) {
 		String sql = "DELETE FROM store_product WHERE id = ?";
 
@@ -573,6 +677,7 @@ public class ProductDAO {
 			ps.setString(idx++, like);
 			ps.setString(idx++, like);
 		}
+
 		if (categoryId != null) ps.setInt(idx++, categoryId);
 		if (brandId != null) ps.setInt(idx++, brandId);
 		if (minRating != null) ps.setInt(idx++, minRating);
