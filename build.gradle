@@ -1,5 +1,3 @@
-import org.hidetake.groovy.ssh.core.Remote
-
 plugins {
     id 'java'
     id 'war'
@@ -18,7 +16,7 @@ dependencies {
     compileOnly 'jakarta.servlet:jakarta.servlet-api:6.0.0'
     compileOnly 'jakarta.servlet.jsp:jakarta.servlet.jsp-api:3.1.1'
 
-    // JSTL
+    // JSTL cho Jakarta EE / Tomcat 10
     implementation 'jakarta.servlet.jsp.jstl:jakarta.servlet.jsp.jstl-api:3.0.0'
     implementation 'org.glassfish.web:jakarta.servlet.jsp.jstl:3.0.1'
 
@@ -66,9 +64,9 @@ test {
 
 remotes {
     host {
-        host = '192.168.101.128'
-        user = 'cnna'
-        password = '123456'
+        host = System.getenv("DEPLOY_HOST") ?: "127.0.0.1"
+        user = System.getenv("DEPLOY_USER") ?: ""
+        password = System.getenv("DEPLOY_PASSWORD") ?: ""
     }
 }
 
