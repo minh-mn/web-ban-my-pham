@@ -17,7 +17,15 @@ public class AdminOrderDAO {
         List<Order> orders = new ArrayList<>();
 
         String sql = """
-                SELECT id, user_id, full_name, total, status, created_at
+                SELECT
+                    id,
+                    user_id,
+                    full_name,
+                    total,
+                    payment_method,
+                    payment_status,
+                    status,
+                    created_at
                 FROM store_order
                 ORDER BY created_at DESC
                 """;
@@ -39,8 +47,18 @@ public class AdminOrderDAO {
 
     public Order findById(int id) {
         String sql = """
-                SELECT id, user_id, full_name, phone, address, total,
-                       payment_method, payment_status, status, vnp_txn_ref, created_at
+                SELECT
+                    id,
+                    user_id,
+                    full_name,
+                    phone,
+                    address,
+                    total,
+                    payment_method,
+                    payment_status,
+                    status,
+                    vnp_txn_ref,
+                    created_at
                 FROM store_order
                 WHERE id = ?
                 """;
@@ -83,13 +101,38 @@ public class AdminOrderDAO {
         }
     }
 
+    public boolean updateStatusAndPaymentStatus(int id, String status, String paymentStatus) {
+        String sql = """
+                UPDATE store_order
+                SET status = ?,
+                    payment_status = ?
+                WHERE id = ?
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, status);
+            statement.setString(2, paymentStatus);
+            statement.setInt(3, id);
+
+            return statement.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("AdminOrderDAO.updateStatusAndPaymentStatus error", e);
+        }
+    }
+
     private Order mapRowBasic(ResultSet resultSet) throws SQLException {
         Order order = new Order();
 
         order.setId(resultSet.getInt("id"));
         setNullableUserId(order, resultSet);
+
         order.setFullName(resultSet.getString("full_name"));
         order.setTotal(resultSet.getBigDecimal("total"));
+        order.setPaymentMethod(resultSet.getString("payment_method"));
+        order.setPaymentStatus(resultSet.getString("payment_status"));
         order.setStatus(resultSet.getString("status"));
         order.setCreatedAt(toLocalDateTime(resultSet.getTimestamp("created_at")));
 
@@ -101,8 +144,6 @@ public class AdminOrderDAO {
 
         order.setPhone(resultSet.getString("phone"));
         order.setAddress(resultSet.getString("address"));
-        order.setPaymentMethod(resultSet.getString("payment_method"));
-        order.setPaymentStatus(resultSet.getString("payment_status"));
         order.setVnpTxnRef(resultSet.getString("vnp_txn_ref"));
 
         return order;
