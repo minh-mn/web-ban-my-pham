@@ -1,13 +1,16 @@
 package com.webshop.app.controller.AccountController;
 
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.webshop.app.dao.AdminStatsDAO;
 import com.webshop.app.dao.OrderDAO;
 import com.webshop.app.dao.UserDAO;
 import com.webshop.app.model.User;
+import com.webshop.app.service.UserRankService;
+
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.Map;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -22,9 +25,12 @@ public class AccountServlet extends HttpServlet {
     private final OrderDAO orderDAO = new OrderDAO();
     private final AdminStatsDAO adminStatsDAO = new AdminStatsDAO();
     private final UserDAO userDAO = new UserDAO();
+    private final UserRankService userRankService = new UserRankService();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
 
         req.setCharacterEncoding("UTF-8");
         resp.setCharacterEncoding("UTF-8");
@@ -37,76 +43,197 @@ public class AccountServlet extends HttpServlet {
             return;
         }
 
-        // ✅ Reload user từ DB để có email/phone mới nhất
+        /*
+         * =========================
+         * RELOAD USER
+         * =========================
+         * Reload từ DB để lấy email/phone mới nhất.
+         */
         User fresh = userDAO.findById(user.getId());
+
         if (fresh != null) {
             user = fresh;
             session.setAttribute("user", fresh);
         }
 
         req.setAttribute("user", user);
-
-        // SAFE DEFAULTS
-        req.setAttribute("rankLabel", null);
-        req.setAttribute("rankCss", null);
-        req.setAttribute("rankDiscount", 0);
-
-        // ✅ set email/phone thật để JSP hiển thị
         req.setAttribute("userEmail", user.getEmail());
         req.setAttribute("userPhone", user.getPhone());
 
-        // USER STATS
+        /*
+         * =========================
+         * SAFE DEFAULT RANK ATTRIBUTES
+         * =========================
+         * Nếu chưa có bảng store_rank hoặc chưa có dữ liệu rank,
+         * giao diện vẫn không bị lỗi.
+         */
+        setDefaultRankAttributes(req);
+
+        /*
+         * =========================
+         * USER RANK
+         * =========================
+         * Tính rank dựa trên tổng chi tiêu từ đơn PAID,
+         * không tính đơn đã hủy.
+         */
+        try {
+            Map<String, Object> rankAttributes = userRankService.buildRankAttributes(user.getId());
+            rankAttributes.forEach(req::setAttribute);
+        } catch (RuntimeException e) {
+            // Giữ default để trang account vẫn hoạt động nếu DB chưa migrate store_rank.
+            e.printStackTrace();
+        }
+
+        /*
+         * =========================
+         * USER STATS
+         * =========================
+         */
         req.setAttribute("total_orders", orderDAO.countByUser(user.getId()));
         req.setAttribute("total_spent_vnd", orderDAO.totalSpentByUserVnd(user.getId()));
         req.setAttribute("latest_order", orderDAO.findLatestByUser(user.getId()));
 
-        req.setAttribute("chart_labels", orderDAO.userChartLabels(user.getId()));
-        req.setAttribute("chart_values", orderDAO.userChartValues(user.getId()));
+        /*
+         * Chart.js cần JSON hợp lệ.
+         * Nếu DAO trả về List thì convert sang JSON.
+         * Nếu DAO đã trả JSON string dạng [] thì giữ nguyên.
+         */
+        req.setAttribute("chart_labels", toJsonArray(orderDAO.userChartLabels(user.getId())));
+        req.setAttribute("chart_values", toJsonArray(orderDAO.userChartValues(user.getId())));
 
-        // ADMIN STATS
+        /*
+         * =========================
+         * ADMIN STATS
+         * =========================
+         */
         if (user.isAdmin()) {
-            req.setAttribute("admin_total_orders", adminStatsDAO.countOrders());
-            req.setAttribute("admin_total_revenue_vnd", adminStatsDAO.totalRevenueVnd());
-            req.setAttribute("admin_aov_vnd", adminStatsDAO.averageOrderValueVnd());
-
-            // ✅ THÁNG NÀY / THÁNG TRƯỚC THEO THÁNG LỊCH (KHÔNG PHẢI 30 NGÀY)
-            BigDecimal thisMonth = adminStatsDAO.thisMonthRevenue();              // NEW
-            BigDecimal prevMonth = adminStatsDAO.prevMonthRevenueCalendar();      // NEW
-
-            if (thisMonth == null) thisMonth = BigDecimal.ZERO;
-            if (prevMonth == null) prevMonth = BigDecimal.ZERO;
-
-            // Nếu DAO đã vnd0 rồi thì đoạn setScale dưới đây không bắt buộc,
-            // nhưng để an toàn vẫn giữ:
-            thisMonth = thisMonth.setScale(0, RoundingMode.HALF_UP);
-            prevMonth = prevMonth.setScale(0, RoundingMode.HALF_UP);
-
-            req.setAttribute("this_month_revenue", thisMonth);
-            req.setAttribute("prev_month_revenue", prevMonth);
-
-            BigDecimal diff = thisMonth.subtract(prevMonth).setScale(0, RoundingMode.HALF_UP);
-            req.setAttribute("revenue_diff", diff);       // dùng để đổi màu/icon
-            req.setAttribute("revenue_diff_vnd", diff);   // dùng để hiển thị tiền
-
-            int percent = 0;
-            if (prevMonth.compareTo(BigDecimal.ZERO) > 0) {
-                percent = diff.multiply(BigDecimal.valueOf(100))
-                              .divide(prevMonth, 0, RoundingMode.HALF_UP)
-                              .intValue();
-            }
-            req.setAttribute("revenue_percent", percent);
-
-            // Chart + top products
-            req.setAttribute("admin_chart_labels", adminStatsDAO.chartLabels());
-            req.setAttribute("admin_chart_values", adminStatsDAO.chartValues());
-            req.setAttribute("top_products", adminStatsDAO.topSellingProducts());
+            setAdminStatistics(req);
         }
 
-        // VIEW
+        /*
+         * =========================
+         * VIEW
+         * =========================
+         */
         req.setAttribute("pageTitle", "MyCosmetic | Tài khoản");
         req.setAttribute("pageCss", "order.css");
         req.setAttribute("pageContent", "/jsp/account/account.jsp");
 
         req.getRequestDispatcher("/jsp/common/base.jsp").forward(req, resp);
+    }
+
+    private void setAdminStatistics(HttpServletRequest req) throws IOException {
+
+        /*
+         * =========================
+         * BASIC ADMIN STATS
+         * =========================
+         */
+        BigDecimal totalRevenue = safeMoney(adminStatsDAO.totalRevenueVnd());
+        BigDecimal averageOrderValue = safeMoney(adminStatsDAO.averageOrderValueVnd());
+
+        req.setAttribute("admin_total_orders", adminStatsDAO.countOrders());
+        req.setAttribute("admin_total_revenue_vnd", totalRevenue);
+        req.setAttribute("admin_aov_vnd", averageOrderValue);
+
+        /*
+         * =========================
+         * MONTH REVENUE
+         * =========================
+         */
+        BigDecimal thisMonth = safeMoney(adminStatsDAO.thisMonthRevenue());
+        BigDecimal prevMonth = safeMoney(adminStatsDAO.prevMonthRevenueCalendar());
+
+        req.setAttribute("this_month_revenue", thisMonth);
+        req.setAttribute("prev_month_revenue", prevMonth);
+
+        BigDecimal diff = thisMonth.subtract(prevMonth).setScale(0, RoundingMode.HALF_UP);
+
+        req.setAttribute("revenue_diff", diff);
+        req.setAttribute("revenue_diff_vnd", diff);
+
+        int percent = 0;
+
+        if (prevMonth.compareTo(BigDecimal.ZERO) > 0) {
+            percent = diff.multiply(BigDecimal.valueOf(100))
+                    .divide(prevMonth, 0, RoundingMode.HALF_UP)
+                    .intValue();
+        }
+
+        req.setAttribute("revenue_percent", percent);
+
+        /*
+         * =========================
+         * ADMIN CHART + TOP PRODUCTS
+         * =========================
+         */
+        req.setAttribute("admin_chart_labels", toJsonArray(adminStatsDAO.chartLabels()));
+        req.setAttribute("admin_chart_values", toJsonArray(adminStatsDAO.chartValues()));
+        req.setAttribute("top_products", adminStatsDAO.topSellingProducts());
+
+        /*
+         * =========================
+         * QUICK PRODUCT ANALYTICS FOR ACCOUNT ADMIN VIEW
+         * =========================
+         * Các attribute này dùng cho 4 ô mini thống kê trong account.jsp:
+         * - Không bán tháng này
+         * - Không bán 30 ngày
+         * - Hết hàng
+         * - Sắp hết hàng
+         */
+        req.setAttribute("unsoldThisMonthCount", adminStatsDAO.countUnsoldProductsThisMonth());
+        req.setAttribute("unsoldLast30DaysCount", adminStatsDAO.countUnsoldProductsLast30Days());
+        req.setAttribute("outOfStockCount", adminStatsDAO.countOutOfStockProducts());
+        req.setAttribute("lowStockCount", adminStatsDAO.countLowStockProducts());
+    }
+
+    private void setDefaultRankAttributes(HttpServletRequest req) {
+
+        req.setAttribute("rankLabel", "Thành viên");
+        req.setAttribute("rankCode", "MEMBER");
+        req.setAttribute("rankCss", "rank-member");
+        req.setAttribute("rankDiscount", 0);
+        req.setAttribute("rankDiscountLabel", "Không có ưu đãi");
+
+        req.setAttribute("rankTotalSpent", BigDecimal.ZERO);
+        req.setAttribute("rankPaidOrderCount", 0);
+
+        req.setAttribute("nextRank", null);
+        req.setAttribute("nextRankLabel", null);
+        req.setAttribute("nextRankMinSpent", BigDecimal.ZERO);
+
+        req.setAttribute("amountToNextRank", BigDecimal.ZERO);
+        req.setAttribute("rankProgressPercent", 0);
+        req.setAttribute("maxRank", false);
+    }
+
+    private BigDecimal safeMoney(BigDecimal value) {
+
+        if (value == null) {
+            return BigDecimal.ZERO;
+        }
+
+        return value.setScale(0, RoundingMode.HALF_UP);
+    }
+
+    private String toJsonArray(Object value) throws IOException {
+
+        if (value == null) {
+            return "[]";
+        }
+
+        if (value instanceof String stringValue) {
+            String trimmed = stringValue.trim();
+
+            if (trimmed.startsWith("[") || trimmed.startsWith("{")) {
+                return trimmed;
+            }
+
+            if (trimmed.isEmpty()) {
+                return "[]";
+            }
+        }
+
+        return objectMapper.writeValueAsString(value);
     }
 }
