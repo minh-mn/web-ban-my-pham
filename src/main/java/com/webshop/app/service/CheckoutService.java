@@ -22,9 +22,15 @@ public class CheckoutService {
 	private final OrderItemDAO itemDAO = new OrderItemDAO();
 	private final CouponDAO couponDAO = new CouponDAO();
 	private final CouponService couponService = new CouponService();
+	private final UserRankService userRankService = new UserRankService();
 
-	public int checkout(int userId, Map<Integer, CartItem> cart, String fullName, String phone, String address,
-						String paymentMethod, String couponCode) {
+	public int checkout(int userId,
+						Map<Integer, CartItem> cart,
+						String fullName,
+						String phone,
+						String address,
+						String paymentMethod,
+						String couponCode) {
 
 		if (userId <= 0) {
 			throw new IllegalArgumentException("Invalid userId");
@@ -41,27 +47,49 @@ public class CheckoutService {
 		boolean isCod = "COD".equalsIgnoreCase(paymentMethod);
 		boolean isVnp = "VNPAY".equalsIgnoreCase(paymentMethod);
 
-		BigDecimal subtotal = cart.values()
-				.stream()
-				.map(CartItem::getSubtotal)
-				.filter(x -> x != null)
-				.reduce(BigDecimal.ZERO, BigDecimal::add);
+		BigDecimal subtotal = calculateCartSubtotal(cart);
 
-		BigDecimal total = subtotal;
-
+		/*
+		 * =========================
+		 * COUPON DISCOUNT
+		 * =========================
+		 */
 		Coupon coupon = null;
-		BigDecimal discount = BigDecimal.ZERO;
+		BigDecimal couponDiscount = BigDecimal.ZERO;
 
 		if (couponCode != null && !couponCode.isBlank()) {
 			coupon = couponService.validateCoupon(couponCode, subtotal);
 
 			if (coupon != null) {
-				discount = couponService.calculateDiscount(coupon, subtotal);
-				total = total.subtract(discount);
+				couponDiscount = couponService.calculateDiscount(coupon, subtotal);
 			}
 		}
 
-		total = total.max(BigDecimal.ZERO).setScale(0, RoundingMode.HALF_UP);
+		couponDiscount = money0(couponDiscount);
+
+		/*
+		 * =========================
+		 * RANK DISCOUNT
+		 * =========================
+		 * Rank discount được tính sau coupon:
+		 * subtotal - couponDiscount = amountAfterCoupon
+		 * rankDiscount = amountAfterCoupon * rankPercent
+		 */
+		BigDecimal amountAfterCoupon = subtotal.subtract(couponDiscount);
+
+		if (amountAfterCoupon.compareTo(BigDecimal.ZERO) < 0) {
+			amountAfterCoupon = BigDecimal.ZERO;
+		}
+
+		BigDecimal rankDiscount = calculateRankDiscount(userId, amountAfterCoupon);
+
+		BigDecimal total = amountAfterCoupon.subtract(rankDiscount);
+
+		if (total.compareTo(BigDecimal.ZERO) < 0) {
+			total = BigDecimal.ZERO;
+		}
+
+		total = money0(total);
 
 		try (Connection conn = DBConnection.getConnection()) {
 			conn.setAutoCommit(false);
@@ -72,8 +100,12 @@ public class CheckoutService {
 				throw new IllegalStateException("Invalid session userId (not found in users): " + userId);
 			}
 
-			// 1) Lock & check stock
-			// MySQL dùng FOR UPDATE thay cho SQL Server WITH (UPDLOCK, ROWLOCK)
+			/*
+			 * =========================
+			 * LOCK & CHECK STOCK
+			 * =========================
+			 * MySQL dùng FOR UPDATE để khóa dòng sản phẩm trong transaction.
+			 */
 			String lockSql = "SELECT stock FROM store_product WHERE id = ? FOR UPDATE";
 
 			for (CartItem item : cart.values()) {
@@ -89,7 +121,15 @@ public class CheckoutService {
 				}
 			}
 
-			// 2) Create order
+			/*
+			 * =========================
+			 * CREATE ORDER
+			 * =========================
+			 * Lưu ý:
+			 * - total đã bao gồm coupon discount và rank discount.
+			 * - Nếu muốn lưu riêng rank_discount/coupon_discount,
+			 *   cần thêm cột trong store_order và setter trong Order model.
+			 */
 			Order o = new Order();
 			o.setUserId(userId);
 			o.setFullName(fullName);
@@ -100,36 +140,24 @@ public class CheckoutService {
 
 			if (isCod) {
 				o.setPaymentStatus("PENDING");
-				o.setStatus("CONFIRMED");
+				o.setStatus("confirmed");
 			} else if (isVnp) {
 				o.setPaymentStatus("PENDING");
-				o.setStatus("PENDING");
+				o.setStatus("processing");
 			} else {
 				o.setPaymentStatus("PENDING");
-				o.setStatus("PENDING");
+				o.setStatus("processing");
 			}
 
 			int orderId = orderDAO.create(conn, o);
 
-			// 3) COD: create items + update stock + update coupon used_count
+			/*
+			 * =========================
+			 * COD FINALIZE IMMEDIATELY
+			 * =========================
+			 */
 			if (isCod) {
-				String updateStockSql = "UPDATE store_product SET stock = stock - ? WHERE id = ?";
-
-				for (CartItem item : cart.values()) {
-					OrderItem oi = new OrderItem();
-					oi.setOrderId(orderId);
-					oi.setProductId(item.getProductId());
-					oi.setPrice(item.getPrice());
-					oi.setQuantity(item.getQuantity());
-
-					itemDAO.create(conn, oi);
-
-					try (PreparedStatement ps = conn.prepareStatement(updateStockSql)) {
-						ps.setInt(1, item.getQuantity());
-						ps.setInt(2, item.getProductId());
-						ps.executeUpdate();
-					}
-				}
+				createOrderItemsAndUpdateStock(conn, orderId, cart);
 
 				if (coupon != null) {
 					couponDAO.increaseUsedCount(conn, coupon.getId());
@@ -157,12 +185,11 @@ public class CheckoutService {
 		try (Connection conn = DBConnection.getConnection()) {
 			conn.setAutoCommit(false);
 
-			// Dùng cùng transaction nếu OrderDAO đã có findById(conn, orderId)
 			Order o;
+
 			try {
 				o = orderDAO.findById(conn, orderId);
 			} catch (Exception ignore) {
-				// Fallback nếu chưa có overload findById(Connection, int)
 				o = orderDAO.findById(orderId);
 			}
 
@@ -171,18 +198,17 @@ public class CheckoutService {
 				throw new RuntimeException("Order not found: " + orderId);
 			}
 
-			// Idempotent: nếu đã có items thì xem như finalize đã chạy rồi
+			/*
+			 * =========================
+			 * IDEMPOTENT CHECK
+			 * =========================
+			 * Nếu order item đã tồn tại, không insert lại để tránh trừ kho 2 lần.
+			 */
 			boolean hasItems = itemDAO.existsByOrderId(conn, orderId);
 
 			if (hasItems) {
-				// Nếu đã có items nhưng paymentStatus chưa PAID thì cập nhật lại trạng thái
 				if (!"PAID".equalsIgnoreCase(o.getPaymentStatus())) {
-					try {
-						orderDAO.updatePaymentStatus(conn, orderId, "PAID", "CONFIRMED", o.getVnpTxnRef());
-					} catch (Exception ignore) {
-						orderDAO.updatePaymentStatus(orderId, "PAID", "CONFIRMED", o.getVnpTxnRef());
-					}
-
+					updatePaidStatus(conn, orderId, o.getVnpTxnRef());
 					conn.commit();
 					return;
 				}
@@ -191,8 +217,11 @@ public class CheckoutService {
 				return;
 			}
 
-			// Lock & check stock
-			// MySQL dùng FOR UPDATE thay cho SQL Server WITH (UPDLOCK, ROWLOCK)
+			/*
+			 * =========================
+			 * LOCK & CHECK STOCK
+			 * =========================
+			 */
 			String lockSql = "SELECT stock FROM store_product WHERE id = ? FOR UPDATE";
 
 			for (CartItem item : cart.values()) {
@@ -210,26 +239,13 @@ public class CheckoutService {
 				}
 			}
 
-			String updateStockSql = "UPDATE store_product SET stock = stock - ? WHERE id = ?";
+			createOrderItemsAndUpdateStock(conn, orderId, cart);
 
-			// Insert order items + update stock
-			for (CartItem item : cart.values()) {
-				OrderItem oi = new OrderItem();
-				oi.setOrderId(orderId);
-				oi.setProductId(item.getProductId());
-				oi.setPrice(item.getPrice());
-				oi.setQuantity(item.getQuantity());
-
-				itemDAO.create(conn, oi);
-
-				try (PreparedStatement ps = conn.prepareStatement(updateStockSql)) {
-					ps.setInt(1, item.getQuantity());
-					ps.setInt(2, item.getProductId());
-					ps.executeUpdate();
-				}
-			}
-
-			// Update coupon used_count
+			/*
+			 * =========================
+			 * UPDATE COUPON USED COUNT
+			 * =========================
+			 */
 			if (couponCode != null && !couponCode.isBlank()) {
 				Coupon coupon = couponDAO.findByCode(couponCode.trim());
 
@@ -238,12 +254,7 @@ public class CheckoutService {
 				}
 			}
 
-			// Update order payment status
-			try {
-				orderDAO.updatePaymentStatus(conn, orderId, "PAID", "CONFIRMED", o.getVnpTxnRef());
-			} catch (Exception ignore) {
-				orderDAO.updatePaymentStatus(orderId, "PAID", "CONFIRMED", o.getVnpTxnRef());
-			}
+			updatePaidStatus(conn, orderId, o.getVnpTxnRef());
 
 			conn.commit();
 
@@ -252,29 +263,88 @@ public class CheckoutService {
 		}
 	}
 
+	/*
+	 * =========================
+	 * DISCOUNT PREVIEW METHODS
+	 * =========================
+	 * Các method này dùng cho servlet/JSP checkout preview nếu cần hiển thị:
+	 * - giảm giá coupon
+	 * - giảm giá rank
+	 * - tổng tiền sau giảm
+	 */
+
 	public BigDecimal calculateCouponDiscount(String couponCode, BigDecimal subTotal) {
+
+		BigDecimal safeSubTotal = money0(subTotal);
 
 		if (couponCode == null || couponCode.isBlank()) {
 			return BigDecimal.ZERO;
 		}
 
-		if (subTotal == null || subTotal.compareTo(BigDecimal.ZERO) <= 0) {
+		if (safeSubTotal.compareTo(BigDecimal.ZERO) <= 0) {
 			return BigDecimal.ZERO;
 		}
 
-		Coupon coupon = couponService.validateCoupon(couponCode, subTotal);
+		Coupon coupon = couponService.validateCoupon(couponCode, safeSubTotal);
 
 		if (coupon == null) {
 			return BigDecimal.ZERO;
 		}
 
-		BigDecimal discount = calculateDiscountFromCoupon(coupon, subTotal);
+		BigDecimal discount = calculateDiscountFromCoupon(coupon, safeSubTotal);
 
 		if (discount.compareTo(BigDecimal.ZERO) <= 0) {
 			return BigDecimal.ZERO;
 		}
 
-		return discount.setScale(0, RoundingMode.HALF_UP);
+		return money0(discount);
+	}
+
+	public BigDecimal calculateRankDiscount(int userId, BigDecimal amountAfterCoupon) {
+
+		if (userId <= 0) {
+			return BigDecimal.ZERO;
+		}
+
+		BigDecimal safeAmount = money0(amountAfterCoupon);
+
+		if (safeAmount.compareTo(BigDecimal.ZERO) <= 0) {
+			return BigDecimal.ZERO;
+		}
+
+		try {
+			return money0(userRankService.calculateRankDiscountAmount(userId, safeAmount));
+		} catch (RuntimeException e) {
+			/*
+			 * Nếu bảng store_rank chưa migrate hoặc có lỗi dữ liệu rank,
+			 * không làm hỏng luồng checkout.
+			 */
+			e.printStackTrace();
+			return BigDecimal.ZERO;
+		}
+	}
+
+	public BigDecimal calculateTotalAfterCouponAndRank(int userId,
+													   BigDecimal subTotal,
+													   String couponCode) {
+
+		BigDecimal safeSubTotal = money0(subTotal);
+
+		BigDecimal couponDiscount = calculateCouponDiscount(couponCode, safeSubTotal);
+		BigDecimal amountAfterCoupon = safeSubTotal.subtract(couponDiscount);
+
+		if (amountAfterCoupon.compareTo(BigDecimal.ZERO) < 0) {
+			amountAfterCoupon = BigDecimal.ZERO;
+		}
+
+		BigDecimal rankDiscount = calculateRankDiscount(userId, amountAfterCoupon);
+		BigDecimal total = amountAfterCoupon.subtract(rankDiscount);
+
+		if (total.compareTo(BigDecimal.ZERO) < 0) {
+			total = BigDecimal.ZERO;
+		}
+
+		return money0(total);
 	}
 
 	private BigDecimal calculateDiscountFromCoupon(Coupon coupon, BigDecimal subTotal) {
@@ -300,7 +370,73 @@ public class CheckoutService {
 		return discount;
 	}
 
+	/*
+	 * =========================
+	 * ORDER ITEM / STOCK HELPERS
+	 * =========================
+	 */
+
+	private void createOrderItemsAndUpdateStock(Connection conn,
+												int orderId,
+												Map<Integer, CartItem> cart) throws Exception {
+
+		String updateStockSql = "UPDATE store_product SET stock = stock - ? WHERE id = ?";
+
+		for (CartItem item : cart.values()) {
+			OrderItem oi = new OrderItem();
+			oi.setOrderId(orderId);
+			oi.setProductId(item.getProductId());
+			oi.setPrice(item.getPrice());
+			oi.setQuantity(item.getQuantity());
+
+			itemDAO.create(conn, oi);
+
+			try (PreparedStatement ps = conn.prepareStatement(updateStockSql)) {
+				ps.setInt(1, item.getQuantity());
+				ps.setInt(2, item.getProductId());
+				ps.executeUpdate();
+			}
+		}
+	}
+
+	private void updatePaidStatus(Connection conn, int orderId, String txnRef) {
+
+		try {
+			orderDAO.updatePaymentStatus(conn, orderId, "PAID", "confirmed", txnRef);
+		} catch (Exception ignore) {
+			orderDAO.updatePaymentStatus(orderId, "PAID", "confirmed", txnRef);
+		}
+	}
+
+	private BigDecimal calculateCartSubtotal(Map<Integer, CartItem> cart) {
+
+		if (cart == null || cart.isEmpty()) {
+			return BigDecimal.ZERO;
+		}
+
+		return cart.values()
+				.stream()
+				.map(CartItem::getSubtotal)
+				.filter(x -> x != null)
+				.reduce(BigDecimal.ZERO, BigDecimal::add)
+				.setScale(0, RoundingMode.HALF_UP);
+	}
+
+	private BigDecimal money0(BigDecimal value) {
+
+		if (value == null) {
+			return BigDecimal.ZERO;
+		}
+
+		if (value.compareTo(BigDecimal.ZERO) < 0) {
+			return BigDecimal.ZERO;
+		}
+
+		return value.setScale(0, RoundingMode.HALF_UP);
+	}
+
 	private boolean existsUsersId(Connection conn, int userId) {
+
 		String sql = "SELECT 1 FROM users WHERE id = ?";
 
 		try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -309,6 +445,7 @@ public class CheckoutService {
 			try (ResultSet rs = ps.executeQuery()) {
 				return rs.next();
 			}
+
 		} catch (Exception e) {
 			throw new RuntimeException("Không thể kiểm tra user_id trong bảng users", e);
 		}
