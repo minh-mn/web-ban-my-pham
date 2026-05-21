@@ -348,6 +348,7 @@
 
             <div class="account-actions">
               <a href="${pageContext.request.contextPath}/admin" class="account-btn primary">🛠 Vào trang Admin</a>
+              <a href="${pageContext.request.contextPath}/admin/dashboard" class="account-btn">📊 Dashboard chi tiết</a>
               <a href="${pageContext.request.contextPath}/account/change-password" class="account-btn">🔒 Đổi mật khẩu</a>
             </div>
           </div>
@@ -473,6 +474,63 @@
                 </div>
               </div>
             </div>
+          </div>
+
+          <!-- ADMIN PRODUCT QUICK STATS -->
+          <div class="account-grid account-grid-4 account-section-space">
+
+            <div class="account-card">
+              <div class="account-card-body account-kpi">
+                <div>
+                  <p class="account-kpi-label">Không bán tháng này</p>
+                  <div class="account-kpi-value">
+                    <c:out value="${empty unsoldThisMonthCount ? 0 : unsoldThisMonthCount}" />
+                  </div>
+                  <div class="account-kpi-note">Sản phẩm chưa phát sinh bán trong tháng.</div>
+                </div>
+                <div class="account-kpi-icon">📉</div>
+              </div>
+            </div>
+
+            <div class="account-card">
+              <div class="account-card-body account-kpi">
+                <div>
+                  <p class="account-kpi-label">Không bán 30 ngày</p>
+                  <div class="account-kpi-value">
+                    <c:out value="${empty unsoldLast30DaysCount ? 0 : unsoldLast30DaysCount}" />
+                  </div>
+                  <div class="account-kpi-note">Sản phẩm không bán trong 30 ngày gần nhất.</div>
+                </div>
+                <div class="account-kpi-icon">🕒</div>
+              </div>
+            </div>
+
+            <div class="account-card">
+              <div class="account-card-body account-kpi">
+                <div>
+                  <p class="account-kpi-label">Hết hàng</p>
+                  <div class="account-kpi-value">
+                    <c:out value="${empty outOfStockCount ? 0 : outOfStockCount}" />
+                  </div>
+                  <div class="account-kpi-note">Sản phẩm active nhưng tồn kho bằng 0.</div>
+                </div>
+                <div class="account-kpi-icon">🚫</div>
+              </div>
+            </div>
+
+            <div class="account-card">
+              <div class="account-card-body account-kpi">
+                <div>
+                  <p class="account-kpi-label">Sắp hết hàng</p>
+                  <div class="account-kpi-value">
+                    <c:out value="${empty lowStockCount ? 0 : lowStockCount}" />
+                  </div>
+                  <div class="account-kpi-note">Tồn kho còn từ 1 đến 10 sản phẩm.</div>
+                </div>
+                <div class="account-kpi-icon">⚠️</div>
+              </div>
+            </div>
+
           </div>
 
           <!-- ADMIN CHART + TOP PRODUCT -->
