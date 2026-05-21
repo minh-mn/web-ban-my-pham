@@ -290,6 +290,47 @@
     margin-top: 16px;
   }
 
+  .account-rank-progress {
+    width: 100%;
+    height: 12px;
+    border-radius: 999px;
+    background: #e5e7eb;
+    overflow: hidden;
+    margin-top: 12px;
+  }
+
+  .account-rank-progress__bar {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #4f8cff, #5cc8ff);
+    transition: width 0.3s ease;
+  }
+
+  .rank-member {
+    background: #eef6ff;
+    color: #2563eb;
+  }
+
+  .rank-silver {
+    background: #f1f5f9;
+    color: #475569;
+  }
+
+  .rank-gold {
+    background: #fff7db;
+    color: #b45309;
+  }
+
+  .rank-diamond {
+    background: #eff6ff;
+    color: #1d4ed8;
+  }
+
+  .rank-vip {
+    background: #fff0f6;
+    color: #be185d;
+  }
+
   @media (max-width: 980px) {
     .account-grid-4,
     .account-grid-3,
@@ -335,7 +376,7 @@
 
                 <c:if test="${not empty rankLabel}">
                   <div style="margin-top:8px;">
-                    <span class="account-chip">
+                    <span class="account-chip ${rankCss}">
                       🎖 <c:out value="${rankLabel}" />
                       <c:if test="${rankDiscount > 0}">
                         -<c:out value="${rankDiscount}" />%
@@ -348,7 +389,6 @@
 
             <div class="account-actions">
               <a href="${pageContext.request.contextPath}/admin" class="account-btn primary">🛠 Vào trang Admin</a>
-              <a href="${pageContext.request.contextPath}/admin/dashboard" class="account-btn">📊 Dashboard chi tiết</a>
               <a href="${pageContext.request.contextPath}/account/change-password" class="account-btn">🔒 Đổi mật khẩu</a>
             </div>
           </div>
@@ -649,7 +689,7 @@
               <div>
                 <h1 class="account-title">Tài khoản của tôi</h1>
                 <p class="account-subtitle">
-                  Xin chào, <strong><c:out value="${safeUsername}" /></strong>. Theo dõi đơn hàng và chi tiêu cá nhân tại đây.
+                  Xin chào, <strong><c:out value="${safeUsername}" /></strong>. Theo dõi đơn hàng, chi tiêu và hạng khách hàng tại đây.
                 </p>
 
                 <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
@@ -674,7 +714,7 @@
                   </span>
 
                   <c:if test="${not empty rankLabel}">
-                    <span class="account-chip user-chip">
+                    <span class="account-chip user-chip ${rankCss}">
                       🎖 <c:out value="${rankLabel}" />
                       <c:if test="${rankDiscount > 0}">
                         -<c:out value="${rankDiscount}" />%
@@ -691,8 +731,93 @@
             </div>
           </div>
 
+          <!-- USER RANK DETAIL -->
+          <div class="account-card account-section-space">
+            <div class="account-card-body">
+              <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px;">
+                <div>
+                  <h2 class="account-card-title">🎖 Hạng khách hàng</h2>
+                  <p class="account-muted">Hạng được tính dựa trên tổng chi tiêu từ các đơn đã thanh toán thành công.</p>
+                </div>
+
+                <span class="account-chip user-chip ${rankCss}">
+                  <c:out value="${empty rankLabel ? 'Thành viên' : rankLabel}" />
+                  <c:if test="${rankDiscount > 0}">
+                    -<c:out value="${rankDiscount}" />%
+                  </c:if>
+                </span>
+              </div>
+
+              <div class="account-grid account-grid-3">
+                <div>
+                  <p class="account-kpi-label">Tổng chi tiêu xét hạng</p>
+                  <div class="account-kpi-value">
+                    <fmt:formatNumber value="${empty rankTotalSpent ? 0 : rankTotalSpent}"
+                                      type="number"
+                                      groupingUsed="true"
+                                      maxFractionDigits="0"/> ₫
+                  </div>
+                  <div class="account-kpi-note">Không tính đơn đã hủy.</div>
+                </div>
+
+                <div>
+                  <p class="account-kpi-label">Ưu đãi hiện tại</p>
+                  <div class="account-kpi-value">
+                    <c:out value="${empty rankDiscount ? 0 : rankDiscount}" />%
+                  </div>
+                  <div class="account-kpi-note">Tự động áp dụng khi thanh toán.</div>
+                </div>
+
+                <div>
+                  <p class="account-kpi-label">Số đơn đã thanh toán</p>
+                  <div class="account-kpi-value">
+                    <c:out value="${empty rankPaidOrderCount ? 0 : rankPaidOrderCount}" />
+                  </div>
+                  <div class="account-kpi-note">Chỉ tính đơn hợp lệ.</div>
+                </div>
+              </div>
+
+              <div style="margin-top:16px;">
+                <c:choose>
+                  <c:when test="${maxRank}">
+                    <p class="account-muted">
+                      Bạn đã đạt hạng cao nhất. Cảm ơn bạn đã đồng hành cùng MyCosmetic.
+                    </p>
+                    <div class="account-rank-progress">
+                      <div class="account-rank-progress__bar" style="width:100%;"></div>
+                    </div>
+                  </c:when>
+
+                  <c:otherwise>
+                    <p class="account-muted">
+                      Còn
+                      <strong>
+                        <fmt:formatNumber value="${empty amountToNextRank ? 0 : amountToNextRank}"
+                                          type="number"
+                                          groupingUsed="true"
+                                          maxFractionDigits="0"/> ₫
+                      </strong>
+                      để lên hạng
+                      <strong><c:out value="${empty nextRankLabel ? 'tiếp theo' : nextRankLabel}" /></strong>.
+                    </p>
+
+                    <div class="account-rank-progress">
+                      <div class="account-rank-progress__bar"
+                           style="width:${empty rankProgressPercent ? 0 : rankProgressPercent}%;"></div>
+                    </div>
+
+                    <p class="account-muted" style="margin-top:6px;">
+                      Tiến độ:
+                      <strong><c:out value="${empty rankProgressPercent ? 0 : rankProgressPercent}" />%</strong>
+                    </p>
+                  </c:otherwise>
+                </c:choose>
+              </div>
+            </div>
+          </div>
+
           <!-- USER KPI -->
-          <div class="account-grid account-grid-3">
+          <div class="account-grid account-grid-3 account-section-space">
             <div class="account-card">
               <div class="account-card-body account-kpi">
                 <div>
