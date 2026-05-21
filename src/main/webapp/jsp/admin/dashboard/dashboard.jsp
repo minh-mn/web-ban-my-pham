@@ -15,7 +15,7 @@
     <div class="admin-topbar">
       <div>
         <h1 class="admin-h1">Dashboard</h1>
-        <p class="admin-subtext">Tổng quan nhanh hệ thống và tình hình kinh doanh.</p>
+        <p class="admin-subtext">Tổng quan nhanh hệ thống, doanh thu, đơn hàng và hiệu suất sản phẩm.</p>
       </div>
     </div>
 
@@ -155,6 +155,51 @@
 
     </div>
 
+    <!-- PRODUCT ANALYTICS KPI -->
+    <div class="admin-grid" style="grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-top: 16px;">
+
+      <div class="admin-card">
+        <div class="admin-card__body admin-stack">
+          <div class="admin-muted" style="font-weight:800; font-size:12px;">Không bán tuần này</div>
+          <div class="admin-h1">
+            <c:out value="${unsoldThisWeekCount}"/>
+          </div>
+          <div class="admin-subtext">Sản phẩm chưa phát sinh đơn trong tuần hiện tại.</div>
+        </div>
+      </div>
+
+      <div class="admin-card">
+        <div class="admin-card__body admin-stack">
+          <div class="admin-muted" style="font-weight:800; font-size:12px;">Không bán tháng này</div>
+          <div class="admin-h1">
+            <c:out value="${unsoldThisMonthCount}"/>
+          </div>
+          <div class="admin-subtext">Sản phẩm chưa bán được trong tháng hiện tại.</div>
+        </div>
+      </div>
+
+      <div class="admin-card">
+        <div class="admin-card__body admin-stack">
+          <div class="admin-muted" style="font-weight:800; font-size:12px;">Sản phẩm hết hàng</div>
+          <div class="admin-h1">
+            <c:out value="${outOfStockCount}"/>
+          </div>
+          <div class="admin-subtext">Sản phẩm đang active nhưng tồn kho bằng 0.</div>
+        </div>
+      </div>
+
+      <div class="admin-card">
+        <div class="admin-card__body admin-stack">
+          <div class="admin-muted" style="font-weight:800; font-size:12px;">Sản phẩm sắp hết</div>
+          <div class="admin-h1">
+            <c:out value="${lowStockCount}"/>
+          </div>
+          <div class="admin-subtext">Tồn kho còn từ 1 đến 10 sản phẩm.</div>
+        </div>
+      </div>
+
+    </div>
+
     <!-- CHARTS -->
     <div class="admin-grid" style="grid-template-columns: 2fr 1fr; gap: 16px; margin-top: 16px;">
 
@@ -199,6 +244,50 @@
       </div>
     </div>
 
+    <!-- PRODUCT ANALYTICS CHARTS -->
+    <div class="admin-grid" style="grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px;">
+
+      <div class="admin-card">
+        <div class="admin-card__body">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <div>
+              <h2 style="margin:0; font-size:18px;">Hiệu suất sản phẩm tháng này</h2>
+              <p class="admin-subtext" style="margin:4px 0 0;">So sánh sản phẩm có bán và không bán trong tháng.</p>
+            </div>
+            <span class="admin-chip">Product</span>
+          </div>
+          <canvas id="productPerformanceChart" height="120"></canvas>
+        </div>
+      </div>
+
+      <div class="admin-card">
+        <div class="admin-card__body">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <div>
+              <h2 style="margin:0; font-size:18px;">Tình trạng tồn kho</h2>
+              <p class="admin-subtext" style="margin:4px 0 0;">Phân nhóm hết hàng, sắp hết và còn hàng.</p>
+            </div>
+            <span class="admin-chip">Stock</span>
+          </div>
+          <canvas id="stockStatusChart" height="120"></canvas>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="admin-card" style="margin-top:16px;">
+      <div class="admin-card__body">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <div>
+            <h2 style="margin:0; font-size:18px;">Số lượng bán theo danh mục trong 30 ngày</h2>
+            <p class="admin-subtext" style="margin:4px 0 0;">Giúp nhận biết nhóm sản phẩm đang bán tốt.</p>
+          </div>
+          <span class="admin-chip">Category</span>
+        </div>
+        <canvas id="categorySoldChart" height="90"></canvas>
+      </div>
+    </div>
+
     <!-- TABLES -->
     <div class="admin-grid" style="grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px;">
 
@@ -229,6 +318,7 @@
                     <tr>
                       <td>
                         <strong><c:out value="${product[1]}"/></strong>
+                        <div class="admin-subtext">ID: <c:out value="${product[0]}"/></div>
                       </td>
                       <td style="text-align:right;">
                         <c:out value="${product[2]}"/>
@@ -309,6 +399,176 @@
 
     </div>
 
+    <!-- PRODUCT ANALYTICS TABLES -->
+    <div class="admin-grid" style="grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px;">
+
+      <!-- UNSOLD PRODUCTS THIS MONTH -->
+      <div class="admin-card">
+        <div class="admin-card__body">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <div>
+              <h2 style="margin:0; font-size:18px;">Sản phẩm không bán được tháng này</h2>
+              <p class="admin-subtext" style="margin:4px 0 0;">Top sản phẩm còn tồn nhưng không phát sinh bán trong tháng.</p>
+            </div>
+            <span class="admin-chip">Unsold</span>
+          </div>
+
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead>
+              <tr>
+                <th>Sản phẩm</th>
+                <th>Danh mục</th>
+                <th style="text-align:right;">Tồn kho</th>
+                <th style="text-align:right;">Giá</th>
+              </tr>
+              </thead>
+
+              <tbody>
+              <c:choose>
+                <c:when test="${not empty unsoldProductsThisMonth}">
+                  <c:forEach var="product" items="${unsoldProductsThisMonth}">
+                    <tr>
+                      <td>
+                        <strong><c:out value="${product[1]}"/></strong>
+                        <div class="admin-subtext">ID: <c:out value="${product[0]}"/></div>
+                      </td>
+                      <td><c:out value="${product[4]}"/></td>
+                      <td style="text-align:right;"><c:out value="${product[2]}"/></td>
+                      <td style="text-align:right;">
+                        <fmt:formatNumber value="${product[3]}" type="number" groupingUsed="true"/> ₫
+                      </td>
+                    </tr>
+                  </c:forEach>
+                </c:when>
+
+                <c:otherwise>
+                  <tr>
+                    <td colspan="4" class="admin-subtext">Không có sản phẩm không bán trong tháng này.</td>
+                  </tr>
+                </c:otherwise>
+              </c:choose>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- LOW STOCK PRODUCTS -->
+      <div class="admin-card">
+        <div class="admin-card__body">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <div>
+              <h2 style="margin:0; font-size:18px;">Sản phẩm cần nhập thêm</h2>
+              <p class="admin-subtext" style="margin:4px 0 0;">Sản phẩm hết hàng hoặc tồn kho thấp.</p>
+            </div>
+            <span class="admin-chip">Inventory</span>
+          </div>
+
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead>
+              <tr>
+                <th>Sản phẩm</th>
+                <th>Danh mục</th>
+                <th style="text-align:right;">Tồn kho</th>
+                <th style="text-align:right;">Giá</th>
+              </tr>
+              </thead>
+
+              <tbody>
+              <c:choose>
+                <c:when test="${not empty lowStockProducts}">
+                  <c:forEach var="product" items="${lowStockProducts}">
+                    <tr>
+                      <td>
+                        <strong><c:out value="${product[1]}"/></strong>
+                        <div class="admin-subtext">ID: <c:out value="${product[0]}"/></div>
+                      </td>
+                      <td><c:out value="${product[4]}"/></td>
+                      <td style="text-align:right;">
+                        <c:choose>
+                          <c:when test="${product[2] == 0}">
+                            <span class="admin-chip">Hết hàng</span>
+                          </c:when>
+                          <c:otherwise>
+                            <c:out value="${product[2]}"/>
+                          </c:otherwise>
+                        </c:choose>
+                      </td>
+                      <td style="text-align:right;">
+                        <fmt:formatNumber value="${product[3]}" type="number" groupingUsed="true"/> ₫
+                      </td>
+                    </tr>
+                  </c:forEach>
+                </c:when>
+
+                <c:otherwise>
+                  <tr>
+                    <td colspan="4" class="admin-subtext">Không có sản phẩm tồn kho thấp.</td>
+                  </tr>
+                </c:otherwise>
+              </c:choose>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- SLOW MOVING PRODUCTS -->
+    <div class="admin-card" style="margin-top:16px;">
+      <div class="admin-card__body">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <div>
+            <h2 style="margin:0; font-size:18px;">Sản phẩm bán chậm trong 30 ngày</h2>
+            <p class="admin-subtext" style="margin:4px 0 0;">Sản phẩm bán từ 0 đến 2 sản phẩm trong 30 ngày gần nhất.</p>
+          </div>
+          <span class="admin-chip">Slow moving</span>
+        </div>
+
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+            <tr>
+              <th>Sản phẩm</th>
+              <th style="text-align:right;">Tồn kho</th>
+              <th style="text-align:right;">Đã bán</th>
+              <th style="text-align:right;">Doanh thu</th>
+            </tr>
+            </thead>
+
+            <tbody>
+            <c:choose>
+              <c:when test="${not empty slowMovingProducts}">
+                <c:forEach var="product" items="${slowMovingProducts}">
+                  <tr>
+                    <td>
+                      <strong><c:out value="${product[1]}"/></strong>
+                      <div class="admin-subtext">ID: <c:out value="${product[0]}"/></div>
+                    </td>
+                    <td style="text-align:right;"><c:out value="${product[2]}"/></td>
+                    <td style="text-align:right;"><c:out value="${product[3]}"/></td>
+                    <td style="text-align:right;">
+                      <fmt:formatNumber value="${product[4]}" type="number" groupingUsed="true"/> ₫
+                    </td>
+                  </tr>
+                </c:forEach>
+              </c:when>
+
+              <c:otherwise>
+                <tr>
+                  <td colspan="4" class="admin-subtext">Không có sản phẩm bán chậm.</td>
+                </tr>
+              </c:otherwise>
+            </c:choose>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
   </div>
 </main>
 
@@ -332,6 +592,27 @@
 
   const orderStatusValues =
           <c:out value="${empty orderStatusValuesJson ? '[]' : orderStatusValuesJson}" escapeXml="false"/>;
+
+  const productPerformanceLabels =
+          <c:out value="${empty productPerformanceLabelsJson ? '[]' : productPerformanceLabelsJson}" escapeXml="false"/>;
+
+  const productPerformanceValues =
+          <c:out value="${empty productPerformanceValuesJson ? '[]' : productPerformanceValuesJson}" escapeXml="false"/>;
+
+  const stockStatusLabels =
+          <c:out value="${empty stockStatusLabelsJson ? '[]' : stockStatusLabelsJson}" escapeXml="false"/>;
+
+  const stockStatusValues =
+          <c:out value="${empty stockStatusValuesJson ? '[]' : stockStatusValuesJson}" escapeXml="false"/>;
+
+  const categorySoldLabels =
+          <c:out value="${empty categorySoldLabelsJson ? '[]' : categorySoldLabelsJson}" escapeXml="false"/>;
+
+  const categorySoldValues =
+          <c:out value="${empty categorySoldValuesJson ? '[]' : categorySoldValuesJson}" escapeXml="false"/>;
+
+  const categoryRevenueValues =
+          <c:out value="${empty categoryRevenueValuesJson ? '[]' : categoryRevenueValuesJson}" escapeXml="false"/>;
 
   function formatVnd(value) {
     return new Intl.NumberFormat('vi-VN').format(value) + ' ₫';
@@ -439,6 +720,97 @@
         plugins: {
           legend: {
             position: 'bottom'
+          }
+        }
+      }
+    });
+  }
+
+  const productPerformanceChart = document.getElementById('productPerformanceChart');
+
+  if (productPerformanceChart) {
+    new Chart(productPerformanceChart, {
+      type: 'bar',
+      data: {
+        labels: productPerformanceLabels,
+        datasets: [{
+          label: 'Số sản phẩm',
+          data: productPerformanceValues,
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            display: false
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    });
+  }
+
+  const stockStatusChart = document.getElementById('stockStatusChart');
+
+  if (stockStatusChart) {
+    new Chart(stockStatusChart, {
+      type: 'doughnut',
+      data: {
+        labels: stockStatusLabels,
+        datasets: [{
+          label: 'Sản phẩm',
+          data: stockStatusValues,
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            position: 'bottom'
+          }
+        }
+      }
+    });
+  }
+
+  const categorySoldChart = document.getElementById('categorySoldChart');
+
+  if (categorySoldChart) {
+    new Chart(categorySoldChart, {
+      type: 'bar',
+      data: {
+        labels: categorySoldLabels,
+        datasets: [{
+          label: 'Số lượng bán',
+          data: categorySoldValues,
+          borderWidth: 1
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            callbacks: {
+              afterLabel: function(context) {
+                const revenue = categoryRevenueValues[context.dataIndex] || 0;
+                return 'Doanh thu: ' + formatVnd(revenue);
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            beginAtZero: true
           }
         }
       }
