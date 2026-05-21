@@ -1,4 +1,4 @@
-package com.webshop.app.controller.AdminController;
+package com.webshop.app.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.webshop.app.dao.AdminStatsDAO;
