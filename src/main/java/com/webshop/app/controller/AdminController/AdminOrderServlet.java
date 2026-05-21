@@ -20,19 +20,26 @@ public class AdminOrderServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
+        req.setCharacterEncoding("UTF-8");
+        resp.setCharacterEncoding("UTF-8");
+
         String action = req.getParameter("action");
-        if (action == null) action = "list";
+        if (action == null || action.isBlank()) {
+            action = "list";
+        }
 
         switch (action) {
 
             case "detail": {
                 int id = parseInt(req.getParameter("id"), -1);
+
                 if (id <= 0) {
                     resp.sendRedirect(req.getContextPath() + "/admin/orders");
                     return;
                 }
 
                 Order order = orderDAO.findById(id);
+
                 if (order == null) {
                     resp.sendRedirect(req.getContextPath() + "/admin/orders");
                     return;
@@ -40,18 +47,16 @@ public class AdminOrderServlet extends HttpServlet {
 
                 req.setAttribute("order", order);
 
-                // ✅ forward theo cấu trúc bạn chốt: /jsp/admin/order/...
                 req.getRequestDispatcher("/jsp/admin/order/order_detail.jsp")
-                   .forward(req, resp);
+                        .forward(req, resp);
                 break;
             }
 
-            default: { // list
+            default: {
                 req.setAttribute("orders", orderDAO.findAll());
 
-                // ✅ forward theo cấu trúc bạn chốt: /jsp/admin/order/...
                 req.getRequestDispatcher("/jsp/admin/order/order_list.jsp")
-                   .forward(req, resp);
+                        .forward(req, resp);
             }
         }
     }
@@ -61,43 +66,104 @@ public class AdminOrderServlet extends HttpServlet {
             throws ServletException, IOException {
 
         req.setCharacterEncoding("UTF-8");
+        resp.setCharacterEncoding("UTF-8");
+
         String action = req.getParameter("action");
 
         if ("updateStatus".equals(action)) {
-            int id = parseInt(req.getParameter("id"), -1);
-            String status = req.getParameter("status");
-
-            if (id > 0 && isAllowedStatus(status)) {
-                orderDAO.updateStatus(id, status);
-            }
-
-            resp.sendRedirect(req.getContextPath() + "/admin/orders?action=detail&id=" + id);
+            handleUpdateStatus(req, resp);
             return;
         }
 
         resp.sendRedirect(req.getContextPath() + "/admin/orders");
     }
 
-    private int parseInt(String s, int fallback) {
+    private void handleUpdateStatus(HttpServletRequest req, HttpServletResponse resp)
+            throws IOException {
+
+        int id = parseInt(req.getParameter("id"), -1);
+        String status = normalizeStatus(req.getParameter("status"));
+
+        if (id <= 0 || !isAllowedStatus(status)) {
+            resp.sendRedirect(req.getContextPath() + "/admin/orders");
+            return;
+        }
+
+        Order order = orderDAO.findById(id);
+
+        if (order == null) {
+            resp.sendRedirect(req.getContextPath() + "/admin/orders");
+            return;
+        }
+
+        /*
+         * Khi admin đổi trạng thái đơn hàng:
+         * - completed  => đơn xem như đã thanh toán thành công, payment_status = PAID
+         * - cancelled  => đơn bị hủy, payment_status = CANCELED
+         * - trạng thái khác => giữ nguyên payment_status hiện tại
+         *
+         * Mục đích:
+         * Rank user chỉ tính đơn có payment_status = PAID.
+         * Nếu đơn COD đã giao thành công nhưng vẫn PENDING thì rank sẽ không cập nhật.
+         */
+        String paymentStatus = resolvePaymentStatusByOrderStatus(
+                status,
+                order.getPaymentStatus()
+        );
+
+        orderDAO.updateStatusAndPaymentStatus(id, status, paymentStatus);
+
+        resp.sendRedirect(req.getContextPath() + "/admin/orders?action=detail&id=" + id);
+    }
+
+    private String resolvePaymentStatusByOrderStatus(String status, String currentPaymentStatus) {
+
+        String normalizedStatus = normalizeStatus(status);
+        String safeCurrentPaymentStatus = normalizePaymentStatus(currentPaymentStatus);
+
+        return switch (normalizedStatus) {
+            case "completed" -> "PAID";
+            case "cancelled", "canceled" -> "CANCELED";
+            default -> safeCurrentPaymentStatus;
+        };
+    }
+
+    private String normalizeStatus(String status) {
+
+        if (status == null) {
+            return "";
+        }
+
+        return status.trim().toLowerCase();
+    }
+
+    private String normalizePaymentStatus(String paymentStatus) {
+
+        if (paymentStatus == null || paymentStatus.isBlank()) {
+            return "PENDING";
+        }
+
+        return paymentStatus.trim().toUpperCase();
+    }
+
+    private int parseInt(String value, int fallback) {
+
         try {
-            return Integer.parseInt(s);
+            return Integer.parseInt(value);
         } catch (Exception e) {
             return fallback;
         }
     }
 
-    // Chặn status rác từ client
-    private boolean isAllowedStatus(String s) {
-        if (s == null) return false;
-        switch (s) {
-            case "processing":
-            case "confirmed":
-            case "shipping":
-            case "completed":
-            case "cancelled":
-                return true;
-            default:
-                return false;
+    private boolean isAllowedStatus(String status) {
+
+        if (status == null) {
+            return false;
         }
+
+        return switch (status) {
+            case "processing", "confirmed", "shipping", "completed", "cancelled" -> true;
+            default -> false;
+        };
     }
 }
