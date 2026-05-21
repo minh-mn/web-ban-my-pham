@@ -5,426 +5,6 @@
 
 <fmt:setLocale value="vi_VN"/>
 
-<style>
-  .account-dashboard {
-    padding: 24px 0;
-  }
-
-  .account-hero {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 18px;
-    padding: 22px;
-    border-radius: 22px;
-    background: linear-gradient(135deg, #fff0f6, #ffffff);
-    border: 1px solid rgba(255, 95, 162, 0.18);
-    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
-    margin-bottom: 18px;
-  }
-
-  .account-hero.admin-mode {
-    background: linear-gradient(135deg, #fff0f6, #f8f4ff);
-  }
-
-  .account-hero.user-mode {
-    background: linear-gradient(135deg, #f3f8ff, #ffffff);
-  }
-
-  .account-profile {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
-
-  .account-avatar {
-    width: 68px;
-    height: 68px;
-    border-radius: 22px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 28px;
-    font-weight: 900;
-    color: #ffffff;
-    background: linear-gradient(135deg, #ff5fa2, #b45cff);
-    box-shadow: 0 10px 22px rgba(255, 95, 162, 0.25);
-  }
-
-  .account-hero.user-mode .account-avatar {
-    background: linear-gradient(135deg, #4f8cff, #5cc8ff);
-  }
-
-  .account-title {
-    margin: 0;
-    font-size: 26px;
-    font-weight: 900;
-    color: #1f2937;
-  }
-
-  .account-subtitle {
-    margin: 4px 0 0;
-    color: #64748b;
-    font-size: 14px;
-  }
-
-  .account-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-
-  .account-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 10px 14px;
-    border-radius: 999px;
-    text-decoration: none;
-    font-weight: 800;
-    border: 1px solid rgba(148, 163, 184, 0.35);
-    background: #ffffff;
-    color: #334155;
-  }
-
-  .account-btn.primary {
-    background: linear-gradient(135deg, #ff5fa2, #b45cff);
-    color: #ffffff;
-    border: none;
-  }
-
-  .account-btn.user-primary {
-    background: linear-gradient(135deg, #4f8cff, #5cc8ff);
-    color: #ffffff;
-    border: none;
-  }
-
-  .account-grid {
-    display: grid;
-    gap: 16px;
-  }
-
-  .account-grid-2 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .account-grid-3 {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .account-grid-4 {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  .account-card {
-    background: #ffffff;
-    border: 1px solid rgba(226, 232, 240, 0.95);
-    border-radius: 22px;
-    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05);
-    overflow: hidden;
-  }
-
-  .account-card-body {
-    padding: 18px;
-  }
-
-  .account-card-title {
-    margin: 0;
-    font-size: 18px;
-    font-weight: 900;
-    color: #1f2937;
-  }
-
-  .account-muted {
-    color: #64748b;
-    font-size: 13px;
-    margin-top: 4px;
-  }
-
-  .account-kpi {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
-  }
-
-  .account-kpi-icon {
-    width: 42px;
-    height: 42px;
-    border-radius: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #fff0f6;
-    font-size: 20px;
-  }
-
-  .user-kpi-icon {
-    background: #eef6ff;
-  }
-
-  .account-kpi-label {
-    margin: 0;
-    color: #64748b;
-    font-size: 12px;
-    font-weight: 900;
-    text-transform: uppercase;
-    letter-spacing: .04em;
-  }
-
-  .account-kpi-value {
-    margin-top: 8px;
-    font-size: 26px;
-    font-weight: 950;
-    color: #111827;
-  }
-
-  .account-kpi-note {
-    margin-top: 6px;
-    color: #64748b;
-    font-size: 13px;
-  }
-
-  .account-form-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-  }
-
-  .account-label {
-    display: block;
-    margin-bottom: 6px;
-    font-weight: 800;
-    color: #334155;
-  }
-
-  .account-input {
-    width: 100%;
-    min-height: 42px;
-    border: 1px solid #dbe3ef;
-    border-radius: 14px;
-    padding: 10px 12px;
-    outline: none;
-    background: #ffffff;
-  }
-
-  .account-input:focus {
-    border-color: #ff5fa2;
-    box-shadow: 0 0 0 3px rgba(255, 95, 162, 0.12);
-  }
-
-  .account-submit {
-    margin-top: 12px;
-    border: none;
-    border-radius: 999px;
-    padding: 11px 18px;
-    font-weight: 900;
-    background: linear-gradient(135deg, #ff5fa2, #b45cff);
-    color: #ffffff;
-    cursor: pointer;
-  }
-
-  .user-mode-submit {
-    background: linear-gradient(135deg, #4f8cff, #5cc8ff);
-  }
-
-  .account-chip {
-    display: inline-flex;
-    align-items: center;
-    padding: 6px 10px;
-    border-radius: 999px;
-    background: #fff0f6;
-    color: #be185d;
-    font-size: 12px;
-    font-weight: 900;
-  }
-
-  .account-chip.user-chip {
-    background: #eef6ff;
-    color: #2563eb;
-  }
-
-  .account-table-wrap {
-    overflow-x: auto;
-  }
-
-  .account-table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-
-  .account-table th,
-  .account-table td {
-    padding: 12px;
-    border-bottom: 1px solid #edf2f7;
-    text-align: left;
-    vertical-align: middle;
-  }
-
-  .account-table th {
-    color: #64748b;
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: .04em;
-  }
-
-  .account-empty {
-    color: #64748b;
-    padding: 12px 0;
-  }
-
-  .account-alert-success {
-    color: #0a7a2f;
-    font-weight: 700;
-    margin: 8px 0;
-  }
-
-  .account-alert-error {
-    color: #b00020;
-    font-weight: 700;
-    margin: 8px 0;
-  }
-
-  .account-section-space {
-    margin-top: 16px;
-  }
-
-  .account-rank-progress {
-    width: 100%;
-    height: 12px;
-    border-radius: 999px;
-    background: #e5e7eb;
-    overflow: hidden;
-    margin-top: 12px;
-  }
-
-  .account-rank-progress__bar {
-    height: 100%;
-    border-radius: 999px;
-    background: linear-gradient(135deg, #4f8cff, #5cc8ff);
-    transition: width 0.3s ease;
-  }
-
-  .rank-member {
-    background: #eef6ff;
-    color: #2563eb;
-  }
-
-  .rank-silver {
-    background: #f1f5f9;
-    color: #475569;
-  }
-
-  .rank-gold {
-    background: #fff7db;
-    color: #b45309;
-  }
-
-  .rank-diamond {
-    background: #eff6ff;
-    color: #1d4ed8;
-  }
-
-  .rank-vip {
-    background: #fff0f6;
-    color: #be185d;
-  }
-
-  .account-coupon-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px;
-    margin-top: 14px;
-  }
-
-  .account-coupon-card {
-    border: 1px dashed rgba(79, 140, 255, 0.45);
-    background: linear-gradient(135deg, #f8fbff, #ffffff);
-    border-radius: 18px;
-    padding: 16px;
-    position: relative;
-  }
-
-  .account-coupon-top {
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-    align-items: flex-start;
-  }
-
-  .account-coupon-code {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    border-radius: 999px;
-    background: #eef6ff;
-    color: #2563eb;
-    font-weight: 950;
-    letter-spacing: .04em;
-  }
-
-  .account-coupon-discount {
-    font-size: 24px;
-    font-weight: 950;
-    color: #111827;
-    margin-top: 12px;
-  }
-
-  .account-coupon-meta {
-    margin-top: 8px;
-    color: #64748b;
-    font-size: 13px;
-    line-height: 1.6;
-  }
-
-  .account-coupon-copy {
-    border: none;
-    border-radius: 999px;
-    padding: 8px 12px;
-    background: linear-gradient(135deg, #4f8cff, #5cc8ff);
-    color: #ffffff;
-    font-weight: 900;
-    cursor: pointer;
-    white-space: nowrap;
-  }
-
-  .account-coupon-copy:hover {
-    opacity: 0.92;
-  }
-
-  .account-coupon-rank {
-    display: inline-flex;
-    align-items: center;
-    margin-top: 10px;
-    padding: 6px 10px;
-    border-radius: 999px;
-    background: #fff0f6;
-    color: #be185d;
-    font-size: 12px;
-    font-weight: 900;
-  }
-
-  @media (max-width: 980px) {
-    .account-grid-4,
-    .account-grid-3,
-    .account-grid-2,
-    .account-coupon-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .account-hero {
-      flex-direction: column;
-      align-items: flex-start;
-    }
-
-    .account-form-grid {
-      grid-template-columns: 1fr;
-    }
-  }
-</style>
-
 <section class="section account-dashboard">
   <div class="container order-page">
 
@@ -451,7 +31,7 @@
                 </p>
 
                 <c:if test="${not empty rankLabel}">
-                  <div style="margin-top:8px;">
+                  <div class="account-chip-row">
                     <span class="account-chip ${rankCss}">
                       🎖 <c:out value="${rankLabel}" />
                       <c:if test="${rankDiscount > 0}">
@@ -653,7 +233,7 @@
           <div class="account-grid account-grid-2 account-section-space">
             <div class="account-card">
               <div class="account-card-body">
-                <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:12px;">
+                <div class="account-card-head account-card-head-center">
                   <div>
                     <h2 class="account-card-title">🏬 Doanh thu toàn cửa hàng</h2>
                     <p class="account-muted">Biểu đồ doanh thu theo thời gian.</p>
@@ -674,7 +254,7 @@
 
             <div class="account-card">
               <div class="account-card-body">
-                <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:12px;">
+                <div class="account-card-head account-card-head-center">
                   <div>
                     <h2 class="account-card-title">🔥 Top sản phẩm bán chạy</h2>
                     <p class="account-muted">Sản phẩm có số lượng bán tốt nhất.</p>
@@ -689,8 +269,8 @@
                         <thead>
                         <tr>
                           <th>Sản phẩm</th>
-                          <th style="text-align:right;">Đã bán</th>
-                          <th style="text-align:right;">Doanh thu</th>
+                          <th class="account-text-right">Đã bán</th>
+                          <th class="account-text-right">Doanh thu</th>
                         </tr>
                         </thead>
 
@@ -713,7 +293,7 @@
                               </strong>
                             </td>
 
-                            <td style="text-align:right;">
+                            <td class="account-text-right">
                               <c:choose>
                                 <c:when test="${isNewTopFormat}">
                                   <c:out value="${p[2]}" />
@@ -724,7 +304,7 @@
                               </c:choose>
                             </td>
 
-                            <td style="text-align:right;">
+                            <td class="account-text-right">
                               <c:choose>
                                 <c:when test="${isNewTopFormat and not empty p[3]}">
                                   <fmt:formatNumber value="${p[3]}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫
@@ -769,7 +349,7 @@
                   Xin chào, <strong><c:out value="${safeUsername}" /></strong>. Theo dõi đơn hàng, chi tiêu và hạng khách hàng tại đây.
                 </p>
 
-                <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
+                <div class="account-chip-row">
                   <span class="account-chip user-chip">
                     📧
                     <c:choose>
@@ -811,7 +391,7 @@
           <!-- USER RANK DETAIL -->
           <div class="account-card account-section-space">
             <div class="account-card-body">
-              <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px;">
+              <div class="account-card-head account-card-head-start">
                 <div>
                   <h2 class="account-card-title">🎖 Hạng khách hàng</h2>
                   <p class="account-muted">Hạng được tính dựa trên tổng chi tiêu từ các đơn đã thanh toán thành công.</p>
@@ -854,7 +434,7 @@
                 </div>
               </div>
 
-              <div style="margin-top:16px;">
+              <div class="account-rank-next">
                 <c:choose>
                   <c:when test="${maxRank}">
                     <p class="account-muted">
@@ -862,7 +442,7 @@
                     </p>
 
                     <div class="account-rank-progress">
-                      <div class="account-rank-progress__bar" style="width:100%;"></div>
+                      <div class="account-rank-progress__bar is-full"></div>
                     </div>
                   </c:when>
 
@@ -881,10 +461,11 @@
 
                     <div class="account-rank-progress">
                       <div class="account-rank-progress__bar"
-                           style="width:${empty rankProgressPercent ? 0 : rankProgressPercent}%;"></div>
+                           data-progress="${empty rankProgressPercent ? 0 : rankProgressPercent}">
+                      </div>
                     </div>
 
-                    <p class="account-muted" style="margin-top:6px;">
+                    <p class="account-muted account-progress-note">
                       Tiến độ:
                       <strong><c:out value="${empty rankProgressPercent ? 0 : rankProgressPercent}" />%</strong>
                     </p>
@@ -897,7 +478,7 @@
           <!-- USER AVAILABLE COUPONS -->
           <div class="account-card account-section-space">
             <div class="account-card-body">
-              <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px;">
+              <div class="account-card-head account-card-head-start">
                 <div>
                   <h2 class="account-card-title">🎟 Mã giảm giá dành cho bạn</h2>
                   <p class="account-muted">
@@ -1059,7 +640,7 @@
           <!-- USER CHART -->
           <div class="account-card account-section-space">
             <div class="account-card-body">
-              <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:12px;">
+              <div class="account-card-head account-card-head-center">
                 <div>
                   <h2 class="account-card-title">📊 Chi tiêu theo thời gian</h2>
                   <p class="account-muted">Theo dõi xu hướng mua hàng của bạn.</p>
@@ -1085,7 +666,7 @@
         <!-- ========================================================= -->
         <div class="account-card account-section-space">
           <div class="account-card-body">
-            <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:12px;">
+            <div class="account-card-head account-card-head-center">
               <div>
                 <h2 class="account-card-title">📌 Cập nhật thông tin liên hệ</h2>
                 <p class="account-muted">Thông tin này dùng cho đơn hàng và liên hệ giao hàng.</p>
@@ -1173,6 +754,12 @@
               alert("Mã giảm giá: " + code);
             }
           }
+
+          document.querySelectorAll(".account-rank-progress__bar[data-progress]").forEach(function (bar) {
+            const rawProgress = Number(bar.dataset.progress || 0);
+            const safeProgress = Math.max(0, Math.min(rawProgress, 100));
+            bar.style.width = safeProgress + "%";
+          });
         </script>
 
         <!-- USER SPENDING CHART -->
