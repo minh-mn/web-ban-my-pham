@@ -534,3 +534,114 @@ a { text-decoration: none; color: inherit; }
 .search-results::-webkit-scrollbar-thumb:hover {
   background: #ccc;
 }
+
+/* =========================================
+   USER DROPDOWN FIX
+========================================= */
+
+.header-actions{
+  display:flex;
+  align-items:center;
+  gap:20px;
+}
+
+.auth-links{
+  display:flex;
+  align-items:center;
+}
+
+.user-dropdown{
+  position:relative;
+}
+
+.user-btn{
+  display:flex;
+  align-items:center;
+  gap:6px;
+
+  border:none;
+  background:none;
+  cursor:pointer;
+
+  font-size:15px;
+  font-weight:600;
+}
+
+.user-menu{
+  position:absolute;
+  top:48px;
+  right:0;
+
+  min-width:220px;
+
+  background:#fff;
+  border-radius:14px;
+
+  padding:10px;
+
+  box-shadow:0 10px 30px rgba(0,0,0,.12);
+
+  display:none;
+  flex-direction:column;
+
+  z-index:9999;
+}
+
+/* Tạo cầu nối tàng hình trực tiếp từ nút Admin xuống */
+.user-dropdown::after {
+  content: "";
+  position: absolute;
+  top: 100%;       
+  left: 0;
+  right: 0;
+  height: 25px;    
+  background: transparent;
+  z-index: 9998; 
+}
+
+.user-menu.show{
+  display:flex;
+}
+
+.user-dropdown:hover .user-menu{
+  display:flex;
+}
+
+.user-menu a,
+.logout-btn{
+  display:flex;
+  align-items:center;
+  gap:10px;
+
+  width:100%;
+
+  padding:12px 14px;
+
+  border:none;
+  background:none;
+
+  text-decoration:none;
+
+  border-radius:10px;
+
+  font-size:14px;
+  color:#333;
+
+  cursor:pointer;
+}
+
+.user-menu a:hover,
+.logout-btn:hover{
+  background:#fff0f6;
+  color:#ff5fa2;
+}
+
+.menu-divider{
+  height:1px;
+  background:#eee;
+  margin:8px 0;
+}
+
+.user-menu form{
+  margin:0;
+}
