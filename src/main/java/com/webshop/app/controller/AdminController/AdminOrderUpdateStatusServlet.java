@@ -3,6 +3,7 @@ package com.webshop.app.controller.AdminController;
 import java.io.IOException;
 
 import com.webshop.app.dao.OrderDAO;
+import com.webshop.app.model.Order;
 import com.webshop.app.model.OrderStatus;
 import com.webshop.app.model.User;
 
@@ -18,7 +19,6 @@ public class AdminOrderUpdateStatusServlet extends HttpServlet {
 
     private final OrderDAO orderDAO = new OrderDAO();
 
-    // Đồng bộ với CsrfFilter/JSP
     private static final String CSRF_SESSION_KEY = "CSRF_TOKEN";
     private static final String CSRF_PARAM = "csrf_token";
 
@@ -29,7 +29,6 @@ public class AdminOrderUpdateStatusServlet extends HttpServlet {
         req.setCharacterEncoding("UTF-8");
         resp.setCharacterEncoding("UTF-8");
 
-        // 1) Auth + Admin check
         HttpSession session = req.getSession(false);
         User user = (session != null) ? (User) session.getAttribute("user") : null;
 
@@ -37,81 +36,128 @@ public class AdminOrderUpdateStatusServlet extends HttpServlet {
             resp.sendRedirect(req.getContextPath() + "/login");
             return;
         }
+
         if (!user.isAdmin()) {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden");
             return;
         }
 
-        // 1.5) CSRF check (nếu CSRF filter đã làm rồi thì vẫn OK — check trùng cũng không hại)
         if (!isValidCsrf(req, session)) {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN, "CSRF invalid");
             return;
         }
 
-        // 2) Read params
         int orderId = safeInt(req.getParameter("orderId"), -1);
-        String statusRaw = req.getParameter("status");
+        String status = normalizeStatus(req.getParameter("status"));
 
-        if (orderId <= 0 || statusRaw == null || statusRaw.isBlank()) {
+        if (orderId <= 0 || status.isBlank()) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid params");
             return;
         }
 
-        // 3) Validate status
-        String normalized = statusRaw.trim();
-        if (!OrderStatus.isValidKey(normalized)) {
+        if (!OrderStatus.isValidKey(status)) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid status");
             return;
         }
 
-        // 4) Update DB
         try {
-            orderDAO.updateStatus(orderId, normalized);
+            Order order = orderDAO.findById(orderId);
+
+            if (order == null) {
+                resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Order not found");
+                return;
+            }
+
+            String paymentStatus = resolvePaymentStatusByOrderStatus(
+                    status,
+                    order.getPaymentStatus()
+            );
+
+            orderDAO.updateStatusAndPaymentStatus(orderId, status, paymentStatus);
+
         } catch (Exception e) {
+            e.printStackTrace();
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Update failed");
             return;
         }
 
-        // 5) Redirect back
         String returnUrl = req.getParameter("returnUrl");
         String target = safeReturnUrl(returnUrl, req.getContextPath());
+
         resp.sendRedirect(req.getContextPath() + target);
     }
 
+    private String resolvePaymentStatusByOrderStatus(String status, String currentPaymentStatus) {
+
+        String normalizedStatus = normalizeStatus(status);
+        String safeCurrentPaymentStatus = normalizePaymentStatus(currentPaymentStatus);
+
+        return switch (normalizedStatus) {
+            case "completed" -> "PAID";
+            case "cancelled", "canceled" -> "CANCELED";
+            default -> safeCurrentPaymentStatus;
+        };
+    }
+
+    private String normalizeStatus(String status) {
+
+        if (status == null) {
+            return "";
+        }
+
+        return status.trim().toLowerCase();
+    }
+
+    private String normalizePaymentStatus(String paymentStatus) {
+
+        if (paymentStatus == null || paymentStatus.isBlank()) {
+            return "PENDING";
+        }
+
+        return paymentStatus.trim().toUpperCase();
+    }
+
     private boolean isValidCsrf(HttpServletRequest req, HttpSession session) {
-        if (session == null) return false;
+
+        if (session == null) {
+            return false;
+        }
+
         String token = (String) session.getAttribute(CSRF_SESSION_KEY);
         String sent = req.getParameter(CSRF_PARAM);
+
         return token != null && sent != null && token.equals(sent);
     }
 
-    private int safeInt(String s, int def) {
+    private int safeInt(String value, int fallback) {
+
         try {
-            return Integer.parseInt(s);
+            return Integer.parseInt(value);
         } catch (Exception e) {
-            return def;
+            return fallback;
         }
     }
 
-    private String safeReturnUrl(String returnUrl, String ctx) {
+    private String safeReturnUrl(String returnUrl, String contextPath) {
+
         if (returnUrl == null || returnUrl.isBlank() || "null".equalsIgnoreCase(returnUrl)) {
             return "/orders";
         }
 
-        String u = returnUrl.trim();
+        String url = returnUrl.trim();
 
-        if (u.startsWith("http://") || u.startsWith("https://")) {
+        if (url.startsWith("http://") || url.startsWith("https://")) {
             return "/orders";
         }
 
-        if (ctx != null && !ctx.isBlank() && u.startsWith(ctx + "/")) {
-            u = u.substring(ctx.length());
+        if (contextPath != null && !contextPath.isBlank() && url.startsWith(contextPath + "/")) {
+            url = url.substring(contextPath.length());
         }
 
-        if (!u.startsWith("/")) {
+        if (!url.startsWith("/")) {
             return "/orders";
         }
 
-        return u;
+        return url;
     }
 }
