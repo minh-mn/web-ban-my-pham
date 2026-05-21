@@ -54,7 +54,8 @@
 	display: block;
 }
 
-.form-group input, .form-group textarea {
+.form-group input,
+.form-group textarea {
 	width: 100%;
 	height: 44px;
 	padding: 0 16px;
@@ -85,6 +86,7 @@
 	align-items: center;
 	font-size: 15px;
 	padding: 8px 0;
+	gap: 14px;
 }
 
 .summary-row.subtotal {
@@ -100,8 +102,18 @@
 	color: #1565c0;
 }
 
+.summary-row.rank {
+	color: #ad1457;
+	font-weight: 600;
+}
+
 .summary-row.vip {
 	color: #ad1457;
+}
+
+.summary-row .discount-value {
+	white-space: nowrap;
+	font-weight: 800;
 }
 
 .price {
@@ -118,18 +130,29 @@
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
+	gap: 14px;
 }
 
-/* 🔥 FIX CHUẨN TIỀN VND */
-.order-summary .summary-total .price-total {
+.order-summary .summary-total .price-total,
+.summary-total strong,
+.summary-total #total {
 	font-size: 28px !important;
 	font-weight: 900 !important;
 	color: #ff4f9a !important;
 	letter-spacing: 1px;
+	white-space: nowrap;
+}
+
+#coupon-discount-row[hidden] {
+	display: none !important;
+}
+
+#coupon-discount-row {
+	display: flex;
 }
 
 /* =========================================================
-   PAYMENT METHOD (NO :has)
+   PAYMENT METHOD
 ========================================================= */
 .payment-options {
 	display: flex;
@@ -164,13 +187,14 @@
 	border: 2px solid #bbb;
 	border-radius: 50%;
 	position: relative;
+	flex-shrink: 0;
 }
 
-.payment-option input:checked+.custom-radio {
+.payment-option input:checked + .custom-radio {
 	border-color: #ff5fa2;
 }
 
-.payment-option input:checked+.custom-radio::after {
+.payment-option input:checked + .custom-radio::after {
 	content: "";
 	width: 10px;
 	height: 10px;
@@ -204,24 +228,22 @@
 	margin-top: 14px;
 	border-radius: 999px;
 	border: none;
-	/* GIỮ MÀU GỐC */
 	background: linear-gradient(135deg, #ff5fa2, #ff86c3);
 	color: #fff;
 	font-size: 16px;
 	font-weight: 900;
 	letter-spacing: 0.3px;
 	cursor: pointer;
-	/* shadow vừa phải, không “chói” */
 	box-shadow: 0 14px 32px rgba(255, 95, 162, 0.34);
-	/* NẨY mượt */
-	transition: transform 0.2s cubic-bezier(.34, 1.56, .64, 1), box-shadow
-		0.2s ease, filter 0.2s ease;
+	transition:
+			transform 0.2s cubic-bezier(.34, 1.56, .64, 1),
+			box-shadow 0.2s ease,
+			filter 0.2s ease;
 }
 
 .btn-auth:hover {
 	transform: translateY(-3px);
 	box-shadow: 0 18px 40px rgba(255, 95, 162, 0.38);
-	/* CHẶN base.css đổi nền */
 	background: linear-gradient(135deg, #ff5fa2, #ff86c3);
 	color: #fff;
 }
@@ -236,4 +258,169 @@
 	text-align: center;
 	font-size: 13px;
 	color: #777;
+}
+
+/* =========================================================
+   CHECKOUT COUPON – ISSUE 110
+========================================================= */
+.checkout-coupon-apply-btn {
+	margin-top: 10px;
+}
+
+.checkout-message-success {
+	color: #0a7a2f;
+	font-weight: 700;
+}
+
+.checkout-message-error {
+	color: #b00020;
+	font-weight: 700;
+}
+
+.checkout-coupon-panel {
+	margin: 16px 0 22px;
+	padding: 16px;
+	border-radius: 20px;
+	background: #ffffff;
+	border: 1px solid rgba(226, 232, 240, 0.95);
+	box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05);
+}
+
+.checkout-coupon-panel__head {
+	display: flex;
+	justify-content: space-between;
+	gap: 12px;
+	align-items: flex-start;
+	margin-bottom: 12px;
+}
+
+.checkout-coupon-title {
+	margin: 0;
+	font-size: 17px;
+	font-weight: 900;
+	color: #1f2937;
+}
+
+.checkout-coupon-subtitle {
+	margin: 4px 0 0;
+	font-size: 13px;
+	color: #64748b;
+}
+
+.checkout-rank-chip {
+	display: inline-flex;
+	align-items: center;
+	padding: 6px 10px;
+	border-radius: 999px;
+	background: #eef6ff;
+	color: #2563eb;
+	font-size: 12px;
+	font-weight: 900;
+	white-space: nowrap;
+}
+
+.checkout-coupon-list {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 14px;
+}
+
+.checkout-coupon-item {
+	padding: 14px;
+	border-radius: 18px;
+	border: 1px dashed rgba(79, 140, 255, 0.45);
+	background: linear-gradient(135deg, #f8fbff, #ffffff);
+}
+
+.checkout-coupon-item__top {
+	display: flex;
+	justify-content: space-between;
+	gap: 12px;
+	align-items: flex-start;
+}
+
+.checkout-coupon-code {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 12px;
+	border-radius: 999px;
+	background: #eef6ff;
+	color: #2563eb;
+	font-weight: 950;
+	letter-spacing: .04em;
+	word-break: break-word;
+}
+
+.checkout-coupon-use-btn {
+	border: none;
+	border-radius: 999px;
+	padding: 8px 12px;
+	background: linear-gradient(135deg, #4f8cff, #5cc8ff);
+	color: #ffffff;
+	font-weight: 900;
+	cursor: pointer;
+	white-space: nowrap;
+}
+
+.checkout-coupon-use-btn:hover {
+	opacity: 0.92;
+}
+
+.checkout-coupon-discount {
+	margin-top: 12px;
+	font-size: 22px;
+	font-weight: 950;
+	color: #111827;
+}
+
+.checkout-coupon-info {
+	margin-top: 8px;
+	color: #64748b;
+	font-size: 13px;
+	line-height: 1.6;
+}
+
+.checkout-coupon-rank {
+	display: inline-flex;
+	align-items: center;
+	margin-top: 10px;
+	padding: 6px 10px;
+	border-radius: 999px;
+	background: #fff0f6;
+	color: #be185d;
+	font-size: 12px;
+	font-weight: 900;
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+@media (max-width: 768px) {
+	.section.container {
+		padding: 40px 14px;
+	}
+
+	.checkout-card {
+		padding: 24px 18px;
+		border-radius: 22px;
+	}
+
+	.checkout-coupon-panel__head,
+	.checkout-coupon-item__top {
+		flex-direction: column;
+	}
+
+	.checkout-coupon-list {
+		grid-template-columns: 1fr;
+	}
+
+	.summary-row,
+	.summary-total {
+		align-items: flex-start;
+	}
+
+	.summary-total #total {
+		font-size: 24px !important;
+	}
 }
