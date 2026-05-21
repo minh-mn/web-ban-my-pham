@@ -3,6 +3,7 @@ package com.webshop.app.controller.AccountController;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.webshop.app.dao.AdminStatsDAO;
 import com.webshop.app.dao.OrderDAO;
+import com.webshop.app.dao.UserCouponDAO;
 import com.webshop.app.dao.UserDAO;
 import com.webshop.app.model.User;
 import com.webshop.app.service.UserRankService;
@@ -10,6 +11,7 @@ import com.webshop.app.service.UserRankService;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Collections;
 import java.util.Map;
 
 import jakarta.servlet.ServletException;
@@ -25,7 +27,10 @@ public class AccountServlet extends HttpServlet {
     private final OrderDAO orderDAO = new OrderDAO();
     private final AdminStatsDAO adminStatsDAO = new AdminStatsDAO();
     private final UserDAO userDAO = new UserDAO();
+
     private final UserRankService userRankService = new UserRankService();
+    private final UserCouponDAO userCouponDAO = new UserCouponDAO();
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
@@ -47,7 +52,7 @@ public class AccountServlet extends HttpServlet {
          * =========================
          * RELOAD USER
          * =========================
-         * Reload từ DB để lấy email/phone mới nhất.
+         * Reload user từ DB để lấy email/phone mới nhất.
          */
         User fresh = userDAO.findById(user.getId());
 
@@ -62,10 +67,10 @@ public class AccountServlet extends HttpServlet {
 
         /*
          * =========================
-         * SAFE DEFAULT RANK ATTRIBUTES
+         * DEFAULT RANK ATTRIBUTES
          * =========================
-         * Nếu chưa có bảng store_rank hoặc chưa có dữ liệu rank,
-         * giao diện vẫn không bị lỗi.
+         * Nếu chưa có bảng store_rank hoặc dữ liệu rank lỗi,
+         * giao diện vẫn không bị crash.
          */
         setDefaultRankAttributes(req);
 
@@ -76,11 +81,45 @@ public class AccountServlet extends HttpServlet {
          * Tính rank dựa trên tổng chi tiêu từ đơn PAID,
          * không tính đơn đã hủy.
          */
+        String currentRankCode = "MEMBER";
+
         try {
             Map<String, Object> rankAttributes = userRankService.buildRankAttributes(user.getId());
             rankAttributes.forEach(req::setAttribute);
+
+            Object rankCodeObj = rankAttributes.get("rankCode");
+
+            if (rankCodeObj != null && !rankCodeObj.toString().isBlank()) {
+                currentRankCode = rankCodeObj.toString().trim().toUpperCase();
+            }
+
         } catch (RuntimeException e) {
-            // Giữ default để trang account vẫn hoạt động nếu DB chưa migrate store_rank.
+            /*
+             * Giữ default MEMBER để trang account vẫn chạy
+             * nếu DB chưa migrate store_rank.
+             */
+            e.printStackTrace();
+        }
+
+        /*
+         * =========================
+         * USER COUPONS BY RANK
+         * =========================
+         * Issue 110:
+         * Hiển thị danh sách mã giảm giá còn hiệu lực
+         * theo hạng khách hàng hiện tại.
+         */
+        try {
+            req.setAttribute(
+                    "availableCoupons",
+                    userCouponDAO.findAvailableCouponsByRankCode(currentRankCode)
+            );
+        } catch (RuntimeException e) {
+            /*
+             * Nếu bảng store_coupon chưa có min_rank_code hoặc query lỗi,
+             * JSP vẫn chạy và chỉ hiển thị danh sách rỗng.
+             */
+            req.setAttribute("availableCoupons", Collections.emptyList());
             e.printStackTrace();
         }
 
@@ -175,11 +214,6 @@ public class AccountServlet extends HttpServlet {
          * =========================
          * QUICK PRODUCT ANALYTICS FOR ACCOUNT ADMIN VIEW
          * =========================
-         * Các attribute này dùng cho 4 ô mini thống kê trong account.jsp:
-         * - Không bán tháng này
-         * - Không bán 30 ngày
-         * - Hết hàng
-         * - Sắp hết hàng
          */
         req.setAttribute("unsoldThisMonthCount", adminStatsDAO.countUnsoldProductsThisMonth());
         req.setAttribute("unsoldLast30DaysCount", adminStatsDAO.countUnsoldProductsLast30Days());
@@ -205,11 +239,20 @@ public class AccountServlet extends HttpServlet {
         req.setAttribute("amountToNextRank", BigDecimal.ZERO);
         req.setAttribute("rankProgressPercent", 0);
         req.setAttribute("maxRank", false);
+
+        /*
+         * Default cho Issue 110.
+         */
+        req.setAttribute("availableCoupons", Collections.emptyList());
     }
 
     private BigDecimal safeMoney(BigDecimal value) {
 
         if (value == null) {
+            return BigDecimal.ZERO;
+        }
+
+        if (value.compareTo(BigDecimal.ZERO) < 0) {
             return BigDecimal.ZERO;
         }
 
