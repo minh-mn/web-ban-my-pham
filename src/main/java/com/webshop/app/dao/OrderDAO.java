@@ -283,6 +283,7 @@ public class OrderDAO {
                 FROM store_order
                 WHERE user_id = ?
                   AND payment_status = ?
+                  AND LOWER(status) NOT IN ('cancelled', 'canceled')
                 """;
 
         try (Connection connection = DBConnection.getConnection();
@@ -538,11 +539,11 @@ public class OrderDAO {
     }
 
     public void markPaidByTxnRef(String txnRef) {
-        updatePaymentByTxnRef(txnRef, PAID, "CONFIRMED");
+        updatePaymentByTxnRef(txnRef, PAID, "confirmed");
     }
 
     public void markFailedByTxnRef(String txnRef) {
-        updatePaymentByTxnRef(txnRef, "FAILED", "CANCELLED");
+        updatePaymentByTxnRef(txnRef, "FAILED", "cancelled");
     }
 
     public boolean isPaidByTxnRef(String txnRef) {
@@ -608,6 +609,7 @@ public class OrderDAO {
                 FROM store_order
                 WHERE user_id = ?
                   AND payment_status = ?
+                  AND LOWER(status) NOT IN ('cancelled', 'canceled')
                   AND created_at >= ?
                   AND created_at < ?
                 GROUP BY YEAR(created_at), MONTH(created_at)
