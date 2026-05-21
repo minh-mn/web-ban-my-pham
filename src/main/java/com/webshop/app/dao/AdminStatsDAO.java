@@ -660,6 +660,7 @@ public class AdminStatsDAO {
                 JOIN store_product p ON p.id = oi.product_id
                 JOIN store_order o ON o.id = oi.order_id
                 WHERE o.payment_status = ?
+                AND LOWER(o.status) NOT IN ('cancelled', 'canceled')
                 GROUP BY p.id, p.title
                 ORDER BY sold DESC, revenue DESC
                 LIMIT 5
@@ -687,6 +688,503 @@ public class AdminStatsDAO {
 
         } catch (SQLException e) {
             throw new RuntimeException("AdminStatsDAO.topSellingProducts error", e);
+        }
+    }
+
+    /* ================= PRODUCT ANALYTICS ================= */
+
+    public int countUnsoldProductsThisWeek() {
+
+        String sql = """
+                SELECT COUNT(*)
+                FROM store_product p
+                WHERE p.is_active = 1
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM store_orderitem oi
+                    JOIN store_order o ON o.id = oi.order_id
+                    WHERE oi.product_id = p.id
+                    AND o.payment_status = ?
+                    AND LOWER(o.status) NOT IN ('cancelled', 'canceled')
+                    AND YEARWEEK(o.created_at, 1) = YEARWEEK(CURDATE(), 1)
+                )
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, PAID);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getInt(1);
+                }
+            }
+
+            return 0;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("AdminStatsDAO.countUnsoldProductsThisWeek error", e);
+        }
+    }
+
+    public int countUnsoldProductsThisMonth() {
+
+        String sql = """
+                SELECT COUNT(*)
+                FROM store_product p
+                WHERE p.is_active = 1
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM store_orderitem oi
+                    JOIN store_order o ON o.id = oi.order_id
+                    WHERE oi.product_id = p.id
+                    AND o.payment_status = ?
+                    AND LOWER(o.status) NOT IN ('cancelled', 'canceled')
+                    AND YEAR(o.created_at) = YEAR(CURDATE())
+                    AND MONTH(o.created_at) = MONTH(CURDATE())
+                )
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, PAID);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getInt(1);
+                }
+            }
+
+            return 0;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("AdminStatsDAO.countUnsoldProductsThisMonth error", e);
+        }
+    }
+
+    public int countUnsoldProductsLast30Days() {
+
+        String sql = """
+                SELECT COUNT(*)
+                FROM store_product p
+                WHERE p.is_active = 1
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM store_orderitem oi
+                    JOIN store_order o ON o.id = oi.order_id
+                    WHERE oi.product_id = p.id
+                    AND o.payment_status = ?
+                    AND LOWER(o.status) NOT IN ('cancelled', 'canceled')
+                    AND o.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+                )
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, PAID);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getInt(1);
+                }
+            }
+
+            return 0;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("AdminStatsDAO.countUnsoldProductsLast30Days error", e);
+        }
+    }
+
+    public int countSoldProductsThisMonth() {
+
+        String sql = """
+                SELECT COUNT(DISTINCT p.id)
+                FROM store_product p
+                JOIN store_orderitem oi ON oi.product_id = p.id
+                JOIN store_order o ON o.id = oi.order_id
+                WHERE p.is_active = 1
+                AND o.payment_status = ?
+                AND LOWER(o.status) NOT IN ('cancelled', 'canceled')
+                AND YEAR(o.created_at) = YEAR(CURDATE())
+                AND MONTH(o.created_at) = MONTH(CURDATE())
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, PAID);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getInt(1);
+                }
+            }
+
+            return 0;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("AdminStatsDAO.countSoldProductsThisMonth error", e);
+        }
+    }
+
+    public int countOutOfStockProducts() {
+
+        String sql = """
+                SELECT COUNT(*)
+                FROM store_product
+                WHERE is_active = 1
+                AND stock = 0
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet resultSet = statement.executeQuery()) {
+
+            if (resultSet.next()) {
+                return resultSet.getInt(1);
+            }
+
+            return 0;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("AdminStatsDAO.countOutOfStockProducts error", e);
+        }
+    }
+
+    public int countLowStockProducts() {
+
+        String sql = """
+                SELECT COUNT(*)
+                FROM store_product
+                WHERE is_active = 1
+                AND stock > 0
+                AND stock <= 10
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet resultSet = statement.executeQuery()) {
+
+            if (resultSet.next()) {
+                return resultSet.getInt(1);
+            }
+
+            return 0;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("AdminStatsDAO.countLowStockProducts error", e);
+        }
+    }
+
+    public List<String> productPerformanceLabels() {
+
+        List<String> labels = new ArrayList<>();
+        labels.add("Có bán trong tháng");
+        labels.add("Không bán trong tháng");
+
+        return labels;
+    }
+
+    public List<Integer> productPerformanceValues() {
+
+        List<Integer> values = new ArrayList<>();
+        values.add(countSoldProductsThisMonth());
+        values.add(countUnsoldProductsThisMonth());
+
+        return values;
+    }
+
+    public List<String> stockStatusLabels() {
+
+        List<String> labels = new ArrayList<>();
+        labels.add("Hết hàng");
+        labels.add("Sắp hết hàng");
+        labels.add("Còn hàng");
+
+        return labels;
+    }
+
+    public List<Integer> stockStatusValues() {
+
+        String sql = """
+                SELECT
+                    COALESCE(SUM(CASE WHEN stock = 0 THEN 1 ELSE 0 END), 0) AS out_of_stock,
+                    COALESCE(SUM(CASE WHEN stock > 0 AND stock <= 10 THEN 1 ELSE 0 END), 0) AS low_stock,
+                    COALESCE(SUM(CASE WHEN stock > 10 THEN 1 ELSE 0 END), 0) AS normal_stock
+                FROM store_product
+                WHERE is_active = 1
+                """;
+
+        List<Integer> values = new ArrayList<>();
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet resultSet = statement.executeQuery()) {
+
+            if (resultSet.next()) {
+                values.add(resultSet.getInt("out_of_stock"));
+                values.add(resultSet.getInt("low_stock"));
+                values.add(resultSet.getInt("normal_stock"));
+            }
+
+            return values;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("AdminStatsDAO.stockStatusValues error", e);
+        }
+    }
+
+    public List<Object[]> unsoldProductsThisMonth() {
+
+        String sql = """
+                SELECT
+                    p.id,
+                    p.title,
+                    p.stock,
+                    p.price,
+                    COALESCE(c.name, 'Chưa phân loại') AS category_name,
+                    p.created_at
+                FROM store_product p
+                LEFT JOIN store_category c ON c.id = p.category_id
+                WHERE p.is_active = 1
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM store_orderitem oi
+                    JOIN store_order o ON o.id = oi.order_id
+                    WHERE oi.product_id = p.id
+                    AND o.payment_status = ?
+                    AND LOWER(o.status) NOT IN ('cancelled', 'canceled')
+                    AND YEAR(o.created_at) = YEAR(CURDATE())
+                    AND MONTH(o.created_at) = MONTH(CURDATE())
+                )
+                ORDER BY p.stock DESC, p.created_at ASC
+                LIMIT 10
+                """;
+
+        List<Object[]> products = new ArrayList<>();
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, PAID);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    products.add(new Object[]{
+                            resultSet.getInt("id"),
+                            resultSet.getString("title"),
+                            resultSet.getInt("stock"),
+                            vnd0(resultSet.getBigDecimal("price")),
+                            resultSet.getString("category_name"),
+                            resultSet.getTimestamp("created_at")
+                    });
+                }
+            }
+
+            return products;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("AdminStatsDAO.unsoldProductsThisMonth error", e);
+        }
+    }
+
+    public List<Object[]> lowStockProducts() {
+
+        String sql = """
+                SELECT
+                    p.id,
+                    p.title,
+                    p.stock,
+                    p.price,
+                    COALESCE(c.name, 'Chưa phân loại') AS category_name
+                FROM store_product p
+                LEFT JOIN store_category c ON c.id = p.category_id
+                WHERE p.is_active = 1
+                AND p.stock <= 10
+                ORDER BY p.stock ASC, p.title ASC
+                LIMIT 10
+                """;
+
+        List<Object[]> products = new ArrayList<>();
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet resultSet = statement.executeQuery()) {
+
+            while (resultSet.next()) {
+                products.add(new Object[]{
+                        resultSet.getInt("id"),
+                        resultSet.getString("title"),
+                        resultSet.getInt("stock"),
+                        vnd0(resultSet.getBigDecimal("price")),
+                        resultSet.getString("category_name")
+                });
+            }
+
+            return products;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("AdminStatsDAO.lowStockProducts error", e);
+        }
+    }
+
+    public List<Object[]> slowMovingProductsLast30Days() {
+
+        String sql = """
+                SELECT
+                    p.id,
+                    p.title,
+                    p.stock,
+                    COALESCE(SUM(CASE WHEN o.id IS NOT NULL THEN oi.quantity ELSE 0 END), 0) AS sold,
+                    COALESCE(SUM(CASE WHEN o.id IS NOT NULL THEN oi.quantity * oi.price ELSE 0 END), 0) AS revenue
+                FROM store_product p
+                LEFT JOIN store_orderitem oi ON oi.product_id = p.id
+                LEFT JOIN store_order o ON o.id = oi.order_id
+                    AND o.payment_status = ?
+                    AND LOWER(o.status) NOT IN ('cancelled', 'canceled')
+                    AND o.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+                WHERE p.is_active = 1
+                GROUP BY p.id, p.title, p.stock
+                HAVING sold <= 2
+                ORDER BY sold ASC, p.stock DESC
+                LIMIT 10
+                """;
+
+        List<Object[]> products = new ArrayList<>();
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, PAID);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    products.add(new Object[]{
+                            resultSet.getInt("id"),
+                            resultSet.getString("title"),
+                            resultSet.getInt("stock"),
+                            resultSet.getInt("sold"),
+                            vnd0(resultSet.getBigDecimal("revenue"))
+                    });
+                }
+            }
+
+            return products;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("AdminStatsDAO.slowMovingProductsLast30Days error", e);
+        }
+    }
+
+    public List<String> categorySoldLabels() {
+
+        String sql = """
+                SELECT COALESCE(c.name, 'Chưa phân loại') AS category_name
+                FROM store_orderitem oi
+                JOIN store_order o ON o.id = oi.order_id
+                JOIN store_product p ON p.id = oi.product_id
+                LEFT JOIN store_category c ON c.id = p.category_id
+                WHERE o.payment_status = ?
+                AND LOWER(o.status) NOT IN ('cancelled', 'canceled')
+                AND o.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+                GROUP BY COALESCE(c.name, 'Chưa phân loại')
+                ORDER BY SUM(oi.quantity) DESC
+                LIMIT 8
+                """;
+
+        List<String> labels = new ArrayList<>();
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, PAID);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    labels.add(resultSet.getString("category_name"));
+                }
+            }
+
+            return labels;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("AdminStatsDAO.categorySoldLabels error", e);
+        }
+    }
+
+    public List<Integer> categorySoldValues() {
+
+        String sql = """
+                SELECT COALESCE(SUM(oi.quantity), 0) AS sold
+                FROM store_orderitem oi
+                JOIN store_order o ON o.id = oi.order_id
+                JOIN store_product p ON p.id = oi.product_id
+                LEFT JOIN store_category c ON c.id = p.category_id
+                WHERE o.payment_status = ?
+                AND LOWER(o.status) NOT IN ('cancelled', 'canceled')
+                AND o.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+                GROUP BY COALESCE(c.name, 'Chưa phân loại')
+                ORDER BY SUM(oi.quantity) DESC
+                LIMIT 8
+                """;
+
+        List<Integer> values = new ArrayList<>();
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, PAID);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    values.add(resultSet.getInt("sold"));
+                }
+            }
+
+            return values;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("AdminStatsDAO.categorySoldValues error", e);
+        }
+    }
+
+    public List<BigDecimal> categoryRevenueValues() {
+
+        String sql = """
+                SELECT COALESCE(SUM(oi.quantity * oi.price), 0) AS revenue
+                FROM store_orderitem oi
+                JOIN store_order o ON o.id = oi.order_id
+                JOIN store_product p ON p.id = oi.product_id
+                LEFT JOIN store_category c ON c.id = p.category_id
+                WHERE o.payment_status = ?
+                AND LOWER(o.status) NOT IN ('cancelled', 'canceled')
+                AND o.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+                GROUP BY COALESCE(c.name, 'Chưa phân loại')
+                ORDER BY SUM(oi.quantity) DESC
+                LIMIT 8
+                """;
+
+        List<BigDecimal> values = new ArrayList<>();
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, PAID);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    values.add(vnd0(resultSet.getBigDecimal("revenue")));
+                }
+            }
+
+            return values;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("AdminStatsDAO.categoryRevenueValues error", e);
         }
     }
 
