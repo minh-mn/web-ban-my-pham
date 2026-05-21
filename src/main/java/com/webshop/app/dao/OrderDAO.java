@@ -330,6 +330,29 @@ public class OrderDAO {
         }
     }
 
+    public void updateStatusAndPaymentStatus(int orderId, String status, String paymentStatus) {
+
+        String sql = """
+                UPDATE store_order
+                SET status = ?,
+                    payment_status = ?
+                WHERE id = ?
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, status);
+            statement.setString(2, paymentStatus);
+            statement.setInt(3, orderId);
+
+            statement.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new RuntimeException("OrderDAO.updateStatusAndPaymentStatus error", e);
+        }
+    }
+
     public void updatePaymentStatus(
             int orderId,
             String paymentStatus,
