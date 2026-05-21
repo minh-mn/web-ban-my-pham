@@ -331,10 +331,86 @@
     color: #be185d;
   }
 
+  .account-coupon-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 14px;
+  }
+
+  .account-coupon-card {
+    border: 1px dashed rgba(79, 140, 255, 0.45);
+    background: linear-gradient(135deg, #f8fbff, #ffffff);
+    border-radius: 18px;
+    padding: 16px;
+    position: relative;
+  }
+
+  .account-coupon-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .account-coupon-code {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: #eef6ff;
+    color: #2563eb;
+    font-weight: 950;
+    letter-spacing: .04em;
+  }
+
+  .account-coupon-discount {
+    font-size: 24px;
+    font-weight: 950;
+    color: #111827;
+    margin-top: 12px;
+  }
+
+  .account-coupon-meta {
+    margin-top: 8px;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .account-coupon-copy {
+    border: none;
+    border-radius: 999px;
+    padding: 8px 12px;
+    background: linear-gradient(135deg, #4f8cff, #5cc8ff);
+    color: #ffffff;
+    font-weight: 900;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .account-coupon-copy:hover {
+    opacity: 0.92;
+  }
+
+  .account-coupon-rank {
+    display: inline-flex;
+    align-items: center;
+    margin-top: 10px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: #fff0f6;
+    color: #be185d;
+    font-size: 12px;
+    font-weight: 900;
+  }
+
   @media (max-width: 980px) {
     .account-grid-4,
     .account-grid-3,
-    .account-grid-2 {
+    .account-grid-2,
+    .account-coupon-grid {
       grid-template-columns: 1fr;
     }
 
@@ -617,6 +693,7 @@
                           <th style="text-align:right;">Doanh thu</th>
                         </tr>
                         </thead>
+
                         <tbody>
                         <c:forEach var="p" items="${top_products}">
                           <c:set var="pLen" value="${fn:length(p)}" />
@@ -783,6 +860,7 @@
                     <p class="account-muted">
                       Bạn đã đạt hạng cao nhất. Cảm ơn bạn đã đồng hành cùng MyCosmetic.
                     </p>
+
                     <div class="account-rank-progress">
                       <div class="account-rank-progress__bar" style="width:100%;"></div>
                     </div>
@@ -813,6 +891,116 @@
                   </c:otherwise>
                 </c:choose>
               </div>
+            </div>
+          </div>
+
+          <!-- USER AVAILABLE COUPONS -->
+          <div class="account-card account-section-space">
+            <div class="account-card-body">
+              <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px;">
+                <div>
+                  <h2 class="account-card-title">🎟 Mã giảm giá dành cho bạn</h2>
+                  <p class="account-muted">
+                    Danh sách mã giảm giá còn hiệu lực phù hợp với hạng khách hàng hiện tại của bạn.
+                  </p>
+                </div>
+
+                <span class="account-chip user-chip ${rankCss}">
+                  Rank: <c:out value="${empty rankLabel ? 'Thành viên' : rankLabel}" />
+                </span>
+              </div>
+
+              <c:choose>
+                <c:when test="${not empty availableCoupons}">
+                  <div class="account-coupon-grid">
+                    <c:forEach var="coupon" items="${availableCoupons}">
+                      <div class="account-coupon-card">
+
+                        <div class="account-coupon-top">
+                          <div class="account-coupon-code">
+                            <span>🏷</span>
+                            <span><c:out value="${coupon.code}" /></span>
+                          </div>
+
+                          <button type="button"
+                                  class="account-coupon-copy"
+                                  data-coupon-code="<c:out value='${coupon.code}'/>"
+                                  onclick="copyCouponCode(this.dataset.couponCode)">
+                            Copy
+                          </button>
+                        </div>
+
+                        <div class="account-coupon-discount">
+                          Giảm <c:out value="${coupon.discountPercent}" />%
+                        </div>
+
+                        <div class="account-coupon-meta">
+                          <div>
+                            <strong>Điều kiện:</strong>
+                            <c:choose>
+                              <c:when test="${coupon.minOrderAmount > 0}">
+                                Đơn từ
+                                <fmt:formatNumber value="${coupon.minOrderAmount}"
+                                                  type="number"
+                                                  groupingUsed="true"
+                                                  maxFractionDigits="0"/> ₫
+                              </c:when>
+                              <c:otherwise>
+                                Không yêu cầu giá trị đơn tối thiểu
+                              </c:otherwise>
+                            </c:choose>
+                          </div>
+
+                          <div>
+                            <strong>Giảm tối đa:</strong>
+                            <c:choose>
+                              <c:when test="${coupon.maxDiscountAmount > 0}">
+                                <fmt:formatNumber value="${coupon.maxDiscountAmount}"
+                                                  type="number"
+                                                  groupingUsed="true"
+                                                  maxFractionDigits="0"/> ₫
+                              </c:when>
+                              <c:otherwise>
+                                Không giới hạn
+                              </c:otherwise>
+                            </c:choose>
+                          </div>
+
+                          <div>
+                            <strong>Hạn dùng:</strong>
+                            <c:choose>
+                              <c:when test="${not empty coupon.endDate}">
+                                <fmt:formatDate value="${coupon.endDate}" pattern="dd/MM/yyyy HH:mm"/>
+                              </c:when>
+                              <c:otherwise>
+                                Không giới hạn
+                              </c:otherwise>
+                            </c:choose>
+                          </div>
+
+                          <c:if test="${coupon.remainingUses >= 0}">
+                            <div>
+                              <strong>Còn lượt:</strong>
+                              <c:out value="${coupon.remainingUses}" />
+                            </div>
+                          </c:if>
+                        </div>
+
+                        <div class="account-coupon-rank">
+                          Dành cho: <c:out value="${coupon.minRankLabel}" /> trở lên
+                        </div>
+
+                      </div>
+                    </c:forEach>
+                  </div>
+                </c:when>
+
+                <c:otherwise>
+                  <p class="account-empty">
+                    Hiện chưa có mã giảm giá phù hợp với hạng khách hàng của bạn.
+                  </p>
+                </c:otherwise>
+              </c:choose>
             </div>
           </div>
 
@@ -916,12 +1104,15 @@
             <c:if test="${param.update == 'success'}">
               <p class="account-alert-success">Cập nhật thành công.</p>
             </c:if>
+
             <c:if test="${param.update == 'invalid_email'}">
               <p class="account-alert-error">Email không hợp lệ.</p>
             </c:if>
+
             <c:if test="${param.update == 'invalid_phone'}">
               <p class="account-alert-error">Số điện thoại không hợp lệ (9–11 chữ số).</p>
             </c:if>
+
             <c:if test="${param.update == 'email_used'}">
               <p class="account-alert-error">Email đã được sử dụng.</p>
             </c:if>
@@ -963,6 +1154,26 @@
         </div>
 
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+        <script>
+          function copyCouponCode(code) {
+            if (!code) {
+              return;
+            }
+
+            if (navigator.clipboard) {
+              navigator.clipboard.writeText(code)
+                      .then(function () {
+                        alert("Đã copy mã: " + code);
+                      })
+                      .catch(function () {
+                        alert("Mã giảm giá: " + code);
+                      });
+            } else {
+              alert("Mã giảm giá: " + code);
+            }
+          }
+        </script>
 
         <!-- USER SPENDING CHART -->
         <c:if test="${not sessionScope.user.admin and not empty chart_labels and not empty chart_values}">
