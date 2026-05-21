@@ -14,7 +14,7 @@
   background: #fff;
   padding: 28px;
   border-radius: 22px;
-  box-shadow: 0 16px 36px rgba(255,95,162,.15);
+  box-shadow: 0 16px 36px rgba(255, 95, 162, .15);
   margin-bottom: 36px;
 }
 
@@ -55,7 +55,7 @@
   background: #fff;
   border-radius: 22px;
   padding: 24px;
-  box-shadow: 0 14px 34px rgba(255,95,162,.12);
+  box-shadow: 0 14px 34px rgba(255, 95, 162, .12);
   overflow-x: auto;
 }
 
@@ -150,18 +150,18 @@
   border-radius: 999px;
   border: none;
 
-  box-shadow: 0 10px 24px rgba(255,95,162,.35);
+  box-shadow: 0 10px 24px rgba(255, 95, 162, .35);
   transition: all .25s ease;
 }
 
 .btn-outline.small:hover {
   transform: translateY(-1px);
-  box-shadow: 0 16px 36px rgba(255,95,162,.45);
+  box-shadow: 0 16px 36px rgba(255, 95, 162, .45);
 }
 
 .btn-outline.small:active {
   transform: translateY(0);
-  box-shadow: 0 8px 18px rgba(255,95,162,.3);
+  box-shadow: 0 8px 18px rgba(255, 95, 162, .3);
 }
 
 /* ===== EMPTY ===== */
@@ -195,7 +195,7 @@
   background: #fff;
   padding: 24px;
   border-radius: 20px;
-  box-shadow: 0 12px 36px rgba(255,95,162,0.12);
+  box-shadow: 0 12px 36px rgba(255, 95, 162, 0.12);
   margin-bottom: 40px;
 }
 
@@ -206,11 +206,11 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  box-shadow: 0 10px 30px rgba(255,95,162,0.12);
+  box-shadow: 0 10px 30px rgba(255, 95, 162, 0.12);
 }
 
 .stat-card.pink {
-  background: linear-gradient(135deg,#ff5fa2,#ff86c3);
+  background: linear-gradient(135deg, #ff5fa2, #ff86c3);
   color: #fff;
 }
 
@@ -247,6 +247,9 @@
 
 /* ===== CHANGE PASSWORD BUTTON ===== */
 .account-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
   margin-top: 4px;
 }
 
@@ -265,16 +268,14 @@
   font-weight: 800;
   text-decoration: none;
 
-  box-shadow: 0 12px 28px rgba(255,95,162,.4);
+  box-shadow: 0 12px 28px rgba(255, 95, 162, .4);
   transition: all .25s ease;
 }
 
 .account-actions .btn-auth:hover {
   transform: translateY(-2px);
-  box-shadow: 0 18px 40px rgba(255,95,162,.5);
+  box-shadow: 0 18px 40px rgba(255, 95, 162, .5);
 }
-
-.account-actions .btn-au
 
 /* =========================================================
    ADMIN STATUS FORM
@@ -304,7 +305,7 @@
 .order-status-select:focus {
   outline: none;
   border-color: #ff5fa2;
-  box-shadow: 0 0 0 2px rgba(255,95,162,.15);
+  box-shadow: 0 0 0 2px rgba(255, 95, 162, .15);
 }
 
 /* ===== STATUS COLORS ===== */
@@ -364,7 +365,6 @@
 }
 
 /* ===== USER RANK BADGE ===== */
-/* ===== USERNAME + RANK INLINE ===== */
 .username-row {
   display: flex;
   align-items: center;
@@ -375,7 +375,6 @@
   margin: 0;
 }
 
-/* BADGE giữ nguyên style cũ, chỉ tinh chỉnh nhẹ */
 .user-rank-badge {
   display: inline-flex;
   align-items: center;
@@ -395,26 +394,442 @@
 .user-rank-badge.bronze {
   background: linear-gradient(135deg, #cd7f32, #b87333);
   color: #3b1f0f;
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.25);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
 }
 
 /* 🥈 BẠC – xám bạc kim loại */
 .user-rank-badge.silver {
   background: linear-gradient(135deg, #f3f4f6, #d1d5db);
   color: #1f2937;
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.5);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
 }
 
 /* 🥇 VÀNG – vàng kim */
 .user-rank-badge.gold {
   background: linear-gradient(135deg, #fde047, #f59e0b);
   color: #78350f;
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.4);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
 }
 
 /* 💎 KIM CƯƠNG – xanh ngọc / xanh nước biển */
 .user-rank-badge.diamond {
   background: linear-gradient(135deg, #67e8f9, #22d3ee);
   color: #083344;
-  box-shadow: 0 0 12px rgba(34,211,238,0.45);
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.45);
+}
+
+/* =========================================================
+   ACCOUNT PAGE – DASHBOARD / RANK / COUPON
+========================================================= */
+
+.account-dashboard {
+  padding: 24px 0;
+}
+
+.account-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 22px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #fff0f6, #ffffff);
+  border: 1px solid rgba(255, 95, 162, 0.18);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+  margin-bottom: 18px;
+}
+
+.account-hero.admin-mode {
+  background: linear-gradient(135deg, #fff0f6, #f8f4ff);
+}
+
+.account-hero.user-mode {
+  background: linear-gradient(135deg, #f3f8ff, #ffffff);
+}
+
+.account-profile {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.account-avatar {
+  width: 68px;
+  height: 68px;
+  border-radius: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 900;
+  color: #ffffff;
+  background: linear-gradient(135deg, #ff5fa2, #b45cff);
+  box-shadow: 0 10px 22px rgba(255, 95, 162, 0.25);
+}
+
+.account-hero.user-mode .account-avatar {
+  background: linear-gradient(135deg, #4f8cff, #5cc8ff);
+}
+
+.account-title {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 900;
+  color: #1f2937;
+}
+
+.account-subtitle {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.account-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  text-decoration: none;
+  font-weight: 800;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: #ffffff;
+  color: #334155;
+}
+
+.account-btn.primary {
+  background: linear-gradient(135deg, #ff5fa2, #b45cff);
+  color: #ffffff;
+  border: none;
+}
+
+.account-btn.user-primary {
+  background: linear-gradient(135deg, #4f8cff, #5cc8ff);
+  color: #ffffff;
+  border: none;
+}
+
+.account-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.account-grid-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.account-grid-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.account-grid-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.account-card {
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  border-radius: 22px;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05);
+  overflow: hidden;
+}
+
+.account-card-body {
+  padding: 18px;
+}
+
+.account-card-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 900;
+  color: #1f2937;
+}
+
+.account-muted {
+  color: #64748b;
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.account-kpi {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.account-kpi-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff0f6;
+  font-size: 20px;
+}
+
+.user-kpi-icon {
+  background: #eef6ff;
+}
+
+.account-kpi-label {
+  margin: 0;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.account-kpi-value {
+  margin-top: 8px;
+  font-size: 26px;
+  font-weight: 950;
+  color: #111827;
+}
+
+.account-kpi-note {
+  margin-top: 6px;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.account-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.account-label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 800;
+  color: #334155;
+}
+
+.account-input {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid #dbe3ef;
+  border-radius: 14px;
+  padding: 10px 12px;
+  outline: none;
+  background: #ffffff;
+}
+
+.account-input:focus {
+  border-color: #ff5fa2;
+  box-shadow: 0 0 0 3px rgba(255, 95, 162, 0.12);
+}
+
+.account-submit {
+  margin-top: 12px;
+  border: none;
+  border-radius: 999px;
+  padding: 11px 18px;
+  font-weight: 900;
+  background: linear-gradient(135deg, #ff5fa2, #b45cff);
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.user-mode-submit {
+  background: linear-gradient(135deg, #4f8cff, #5cc8ff);
+}
+
+.account-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #fff0f6;
+  color: #be185d;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.account-chip.user-chip {
+  background: #eef6ff;
+  color: #2563eb;
+}
+
+.account-table-wrap {
+  overflow-x: auto;
+}
+
+.account-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.account-table th,
+.account-table td {
+  padding: 12px;
+  border-bottom: 1px solid #edf2f7;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.account-table th {
+  color: #64748b;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.account-empty {
+  color: #64748b;
+  padding: 12px 0;
+}
+
+.account-alert-success {
+  color: #0a7a2f;
+  font-weight: 700;
+  margin: 8px 0;
+}
+
+.account-alert-error {
+  color: #b00020;
+  font-weight: 700;
+  margin: 8px 0;
+}
+
+.account-section-space {
+  margin-top: 16px;
+}
+
+.account-rank-progress {
+  width: 100%;
+  height: 12px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  overflow: hidden;
+  margin-top: 12px;
+}
+
+.account-rank-progress__bar {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #4f8cff, #5cc8ff);
+  transition: width 0.3s ease;
+}
+
+.rank-member {
+  background: #eef6ff;
+  color: #2563eb;
+}
+
+.rank-silver {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.rank-gold {
+  background: #fff7db;
+  color: #b45309;
+}
+
+.rank-diamond {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.rank-vip {
+  background: #fff0f6;
+  color: #be185d;
+}
+
+.account-coupon-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.account-coupon-card {
+  border: 1px dashed rgba(79, 140, 255, 0.45);
+  background: linear-gradient(135deg, #f8fbff, #ffffff);
+  border-radius: 18px;
+  padding: 16px;
+  position: relative;
+}
+
+.account-coupon-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.account-coupon-code {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #eef6ff;
+  color: #2563eb;
+  font-weight: 950;
+  letter-spacing: .04em;
+}
+
+.account-coupon-discount {
+  font-size: 24px;
+  font-weight: 950;
+  color: #111827;
+  margin-top: 12px;
+}
+
+.account-coupon-meta {
+  margin-top: 8px;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.account-coupon-copy {
+  border: none;
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, #4f8cff, #5cc8ff);
+  color: #ffffff;
+  font-weight: 900;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.account-coupon-copy:hover {
+  opacity: 0.92;
+}
+
+.account-coupon-rank {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 10px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #fff0f6;
+  color: #be185d;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+@media (max-width: 980px) {
+  .account-grid-4,
+  .account-grid-3,
+  .account-grid-2,
+  .account-coupon-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .account-hero {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .account-form-grid {
+    grid-template-columns: 1fr;
+  }
 }
