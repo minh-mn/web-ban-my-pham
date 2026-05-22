@@ -6,6 +6,7 @@ import java.util.List;
 import com.webshop.app.dao.AdminUserDAO;
 import com.webshop.app.dao.UserRankDAO;
 import com.webshop.app.model.User;
+import com.webshop.app.model.UserRank;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -49,6 +50,8 @@ public class AdminUserServlet extends HttpServlet {
                     return;
                 }
 
+                attachCurrentRank(u);
+
                 req.setAttribute("user", u);
                 req.setAttribute("ranks", rankDAO.findAllActive());
 
@@ -70,6 +73,8 @@ public class AdminUserServlet extends HttpServlet {
                     resp.sendRedirect(req.getContextPath() + "/admin/users");
                     return;
                 }
+
+                attachCurrentRank(u);
 
                 req.setAttribute("mode", "edit");
                 req.setAttribute("user", u);
@@ -95,6 +100,7 @@ public class AdminUserServlet extends HttpServlet {
                 }
 
                 List<User> users = userDAO.search(q, role, rank, active);
+                attachCurrentRanks(users);
 
                 req.setAttribute("users", users);
                 req.setAttribute("ranks", rankDAO.findAllActive());
@@ -122,7 +128,6 @@ public class AdminUserServlet extends HttpServlet {
 
         switch (action) {
 
-            /* ================= UPDATE INFO ================= */
             case "updateInfo": {
                 if (id <= 0) {
                     resp.sendRedirect(req.getContextPath() + "/admin/users");
@@ -172,7 +177,6 @@ public class AdminUserServlet extends HttpServlet {
                 return;
             }
 
-            /* ================= CHANGE PASSWORD ================= */
             case "changePassword": {
                 if (id <= 0) {
                     resp.sendRedirect(req.getContextPath() + "/admin/users");
@@ -206,7 +210,10 @@ public class AdminUserServlet extends HttpServlet {
                 return;
             }
 
-            /* ================= CHANGE RANK QUICKLY ================= */
+            /*
+             * Giữ lại để tương thích nếu form cũ còn gọi.
+             * Nếu user_list.jsp đã bỏ đổi rank nhanh thì case này không ảnh hưởng.
+             */
             case "changeRank": {
                 int uid = safeInt(req.getParameter("id"), -1);
                 String manualRankCode = safe(req.getParameter("manualRankCode"));
@@ -219,7 +226,6 @@ public class AdminUserServlet extends HttpServlet {
                 return;
             }
 
-            /* ================= DELETE USER ================= */
             case "delete": {
                 int uid = safeInt(req.getParameter("id"), -1);
 
@@ -261,7 +267,10 @@ public class AdminUserServlet extends HttpServlet {
                 return;
             }
 
-            /* ================= CHANGE ROLE QUICKLY ================= */
+            /*
+             * Giữ lại để tương thích nếu form cũ còn gọi.
+             * Nếu user_list.jsp đã bỏ đổi role nhanh thì case này không ảnh hưởng.
+             */
             case "changeRole": {
                 int uid = safeInt(req.getParameter("id"), -1);
                 String role = safe(req.getParameter("role"));
@@ -290,6 +299,50 @@ public class AdminUserServlet extends HttpServlet {
         }
     }
 
+    /* ===================== RANK HELPERS ===================== */
+
+    private void attachCurrentRanks(List<User> users) {
+        if (users == null || users.isEmpty()) {
+            return;
+        }
+
+        for (User user : users) {
+            attachCurrentRank(user);
+        }
+    }
+
+    private void attachCurrentRank(User user) {
+        if (user == null) {
+            return;
+        }
+
+        UserRank rank = null;
+
+        /*
+         * Nếu admin đã chỉ định rank trực tiếp:
+         * - Dùng rank đó làm rank hiện tại.
+         */
+        if (user.getManualRankCode() != null && !user.getManualRankCode().isBlank()) {
+            rank = rankDAO.findByCode(user.getManualRankCode());
+        }
+
+        /*
+         * Nếu không có rank thủ công:
+         * - Tính rank theo tổng chi tiêu đã thanh toán.
+         */
+        if (rank == null) {
+            rank = rankDAO.findCurrentRankByUserId(user.getId());
+        }
+
+        if (rank != null) {
+            user.setCurrentRankCode(rank.getCode());
+            user.setCurrentRankName(rank.getName());
+        } else {
+            user.setCurrentRankCode("MEMBER");
+            user.setCurrentRankName("Thành viên");
+        }
+    }
+
     /* ===================== HELPERS ===================== */
 
     private void forwardEdit(HttpServletRequest req, HttpServletResponse resp, int id)
@@ -301,6 +354,8 @@ public class AdminUserServlet extends HttpServlet {
             resp.sendRedirect(req.getContextPath() + "/admin/users");
             return;
         }
+
+        attachCurrentRank(fresh);
 
         req.setAttribute("mode", "edit");
         req.setAttribute("user", fresh);
