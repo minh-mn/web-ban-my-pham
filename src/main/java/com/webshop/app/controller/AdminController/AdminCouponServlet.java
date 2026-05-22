@@ -23,6 +23,7 @@ public class AdminCouponServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
+        couponDAO.deactivateExpiredCoupons();
 
         req.setCharacterEncoding("UTF-8");
         resp.setCharacterEncoding("UTF-8");
@@ -130,7 +131,7 @@ public class AdminCouponServlet extends HttpServlet {
 
                 case "delete": {
                     int id = safeInt(req.getParameter("id"), -1);
-                    if (id > 0) couponDAO.delete(id);
+                    if (id > 0) couponDAO.softDisable(id);
                     resp.sendRedirect(req.getContextPath() + "/admin/coupons");
                     return;
                 }
@@ -169,18 +170,40 @@ public class AdminCouponServlet extends HttpServlet {
     /* ===================== BIND + VALIDATE ===================== */
 
     private void bind(HttpServletRequest req, Coupon cp) {
+
         // CODE
         String code = safe(req.getParameter("code")).toUpperCase();
         cp.setCode(code);
 
+        // TYPE
+        String type = safe(req.getParameter("type")).toUpperCase();
+        if (type.isEmpty()) {
+            type = "DISCOUNT"; // default
+        }
+        cp.setType(type);
+
+        // Description
+        cp.setDescription(safe(req.getParameter("description")));
+
+        // Min Order Amount
+        String minOrderStr = req.getParameter("minOrderAmount");
+        if (minOrderStr == null || minOrderStr.trim().isEmpty()) {
+            cp.setMinOrderAmount(BigDecimal.ZERO);
+        } else {
+            try {
+                cp.setMinOrderAmount(new BigDecimal(minOrderStr.trim()));
+            } catch (Exception e) {
+                cp.setMinOrderAmount(BigDecimal.ZERO);
+            }
+        }
+
         // discount %
         cp.setDiscountPercent(safeInt(req.getParameter("discountPercent"), 0));
 
-        // max uses (DB NOT NULL)
-        int maxUses = safeInt(req.getParameter("maxUses"), 0);
-        cp.setMaxUses(maxUses);
+        // max uses
+        cp.setMaxUses(safeInt(req.getParameter("maxUses"), 1));
 
-        // max discount amount (nullable)
+        // max discount amount
         String maxStr = req.getParameter("maxDiscountAmount");
         if (maxStr == null || maxStr.trim().isEmpty()) {
             cp.setMaxDiscountAmount(null);
@@ -192,37 +215,43 @@ public class AdminCouponServlet extends HttpServlet {
             }
         }
 
-        // dates (LocalDate)
+        // dates
         cp.setStartDate(safeDate(req.getParameter("startDate")));
         cp.setEndDate(safeDate(req.getParameter("endDate")));
 
         // active
-        boolean active = "1".equals(req.getParameter("active")) ||
-                         "true".equalsIgnoreCase(req.getParameter("active"));
+        boolean active =
+                "1".equals(req.getParameter("active")) ||
+                        "true".equalsIgnoreCase(req.getParameter("active"));
+
         cp.setActive(active);
     }
 
     private void validate(Coupon cp, boolean isUpdate) {
+
         if (cp.getCode() == null || cp.getCode().isBlank())
-            throw new IllegalArgumentException("Mã coupon (code) không được để trống.");
+            throw new IllegalArgumentException("Code không được trống.");
 
         if (cp.getDiscountPercent() <= 0 || cp.getDiscountPercent() > 100)
-            throw new IllegalArgumentException("discountPercent phải trong khoảng 1..100.");
+            throw new IllegalArgumentException("discountPercent phải 1-100.");
 
         if (cp.getMaxUses() < 1)
             throw new IllegalArgumentException("maxUses phải >= 1.");
 
-        if (cp.getMaxDiscountAmount() != null &&
-            cp.getMaxDiscountAmount().compareTo(BigDecimal.ZERO) <= 0)
-            throw new IllegalArgumentException("maxDiscountAmount nếu nhập phải > 0.");
+        // ⭐ FIX TYPE
+        if (cp.getType() == null || cp.getType().isBlank())
+            throw new IllegalArgumentException("type không được trống.");
+
+        if (!cp.getType().equals("DISCOUNT")
+                && !cp.getType().equals("FREESHIP")
+                && !cp.getType().equals("PRODUCT")) {
+            throw new IllegalArgumentException("type không hợp lệ.");
+        }
 
         if (cp.getStartDate() != null && cp.getEndDate() != null &&
-            cp.getEndDate().isBefore(cp.getStartDate()))
-            throw new IllegalArgumentException("endDate không được trước startDate.");
-
-        // Nếu update, không cho maxUses < usedCount (tránh dữ liệu vô lý)
-        if (isUpdate && cp.getUsedCount() > 0 && cp.getMaxUses() > 0 && cp.getUsedCount() > cp.getMaxUses())
-            throw new IllegalArgumentException("maxUses không được nhỏ hơn usedCount hiện tại.");
+                cp.getEndDate().isBefore(cp.getStartDate())) {
+            throw new IllegalArgumentException("endDate phải sau startDate.");
+        }
     }
 
     /* ===================== HELPERS ===================== */
