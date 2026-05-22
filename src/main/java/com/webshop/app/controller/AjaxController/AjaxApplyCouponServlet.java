@@ -18,64 +18,143 @@ import jakarta.servlet.http.HttpSession;
 @WebServlet("/ajax/apply-coupon")
 public class AjaxApplyCouponServlet extends HttpServlet {
 
+    private static final long serialVersionUID = 1L;
+
     private final CheckoutService checkoutService = new CheckoutService();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
 
+        req.setCharacterEncoding("UTF-8");
+        resp.setCharacterEncoding("UTF-8");
         resp.setContentType("application/json;charset=UTF-8");
 
-        HttpSession session = req.getSession();
-        Map<String, CartItem> cart = CartUtil.getCart(session);
+        HttpSession session = req.getSession(false);
 
-        // ===== 1) CHECK CART =====
-        if (cart == null || cart.isEmpty()) {
-            resp.getWriter().write("{\"error\":\"Giỏ hàng trống\"}");
+        if (session == null) {
+            writeError(resp, "Phiên làm việc đã hết hạn. Vui lòng thử lại.");
             return;
         }
 
-        // ===== 2) SUBTOTAL (LUÔN CÓ) =====
-        BigDecimal subTotal = cart.values().stream()
-                .map(CartItem::getSubtotal)
-                .reduce(BigDecimal.ZERO, BigDecimal::add)
-                .setScale(0, RoundingMode.HALF_UP);
+        /*
+         * Mục 68:
+         * Chỉ lấy các sản phẩm đã được tích chọn để tính coupon.
+         */
+        Map<String, CartItem> cart = CartUtil.getSelectedCart(session);
+
+        if (cart == null || cart.isEmpty()) {
+            writeError(resp, "Vui lòng chọn ít nhất một sản phẩm để áp dụng mã giảm giá.");
+            return;
+        }
+
+        BigDecimal subTotal = calcSubTotal(cart);
 
         String code = req.getParameter("code");
 
-        // ===== 3) KHÔNG NHẬP MÃ → trả tổng tiền mặc định =====
-        if (code == null || code.isBlank()) {
+        /*
+         * Không nhập mã:
+         * - Xóa coupon khỏi session.
+         * - Trả về tổng tiền gốc.
+         */
+        if (isBlank(code)) {
+            session.removeAttribute("CHECKOUT_COUPON");
+            session.removeAttribute("CHECKOUT_COUPON_DISCOUNT");
+
             writeJson(resp, subTotal, BigDecimal.ZERO, subTotal);
             return;
         }
 
-        // ===== 4) TÍNH GIẢM GIÁ QUA SERVICE (CHUẨN) =====
-        BigDecimal discount =
-                checkoutService.calculateCouponDiscount(code.trim(), subTotal);
+        code = code.trim();
 
-        if (discount == null) {
-            resp.getWriter().write("{\"error\":\"Mã không hợp lệ hoặc đã hết hạn\"}");
+        BigDecimal discount = checkoutService.calculateCouponDiscount(code, subTotal);
+
+        if (discount == null || discount.compareTo(BigDecimal.ZERO) <= 0) {
+            session.removeAttribute("CHECKOUT_COUPON");
+            session.removeAttribute("CHECKOUT_COUPON_DISCOUNT");
+
+            writeError(resp, "Mã không hợp lệ hoặc đã hết hạn.");
             return;
         }
 
+        discount = discount.setScale(0, RoundingMode.HALF_UP);
+
         BigDecimal total = subTotal.subtract(discount);
-        if (total.compareTo(BigDecimal.ZERO) < 0) total = BigDecimal.ZERO;
+
+        if (total.compareTo(BigDecimal.ZERO) < 0) {
+            total = BigDecimal.ZERO;
+        }
+
+        total = total.setScale(0, RoundingMode.HALF_UP);
+
+        /*
+         * Lưu coupon vào session để CheckoutServlet dùng khi đặt hàng.
+         */
+        session.setAttribute("CHECKOUT_COUPON", code);
+        session.setAttribute("CHECKOUT_COUPON_DISCOUNT", discount);
 
         writeJson(resp, subTotal, discount, total);
     }
 
-    // ===== helper JSON =====
-    private void writeJson(HttpServletResponse resp,
-                           BigDecimal subTotal,
-                           BigDecimal discount,
-                           BigDecimal total) throws IOException {
+    @Override
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp)
+            throws IOException {
+        doGet(req, resp);
+    }
+
+    private BigDecimal calcSubTotal(Map<String, CartItem> cart) {
+        BigDecimal subTotal = BigDecimal.ZERO;
+
+        if (cart == null || cart.isEmpty()) {
+            return subTotal;
+        }
+
+        for (CartItem item : cart.values()) {
+            if (item != null && item.getSubtotal() != null) {
+                subTotal = subTotal.add(item.getSubtotal());
+            }
+        }
+
+        return subTotal.setScale(0, RoundingMode.HALF_UP);
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
+    }
+
+    private void writeJson(
+            HttpServletResponse resp,
+            BigDecimal subTotal,
+            BigDecimal discount,
+            BigDecimal total
+    ) throws IOException {
 
         resp.getWriter().write(
-            "{"
-          + "\"subtotal\":" + subTotal + ","
-          + "\"discount\":" + discount + ","
-          + "\"total\":" + total
-          + "}"
+                "{"
+                        + "\"subtotal\":" + subTotal + ","
+                        + "\"discount\":" + discount + ","
+                        + "\"total\":" + total
+                        + "}"
         );
+    }
+
+    private void writeError(HttpServletResponse resp, String message)
+            throws IOException {
+
+        resp.getWriter().write(
+                "{"
+                        + "\"error\":\"" + escapeJson(message) + "\""
+                        + "}"
+        );
+    }
+
+    private String escapeJson(String value) {
+        if (value == null) {
+            return "";
+        }
+
+        return value
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"");
     }
 }
