@@ -5,7 +5,9 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Map;
 
+import com.webshop.app.dao.CouponDAO;
 import com.webshop.app.model.CartItem;
+import com.webshop.app.model.User;
 import com.webshop.app.service.CheckoutService;
 import com.webshop.app.utils.CartUtil;
 
@@ -18,143 +20,59 @@ import jakarta.servlet.http.HttpSession;
 @WebServlet("/ajax/apply-coupon")
 public class AjaxApplyCouponServlet extends HttpServlet {
 
-    private static final long serialVersionUID = 1L;
-
     private final CheckoutService checkoutService = new CheckoutService();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
 
-        req.setCharacterEncoding("UTF-8");
+        resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
-        resp.setContentType("application/json;charset=UTF-8");
 
-        HttpSession session = req.getSession(false);
+        HttpSession session = req.getSession();
+        User loggedInUser = (User) session.getAttribute("user");
 
-        if (session == null) {
-            writeError(resp, "Phiên làm việc đã hết hạn. Vui lòng thử lại.");
+        // 1. Kiểm tra đăng nhập
+        if (loggedInUser == null) {
+            resp.getWriter().write("{\"success\": false, \"message\": \"Vui lòng đăng nhập trước!\"}");
             return;
         }
 
-        /*
-         * Mục 68:
-         * Chỉ lấy các sản phẩm đã được tích chọn để tính coupon.
-         */
-        Map<String, CartItem> cart = CartUtil.getSelectedCart(session);
-
-        if (cart == null || cart.isEmpty()) {
-            writeError(resp, "Vui lòng chọn ít nhất một sản phẩm để áp dụng mã giảm giá.");
-            return;
-        }
-
-        BigDecimal subTotal = calcSubTotal(cart);
-
+        // 2. Kiểm tra mã hợp lệ gửi lên
         String code = req.getParameter("code");
-
-        /*
-         * Không nhập mã:
-         * - Xóa coupon khỏi session.
-         * - Trả về tổng tiền gốc.
-         */
-        if (isBlank(code)) {
-            session.removeAttribute("CHECKOUT_COUPON");
-            session.removeAttribute("CHECKOUT_COUPON_DISCOUNT");
-
-            writeJson(resp, subTotal, BigDecimal.ZERO, subTotal);
+        if (code == null || code.isBlank()) {
+            resp.getWriter().write("{\"success\": false, \"message\": \"Mã giảm giá không hợp lệ!\"}");
             return;
         }
 
-        code = code.trim();
+        // 3. Tiến hành gọi DAO lưu cặp (userId, couponId) vào bảng trung gian user_coupon dưới DB
+        CouponDAO couponDAO = new CouponDAO();
+        couponDAO.saveVoucherToUserCollection(loggedInUser.getId(), code);
 
-        BigDecimal discount = checkoutService.calculateCouponDiscount(code, subTotal);
+        // 4. Tính toán số tiền được giảm giá dựa trên giỏ hàng hiện tại (nếu có)
+        // Việc này giúp đảm bảo JavaScript ở home.jsp lấy được thuộc tính 'data.discount' mà không bị lỗi crash
+        BigDecimal discount = BigDecimal.ZERO;
+        Map<Integer, CartItem> cart = CartUtil.getCart(session);
 
-        if (discount == null || discount.compareTo(BigDecimal.ZERO) <= 0) {
-            session.removeAttribute("CHECKOUT_COUPON");
-            session.removeAttribute("CHECKOUT_COUPON_DISCOUNT");
+        if (cart != null && !cart.isEmpty()) {
+            BigDecimal subTotal = cart.values().stream()
+                    .map(CartItem::getSubtotal)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add)
+                    .setScale(0, RoundingMode.HALF_UP);
 
-            writeError(resp, "Mã không hợp lệ hoặc đã hết hạn.");
-            return;
-        }
-
-        discount = discount.setScale(0, RoundingMode.HALF_UP);
-
-        BigDecimal total = subTotal.subtract(discount);
-
-        if (total.compareTo(BigDecimal.ZERO) < 0) {
-            total = BigDecimal.ZERO;
-        }
-
-        total = total.setScale(0, RoundingMode.HALF_UP);
-
-        /*
-         * Lưu coupon vào session để CheckoutServlet dùng khi đặt hàng.
-         */
-        session.setAttribute("CHECKOUT_COUPON", code);
-        session.setAttribute("CHECKOUT_COUPON_DISCOUNT", discount);
-
-        writeJson(resp, subTotal, discount, total);
-    }
-
-    @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp)
-            throws IOException {
-        doGet(req, resp);
-    }
-
-    private BigDecimal calcSubTotal(Map<String, CartItem> cart) {
-        BigDecimal subTotal = BigDecimal.ZERO;
-
-        if (cart == null || cart.isEmpty()) {
-            return subTotal;
-        }
-
-        for (CartItem item : cart.values()) {
-            if (item != null && item.getSubtotal() != null) {
-                subTotal = subTotal.add(item.getSubtotal());
+            BigDecimal calculatedDiscount = checkoutService.calculateCouponDiscount(code.trim(), subTotal);
+            if (calculatedDiscount != null) {
+                discount = calculatedDiscount;
             }
         }
 
-        return subTotal.setScale(0, RoundingMode.HALF_UP);
-    }
-
-    private boolean isBlank(String value) {
-        return value == null || value.trim().isEmpty();
-    }
-
-    private void writeJson(
-            HttpServletResponse resp,
-            BigDecimal subTotal,
-            BigDecimal discount,
-            BigDecimal total
-    ) throws IOException {
-
+        // 5. Trả về một chuỗi JSON duy nhất, hợp lệ hoàn toàn cho Frontend xử lý
         resp.getWriter().write(
                 "{"
-                        + "\"subtotal\":" + subTotal + ","
-                        + "\"discount\":" + discount + ","
-                        + "\"total\":" + total
+                        + "\"success\":true,"
+                        + "\"message\":\"Lưu mã giảm giá thành công!\","
+                        + "\"discount\":" + discount
                         + "}"
         );
-    }
-
-    private void writeError(HttpServletResponse resp, String message)
-            throws IOException {
-
-        resp.getWriter().write(
-                "{"
-                        + "\"error\":\"" + escapeJson(message) + "\""
-                        + "}"
-        );
-    }
-
-    private String escapeJson(String value) {
-        if (value == null) {
-            return "";
-        }
-
-        return value
-                .replace("\\", "\\\\")
-                .replace("\"", "\\\"");
     }
 }
