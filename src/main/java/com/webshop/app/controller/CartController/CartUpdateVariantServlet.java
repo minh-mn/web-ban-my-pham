@@ -26,7 +26,9 @@ public class CartUpdateVariantServlet extends HttpServlet {
     private final ProductVariantDAO variantDAO = new ProductVariantDAO();
 
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp)
+            throws IOException {
+
         req.setCharacterEncoding("UTF-8");
         resp.setCharacterEncoding("UTF-8");
 
@@ -41,6 +43,7 @@ public class CartUpdateVariantServlet extends HttpServlet {
 
         HttpSession session = req.getSession();
         Map<String, CartItem> cart = CartUtil.getCart(session);
+
         CartItem oldItem = cart.get(oldKey);
 
         if (oldItem == null) {
@@ -58,12 +61,29 @@ public class CartUpdateVariantServlet extends HttpServlet {
 
         String newKey = CartUtil.buildKey(productId, variant.getId());
 
-        BigDecimal basePrice = product.getFinalPrice() != null
-                ? product.getFinalPrice()
-                : product.getPrice();
+        /*
+         * originalProductPrice = giá gốc sản phẩm.
+         * finalProductPrice    = giá sau giảm / giá đang bán.
+         */
+        BigDecimal originalProductPrice = safeMoney(product.getPrice());
 
-        BigDecimal newPrice = basePrice.add(variant.getExtraPrice());
+        BigDecimal finalProductPrice = product.getFinalPrice() != null
+                ? safeMoney(product.getFinalPrice())
+                : originalProductPrice;
+
+        /*
+         * Khi đổi biến thể, extraPrice phải cộng vào cả giá gốc và giá sau giảm.
+         */
+        BigDecimal variantExtraPrice = safeMoney(variant.getExtraPrice());
+
+        BigDecimal originalUnitPrice = originalProductPrice.add(variantExtraPrice);
+        BigDecimal finalUnitPrice = finalProductPrice.add(variantExtraPrice);
+
         int newQty = Math.min(oldItem.getQuantity(), variant.getStock());
+
+        if (newQty <= 0) {
+            newQty = 1;
+        }
 
         cart.remove(oldKey);
 
@@ -76,11 +96,27 @@ public class CartUpdateVariantServlet extends HttpServlet {
                 mergedQty = variant.getStock();
             }
 
-            existing.setQuantity(mergedQty);
+            existing.setPrice(finalUnitPrice);
+            existing.setOriginalPrice(originalUnitPrice);
             existing.setStock(variant.getStock());
+            existing.setQuantity(mergedQty);
+
+            existing.setVariantId(variant.getId());
+            existing.setVariantSize(variant.getSize());
+            existing.setVariantType(variant.getType());
+            existing.setVariantName(variant.getDisplayName());
+            existing.setVariantExtraPrice(variantExtraPrice);
         } else {
             oldItem.setCartKey(newKey);
-            oldItem.setPrice(newPrice);
+
+            /*
+             * Quan trọng:
+             * price         = giá đang bán / giá sau giảm
+             * originalPrice = giá gốc trước giảm
+             */
+            oldItem.setPrice(finalUnitPrice);
+            oldItem.setOriginalPrice(originalUnitPrice);
+
             oldItem.setStock(variant.getStock());
             oldItem.setQuantity(newQty);
 
@@ -88,7 +124,7 @@ public class CartUpdateVariantServlet extends HttpServlet {
             oldItem.setVariantSize(variant.getSize());
             oldItem.setVariantType(variant.getType());
             oldItem.setVariantName(variant.getDisplayName());
-            oldItem.setVariantExtraPrice(variant.getExtraPrice());
+            oldItem.setVariantExtraPrice(variantExtraPrice);
 
             cart.put(newKey, oldItem);
         }
@@ -96,9 +132,13 @@ public class CartUpdateVariantServlet extends HttpServlet {
         resp.sendRedirect(req.getContextPath() + "/cart");
     }
 
-    private int parseInt(String s, int def) {
+    private BigDecimal safeMoney(BigDecimal value) {
+        return value != null ? value : BigDecimal.ZERO;
+    }
+
+    private int parseInt(String raw, int def) {
         try {
-            return Integer.parseInt(s);
+            return Integer.parseInt(raw);
         } catch (Exception e) {
             return def;
         }
