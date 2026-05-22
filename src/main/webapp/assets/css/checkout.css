@@ -768,3 +768,45 @@
 		grid-template-columns: 1fr;
 	}
 }
+/* ================= CHECKOUT VALIDATION ERROR ================= */
+
+.checkout-alert-error {
+	width: 100%;
+	margin: 0 0 18px;
+	padding: 14px 18px;
+	border-radius: 14px;
+	background: #fff0f3;
+	border: 1px solid #ffc2d1;
+	color: #c9184a;
+	font-size: 14.5px;
+	line-height: 1.45;
+	font-weight: 700;
+}
+
+.checkout-field input.is-invalid {
+	border-color: #ff5c8a !important;
+	background: #fff7fa !important;
+	box-shadow: 0 0 0 4px rgba(255, 92, 138, 0.1) !important;
+}
+
+.payment-list.is-invalid {
+	border-color: #ff5c8a !important;
+	background: #fff7fa;
+}
+
+.field-error {
+	min-height: 19px;
+	margin-top: 7px;
+	color: #d6336c;
+	font-size: 13.5px;
+	line-height: 1.4;
+	font-weight: 700;
+}
+
+.payment-error {
+	margin-top: 10px;
+}
+
+.checkout-field input.is-invalid::placeholder {
+	color: #c96b87;
+}
