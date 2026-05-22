@@ -57,6 +57,12 @@
                                 <c:set var="cartKey" value="${entry.key}" />
                                 <c:set var="options" value="${variantOptions[item.productId]}" />
 
+                                <!-- Format subtotal thành số nguyên sạch, không có dấu phẩy/chấm -->
+                                <fmt:formatNumber var="itemSubtotalRaw"
+                                                  value="${item.subtotal}"
+                                                  pattern="0"
+                                                  groupingUsed="false" />
+
                                 <tr>
                                     <!-- CHỌN SẢN PHẨM -->
                                     <td class="cart-select">
@@ -65,6 +71,7 @@
                                                form="checkoutSelectForm"
                                                name="selectedKeys"
                                                value="${cartKey}"
+                                               data-subtotal="${itemSubtotalRaw}"
                                                checked>
                                     </td>
 
@@ -118,9 +125,11 @@
                                                                 ${v.id == item.variantId ? 'selected' : ''}
                                                                 ${v.stock <= 0 ? 'disabled' : ''}>
                                                                 <c:out value="${v.displayName}" />
+
                                                                 <c:if test="${v.extraPrice > 0}">
                                                                     - +<fmt:formatNumber value="${v.extraPrice}" type="number" groupingUsed="true" /> ₫
                                                                 </c:if>
+
                                                                 - Còn ${v.stock}
                                                             </option>
                                                         </c:forEach>
@@ -129,9 +138,9 @@
                                             </c:when>
 
                                             <c:otherwise>
-                          <span class="variant-text">
-                            <c:out value="${item.variantDisplayName}" />
-                          </span>
+                                                <span class="variant-text">
+                                                    <c:out value="${item.variantDisplayName}" />
+                                                </span>
                                             </c:otherwise>
                                         </c:choose>
                                     </td>
@@ -195,12 +204,12 @@
                         <div class="summary-row">
                             <span>Tạm tính</span>
 
-                            <strong>
-                                <fmt:formatNumber value="${total}" type="number" groupingUsed="true" /> ₫
+                            <strong id="selectedCartTotal">
+                                0 ₫
                             </strong>
                         </div>
 
-                        <div class="cart-select-note">
+                        <div class="cart-select-note" id="selectedCartNote">
                             Chọn sản phẩm muốn mua rồi bấm thanh toán.
                         </div>
 
@@ -226,43 +235,115 @@
 </section>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const selectAll = document.getElementById("selectAllCartItems");
-        const itemCheckboxes = document.querySelectorAll(".cart-item-checkbox");
-        const checkoutForm = document.getElementById("checkoutSelectForm");
-
-        function syncSelectAll() {
-            if (!selectAll) return;
-
-            const checkedCount = document.querySelectorAll(".cart-item-checkbox:checked").length;
-
-            selectAll.checked = checkedCount === itemCheckboxes.length;
-            selectAll.indeterminate = checkedCount > 0 && checkedCount < itemCheckboxes.length;
+    (function () {
+        function ready(fn) {
+            if (document.readyState === "loading") {
+                document.addEventListener("DOMContentLoaded", fn);
+            } else {
+                fn();
+            }
         }
 
-        if (selectAll) {
-            selectAll.addEventListener("change", function () {
-                itemCheckboxes.forEach(function (cb) {
-                    cb.checked = selectAll.checked;
-                });
-            });
-        }
+        ready(function () {
+            const selectAll = document.getElementById("selectAllCartItems");
+            const itemCheckboxes = Array.from(document.querySelectorAll(".cart-item-checkbox"));
+            const checkoutForm = document.getElementById("checkoutSelectForm");
+            const totalEl = document.getElementById("selectedCartTotal");
+            const noteEl = document.getElementById("selectedCartNote");
+            const checkoutBtn = document.getElementById("selectedCheckoutBtn");
 
-        itemCheckboxes.forEach(function (cb) {
-            cb.addEventListener("change", syncSelectAll);
-        });
-
-        if (checkoutForm) {
-            checkoutForm.addEventListener("submit", function (e) {
-                const checkedCount = document.querySelectorAll(".cart-item-checkbox:checked").length;
-
-                if (checkedCount === 0) {
-                    e.preventDefault();
-                    alert("Vui lòng chọn ít nhất một sản phẩm để thanh toán.");
+            function parseSubtotal(value) {
+                if (value === null || value === undefined) {
+                    return 0;
                 }
-            });
-        }
 
-        syncSelectAll();
-    });
+                const raw = String(value).trim();
+                const number = Number(raw);
+
+                return Number.isFinite(number) ? number : 0;
+            }
+
+            function formatVnd(value) {
+                return new Intl.NumberFormat("en-US").format(Math.round(value)) + " ₫";
+            }
+
+            function getCheckedItems() {
+                return itemCheckboxes.filter(function (checkbox) {
+                    return checkbox.checked;
+                });
+            }
+
+            function syncSelectAll() {
+                if (!selectAll) {
+                    return;
+                }
+
+                const checkedCount = getCheckedItems().length;
+
+                /*
+                  Không dùng indeterminate để tránh hiện dấu "-"
+                  khi chỉ chọn một vài sản phẩm.
+                */
+                selectAll.indeterminate = false;
+                selectAll.checked =
+                    itemCheckboxes.length > 0 && checkedCount === itemCheckboxes.length;
+            }
+
+            function updateSelectedTotal() {
+                const checkedItems = getCheckedItems();
+
+                let selectedTotal = 0;
+
+                checkedItems.forEach(function (checkbox) {
+                    selectedTotal += parseSubtotal(checkbox.dataset.subtotal);
+                });
+
+                if (totalEl) {
+                    totalEl.textContent = formatVnd(selectedTotal);
+                }
+
+                if (noteEl) {
+                    if (checkedItems.length === 0) {
+                        noteEl.textContent = "Vui lòng chọn ít nhất một sản phẩm để thanh toán.";
+                    } else {
+                        noteEl.textContent =
+                            "Đã chọn " + checkedItems.length + " sản phẩm để thanh toán.";
+                    }
+                }
+
+                if (checkoutBtn) {
+                    const disabled = checkedItems.length === 0;
+                    checkoutBtn.disabled = disabled;
+                    checkoutBtn.classList.toggle("disabled", disabled);
+                }
+
+                syncSelectAll();
+            }
+
+            if (selectAll) {
+                selectAll.addEventListener("change", function () {
+                    itemCheckboxes.forEach(function (checkbox) {
+                        checkbox.checked = selectAll.checked;
+                    });
+
+                    updateSelectedTotal();
+                });
+            }
+
+            itemCheckboxes.forEach(function (checkbox) {
+                checkbox.addEventListener("change", updateSelectedTotal);
+            });
+
+            if (checkoutForm) {
+                checkoutForm.addEventListener("submit", function (event) {
+                    if (getCheckedItems().length === 0) {
+                        event.preventDefault();
+                        alert("Vui lòng chọn ít nhất một sản phẩm để thanh toán.");
+                    }
+                });
+            }
+
+            updateSelectedTotal();
+        });
+    })();
 </script>
