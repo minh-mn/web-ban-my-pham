@@ -117,8 +117,8 @@ public class VNPayReturnServlet extends HttpServlet {
             HttpSession session = req.getSession(false);
 
             @SuppressWarnings("unchecked")
-            Map<Integer, CartItem> vnpCart =
-                    (session != null) ? (Map<Integer, CartItem>) session.getAttribute("VNP_CART") : null;
+            Map<String, CartItem> vnpCart =
+                    (session != null) ? (Map<String, CartItem>) session.getAttribute("VNP_CART") : null;
 
             String couponCode =
                     (session != null) ? (String) session.getAttribute("VNP_COUPON") : null;
