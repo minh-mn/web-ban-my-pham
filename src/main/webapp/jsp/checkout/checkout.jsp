@@ -3,8 +3,9 @@
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
-<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/checkout.css?v=20260522_3">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/checkout.css?v=20260522_5">
 
+<c:set var="errors" value="${requestScope.errors}" />
 <c:set var="checkoutCart" value="${not empty selectedCart ? selectedCart : cart}" />
 
 <c:set var="orderSubtotal"
@@ -19,10 +20,17 @@
 <section class="checkout-page">
   <div class="checkout-container">
 
+    <c:if test="${not empty errors.general}">
+      <div class="checkout-alert-error">
+        <c:out value="${errors.general}" />
+      </div>
+    </c:if>
+
     <form action="${pageContext.request.contextPath}/checkout"
           method="post"
           class="checkout-grid"
-          id="checkoutForm">
+          id="checkoutForm"
+          novalidate>
 
       <!-- ================= LEFT COLUMN ================= -->
       <div class="checkout-left">
@@ -91,16 +99,26 @@
             <h2>Thông tin giao hàng</h2>
           </div>
 
+          <!-- FULL NAME -->
           <div class="checkout-field">
             <label for="fullName">Họ và tên</label>
+
             <input type="text"
                    id="fullName"
                    name="fullName"
-                   value="${not empty param.fullName ? param.fullName : sessionScope.authUser.fullName}"
+                   value="${not empty requestScope.formFullName ? requestScope.formFullName : (not empty param.fullName ? param.fullName : (not empty sessionScope.authUser.fullName ? sessionScope.authUser.fullName : sessionScope.user.fullName))}"
                    placeholder="Nhập họ và tên"
-                   required>
+                   class="${not empty errors.fullName ? 'is-invalid' : ''}"
+                   autocomplete="name">
+
+            <div class="field-error" id="fullNameError">
+              <c:if test="${not empty errors.fullName}">
+                <c:out value="${errors.fullName}" />
+              </c:if>
+            </div>
           </div>
 
+          <!-- PHONE -->
           <div class="checkout-field phone-field">
             <label for="phone">Số điện thoại</label>
 
@@ -108,16 +126,26 @@
               <input type="text"
                      id="phone"
                      name="phone"
-                     value="${not empty param.phone ? param.phone : sessionScope.authUser.phone}"
+                     value="${not empty requestScope.formPhone ? requestScope.formPhone : (not empty param.phone ? param.phone : (not empty sessionScope.authUser.phone ? sessionScope.authUser.phone : sessionScope.user.phone))}"
                      placeholder="Nhập số điện thoại"
-                     required>
+                     class="${not empty errors.phone ? 'is-invalid' : ''}"
+                     inputmode="numeric"
+                     autocomplete="tel">
 
               <span class="country-flag">★</span>
             </div>
+
+            <div class="field-error" id="phoneError">
+              <c:if test="${not empty errors.phone}">
+                <c:out value="${errors.phone}" />
+              </c:if>
+            </div>
           </div>
 
+          <!-- COUNTRY -->
           <div class="checkout-field">
             <label for="country">Quốc gia</label>
+
             <input type="text"
                    id="country"
                    name="country"
@@ -125,34 +153,62 @@
                    readonly>
           </div>
 
+          <!-- ADDRESS -->
           <div class="checkout-field">
             <label for="address">Địa chỉ, tên đường</label>
+
             <input type="text"
                    id="address"
                    name="address"
-                   value="${param.address}"
-                   placeholder="Địa chỉ, tên đường"
-                   required>
+                   value="${not empty requestScope.formAddress ? requestScope.formAddress : param.address}"
+                   placeholder="Ví dụ: 123 Nguyễn Văn A"
+                   class="${not empty errors.address ? 'is-invalid' : ''}"
+                   autocomplete="street-address">
+
+            <div class="field-error" id="addressError">
+              <c:if test="${not empty errors.address}">
+                <c:out value="${errors.address}" />
+              </c:if>
+            </div>
           </div>
 
-          <!-- TỈNH/TP - PHƯỜNG/XÃ -->
+          <!-- LOCATION -->
           <div class="checkout-field no-margin location-field" id="locationField">
             <label for="locationInput">Tỉnh/TP, Phường/Xã</label>
 
             <input type="text"
                    id="locationInput"
                    name="locationText"
-                   value="${param.locationText}"
+                   value="${not empty requestScope.formLocationText ? requestScope.formLocationText : param.locationText}"
                    placeholder="Tỉnh/TP, Phường/Xã"
                    autocomplete="off"
                    readonly
-                   required>
+                   class="${not empty errors.location ? 'is-invalid' : ''}">
 
-            <input type="hidden" id="provinceInput" name="province" value="${param.province}">
-            <input type="hidden" id="provinceCodeInput" name="provinceCode" value="${param.provinceCode}">
-            <input type="hidden" id="wardInput" name="wardName" value="${param.wardName}">
-            <input type="hidden" id="wardCodeInput" name="wardCode" value="${param.wardCode}">
-            <input type="hidden" id="shippingAddressInput" name="shippingAddress" value="${param.shippingAddress}">
+            <input type="hidden"
+                   id="provinceInput"
+                   name="province"
+                   value="${not empty requestScope.formProvince ? requestScope.formProvince : param.province}">
+
+            <input type="hidden"
+                   id="provinceCodeInput"
+                   name="provinceCode"
+                   value="${not empty requestScope.formProvinceCode ? requestScope.formProvinceCode : param.provinceCode}">
+
+            <input type="hidden"
+                   id="wardInput"
+                   name="wardName"
+                   value="${not empty requestScope.formWardName ? requestScope.formWardName : param.wardName}">
+
+            <input type="hidden"
+                   id="wardCodeInput"
+                   name="wardCode"
+                   value="${not empty requestScope.formWardCode ? requestScope.formWardCode : param.wardCode}">
+
+            <input type="hidden"
+                   id="shippingAddressInput"
+                   name="shippingAddress"
+                   value="${not empty requestScope.formShippingAddress ? requestScope.formShippingAddress : param.shippingAddress}">
 
             <div class="location-dropdown" id="locationDropdown">
               <div class="location-tabs">
@@ -181,6 +237,12 @@
                 </div>
               </div>
             </div>
+
+            <div class="field-error" id="locationError">
+              <c:if test="${not empty errors.location}">
+                <c:out value="${errors.location}" />
+              </c:if>
+            </div>
           </div>
         </div>
 
@@ -201,7 +263,9 @@
             <h2>Phương thức thanh toán</h2>
           </div>
 
-          <div class="payment-list">
+          <div class="payment-list ${not empty errors.paymentMethod ? 'is-invalid' : ''}"
+               id="paymentList">
+
             <label class="payment-item">
               <input type="radio"
                      name="paymentMethod"
@@ -233,6 +297,12 @@
                                 <small>Chuyển sang cổng thanh toán VNPAY</small>
                             </span>
             </label>
+          </div>
+
+          <div class="field-error payment-error" id="paymentMethodError">
+            <c:if test="${not empty errors.paymentMethod}">
+              <c:out value="${errors.paymentMethod}" />
+            </c:if>
           </div>
         </div>
 
@@ -413,6 +483,201 @@
   </div>
 </section>
 
+<!-- ================= FRONTEND VALIDATION ================= -->
+<script>
+  (function () {
+    const form = document.getElementById("checkoutForm");
+
+    const fullNameInput = document.getElementById("fullName");
+    const phoneInput = document.getElementById("phone");
+    const addressInput = document.getElementById("address");
+    const locationInput = document.getElementById("locationInput");
+
+    const provinceInput = document.getElementById("provinceInput");
+    const wardInput = document.getElementById("wardInput");
+
+    const paymentList = document.getElementById("paymentList");
+
+    function setFieldError(input, errorId, message) {
+      const errorEl = document.getElementById(errorId);
+
+      if (input) {
+        input.classList.toggle("is-invalid", !!message);
+      }
+
+      if (errorEl) {
+        errorEl.textContent = message || "";
+      }
+    }
+
+    function validateFullName() {
+      const value = fullNameInput ? fullNameInput.value.trim() : "";
+
+      if (!value) {
+        setFieldError(fullNameInput, "fullNameError", "Vui lòng nhập họ và tên người nhận.");
+        return false;
+      }
+
+      if (value.length < 2 || value.length > 80) {
+        setFieldError(fullNameInput, "fullNameError", "Họ và tên phải từ 2 đến 80 ký tự.");
+        return false;
+      }
+
+      const nameRegex = /^[\p{L}\s'.-]+$/u;
+
+      if (!nameRegex.test(value)) {
+        setFieldError(fullNameInput, "fullNameError", "Họ và tên chỉ nên chứa chữ cái và khoảng trắng.");
+        return false;
+      }
+
+      setFieldError(fullNameInput, "fullNameError", "");
+      return true;
+    }
+
+    function validatePhone() {
+      const value = phoneInput ? phoneInput.value.trim() : "";
+      const phoneRegex = /^0(3|5|7|8|9)[0-9]{8}$/;
+
+      if (!value) {
+        setFieldError(phoneInput, "phoneError", "Vui lòng nhập số điện thoại.");
+        return false;
+      }
+
+      if (!phoneRegex.test(value)) {
+        setFieldError(phoneInput, "phoneError", "Số điện thoại không hợp lệ. Ví dụ: 0912345678.");
+        return false;
+      }
+
+      setFieldError(phoneInput, "phoneError", "");
+      return true;
+    }
+
+    function validateAddress() {
+      const value = addressInput ? addressInput.value.trim() : "";
+
+      if (!value) {
+        setFieldError(addressInput, "addressError", "Vui lòng nhập địa chỉ giao hàng.");
+        return false;
+      }
+
+      if (value.length < 5 || value.length > 160) {
+        setFieldError(addressInput, "addressError", "Địa chỉ phải từ 5 đến 160 ký tự.");
+        return false;
+      }
+
+      setFieldError(addressInput, "addressError", "");
+      return true;
+    }
+
+    function validateLocation() {
+      const province = provinceInput ? provinceInput.value.trim() : "";
+      const ward = wardInput ? wardInput.value.trim() : "";
+
+      if (!province) {
+        setFieldError(locationInput, "locationError", "Vui lòng chọn Tỉnh/TP.");
+        return false;
+      }
+
+      if (!ward) {
+        setFieldError(locationInput, "locationError", "Vui lòng chọn Phường/Xã sau khi chọn Tỉnh/TP.");
+        return false;
+      }
+
+      setFieldError(locationInput, "locationError", "");
+      return true;
+    }
+
+    function validatePaymentMethod() {
+      const checked = document.querySelector("input[name='paymentMethod']:checked");
+      const errorEl = document.getElementById("paymentMethodError");
+
+      if (!checked) {
+        if (paymentList) {
+          paymentList.classList.add("is-invalid");
+        }
+
+        if (errorEl) {
+          errorEl.textContent = "Vui lòng chọn phương thức thanh toán.";
+        }
+
+        return false;
+      }
+
+      if (checked.value !== "COD" && checked.value !== "VNPAY") {
+        if (paymentList) {
+          paymentList.classList.add("is-invalid");
+        }
+
+        if (errorEl) {
+          errorEl.textContent = "Phương thức thanh toán không hợp lệ.";
+        }
+
+        return false;
+      }
+
+      if (paymentList) {
+        paymentList.classList.remove("is-invalid");
+      }
+
+      if (errorEl) {
+        errorEl.textContent = "";
+      }
+
+      return true;
+    }
+
+    if (fullNameInput) {
+      fullNameInput.addEventListener("blur", validateFullName);
+      fullNameInput.addEventListener("input", function () {
+        setFieldError(fullNameInput, "fullNameError", "");
+      });
+    }
+
+    if (phoneInput) {
+      phoneInput.addEventListener("blur", validatePhone);
+      phoneInput.addEventListener("input", function () {
+        this.value = this.value.replace(/[^\d]/g, "");
+        setFieldError(phoneInput, "phoneError", "");
+      });
+    }
+
+    if (addressInput) {
+      addressInput.addEventListener("blur", validateAddress);
+      addressInput.addEventListener("input", function () {
+        setFieldError(addressInput, "addressError", "");
+      });
+    }
+
+    document.querySelectorAll("input[name='paymentMethod']").forEach(function (radio) {
+      radio.addEventListener("change", validatePaymentMethod);
+    });
+
+    if (form) {
+      form.addEventListener("submit", function (event) {
+        const validFullName = validateFullName();
+        const validPhone = validatePhone();
+        const validAddress = validateAddress();
+        const validLocation = validateLocation();
+        const validPayment = validatePaymentMethod();
+
+        if (!validFullName || !validPhone || !validAddress || !validLocation || !validPayment) {
+          event.preventDefault();
+
+          const firstInvalid = document.querySelector(".is-invalid");
+
+          if (firstInvalid) {
+            firstInvalid.scrollIntoView({
+              behavior: "smooth",
+              block: "center"
+            });
+          }
+        }
+      });
+    }
+  })();
+</script>
+
+<!-- ================= APPLY COUPON AJAX ================= -->
 <script>
   (function () {
     const applyBtn = document.getElementById("applyCouponBtn");
@@ -463,6 +728,7 @@
   })();
 </script>
 
+<!-- ================= CHECKOUT QUANTITY AJAX ================= -->
 <script>
   (function () {
     const contextPath = "${pageContext.request.contextPath}";
@@ -579,6 +845,7 @@
   })();
 </script>
 
+<!-- ================= PROVINCE / WARD SELECTOR ================= -->
 <script>
   (function () {
     const API_BASE_URL = "https://provinces.open-api.vn/api/v2";
@@ -832,6 +1099,13 @@
           wardCodeInput.value = ward.code || "";
 
           locationInput.value = ward.name + ", " + selectedProvince.name;
+
+          const locationError = document.getElementById("locationError");
+          locationInput.classList.remove("is-invalid");
+
+          if (locationError) {
+            locationError.textContent = "";
+          }
 
           updateShippingAddress();
           updateDeliveryText();
