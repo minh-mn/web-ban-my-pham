@@ -37,18 +37,18 @@ public class UserCouponDAO {
                     min_order_amount,
                     start_date,
                     end_date,
-                    active,
+                    is_active AS active,
                     max_uses,
                     used_count,
                     COALESCE(min_rank_code, 'MEMBER') AS min_rank_code
                 FROM store_coupon
-                WHERE active = 1
-                  AND (start_date IS NULL OR start_date <= NOW())
-                  AND (end_date IS NULL OR end_date >= NOW())
+                WHERE is_active = 1
+                  AND (start_date IS NULL OR start_date <= CURDATE())
+                  AND (end_date IS NULL OR end_date >= CURDATE())
                   AND (
                         max_uses IS NULL
                         OR max_uses <= 0
-                        OR used_count < max_uses
+                        OR COALESCE(used_count, 0) < max_uses
                   )
                 ORDER BY
                     CASE COALESCE(min_rank_code, 'MEMBER')
@@ -88,9 +88,7 @@ public class UserCouponDAO {
     }
 
     public List<UserCouponView> findAvailableCouponsByRankLevel(int userRankLevel) {
-
         String rankCode = rankCodeFromLevel(userRankLevel);
-
         return findAvailableCouponsByRankCode(rankCode);
     }
 
@@ -107,13 +105,21 @@ public class UserCouponDAO {
         String sql = """
                 SELECT
                     COALESCE(min_rank_code, 'MEMBER') AS min_rank_code,
-                    active,
+                    is_active AS active,
                     start_date,
                     end_date,
                     max_uses,
                     used_count
                 FROM store_coupon
                 WHERE code = ?
+                  AND is_active = 1
+                  AND (start_date IS NULL OR start_date <= CURDATE())
+                  AND (end_date IS NULL OR end_date >= CURDATE())
+                  AND (
+                        max_uses IS NULL
+                        OR max_uses <= 0
+                        OR COALESCE(used_count, 0) < max_uses
+                  )
                 LIMIT 1
                 """;
 
@@ -130,6 +136,7 @@ public class UserCouponDAO {
                 }
 
                 String minRankCode = normalizeRankCode(resultSet.getString("min_rank_code"));
+
                 return canUseCoupon(userRankLevel, minRankCode);
             }
 
@@ -153,19 +160,19 @@ public class UserCouponDAO {
                     min_order_amount,
                     start_date,
                     end_date,
-                    active,
+                    is_active AS active,
                     max_uses,
                     used_count,
                     COALESCE(min_rank_code, 'MEMBER') AS min_rank_code
                 FROM store_coupon
                 WHERE code = ?
-                  AND active = 1
-                  AND (start_date IS NULL OR start_date <= NOW())
-                  AND (end_date IS NULL OR end_date >= NOW())
+                  AND is_active = 1
+                  AND (start_date IS NULL OR start_date <= CURDATE())
+                  AND (end_date IS NULL OR end_date >= CURDATE())
                   AND (
                         max_uses IS NULL
                         OR max_uses <= 0
-                        OR used_count < max_uses
+                        OR COALESCE(used_count, 0) < max_uses
                   )
                 LIMIT 1
                 """;
@@ -202,7 +209,6 @@ public class UserCouponDAO {
 
     private boolean canUseCoupon(int userRankLevel, String minRankCode) {
         int couponMinRankLevel = rankLevel(minRankCode);
-
         return userRankLevel >= couponMinRankLevel;
     }
 
@@ -275,8 +281,13 @@ public class UserCouponDAO {
         coupon.setStartDate(resultSet.getTimestamp("start_date"));
         coupon.setEndDate(resultSet.getTimestamp("end_date"));
         coupon.setActive(resultSet.getBoolean("active"));
-        coupon.setMaxUses(resultSet.getObject("max_uses") == null ? null : resultSet.getInt("max_uses"));
-        coupon.setUsedCount(resultSet.getInt("used_count"));
+
+        Object maxUsesObj = resultSet.getObject("max_uses");
+        coupon.setMaxUses(maxUsesObj == null ? null : resultSet.getInt("max_uses"));
+
+        Object usedCountObj = resultSet.getObject("used_count");
+        coupon.setUsedCount(usedCountObj == null ? 0 : resultSet.getInt("used_count"));
+
         coupon.setMinRankCode(normalizeRankCode(resultSet.getString("min_rank_code")));
         coupon.setMinRankLabel(toVietnameseRankName(coupon.getMinRankCode()));
 
