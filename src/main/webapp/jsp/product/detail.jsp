@@ -3,18 +3,20 @@
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
-<c:set var="mainImg" value="${product.imageUrl}"/>
+<c:set var="mainImg" value="${product.imageUrl}" />
 
 <section class="pd-page">
   <div class="pd-container">
 
     <div class="pd-layout">
 
-      <!-- LEFT: IMAGE GALLERY -->
+      <!-- LEFT: GALLERY -->
       <div class="pd-gallery-col">
 
         <div class="pd-thumbs">
-          <button type="button" class="pd-thumb active" data-src="${pageContext.request.contextPath}${mainImg}">
+          <button type="button"
+                  class="pd-thumb active"
+                  data-src="${pageContext.request.contextPath}${mainImg}">
             <img src="${pageContext.request.contextPath}${mainImg}"
                  alt="${fn:escapeXml(product.title)}"
                  onerror="handleImgError(this)">
@@ -23,7 +25,9 @@
           <c:if test="${not empty product.images}">
             <c:forEach var="img" items="${product.images}">
               <c:if test="${not empty img.imageUrl}">
-                <button type="button" class="pd-thumb" data-src="${pageContext.request.contextPath}${img.imageUrl}">
+                <button type="button"
+                        class="pd-thumb"
+                        data-src="${pageContext.request.contextPath}${img.imageUrl}">
                   <img src="${pageContext.request.contextPath}${img.imageUrl}"
                        alt="gallery"
                        onerror="handleImgError(this)">
@@ -46,7 +50,7 @@
       <div class="pd-info-col">
 
         <h1 class="pd-title">
-          <c:out value="${product.title}"/>
+          <c:out value="${product.title}" />
         </h1>
 
         <div class="pd-tags">
@@ -66,7 +70,7 @@
           </div>
 
           <span class="pd-rating-badge">
-            <fmt:formatNumber value="${product.avgRating}" maxFractionDigits="1"/>
+            <fmt:formatNumber value="${product.avgRating}" maxFractionDigits="1" />
           </span>
 
           <span class="pd-review-count">
@@ -78,11 +82,11 @@
           <c:choose>
             <c:when test="${product.finalPrice lt product.price}">
               <span class="pd-old-price">
-                <fmt:formatNumber value="${product.price}" type="number" groupingUsed="true"/>đ
+                <fmt:formatNumber value="${product.price}" type="number" groupingUsed="true" />đ
               </span>
 
-              <span class="pd-sale-price" id="displayPrice">
-                <fmt:formatNumber value="${product.finalPrice}" type="number" groupingUsed="true"/>đ
+              <span class="pd-sale-price">
+                <fmt:formatNumber value="${product.finalPrice}" type="number" groupingUsed="true" />đ
               </span>
 
               <c:if test="${product.discountPercent > 0}">
@@ -93,8 +97,8 @@
             </c:when>
 
             <c:otherwise>
-              <span class="pd-sale-price" id="displayPrice">
-                <fmt:formatNumber value="${product.price}" type="number" groupingUsed="true"/>đ
+              <span class="pd-sale-price">
+                <fmt:formatNumber value="${product.price}" type="number" groupingUsed="true" />đ
               </span>
             </c:otherwise>
           </c:choose>
@@ -103,10 +107,10 @@
         </div>
 
         <p class="pd-short-desc">
-          <strong><c:out value="${product.title}"/></strong>
+          <strong><c:out value="${product.title}" /></strong>
           <c:if test="${not empty product.description}">
             <br>
-            <c:out value="${product.description}"/>
+            <c:out value="${product.description}" />
           </c:if>
         </p>
 
@@ -139,20 +143,18 @@
                          name="variantId"
                          id="variant_${v.id}"
                          value="${v.id}"
-                         data-extra="${v.extraPrice}"
-                         data-stock="${v.stock}"
                     ${v.stock <= 0 ? 'disabled' : ''}
                          required>
 
                   <label class="pd-variant-card ${v.stock <= 0 ? 'disabled' : ''}"
                          for="variant_${v.id}">
                     <span class="variant-name">
-                      <c:out value="${v.displayName}"/>
+                      <c:out value="${v.displayName}" />
                     </span>
 
                     <c:if test="${v.extraPrice > 0}">
                       <span class="variant-extra">
-                        +<fmt:formatNumber value="${v.extraPrice}" type="number" groupingUsed="true"/>đ
+                        +<fmt:formatNumber value="${v.extraPrice}" type="number" groupingUsed="true" />đ
                       </span>
                     </c:if>
 
@@ -184,7 +186,6 @@
       </div>
     </div>
 
-    <!-- REVIEWS -->
     <section class="pd-review-section">
       <h2>Đánh giá từ khách hàng</h2>
 
@@ -226,7 +227,8 @@
             <c:forEach var="r" items="${reviews}">
               <div class="review-item">
                 <div class="review-header">
-                  <strong><c:out value="${r.authorName}"/></strong>
+                  <strong><c:out value="${r.authorName}" /></strong>
+
                   <div class="review-stars">
                     <c:forEach begin="1" end="5" var="i">
                       <c:choose>
@@ -237,10 +239,10 @@
                   </div>
                 </div>
 
-                <p><c:out value="${r.comment}"/></p>
+                <p><c:out value="${r.comment}" /></p>
 
                 <span>
-                  <fmt:formatDate value="${r.createdAtDate}" pattern="dd/MM/yyyy"/>
+                  <fmt:formatDate value="${r.createdAtDate}" pattern="dd/MM/yyyy" />
                 </span>
               </div>
             </c:forEach>
