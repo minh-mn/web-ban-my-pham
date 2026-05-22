@@ -1,6 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
 <section class="banner-slider">
 	<div class="slider-wrapper">
@@ -29,29 +30,100 @@
 </section>
 
 <section class="section voucher-section" style="background: #fff;">
-    <div class="container">
-        <div class="voucher-grid">
-            <c:forEach begin="1" end="3">
-                <div class="voucher-card">
-                    <div class="voucher-left">
-                        <img src="${pageContext.request.contextPath}/assets/images/logo-mini.png" alt="Logo">
-                    </div>
-                    <div class="voucher-right">
-                        <div class="voucher-info">
-                            <span class="v-code">TGSF10K</span>
-                            <h3>Giảm 10.000đ</h3>
-                            <p>Đơn tối thiểu 159K</p>
-                        </div>
-                        <button class="btn-save" 
-                                data-loggedin="${not empty sessionScope.user}" 
-                                onclick="saveVoucher(this)">
-                            Lưu
-                        </button>
-                    </div>
-                </div>
-            </c:forEach>
-        </div>
-    </div>
+	<div class="container">
+		<div class="voucher-grid">
+
+			<c:forEach var="voucher" items="${vouchers}">
+
+				<div class="voucher-card
+                     ${voucher.type == 'FREESHIP' ? 'free-ship' : 'discount'}">
+
+					<!-- LEFT -->
+					<div class="voucher-left">
+						<div class="voucher-icon">
+							<c:choose>
+								<c:when test="${voucher.type == 'FREESHIP'}">
+									🚚
+								</c:when>
+								<c:otherwise>
+									🎟
+								</c:otherwise>
+							</c:choose>
+						</div>
+					</div>
+
+					<!-- RIGHT -->
+					<div class="voucher-right">
+
+						<!-- CODE -->
+						<div class="voucher-info">
+							<span class="v-code">${voucher.code}</span>
+
+							<!-- TYPE TITLE -->
+							<c:choose>
+								<c:when test="${voucher.type == 'FREESHIP'}">
+									<h3 class="coupon-title free-ship">
+										Miễn phí vận chuyển
+									</h3>
+								</c:when>
+
+								<c:otherwise>
+									<h3 class="coupon-title discount">
+										Giảm ${voucher.discountPercent}%
+									</h3>
+								</c:otherwise>
+							</c:choose>
+
+							<!-- DESCRIPTION -->
+							<c:if test="${not empty voucher.description}">
+								<p class="coupon-desc">
+										${voucher.description}
+								</p>
+							</c:if>
+
+							<!-- CONDITION -->
+							<c:if test="${voucher.minOrderAmount > 0}">
+								<p class="coupon-condition">
+									Đơn tối thiểu:
+									<fmt:formatNumber value="${voucher.minOrderAmount}" type="number"/> ₫
+								</p>
+							</c:if>
+
+						</div>
+
+						<!-- ACTIONS -->
+						<div class="voucher-actions">
+
+							<!-- DETAIL BUTTON -->
+							<button type="button"
+							        class="btn-detail"
+							        data-code="${voucher.code}"
+							        data-type="${voucher.type}"
+							        data-desc="${fn:escapeXml(voucher.description)}"
+							        data-min="${not empty voucher.minOrderAmount ? voucher.minOrderAmount : 0}"
+							        data-end="${voucher.endDate}"
+									onclick="showVoucherDetailFromEl(this)">
+								Xem chi tiết
+							</button>
+
+							<!-- SAVE BUTTON -->
+							<button class="btn-save"
+							        data-code="${voucher.code}"
+							        data-loggedin="${not empty sessionScope.user}"
+							        onclick="saveVoucher(this)">
+								Lưu
+							</button>
+
+						</div>
+
+					</div>
+
+				</div>
+
+			</c:forEach>
+
+		</div>
+	</div>
 </section>
 
 <jsp:include page="/jsp/product/hot-categories.jsp" />
@@ -229,7 +301,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 	let autoSlide = setInterval(nextSlide, interval);
 
-	
+
 	function resetAuto() {
 		clearInterval(autoSlide);
 		autoSlide = setInterval(nextSlide, interval);
@@ -261,7 +333,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 	showSlide(i);
 	resetAuto();
-	
+
 	});
 	});
 	});
@@ -299,37 +371,107 @@ window.onload = function () {
 };
 
 function saveVoucher(btn) {
+
+	const code = btn.getAttribute('data-code'); // 👈 FIX QUAN TRỌNG
 	const isLoggedIn = btn.getAttribute('data-loggedin') === 'true';
+
 	if (!isLoggedIn) {
 		alert("Vui lòng đăng nhập để lưu mã giảm giá này!");
 		window.location.href = window.APP_CTX + "/login";
 		return;
 	}
 
-	// Vô hiệu hóa nút trong lúc gọi API
 	btn.disabled = true;
 	btn.innerText = "Đang lưu...";
 
-	// Gọi API đã có sẵn của bạn
-	fetch(window.APP_CTX + '/ajax/apply-coupon?code=TGSF10K')
-			.then(response => response.json())
+	fetch(window.APP_CTX + '/ajax/apply-coupon?code=' + encodeURIComponent(code))
+			.then(res => res.json())
 			.then(data => {
-				if(data.success) {
+
+				if (data.success) {
 					btn.innerText = "Đã lưu";
 					btn.classList.add("saved");
-					btn.style.backgroundColor = "#ccc"; // Đổi màu xám
+					btn.style.backgroundColor = "#ccc";
+
 					alert(data.message + " Bạn được giảm " + data.discount + "đ.");
 				} else {
 					btn.disabled = false;
 					btn.innerText = "Lưu";
 					alert("Lỗi: " + data.message);
 				}
+
 			})
 			.catch(err => {
-				console.error("Lỗi:", err);
+				console.error(err);
 				btn.disabled = false;
 				btn.innerText = "Lưu";
 				alert("Có lỗi xảy ra, vui lòng thử lại!");
 			});
+}
+
+function showVoucherDetailFromEl(btn) {
+	const code = btn.dataset.code || "";
+	const type = btn.dataset.type || "";
+	const desc = btn.dataset.desc || "";
+	const minOrder = btn.dataset.min || "0";
+	const endDate = btn.dataset.end || "";
+
+	showVoucherDetail(code, type, desc, minOrder, endDate);
+}
+
+function showVoucherDetail(code, type, desc, minOrder, endDate) {
+
+	console.log("Voucher debug:", { code, type, desc, minOrder, endDate });
+
+	let html = "";
+
+	// 1. LOẠI VOUCHER
+	if ((type || "").toUpperCase().includes("SHIP")) {
+		html += "🚚 <b>Miễn phí vận chuyển</b><br><br>";
+	} else {
+		html += "🎟 <b>Voucher giảm giá</b><br><br>";
+	}
+
+	// 2. MÃ VOUCHER
+	html += "Mã: <b>" + code + "</b><br>";
+
+	// 3. MÔ TẢ
+	if (desc && desc.trim() !== "") {
+		html += "Mô tả: " + desc + "<br>";
+	} else {
+		html += "Mô tả: Không có<br>";
+	}
+
+	// 4. ĐƠN TỐI THIỂU
+	const min = Number(minOrder);
+	if (!isNaN(min) && min > 0) {
+		html += "Đơn tối thiểu: " + min.toLocaleString('vi-VN') + "₫<br>";
+	} else {
+		html += "Đơn tối thiểu: 0₫<br>";
+	}
+
+	// 5. HẠN SỬ DỤNG 
+	if (endDate && endDate.trim() !== "") {
+		// Định dạng mặc định từ DB thường là yyyy-MM-dd, ta có thể hiển thị trực tiếp hoặc format lại
+		html += "Hạn sử dụng đến ngày: <b style='color: #e11d48;'>" + endDate + "</b><br>";
+	} else {
+		html += "Hạn sử dụng: Vô thời hạn<br>";
+	}
+
+	// CREATE MODAL (Tạo popup hộp thoại)
+	const modal = document.createElement("div");
+	modal.className = "voucher-modal";
+
+	modal.innerHTML =
+			'<div class="voucher-modal-box">' +
+				'<div style="line-height:1.6; margin-bottom: 10px;">' +
+				html +
+				'</div>' +
+				'<button style="margin-top:15px; padding:8px 16px; border:none; background:#ff5fa2; color:#fff; border-radius:8px; cursor:pointer;" onclick="this.closest(\'.voucher-modal\').remove()">' +
+				'Đóng' +
+				'</button>' +
+			'</div>';
+
+	document.body.appendChild(modal);
 }
 </script>
