@@ -205,6 +205,13 @@
 	background: #fafafa;
 }
 
+.delivery-box.available {
+	color: #168a52;
+	background: #f2fff8;
+	border-color: #bfe8d0;
+	font-weight: 700;
+}
+
 /* ================= PAYMENT ================= */
 
 .payment-list {
@@ -386,7 +393,7 @@
 	background: #ffffff;
 }
 
-.checkout-qty a,
+.checkout-qty button,
 .checkout-qty span {
 	display: flex;
 	align-items: center;
@@ -395,6 +402,22 @@
 	text-decoration: none;
 	font-size: 18px;
 	font-weight: 700;
+}
+
+.checkout-qty button {
+	border: none;
+	background: #ffffff;
+	cursor: pointer;
+	transition: 0.18s ease;
+}
+
+.checkout-qty button:hover {
+	background: #f5f5f5;
+}
+
+.checkout-qty button:disabled {
+	cursor: not-allowed;
+	opacity: 0.55;
 }
 
 .checkout-qty span {
@@ -557,59 +580,6 @@
 	background: #d98ba2;
 }
 
-/* ================= RESPONSIVE ================= */
-
-@media (max-width: 1100px) {
-	.checkout-grid {
-		grid-template-columns: 1fr;
-	}
-
-	.checkout-summary-card {
-		position: static;
-	}
-}
-
-@media (max-width: 768px) {
-	.checkout-page {
-		padding: 24px 0 44px;
-	}
-
-	.checkout-container {
-		width: calc(100% - 24px);
-	}
-
-	.checkout-grid {
-		gap: 20px;
-	}
-
-	.checkout-card {
-		padding: 20px;
-		border-radius: 20px;
-	}
-
-	.checkout-card-header h2 {
-		font-size: 20px;
-	}
-
-	.checkout-product-main {
-		grid-template-columns: 76px 1fr 24px;
-	}
-
-	.checkout-product-img {
-		width: 76px;
-		height: 76px;
-	}
-
-	.checkout-product-bottom {
-		padding-left: 0;
-		flex-direction: column;
-		align-items: flex-start;
-	}
-
-	.coupon-input-row {
-		grid-template-columns: 1fr;
-	}
-}
 /* ================= LOCATION DROPDOWN ================= */
 
 .location-field {
@@ -743,4 +713,58 @@
 
 .location-list::-webkit-scrollbar-thumb:hover {
 	background: #c7c7c7;
+}
+
+/* ================= RESPONSIVE ================= */
+
+@media (max-width: 1100px) {
+	.checkout-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.checkout-summary-card {
+		position: static;
+	}
+}
+
+@media (max-width: 768px) {
+	.checkout-page {
+		padding: 24px 0 44px;
+	}
+
+	.checkout-container {
+		width: calc(100% - 24px);
+	}
+
+	.checkout-grid {
+		gap: 20px;
+	}
+
+	.checkout-card {
+		padding: 20px;
+		border-radius: 20px;
+	}
+
+	.checkout-card-header h2 {
+		font-size: 20px;
+	}
+
+	.checkout-product-main {
+		grid-template-columns: 76px 1fr 24px;
+	}
+
+	.checkout-product-img {
+		width: 76px;
+		height: 76px;
+	}
+
+	.checkout-product-bottom {
+		padding-left: 0;
+		flex-direction: column;
+		align-items: flex-start;
+	}
+
+	.coupon-input-row {
+		grid-template-columns: 1fr;
+	}
 }
