@@ -82,6 +82,7 @@
 }
 
 /* 7 cột: checkbox | sản phẩm | biến thể | đơn giá | số lượng | tạm tính | xóa */
+
 .cart-table th:nth-child(1),
 .cart-table td:nth-child(1) {
   width: 4%;
@@ -239,6 +240,10 @@
   vertical-align: middle;
 }
 
+.cart-price {
+  text-align: center;
+}
+
 .cart-subtotal {
   text-align: center;
 }
@@ -246,10 +251,10 @@
 /* ================= QUANTITY FIX ================= */
 
 /*
-  Sửa lỗi:
-  - Cụm - 1 + không che tạm tính.
-  - Số lượng hiện tại nằm ngang hàng với tiền tạm tính.
-  - Dòng "Còn xx" nằm xuống dưới.
+  Mục tiêu:
+  - Cụm - 1 + ngang hàng với số tiền tạm tính.
+  - Cụm - 1 + không lấn qua cột tạm tính.
+  - Dòng "Còn xx" nằm xuống dưới cụm số lượng.
 */
 
 .cart-quantity {
@@ -264,11 +269,17 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  transform: none;
+
+  /*
+    Đẩy cả cụm xuống nhẹ.
+    Vì stock-note nằm dưới quantity-box nên nếu không đẩy xuống,
+    nút - 1 + sẽ nhìn cao hơn số tiền tạm tính.
+  */
+  transform: translateY(9px);
 }
 
 .quantity-box {
-  width: 118px;
+  width: 116px;
   height: 38px;
   display: inline-flex;
   align-items: center;
@@ -280,7 +291,7 @@
 }
 
 .quantity-box .qty-btn {
-  width: 34px;
+  width: 33px;
   height: 38px;
   display: inline-flex;
   align-items: center;
