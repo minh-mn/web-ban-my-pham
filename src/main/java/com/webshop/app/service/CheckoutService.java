@@ -25,7 +25,7 @@ public class CheckoutService {
 	private final UserRankService userRankService = new UserRankService();
 
 	public int checkout(int userId,
-						Map<Integer, CartItem> cart,
+						Map<String, CartItem> cart,
 						String fullName,
 						String phone,
 						String address,
@@ -172,7 +172,7 @@ public class CheckoutService {
 		}
 	}
 
-	public void finalizeVnpayPaid(int orderId, Map<Integer, CartItem> cart, String couponCode) {
+	public void finalizeVnpayPaid(int orderId, Map<String, CartItem> cart, String couponCode) {
 
 		if (orderId <= 0) {
 			throw new IllegalArgumentException("Invalid orderId");
@@ -378,7 +378,7 @@ public class CheckoutService {
 
 	private void createOrderItemsAndUpdateStock(Connection conn,
 												int orderId,
-												Map<Integer, CartItem> cart) throws Exception {
+												Map<String, CartItem> cart) throws Exception {
 
 		String updateStockSql = "UPDATE store_product SET stock = stock - ? WHERE id = ?";
 
@@ -408,7 +408,7 @@ public class CheckoutService {
 		}
 	}
 
-	private BigDecimal calculateCartSubtotal(Map<Integer, CartItem> cart) {
+	private BigDecimal calculateCartSubtotal(Map<String, CartItem> cart) {
 
 		if (cart == null || cart.isEmpty()) {
 			return BigDecimal.ZERO;
