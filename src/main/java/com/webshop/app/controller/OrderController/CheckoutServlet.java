@@ -2,8 +2,10 @@ package com.webshop.app.controller.OrderController;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 import com.webshop.app.model.CartItem;
 import com.webshop.app.model.User;
@@ -44,6 +46,10 @@ public class CheckoutServlet extends HttpServlet {
         return s == null || s.trim().isEmpty();
     }
 
+    private String trim(String s) {
+        return s == null ? "" : s.trim();
+    }
+
     /**
      * Lấy giỏ hàng đã được tích chọn.
      * Nếu chưa có sản phẩm được chọn thì redirect về cart.
@@ -62,6 +68,159 @@ public class CheckoutServlet extends HttpServlet {
         }
 
         return selectedCart;
+    }
+
+    private BigDecimal getCheckoutCouponDiscount(HttpSession session) {
+        BigDecimal couponDiscount =
+                (BigDecimal) session.getAttribute("CHECKOUT_COUPON_DISCOUNT");
+
+        return couponDiscount != null ? couponDiscount : BigDecimal.ZERO;
+    }
+
+    private BigDecimal calcTotal(BigDecimal subTotal, BigDecimal discount) {
+        BigDecimal total = subTotal.subtract(discount);
+
+        if (total.compareTo(BigDecimal.ZERO) < 0) {
+            total = BigDecimal.ZERO;
+        }
+
+        return total;
+    }
+
+    private void prepareCheckoutView(HttpServletRequest req,
+                                     HttpSession session,
+                                     Map<String, CartItem> cart) {
+
+        BigDecimal subTotal = calcSubTotal(cart);
+
+        String appliedCoupon = (String) session.getAttribute("CHECKOUT_COUPON");
+        BigDecimal couponDiscount = getCheckoutCouponDiscount(session);
+        BigDecimal total = calcTotal(subTotal, couponDiscount);
+
+        req.setAttribute("cart", cart);
+        req.setAttribute("selectedCart", cart);
+
+        req.setAttribute("subtotal", subTotal);
+        req.setAttribute("subTotal", subTotal);
+
+        req.setAttribute("couponCode", appliedCoupon);
+        req.setAttribute("couponDiscount", couponDiscount);
+        req.setAttribute("discount", couponDiscount);
+        req.setAttribute("total", total);
+
+        req.setAttribute("coupon_success", session.getAttribute("coupon_success"));
+        req.setAttribute("coupon_error", session.getAttribute("coupon_error"));
+
+        session.removeAttribute("coupon_success");
+        session.removeAttribute("coupon_error");
+
+        req.setAttribute("pageTitle", "MyCosmetic | Thanh toán");
+        req.setAttribute("pageCss", "/checkout.css");
+        req.setAttribute("pageContent", "/jsp/checkout/checkout.jsp");
+    }
+
+    private void keepFormValues(HttpServletRequest req) {
+        req.setAttribute("formFullName", trim(req.getParameter("fullName")));
+        req.setAttribute("formPhone", trim(req.getParameter("phone")));
+        req.setAttribute("formAddress", trim(req.getParameter("address")));
+
+        req.setAttribute("formLocationText", trim(req.getParameter("locationText")));
+        req.setAttribute("formProvince", trim(req.getParameter("province")));
+        req.setAttribute("formProvinceCode", trim(req.getParameter("provinceCode")));
+        req.setAttribute("formWardName", trim(req.getParameter("wardName")));
+        req.setAttribute("formWardCode", trim(req.getParameter("wardCode")));
+        req.setAttribute("formShippingAddress", trim(req.getParameter("shippingAddress")));
+    }
+
+    private Map<String, String> validateCheckoutForm(HttpServletRequest req,
+                                                     Map<String, CartItem> checkoutCart) {
+        Map<String, String> errors = new HashMap<>();
+
+        String fullName = trim(req.getParameter("fullName"));
+        String phone = trim(req.getParameter("phone"));
+        String address = trim(req.getParameter("address"));
+
+        String province = trim(req.getParameter("province"));
+        String provinceCode = trim(req.getParameter("provinceCode"));
+        String wardName = trim(req.getParameter("wardName"));
+        String wardCode = trim(req.getParameter("wardCode"));
+
+        String paymentMethod = trim(req.getParameter("paymentMethod"));
+
+        if (checkoutCart == null || checkoutCart.isEmpty()) {
+            errors.put("general", "Không có sản phẩm nào để thanh toán.");
+        }
+
+        if (isBlank(fullName)) {
+            errors.put("fullName", "Vui lòng nhập họ và tên người nhận.");
+        } else if (fullName.length() < 2 || fullName.length() > 80) {
+            errors.put("fullName", "Họ và tên phải từ 2 đến 80 ký tự.");
+        } else if (!fullName.matches("^[\\p{L}\\s'.-]+$")) {
+            errors.put("fullName", "Họ và tên chỉ nên chứa chữ cái và khoảng trắng.");
+        }
+
+        if (isBlank(phone)) {
+            errors.put("phone", "Vui lòng nhập số điện thoại.");
+        } else if (!phone.matches("^0(3|5|7|8|9)[0-9]{8}$")) {
+            errors.put("phone", "Số điện thoại không hợp lệ. Ví dụ: 0912345678.");
+        }
+
+        if (isBlank(address)) {
+            errors.put("address", "Vui lòng nhập địa chỉ giao hàng.");
+        } else if (address.length() < 5 || address.length() > 160) {
+            errors.put("address", "Địa chỉ phải từ 5 đến 160 ký tự.");
+        }
+
+        if (isBlank(province) || isBlank(provinceCode)) {
+            errors.put("location", "Vui lòng chọn Tỉnh/TP.");
+        } else if (isBlank(wardName) || isBlank(wardCode)) {
+            errors.put("location", "Vui lòng chọn Phường/Xã sau khi chọn Tỉnh/TP.");
+        }
+
+        Set<String> validPaymentMethods = Set.of("COD", "VNPAY");
+
+        if (isBlank(paymentMethod)) {
+            errors.put("paymentMethod", "Vui lòng chọn phương thức thanh toán.");
+        } else if (!validPaymentMethods.contains(paymentMethod)) {
+            errors.put("paymentMethod", "Phương thức thanh toán không hợp lệ.");
+        }
+
+        return errors;
+    }
+
+    private String buildFinalShippingAddress(HttpServletRequest req) {
+        String address = trim(req.getParameter("address"));
+        String wardName = trim(req.getParameter("wardName"));
+        String province = trim(req.getParameter("province"));
+        String shippingAddress = trim(req.getParameter("shippingAddress"));
+
+        if (!isBlank(shippingAddress)) {
+            return shippingAddress;
+        }
+
+        StringBuilder builder = new StringBuilder();
+
+        if (!isBlank(address)) {
+            builder.append(address);
+        }
+
+        if (!isBlank(wardName)) {
+            if (builder.length() > 0) {
+                builder.append(", ");
+            }
+
+            builder.append(wardName);
+        }
+
+        if (!isBlank(province)) {
+            if (builder.length() > 0) {
+                builder.append(", ");
+            }
+
+            builder.append(province);
+        }
+
+        return builder.toString();
     }
 
     @Override
@@ -90,40 +249,7 @@ public class CheckoutServlet extends HttpServlet {
             return;
         }
 
-        BigDecimal subTotal = calcSubTotal(cart);
-
-        String appliedCoupon = (String) session.getAttribute("CHECKOUT_COUPON");
-
-        BigDecimal couponDiscount =
-                (BigDecimal) session.getAttribute("CHECKOUT_COUPON_DISCOUNT");
-
-        if (couponDiscount == null) {
-            couponDiscount = BigDecimal.ZERO;
-        }
-
-        BigDecimal total = subTotal.subtract(couponDiscount);
-
-        if (total.compareTo(BigDecimal.ZERO) < 0) {
-            total = BigDecimal.ZERO;
-        }
-
-        req.setAttribute("cart", cart);
-        req.setAttribute("subtotal", subTotal);
-        req.setAttribute("subTotal", subTotal);
-
-        req.setAttribute("couponCode", appliedCoupon);
-        req.setAttribute("couponDiscount", couponDiscount);
-        req.setAttribute("total", total);
-
-        req.setAttribute("coupon_success", session.getAttribute("coupon_success"));
-        req.setAttribute("coupon_error", session.getAttribute("coupon_error"));
-
-        session.removeAttribute("coupon_success");
-        session.removeAttribute("coupon_error");
-
-        req.setAttribute("pageTitle", "MyCosmetic | Thanh toán");
-        req.setAttribute("pageCss", "/checkout.css");
-        req.setAttribute("pageContent", "/jsp/checkout/checkout.jsp");
+        prepareCheckoutView(req, session, cart);
 
         req.getRequestDispatcher("/jsp/common/base.jsp").forward(req, resp);
     }
@@ -192,20 +318,26 @@ public class CheckoutServlet extends HttpServlet {
             return;
         }
 
-        String fullName = req.getParameter("fullName");
-        String phone = req.getParameter("phone");
-        String address = req.getParameter("address");
-        String paymentMethod = req.getParameter("paymentMethod");
+        /*
+         * Mục 79:
+         * Validate dữ liệu thanh toán ở backend.
+         */
+        Map<String, String> errors = validateCheckoutForm(req, cart);
 
-        if (isBlank(fullName) || isBlank(phone) || isBlank(address)) {
-            session.setAttribute("coupon_error", "Vui lòng nhập đầy đủ thông tin người nhận.");
-            resp.sendRedirect(req.getContextPath() + "/checkout");
+        if (!errors.isEmpty()) {
+            req.setAttribute("errors", errors);
+
+            keepFormValues(req);
+            prepareCheckoutView(req, session, cart);
+
+            req.getRequestDispatcher("/jsp/common/base.jsp").forward(req, resp);
             return;
         }
 
-        if (isBlank(paymentMethod)) {
-            paymentMethod = "COD";
-        }
+        String fullName = trim(req.getParameter("fullName"));
+        String phone = trim(req.getParameter("phone"));
+        String finalAddress = buildFinalShippingAddress(req);
+        String paymentMethod = trim(req.getParameter("paymentMethod"));
 
         String couponCode = req.getParameter("couponCode");
 
@@ -221,9 +353,9 @@ public class CheckoutServlet extends HttpServlet {
             int orderId = checkoutService.checkout(
                     user.getId(),
                     cart,
-                    fullName.trim(),
-                    phone.trim(),
-                    address.trim(),
+                    fullName,
+                    phone,
+                    finalAddress,
                     paymentMethod,
                     couponCode
             );
@@ -271,7 +403,7 @@ public class CheckoutServlet extends HttpServlet {
             }
 
             /*
-             * Fallback cho các phương thức thanh toán khác nếu có.
+             * Fallback an toàn: về lý thuyết không chạy tới đây vì đã validate COD/VNPAY.
              */
             CartUtil.removeItems(session, cart.keySet());
             CartUtil.clearSelectedCartKeys(session);
