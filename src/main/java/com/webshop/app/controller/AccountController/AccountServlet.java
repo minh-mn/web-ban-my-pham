@@ -1,10 +1,7 @@
 package com.webshop.app.controller.AccountController;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.webshop.app.dao.AdminStatsDAO;
-import com.webshop.app.dao.OrderDAO;
-import com.webshop.app.dao.UserCouponDAO;
-import com.webshop.app.dao.UserDAO;
+import com.webshop.app.dao.*;
 import com.webshop.app.model.User;
 import com.webshop.app.service.UserRankService;
 
@@ -132,6 +129,8 @@ public class AccountServlet extends HttpServlet {
         req.setAttribute("total_spent_vnd", orderDAO.totalSpentByUserVnd(user.getId()));
         req.setAttribute("latest_order", orderDAO.findLatestByUser(user.getId()));
 
+        CouponDAO couponDAO = new com.webshop.app.dao.CouponDAO();
+        req.setAttribute("savedCoupons", couponDAO.findSavedCouponsByUserId(user.getId()));
         /*
          * Chart.js cần JSON hợp lệ.
          * Nếu DAO trả về List thì convert sang JSON.
