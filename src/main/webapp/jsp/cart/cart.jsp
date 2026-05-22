@@ -8,6 +8,12 @@
 
         <h1 class="cart-title">Giỏ hàng của bạn</h1>
 
+        <c:if test="${param.selectRequired == '1'}">
+            <div class="cart-alert">
+                Vui lòng chọn ít nhất một sản phẩm để tiếp tục thanh toán.
+            </div>
+        </c:if>
+
         <c:choose>
             <c:when test="${empty cart}">
                 <div class="cart-empty">
@@ -20,12 +26,22 @@
             </c:when>
 
             <c:otherwise>
+                <form id="checkoutSelectForm"
+                      method="post"
+                      action="${pageContext.request.contextPath}/cart/select-checkout"></form>
+
                 <div class="cart-layout">
 
                     <div class="cart-table-wrap">
                         <table class="cart-table">
                             <thead>
                             <tr>
+                                <th class="cart-select-col">
+                                    <input type="checkbox"
+                                           id="selectAllCartItems"
+                                           class="cart-check-all"
+                                           checked>
+                                </th>
                                 <th>Sản phẩm</th>
                                 <th>Biến thể</th>
                                 <th>Đơn giá</th>
@@ -42,6 +58,16 @@
                                 <c:set var="options" value="${variantOptions[item.productId]}" />
 
                                 <tr>
+                                    <!-- CHỌN SẢN PHẨM -->
+                                    <td class="cart-select">
+                                        <input type="checkbox"
+                                               class="cart-item-checkbox"
+                                               form="checkoutSelectForm"
+                                               name="selectedKeys"
+                                               value="${cartKey}"
+                                               checked>
+                                    </td>
+
                                     <!-- SẢN PHẨM -->
                                     <td class="cart-product">
                                         <div class="cart-product-info">
@@ -174,14 +200,21 @@
                             </strong>
                         </div>
 
+                        <div class="cart-select-note">
+                            Chọn sản phẩm muốn mua rồi bấm thanh toán.
+                        </div>
+
                         <div class="summary-actions">
                             <a href="${pageContext.request.contextPath}/products" class="btn-continue">
                                 Tiếp tục mua
                             </a>
 
-                            <a href="${pageContext.request.contextPath}/checkout" class="btn-checkout">
-                                Thanh toán
-                            </a>
+                            <button type="submit"
+                                    form="checkoutSelectForm"
+                                    class="btn-checkout"
+                                    id="selectedCheckoutBtn">
+                                Thanh toán sản phẩm đã chọn
+                            </button>
                         </div>
                     </div>
 
@@ -191,3 +224,45 @@
 
     </div>
 </section>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const selectAll = document.getElementById("selectAllCartItems");
+        const itemCheckboxes = document.querySelectorAll(".cart-item-checkbox");
+        const checkoutForm = document.getElementById("checkoutSelectForm");
+
+        function syncSelectAll() {
+            if (!selectAll) return;
+
+            const checkedCount = document.querySelectorAll(".cart-item-checkbox:checked").length;
+
+            selectAll.checked = checkedCount === itemCheckboxes.length;
+            selectAll.indeterminate = checkedCount > 0 && checkedCount < itemCheckboxes.length;
+        }
+
+        if (selectAll) {
+            selectAll.addEventListener("change", function () {
+                itemCheckboxes.forEach(function (cb) {
+                    cb.checked = selectAll.checked;
+                });
+            });
+        }
+
+        itemCheckboxes.forEach(function (cb) {
+            cb.addEventListener("change", syncSelectAll);
+        });
+
+        if (checkoutForm) {
+            checkoutForm.addEventListener("submit", function (e) {
+                const checkedCount = document.querySelectorAll(".cart-item-checkbox:checked").length;
+
+                if (checkedCount === 0) {
+                    e.preventDefault();
+                    alert("Vui lòng chọn ít nhất một sản phẩm để thanh toán.");
+                }
+            });
+        }
+
+        syncSelectAll();
+    });
+</script>
