@@ -142,8 +142,10 @@
                                     <td class="cart-remove">
                                         <a href="${pageContext.request.contextPath}/cart/remove?productId=${item.productId}&key=${cartKey}"
                                            class="remove-btn"
+                                           title="Xóa sản phẩm"
+                                           aria-label="Xóa sản phẩm"
                                            onclick="return confirm('Xóa sản phẩm này khỏi giỏ hàng?');">
-                                            Xóa
+                                            &times;
                                         </a>
                                     </td>
                                 </tr>
