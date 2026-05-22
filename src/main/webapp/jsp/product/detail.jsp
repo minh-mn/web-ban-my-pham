@@ -3,170 +3,190 @@
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
-<c:set var="defaultImg" value="${pageContext.request.contextPath}/assets/images/default-product.jpg"/>
+<c:set var="mainImg" value="${product.imageUrl}"/>
 
-<c:set var="mainImg" value="${defaultImg}"/>
-<c:if test="${not empty product.imageUrl}">
-  <c:choose>
-    <c:when test="${fn:startsWith(product.imageUrl, 'http')}">
-      <c:set var="mainImg" value="${product.imageUrl}"/>
-    </c:when>
-    <c:otherwise>
-      <c:set var="mainImg" value="${pageContext.request.contextPath}${product.imageUrl}"/>
-    </c:otherwise>
-  </c:choose>
-</c:if>
-
-<section class="section">
-  <div class="container">
+<section class="pd-page">
+  <div class="pd-container">
 
     <div class="pd-layout">
 
-      <!-- LEFT: PRODUCT IMAGES -->
-      <div class="pd-gallery">
+      <!-- LEFT: IMAGE GALLERY -->
+      <div class="pd-gallery-col">
 
         <div class="pd-thumbs">
-          <img class="thumb active"
-               src="${mainImg}"
-               data-src="${mainImg}"
-               alt="${fn:escapeXml(product.title)}">
+          <button type="button" class="pd-thumb active" data-src="${pageContext.request.contextPath}${mainImg}">
+            <img src="${pageContext.request.contextPath}${mainImg}"
+                 alt="${fn:escapeXml(product.title)}"
+                 onerror="handleImgError(this)">
+          </button>
 
           <c:if test="${not empty product.images}">
             <c:forEach var="img" items="${product.images}">
               <c:if test="${not empty img.imageUrl}">
-                <img class="thumb"
-                     src="${pageContext.request.contextPath}${img.imageUrl}"
-                     data-src="${pageContext.request.contextPath}${img.imageUrl}"
-                     alt="gallery">
+                <button type="button" class="pd-thumb" data-src="${pageContext.request.contextPath}${img.imageUrl}">
+                  <img src="${pageContext.request.contextPath}${img.imageUrl}"
+                       alt="gallery"
+                       onerror="handleImgError(this)">
+                </button>
               </c:if>
             </c:forEach>
           </c:if>
         </div>
 
-        <div class="pd-image-box">
+        <div class="pd-main-image" id="mainImageBox">
           <img id="mainProductImage"
-               src="${mainImg}"
-               alt="${fn:escapeXml(product.title)}">
+               src="${pageContext.request.contextPath}${mainImg}"
+               alt="${fn:escapeXml(product.title)}"
+               onerror="handleMainImgError(this)">
         </div>
 
       </div>
 
       <!-- RIGHT: PRODUCT INFO -->
-      <div class="pd-info">
+      <div class="pd-info-col">
 
-        <h1 class="product-title">
+        <h1 class="pd-title">
           <c:out value="${product.title}"/>
         </h1>
 
-        <div class="rating">
-          <c:forEach begin="1" end="5" var="i">
-            <c:choose>
-              <c:when test="${i <= product.avgRating}">★</c:when>
-              <c:otherwise>☆</c:otherwise>
-            </c:choose>
-          </c:forEach>
-          <span>(<c:out value="${product.reviewCount}"/> đánh giá)</span>
+        <div class="pd-tags">
+          <span class="pd-tag pink">MyCosmetic</span>
+          <span class="pd-tag blue">Chính hãng</span>
+          <span class="pd-tag yellow">Còn ${product.stock}</span>
         </div>
 
-        <div class="product-price">
+        <div class="pd-rating-row">
+          <div class="pd-stars">
+            <c:forEach begin="1" end="5" var="i">
+              <c:choose>
+                <c:when test="${i <= product.avgRating}">★</c:when>
+                <c:otherwise>☆</c:otherwise>
+              </c:choose>
+            </c:forEach>
+          </div>
+
+          <span class="pd-rating-badge">
+            <fmt:formatNumber value="${product.avgRating}" maxFractionDigits="1"/>
+          </span>
+
+          <span class="pd-review-count">
+            (${product.reviewCount} đánh giá)
+          </span>
+        </div>
+
+        <div class="pd-price-box">
           <c:choose>
             <c:when test="${product.finalPrice lt product.price}">
-              <span class="old-price">
-                <fmt:formatNumber value="${product.price}" type="number" groupingUsed="true"/> ₫
+              <span class="pd-old-price">
+                <fmt:formatNumber value="${product.price}" type="number" groupingUsed="true"/>đ
               </span>
 
-              <span class="sale-price">
-                <fmt:formatNumber value="${product.finalPrice}" type="number" groupingUsed="true"/> ₫
+              <span class="pd-sale-price" id="displayPrice">
+                <fmt:formatNumber value="${product.finalPrice}" type="number" groupingUsed="true"/>đ
               </span>
 
               <c:if test="${product.discountPercent > 0}">
-                <div class="discount-info">Giảm ${product.discountPercent}%</div>
+                <span class="pd-discount-badge">
+                  -${product.discountPercent}%
+                </span>
               </c:if>
             </c:when>
 
             <c:otherwise>
-              <span class="sale-price">
-                <fmt:formatNumber value="${product.price}" type="number" groupingUsed="true"/> ₫
+              <span class="pd-sale-price" id="displayPrice">
+                <fmt:formatNumber value="${product.price}" type="number" groupingUsed="true"/>đ
               </span>
             </c:otherwise>
           </c:choose>
+
+          <div class="pd-vat-note">*Giá đã bao gồm VAT</div>
         </div>
 
-        <p class="product-desc">
-          <c:out value="${product.description}"/>
+        <p class="pd-short-desc">
+          <strong><c:out value="${product.title}"/></strong>
+          <c:if test="${not empty product.description}">
+            <br>
+            <c:out value="${product.description}"/>
+          </c:if>
         </p>
 
-        <c:choose>
-          <c:when test="${product.stock > 0}">
-            <form method="post"
-                  action="${pageContext.request.contextPath}/cart/add"
-                  class="pd-cart-form">
+        <c:if test="${param.variantRequired == '1'}">
+          <div class="pd-alert">Vui lòng chọn size/loại trước khi thêm vào giỏ hàng.</div>
+        </c:if>
 
-              <input type="hidden" name="productId" value="${product.id}">
+        <c:if test="${param.variantInvalid == '1'}">
+          <div class="pd-alert">Biến thể không hợp lệ hoặc đã ngừng bán.</div>
+        </c:if>
 
-              <!-- VARIANT SELECTION -->
-              <c:if test="${not empty variants}">
-                <div class="variant-box">
-                  <label for="variantId">Chọn biến thể</label>
+        <c:if test="${param.variantOutOfStock == '1'}">
+          <div class="pd-alert">Biến thể đã hết hàng.</div>
+        </c:if>
 
-                  <select id="variantId" name="variantId" class="variant-select" required>
-                    <option value="">-- Chọn size / loại sản phẩm --</option>
+        <form method="post"
+              action="${pageContext.request.contextPath}/cart/add"
+              class="pd-buy-form">
 
-                    <c:forEach var="v" items="${variants}">
-                      <option value="${v.id}" ${v.stock <= 0 ? 'disabled' : ''}>
-                        <c:out value="${v.displayName}"/>
+          <input type="hidden" name="productId" value="${product.id}">
 
-                        <c:if test="${v.extraPrice > 0}">
-                          - +<fmt:formatNumber value="${v.extraPrice}" type="number" groupingUsed="true"/> ₫
-                        </c:if>
+          <c:if test="${not empty variants}">
+            <div class="pd-option-group">
+              <div class="pd-option-title">Phân loại / Dung tích</div>
 
-                        - Còn ${v.stock}
-                      </option>
-                    </c:forEach>
-                  </select>
-                </div>
-              </c:if>
+              <div class="pd-variant-list">
+                <c:forEach var="v" items="${variants}">
+                  <input type="radio"
+                         class="pd-variant-radio"
+                         name="variantId"
+                         id="variant_${v.id}"
+                         value="${v.id}"
+                         data-extra="${v.extraPrice}"
+                         data-stock="${v.stock}"
+                    ${v.stock <= 0 ? 'disabled' : ''}
+                         required>
 
-              <!-- VARIANT MESSAGES -->
-              <c:if test="${param.variantRequired == '1'}">
-                <div class="variant-message">
-                  Vui lòng chọn size/loại trước khi thêm vào giỏ hàng.
-                </div>
-              </c:if>
+                  <label class="pd-variant-card ${v.stock <= 0 ? 'disabled' : ''}"
+                         for="variant_${v.id}">
+                    <span class="variant-name">
+                      <c:out value="${v.displayName}"/>
+                    </span>
 
-              <c:if test="${param.variantInvalid == '1'}">
-                <div class="variant-message">
-                  Biến thể không hợp lệ hoặc đã ngừng bán.
-                </div>
-              </c:if>
+                    <c:if test="${v.extraPrice > 0}">
+                      <span class="variant-extra">
+                        +<fmt:formatNumber value="${v.extraPrice}" type="number" groupingUsed="true"/>đ
+                      </span>
+                    </c:if>
 
-              <c:if test="${param.variantOutOfStock == '1'}">
-                <div class="variant-message">
-                  Biến thể đã hết hàng.
-                </div>
-              </c:if>
-
-              <button type="submit" class="pd-add-cart">
-                Thêm vào giỏ hàng
-              </button>
-
-            </form>
-          </c:when>
-
-          <c:otherwise>
-            <div class="out-of-stock">
-              Sản phẩm hiện đã hết hàng
+                    <span class="variant-stock">
+                      Còn ${v.stock}
+                    </span>
+                  </label>
+                </c:forEach>
+              </div>
             </div>
-          </c:otherwise>
-        </c:choose>
+          </c:if>
+
+          <div class="pd-quantity-row">
+            <span class="pd-option-title">Số lượng</span>
+
+            <div class="pd-qty-control">
+              <button type="button" class="qty-btn" id="qtyMinus">−</button>
+              <input type="number" name="quantity" id="quantityInput" value="1" min="1">
+              <button type="button" class="qty-btn" id="qtyPlus">+</button>
+            </div>
+          </div>
+
+          <button type="submit" class="pd-add-cart">
+            Thêm vào giỏ hàng
+          </button>
+
+        </form>
 
       </div>
     </div>
 
     <!-- REVIEWS -->
-    <section class="product-reviews">
-
-      <h2 class="review-title">Đánh giá từ khách hàng</h2>
+    <section class="pd-review-section">
+      <h2>Đánh giá từ khách hàng</h2>
 
       <c:choose>
         <c:when test="${not empty sessionScope.user}">
@@ -189,17 +209,13 @@
                       placeholder="Chia sẻ cảm nhận của bạn về sản phẩm..."
                       required></textarea>
 
-            <button type="submit" class="btn-review">
-              Gửi đánh giá
-            </button>
+            <button type="submit" class="btn-review">Gửi đánh giá</button>
           </form>
         </c:when>
 
         <c:otherwise>
           <p class="review-note">
-            Vui lòng
-            <a href="${pageContext.request.contextPath}/login">đăng nhập</a>
-            để đánh giá.
+            Vui lòng <a href="${pageContext.request.contextPath}/login">đăng nhập</a> để đánh giá.
           </p>
         </c:otherwise>
       </c:choose>
@@ -209,10 +225,8 @@
           <div class="review-list">
             <c:forEach var="r" items="${reviews}">
               <div class="review-item">
-
                 <div class="review-header">
                   <strong><c:out value="${r.authorName}"/></strong>
-
                   <div class="review-stars">
                     <c:forEach begin="1" end="5" var="i">
                       <c:choose>
@@ -223,35 +237,46 @@
                   </div>
                 </div>
 
-                <p class="review-comment">
-                  <c:out value="${r.comment}"/>
-                </p>
+                <p><c:out value="${r.comment}"/></p>
 
-                <span class="review-date">
+                <span>
                   <fmt:formatDate value="${r.createdAtDate}" pattern="dd/MM/yyyy"/>
                 </span>
-
               </div>
             </c:forEach>
           </div>
         </c:when>
 
         <c:otherwise>
-          <p class="no-review">
-            Chưa có đánh giá nào cho sản phẩm này.
-          </p>
+          <p class="no-review">Chưa có đánh giá nào cho sản phẩm này.</p>
         </c:otherwise>
       </c:choose>
-
     </section>
 
   </div>
 </section>
 
 <script>
+  function handleImgError(img) {
+    img.style.display = "none";
+    const parent = img.closest(".pd-thumb");
+    if (parent) {
+      parent.classList.add("missing-img");
+    }
+  }
+
+  function handleMainImgError(img) {
+    img.style.display = "none";
+    const box = document.getElementById("mainImageBox");
+    if (box) {
+      box.classList.add("missing-img");
+    }
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     const mainImg = document.getElementById("mainProductImage");
-    const thumbs = document.querySelectorAll(".pd-thumbs .thumb");
+    const mainBox = document.getElementById("mainImageBox");
+    const thumbs = document.querySelectorAll(".pd-thumb");
 
     thumbs.forEach(function (thumb) {
       thumb.addEventListener("click", function () {
@@ -261,13 +286,34 @@
 
         thumb.classList.add("active");
 
-        const src = thumb.getAttribute("data-src") || thumb.getAttribute("src");
+        const src = thumb.getAttribute("data-src");
 
         if (mainImg && src) {
+          mainImg.style.display = "block";
           mainImg.src = src;
+
+          if (mainBox) {
+            mainBox.classList.remove("missing-img");
+          }
         }
       });
     });
+
+    const minusBtn = document.getElementById("qtyMinus");
+    const plusBtn = document.getElementById("qtyPlus");
+    const qtyInput = document.getElementById("quantityInput");
+
+    if (minusBtn && plusBtn && qtyInput) {
+      minusBtn.addEventListener("click", function () {
+        const current = Number(qtyInput.value || 1);
+        qtyInput.value = Math.max(1, current - 1);
+      });
+
+      plusBtn.addEventListener("click", function () {
+        const current = Number(qtyInput.value || 1);
+        qtyInput.value = current + 1;
+      });
+    }
 
     const stars = document.querySelectorAll(".star-input .star");
     const ratingInput = document.getElementById("ratingInput");
