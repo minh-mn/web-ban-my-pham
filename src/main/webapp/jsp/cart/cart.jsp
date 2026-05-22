@@ -1,168 +1,181 @@
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
-<!-- PAGE CSS -->
-<link rel="stylesheet"
-      href="${pageContext.request.contextPath}/assets/css/cart.css">
+<section class="cart-section">
+    <div class="container">
 
-<section class="section container">
+        <h1 class="cart-title">Giỏ hàng của bạn</h1>
 
-    <h2 class="section-title">🛒 Giỏ hàng của bạn</h2>
+        <c:choose>
+            <c:when test="${empty cart}">
+                <div class="cart-empty">
+                    <p>Giỏ hàng của bạn đang trống.</p>
 
-    <c:choose>
-        <c:when test="${not empty cart}">
-            <div class="cart-wrapper">
-
-                <table class="cart-table">
-                    <thead>
-                        <tr>
-                            <th>Sản phẩm</th>
-                            <th>Số lượng</th>
-                            <th>Đơn giá</th>
-                            <th>Tạm tính</th>
-                            <th>Xóa</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                        <c:forEach var="entry" items="${cart}">
-                            <c:set var="item" value="${entry.value}" />
-
-                            <tr>
-                                <!-- PRODUCT -->
-                                <td class="cart-product">
-
-                                    <c:choose>
-                                        <c:when test="${not empty item.imageUrl}">
-                                            <c:choose>
-                                                <c:when test="${fn:startsWith(item.imageUrl, 'http')}">
-                                                    <img src="${item.imageUrl}" class="cart-thumb"
-                                                         alt="${fn:escapeXml(item.title)}">
-                                                </c:when>
-                                                <c:otherwise>
-                                                    <img src="${pageContext.request.contextPath}${item.imageUrl}"
-                                                         class="cart-thumb"
-                                                         alt="${fn:escapeXml(item.title)}">
-                                                </c:otherwise>
-                                            </c:choose>
-                                        </c:when>
-
-                                        <c:otherwise>
-                                            <img src="${pageContext.request.contextPath}/assets/images/default-product.jpg"
-                                                 class="cart-thumb"
-                                                 alt="no-image">
-                                        </c:otherwise>
-                                    </c:choose>
-
-                                    <span class="cart-title"><c:out value="${item.title}"/></span>
-                                </td>
-
-                                <!-- QUANTITY -->
-                                <td>
-                                    <div class="qty-control">
-                                        <a href="${pageContext.request.contextPath}/cart/decrease?productId=${item.productId}"
-                                           class="btn-qty">−</a>
-
-                                        <span class="qty"><c:out value="${item.quantity}"/></span>
-
-                                        <a href="${pageContext.request.contextPath}/cart/increase?productId=${item.productId}"
-                                           class="btn-qty ${item.quantity >= item.stock ? 'disabled' : ''}">
-                                            +
-                                        </a>
-                                    </div>
-                                </td>
-
-                                <!-- PRICE -->
-                                <td class="cart-price">
-                                    <span class="price-vnd">
-                                        <fmt:formatNumber value="${item.price}"
-                                                          type="number"
-                                                          groupingUsed="true"
-                                                          minFractionDigits="0"
-                                                          maxFractionDigits="0"/>
-                                    </span>
-                                    <span class="currency">₫</span>
-                                </td>
-
-                                <!-- SUBTOTAL -->
-                                <td class="cart-subtotal">
-                                    <strong class="total-price">
-                                        <fmt:formatNumber value="${item.subtotal}"
-                                                          type="number"
-                                                          groupingUsed="true"
-                                                          minFractionDigits="0"
-                                                          maxFractionDigits="0"/> ₫
-                                    </strong>
-                                </td>
-
-                                <!-- REMOVE -->
-                                <td>
-                                    <a href="${pageContext.request.contextPath}/cart/remove?productId=${item.productId}"
-                                       class="btn-remove"
-                                       title="Xóa sản phẩm">
-                                        ✕
-                                    </a>
-                                </td>
-                            </tr>
-                        </c:forEach>
-                    </tbody>
-                </table>
-
-                <!-- ================= SUMMARY ================= -->
-                <div class="cart-summary">
-
-                    <!-- TOTAL -->
-                    <div class="cart-total">
-                        <span>Tổng tiền sản phẩm</span>
-                        <strong class="total-price">
-                            <fmt:formatNumber value="${total}"
-                                              type="number"
-                                              groupingUsed="true"
-                                              minFractionDigits="0"
-                                              maxFractionDigits="0"/> ₫
-                        </strong>
-                    </div>
-
-                    <!-- PROMOTION NOTE -->
-                    <div class="cart-promo-note">
-                        <small>
-                            💡 Khuyến mãi theo đơn hàng, mã giảm giá và ưu đãi VIP
-                            sẽ được áp dụng ở bước thanh toán.
-                        </small>
-                    </div>
-
-                    <!-- ACTIONS -->
-                    <div class="cart-actions">
-                        <a href="${pageContext.request.contextPath}/products"
-                           class="btn-continue">
-                            ↩ Tiếp tục mua sắm
-                        </a>
-
-                        <a href="${pageContext.request.contextPath}/checkout"
-                           class="btn-checkout"
-                           onclick="showLoading(this)">
-                            Thanh toán
-                        </a>
-                    </div>
+                    <a href="${pageContext.request.contextPath}/products" class="btn-continue">
+                        Tiếp tục mua sắm
+                    </a>
                 </div>
+            </c:when>
 
-            </div>
-        </c:when>
+            <c:otherwise>
+                <div class="cart-layout">
 
-        <c:otherwise>
-            <p style="text-align:center; color:#666; font-size:16px;">
-                Giỏ hàng của bạn đang trống.
-            </p>
-        </c:otherwise>
-    </c:choose>
+                    <div class="cart-table-wrap">
+                        <table class="cart-table">
+                            <thead>
+                            <tr>
+                                <th>Sản phẩm</th>
+                                <th>Biến thể</th>
+                                <th>Đơn giá</th>
+                                <th>Số lượng</th>
+                                <th>Tạm tính</th>
+                                <th></th>
+                            </tr>
+                            </thead>
 
+                            <tbody>
+                            <c:forEach var="entry" items="${cart}">
+                                <c:set var="item" value="${entry.value}"/>
+                                <c:set var="cartKey" value="${entry.key}"/>
+                                <c:set var="options" value="${variantOptions[item.productId]}"/>
+
+                                <tr>
+                                    <td class="cart-product">
+                                        <div class="cart-product-info">
+                                            <div class="cart-img-box">
+                                                <c:choose>
+                                                    <c:when test="${not empty item.imageUrl}">
+                                                        <img src="${pageContext.request.contextPath}${item.imageUrl}"
+                                                             alt="${fn:escapeXml(item.title)}">
+                                                    </c:when>
+
+                                                    <c:otherwise>
+                                                        <img src="${pageContext.request.contextPath}/assets/images/default-product.jpg"
+                                                             alt="default">
+                                                    </c:otherwise>
+                                                </c:choose>
+                                            </div>
+
+                                            <div>
+                                                <div class="cart-product-title">
+                                                    <c:out value="${item.title}"/>
+                                                </div>
+
+                                                <div class="cart-product-id">
+                                                    Mã SP: ${item.productId}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+
+                                    <td class="cart-variant">
+                                        <c:choose>
+                                            <c:when test="${not empty options}">
+                                                <form method="post"
+                                                      action="${pageContext.request.contextPath}/cart/update-variant"
+                                                      class="variant-update-form">
+
+                                                    <input type="hidden" name="productId" value="${item.productId}">
+                                                    <input type="hidden" name="key" value="${cartKey}">
+
+                                                    <select name="variantId"
+                                                            class="cart-variant-select"
+                                                            onchange="this.form.submit()">
+
+                                                        <c:forEach var="v" items="${options}">
+                                                            <option value="${v.id}"
+                                                                ${v.id == item.variantId ? 'selected' : ''}
+                                                                ${v.stock <= 0 ? 'disabled' : ''}>
+                                                                <c:out value="${v.displayName}"/>
+
+                                                                <c:if test="${v.extraPrice > 0}">
+                                                                    - +<fmt:formatNumber value="${v.extraPrice}" type="number" groupingUsed="true"/> ₫
+                                                                </c:if>
+
+                                                                - Còn ${v.stock}
+                                                            </option>
+                                                        </c:forEach>
+                                                    </select>
+                                                </form>
+                                            </c:when>
+
+                                            <c:otherwise>
+                          <span class="variant-text">
+                            <c:out value="${item.variantDisplayName}"/>
+                          </span>
+                                            </c:otherwise>
+                                        </c:choose>
+                                    </td>
+
+                                    <td class="cart-price">
+                                        <fmt:formatNumber value="${item.price}" type="number" groupingUsed="true"/> ₫
+                                    </td>
+
+                                    <td class="cart-quantity">
+                                        <div class="quantity-box">
+                                            <a class="qty-btn"
+                                               href="${pageContext.request.contextPath}/cart/decrease?productId=${item.productId}&key=${cartKey}">
+                                                -
+                                            </a>
+
+                                            <span class="qty-value">
+                                                    ${item.quantity}
+                                            </span>
+
+                                            <a class="qty-btn"
+                                               href="${pageContext.request.contextPath}/cart/increase?productId=${item.productId}&key=${cartKey}">
+                                                +
+                                            </a>
+                                        </div>
+
+                                        <div class="stock-note">
+                                            Còn ${item.stock}
+                                        </div>
+                                    </td>
+
+                                    <td class="cart-subtotal">
+                                        <fmt:formatNumber value="${item.subtotal}" type="number" groupingUsed="true"/> ₫
+                                    </td>
+
+                                    <td class="cart-remove">
+                                        <a href="${pageContext.request.contextPath}/cart/remove?productId=${item.productId}&key=${cartKey}"
+                                           class="remove-btn"
+                                           onclick="return confirm('Xóa sản phẩm này khỏi giỏ hàng?');">
+                                            Xóa
+                                        </a>
+                                    </td>
+                                </tr>
+                            </c:forEach>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="cart-summary">
+                        <h2>Tổng giỏ hàng</h2>
+
+                        <div class="summary-row">
+                            <span>Tạm tính</span>
+                            <strong>
+                                <fmt:formatNumber value="${total}" type="number" groupingUsed="true"/> ₫
+                            </strong>
+                        </div>
+
+                        <div class="summary-actions">
+                            <a href="${pageContext.request.contextPath}/products" class="btn-continue">
+                                Tiếp tục mua
+                            </a>
+
+                            <a href="${pageContext.request.contextPath}/checkout" class="btn-checkout">
+                                Thanh toán
+                            </a>
+                        </div>
+                    </div>
+
+                </div>
+            </c:otherwise>
+        </c:choose>
+
+    </div>
 </section>
-
-<script>
-function showLoading(btn) {
-    btn.innerHTML = "⏳ Đang xử lý...";
-    btn.style.pointerEvents = "none";
-}
-</script>
