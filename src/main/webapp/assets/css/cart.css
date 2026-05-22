@@ -15,6 +15,16 @@
   margin-bottom: 26px;
 }
 
+.cart-alert {
+  margin-bottom: 18px;
+  padding: 13px 16px;
+  border-radius: 14px;
+  background: #fff0f6;
+  border: 1px solid #ffc2dc;
+  color: #b4235f;
+  font-weight: 700;
+}
+
 /* ================= EMPTY CART ================= */
 
 .cart-empty {
@@ -58,57 +68,73 @@
   font-weight: 800;
   letter-spacing: -0.2px;
   text-align: left;
-  padding: 16px 12px;
+  padding: 16px 10px;
   border-bottom: 1px solid #eee;
   vertical-align: middle;
 }
 
 .cart-table td {
-  padding: 18px 12px;
+  padding: 18px 10px;
   border-bottom: 1px solid #f0f0f0;
   vertical-align: middle;
   color: #374151;
   font-size: 15px;
 }
 
-/* Cột sản phẩm */
+/* Chia cột để không cần kéo ngang */
 .cart-table th:nth-child(1),
 .cart-table td:nth-child(1) {
-  width: 30%;
+  width: 5%;
+  text-align: center;
 }
 
-/* Cột biến thể */
 .cart-table th:nth-child(2),
 .cart-table td:nth-child(2) {
-  width: 15%;
+  width: 27%;
 }
 
-/* Cột đơn giá */
 .cart-table th:nth-child(3),
 .cart-table td:nth-child(3) {
+  width: 14%;
+}
+
+.cart-table th:nth-child(4),
+.cart-table td:nth-child(4) {
+  width: 14%;
+  text-align: center;
+}
+
+.cart-table th:nth-child(5),
+.cart-table td:nth-child(5) {
   width: 15%;
   text-align: center;
 }
 
-/* Cột số lượng */
-.cart-table th:nth-child(4),
-.cart-table td:nth-child(4) {
-  width: 16%;
-  text-align: center;
-}
-
-/* Cột tạm tính */
-.cart-table th:nth-child(5),
-.cart-table td:nth-child(5) {
-  width: 16%;
-  text-align: center;
-}
-
-/* Cột xóa */
 .cart-table th:nth-child(6),
 .cart-table td:nth-child(6) {
+  width: 17%;
+  text-align: center;
+}
+
+.cart-table th:nth-child(7),
+.cart-table td:nth-child(7) {
   width: 8%;
   text-align: center;
+}
+
+/* ================= CHECKBOX ================= */
+
+.cart-select,
+.cart-select-col {
+  text-align: center;
+}
+
+.cart-check-all,
+.cart-item-checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: #d63384;
+  cursor: pointer;
 }
 
 /* ================= PRODUCT INFO ================= */
@@ -215,11 +241,6 @@
 
 /* ================= QUANTITY ALIGNMENT ================= */
 
-/*
-  Fix lỗi bạn nói:
-  - Số lượng hiện tại, ví dụ số 1, nằm ngang hàng với số tiền tạm tính.
-  - Dòng "Còn xx" nằm thụt xuống dưới để cân bằng.
-*/
 .cart-quantity {
   text-align: center;
   vertical-align: middle;
@@ -230,12 +251,6 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-
-  /*
-    Dịch cả cụm xuống một chút:
-    - Quantity box sẽ nằm ngang hơn với tạm tính.
-    - Stock note nằm dưới quantity box.
-  */
   transform: translateY(11px);
 }
 
@@ -363,6 +378,13 @@
   white-space: nowrap;
 }
 
+.cart-select-note {
+  margin-top: 14px;
+  color: #6b7280;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 .summary-actions {
   display: grid;
   gap: 12px;
@@ -393,8 +415,10 @@
 }
 
 .btn-checkout {
+  border: none;
   background: #d63384;
   color: #fff;
+  cursor: pointer;
 }
 
 .btn-checkout:hover {
@@ -419,7 +443,7 @@
   }
 
   .cart-table {
-    min-width: 760px;
+    min-width: 860px;
   }
 }
 
