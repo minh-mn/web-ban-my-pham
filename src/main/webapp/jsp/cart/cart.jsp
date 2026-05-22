@@ -57,7 +57,6 @@
                                 <c:set var="cartKey" value="${entry.key}" />
                                 <c:set var="options" value="${variantOptions[item.productId]}" />
 
-                                <!-- Format subtotal thành số nguyên sạch, không có dấu phẩy/chấm -->
                                 <fmt:formatNumber var="itemSubtotalRaw"
                                                   value="${item.subtotal}"
                                                   pattern="0"
@@ -139,7 +138,7 @@
 
                                             <c:otherwise>
                                                 <span class="variant-text">
-                                                    <c:out value="${item.variantDisplayName}" />
+                                                    <c:out value="${empty item.variantDisplayName ? 'Mặc định' : item.variantDisplayName}" />
                                                 </span>
                                             </c:otherwise>
                                         </c:choose>
@@ -178,8 +177,16 @@
                                     </td>
 
                                     <!-- TẠM TÍNH -->
-                                    <td class="cart-subtotal">
-                                        <fmt:formatNumber value="${item.subtotal}" type="number" groupingUsed="true" /> ₫
+                                    <td class="cart-subtotal ${item.discounted ? 'has-discount' : ''}">
+                                        <strong class="subtotal-current">
+                                            <fmt:formatNumber value="${item.subtotal}" type="number" groupingUsed="true" /> ₫
+                                        </strong>
+
+                                        <c:if test="${item.discounted}">
+                                            <span class="subtotal-original">
+                                                <fmt:formatNumber value="${item.originalSubtotal}" type="number" groupingUsed="true" /> ₫
+                                            </span>
+                                        </c:if>
                                     </td>
 
                                     <!-- XÓA -->
@@ -257,8 +264,7 @@
                     return 0;
                 }
 
-                const raw = String(value).trim();
-                const number = Number(raw);
+                const number = Number(String(value).trim());
 
                 return Number.isFinite(number) ? number : 0;
             }
