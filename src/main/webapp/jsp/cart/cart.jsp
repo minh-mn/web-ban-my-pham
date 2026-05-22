@@ -37,18 +37,20 @@
 
                             <tbody>
                             <c:forEach var="entry" items="${cart}">
-                                <c:set var="item" value="${entry.value}"/>
-                                <c:set var="cartKey" value="${entry.key}"/>
-                                <c:set var="options" value="${variantOptions[item.productId]}"/>
+                                <c:set var="item" value="${entry.value}" />
+                                <c:set var="cartKey" value="${entry.key}" />
+                                <c:set var="options" value="${variantOptions[item.productId]}" />
 
                                 <tr>
+                                    <!-- SẢN PHẨM -->
                                     <td class="cart-product">
                                         <div class="cart-product-info">
                                             <div class="cart-img-box">
                                                 <c:choose>
                                                     <c:when test="${not empty item.imageUrl}">
                                                         <img src="${pageContext.request.contextPath}${item.imageUrl}"
-                                                             alt="${fn:escapeXml(item.title)}">
+                                                             alt="${fn:escapeXml(item.title)}"
+                                                             onerror="this.onerror=null;this.src='${pageContext.request.contextPath}/assets/images/default-product.jpg';">
                                                     </c:when>
 
                                                     <c:otherwise>
@@ -58,9 +60,9 @@
                                                 </c:choose>
                                             </div>
 
-                                            <div>
+                                            <div class="cart-product-meta">
                                                 <div class="cart-product-title">
-                                                    <c:out value="${item.title}"/>
+                                                    <c:out value="${item.title}" />
                                                 </div>
 
                                                 <div class="cart-product-id">
@@ -70,6 +72,7 @@
                                         </div>
                                     </td>
 
+                                    <!-- BIẾN THỂ -->
                                     <td class="cart-variant">
                                         <c:choose>
                                             <c:when test="${not empty options}">
@@ -88,12 +91,10 @@
                                                             <option value="${v.id}"
                                                                 ${v.id == item.variantId ? 'selected' : ''}
                                                                 ${v.stock <= 0 ? 'disabled' : ''}>
-                                                                <c:out value="${v.displayName}"/>
-
+                                                                <c:out value="${v.displayName}" />
                                                                 <c:if test="${v.extraPrice > 0}">
-                                                                    - +<fmt:formatNumber value="${v.extraPrice}" type="number" groupingUsed="true"/> ₫
+                                                                    - +<fmt:formatNumber value="${v.extraPrice}" type="number" groupingUsed="true" /> ₫
                                                                 </c:if>
-
                                                                 - Còn ${v.stock}
                                                             </option>
                                                         </c:forEach>
@@ -103,42 +104,50 @@
 
                                             <c:otherwise>
                           <span class="variant-text">
-                            <c:out value="${item.variantDisplayName}"/>
+                            <c:out value="${item.variantDisplayName}" />
                           </span>
                                             </c:otherwise>
                                         </c:choose>
                                     </td>
 
+                                    <!-- ĐƠN GIÁ -->
                                     <td class="cart-price">
-                                        <fmt:formatNumber value="${item.price}" type="number" groupingUsed="true"/> ₫
+                                        <fmt:formatNumber value="${item.price}" type="number" groupingUsed="true" /> ₫
                                     </td>
 
+                                    <!-- SỐ LƯỢNG -->
                                     <td class="cart-quantity">
-                                        <div class="quantity-box">
-                                            <a class="qty-btn"
-                                               href="${pageContext.request.contextPath}/cart/decrease?productId=${item.productId}&key=${cartKey}">
-                                                -
-                                            </a>
+                                        <div class="cart-quantity-inner">
+                                            <div class="quantity-box">
+                                                <a class="qty-btn"
+                                                   href="${pageContext.request.contextPath}/cart/decrease?productId=${item.productId}&key=${cartKey}"
+                                                   aria-label="Giảm số lượng">
+                                                    -
+                                                </a>
 
-                                            <span class="qty-value">
-                                                    ${item.quantity}
-                                            </span>
+                                                <span class="qty-value">
+                                                        ${item.quantity}
+                                                </span>
 
-                                            <a class="qty-btn"
-                                               href="${pageContext.request.contextPath}/cart/increase?productId=${item.productId}&key=${cartKey}">
-                                                +
-                                            </a>
-                                        </div>
+                                                <a class="qty-btn"
+                                                   href="${pageContext.request.contextPath}/cart/increase?productId=${item.productId}&key=${cartKey}"
+                                                   aria-label="Tăng số lượng">
+                                                    +
+                                                </a>
+                                            </div>
 
-                                        <div class="stock-note">
-                                            Còn ${item.stock}
+                                            <div class="stock-note">
+                                                Còn ${item.stock}
+                                            </div>
                                         </div>
                                     </td>
 
+                                    <!-- TẠM TÍNH -->
                                     <td class="cart-subtotal">
-                                        <fmt:formatNumber value="${item.subtotal}" type="number" groupingUsed="true"/> ₫
+                                        <fmt:formatNumber value="${item.subtotal}" type="number" groupingUsed="true" /> ₫
                                     </td>
 
+                                    <!-- XÓA -->
                                     <td class="cart-remove">
                                         <a href="${pageContext.request.contextPath}/cart/remove?productId=${item.productId}&key=${cartKey}"
                                            class="remove-btn"
@@ -159,8 +168,9 @@
 
                         <div class="summary-row">
                             <span>Tạm tính</span>
+
                             <strong>
-                                <fmt:formatNumber value="${total}" type="number" groupingUsed="true"/> ₫
+                                <fmt:formatNumber value="${total}" type="number" groupingUsed="true" /> ₫
                             </strong>
                         </div>
 
