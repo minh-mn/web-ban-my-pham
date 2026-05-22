@@ -3,7 +3,7 @@
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
-<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/checkout.css?v=20260522">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/checkout.css?v=20260522_3">
 
 <c:set var="checkoutCart" value="${not empty selectedCart ? selectedCart : cart}" />
 
@@ -44,11 +44,9 @@
                 <c:when test="${not empty sessionScope.authUser.username}">
                   ${fn:toUpperCase(fn:substring(sessionScope.authUser.username, 0, 1))}
                 </c:when>
-
                 <c:when test="${not empty sessionScope.user.username}">
                   ${fn:toUpperCase(fn:substring(sessionScope.user.username, 0, 1))}
                 </c:when>
-
                 <c:otherwise>U</c:otherwise>
               </c:choose>
             </div>
@@ -59,19 +57,15 @@
                   <c:when test="${not empty sessionScope.authUser.fullName}">
                     <c:out value="${sessionScope.authUser.fullName}" />
                   </c:when>
-
                   <c:when test="${not empty sessionScope.user.fullName}">
                     <c:out value="${sessionScope.user.fullName}" />
                   </c:when>
-
                   <c:when test="${not empty sessionScope.authUser.username}">
                     <c:out value="${sessionScope.authUser.username}" />
                   </c:when>
-
                   <c:when test="${not empty sessionScope.user.username}">
                     <c:out value="${sessionScope.user.username}" />
                   </c:when>
-
                   <c:otherwise>Khách hàng</c:otherwise>
                 </c:choose>
               </strong>
@@ -81,11 +75,9 @@
                                   <c:when test="${not empty sessionScope.authUser.email}">
                                     <c:out value="${sessionScope.authUser.email}" />
                                   </c:when>
-
                                   <c:when test="${not empty sessionScope.user.email}">
                                     <c:out value="${sessionScope.user.email}" />
                                   </c:when>
-
                                   <c:otherwise>Chưa có email</c:otherwise>
                                 </c:choose>
                             </span>
@@ -143,7 +135,7 @@
                    required>
           </div>
 
-          <!-- TỈNH/TP - PHƯỜNG/XÃ SAU SÁP NHẬP -->
+          <!-- TỈNH/TP - PHƯỜNG/XÃ -->
           <div class="checkout-field no-margin location-field" id="locationField">
             <label for="locationInput">Tỉnh/TP, Phường/Xã</label>
 
@@ -268,6 +260,11 @@
                   <c:set var="item" value="${entry.value}" />
                   <c:set var="cartKey" value="${entry.key}" />
 
+                  <fmt:formatNumber var="itemSubtotalRaw"
+                                    value="${item.subtotal}"
+                                    pattern="0"
+                                    groupingUsed="false" />
+
                   <div class="checkout-product-item">
                     <div class="checkout-product-main">
 
@@ -297,7 +294,7 @@
                         </div>
 
                         <div class="checkout-product-price">
-                          <fmt:formatNumber value="${item.subtotal}" type="number" groupingUsed="true" />đ
+                          <fmt:formatNumber value="${item.price}" type="number" groupingUsed="true" />đ
                         </div>
                       </div>
 
@@ -310,13 +307,31 @@
                     </div>
 
                     <div class="checkout-product-bottom">
-                      <div class="checkout-qty">
-                        <a href="${pageContext.request.contextPath}/cart/decrease?productId=${item.productId}&key=${cartKey}">−</a>
-                        <span>${item.quantity}</span>
-                        <a href="${pageContext.request.contextPath}/cart/increase?productId=${item.productId}&key=${cartKey}">＋</a>
+                      <div class="checkout-qty"
+                           data-product-id="${item.productId}"
+                           data-cart-key="${cartKey}">
+
+                        <button type="button"
+                                class="checkout-qty-btn js-checkout-qty-btn"
+                                data-action="decrease"
+                                aria-label="Giảm số lượng">
+                          −
+                        </button>
+
+                        <span class="checkout-qty-value">
+                            ${item.quantity}
+                        </span>
+
+                        <button type="button"
+                                class="checkout-qty-btn js-checkout-qty-btn"
+                                data-action="increase"
+                                aria-label="Tăng số lượng">
+                          ＋
+                        </button>
                       </div>
 
-                      <strong class="checkout-product-subtotal">
+                      <strong class="checkout-product-subtotal js-item-subtotal"
+                              data-raw="${itemSubtotalRaw}">
                         <fmt:formatNumber value="${item.subtotal}" type="number" groupingUsed="true" />đ
                       </strong>
                     </div>
@@ -445,6 +460,122 @@
                 });
       });
     }
+  })();
+</script>
+
+<script>
+  (function () {
+    const contextPath = "${pageContext.request.contextPath}";
+
+    const summarySubtotal = document.getElementById("summarySubtotal");
+    const summaryDiscount = document.getElementById("summaryDiscount");
+    const summaryTotal = document.getElementById("summaryTotal");
+
+    const couponInput = document.getElementById("couponCode");
+    const applyCouponBtn = document.getElementById("applyCouponBtn");
+
+    function formatVnd(value) {
+      return new Intl.NumberFormat("vi-VN").format(Math.round(Number(value || 0))) + "đ";
+    }
+
+    function parseMoney(value) {
+      const number = Number(String(value || "0").trim());
+      return Number.isFinite(number) ? number : 0;
+    }
+
+    function calculateCurrentSubtotal() {
+      let subtotal = 0;
+
+      document.querySelectorAll(".js-item-subtotal").forEach(function (el) {
+        subtotal += parseMoney(el.dataset.raw);
+      });
+
+      return subtotal;
+    }
+
+    function updateSummaryWithoutCoupon() {
+      const subtotal = calculateCurrentSubtotal();
+
+      if (summarySubtotal) {
+        summarySubtotal.textContent = formatVnd(subtotal);
+      }
+
+      if (summaryDiscount) {
+        summaryDiscount.textContent = formatVnd(0);
+      }
+
+      if (summaryTotal) {
+        summaryTotal.textContent = formatVnd(subtotal);
+      }
+    }
+
+    function recalculateSummary() {
+      updateSummaryWithoutCoupon();
+
+      if (couponInput && couponInput.value.trim() && applyCouponBtn) {
+        applyCouponBtn.click();
+      }
+    }
+
+    document.querySelectorAll(".js-checkout-qty-btn").forEach(function (button) {
+      button.addEventListener("click", function () {
+        const qtyBox = button.closest(".checkout-qty");
+        const productItem = button.closest(".checkout-product-item");
+
+        if (!qtyBox || !productItem) {
+          return;
+        }
+
+        const productId = qtyBox.dataset.productId;
+        const cartKey = qtyBox.dataset.cartKey;
+        const action = button.dataset.action;
+
+        const params = new URLSearchParams();
+        params.append("productId", productId);
+        params.append("key", cartKey);
+        params.append("action", action);
+
+        button.disabled = true;
+
+        fetch(contextPath + "/ajax/checkout-quantity", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+            "Accept": "application/json"
+          },
+          body: params.toString()
+        })
+                .then(function (res) {
+                  return res.json();
+                })
+                .then(function (data) {
+                  if (!data.ok) {
+                    alert(data.message || "Không thể cập nhật số lượng.");
+                    return;
+                  }
+
+                  const qtyValue = qtyBox.querySelector(".checkout-qty-value");
+                  const subtotalEl = productItem.querySelector(".js-item-subtotal");
+
+                  if (qtyValue) {
+                    qtyValue.textContent = data.quantity;
+                  }
+
+                  if (subtotalEl) {
+                    subtotalEl.dataset.raw = data.itemSubtotal;
+                    subtotalEl.textContent = formatVnd(data.itemSubtotal);
+                  }
+
+                  recalculateSummary();
+                })
+                .catch(function () {
+                  alert("Không thể cập nhật số lượng lúc này.");
+                })
+                .finally(function () {
+                  button.disabled = false;
+                });
+      });
+    });
   })();
 </script>
 
