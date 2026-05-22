@@ -587,20 +587,8 @@ a { text-decoration: none; color: inherit; }
   z-index:9999;
 }
 
-/* Tạo cầu nối tàng hình trực tiếp từ nút Admin xuống */
-.user-dropdown::after {
-  content: "";
-  position: absolute;
-  top: 100%;       
-  left: 0;
-  right: 0;
-  height: 25px;    
-  background: transparent;
-  z-index: 9998; 
-}
-
 .user-menu.show{
-  display:flex;
+  display:flex !important;
 }
 
 .user-dropdown:hover .user-menu{
@@ -644,4 +632,44 @@ a { text-decoration: none; color: inherit; }
 
 .user-menu form{
   margin:0;
+}
+
+/* ================= VOUCHER MODAL (XEM CHI TIẾT) ================= */
+.voucher-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999999;
+}
+
+.voucher-modal-box {
+  background: #ffffff;
+  padding: 24px 30px;
+  border-radius: 16px;
+  min-width: 320px;
+  max-width: 90%;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  animation: modalScaleUp 0.3s ease;
+  color: #333;
+}
+
+.voucher-modal-box b {
+  color: var(--pink-dark, #db2777);
+}
+
+@keyframes modalScaleUp {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
