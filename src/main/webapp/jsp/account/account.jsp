@@ -480,95 +480,73 @@
             <div class="account-card-body">
               <div class="account-card-head account-card-head-start">
                 <div>
-                  <h2 class="account-card-title">🎟 Mã giảm giá dành cho bạn</h2>
+                  <h2 class="account-card-title" style="color: var(--pink-dark);">💼 Ví voucher của bạn</h2>
                   <p class="account-muted">
-                    Danh sách mã giảm giá còn hiệu lực phù hợp với hạng khách hàng hiện tại của bạn.
+                    Danh sách các mã giảm giá bạn đã thu thập thành công từ trang chủ.
                   </p>
                 </div>
-
-                <span class="account-chip user-chip ${rankCss}">
-                  Rank: <c:out value="${empty rankLabel ? 'Thành viên' : rankLabel}" />
+                <span class="account-chip user-chip" style="background-color: var(--pink-soft); color: var(--pink-main); font-weight: bold;">
+                  🎰 Đã lưu: ${fn:length(savedCoupons)} mã
                 </span>
               </div>
 
               <c:choose>
-                <c:when test="${not empty availableCoupons}">
+                <c:when test="${not empty savedCoupons}">
                   <div class="account-coupon-grid">
-                    <c:forEach var="coupon" items="${availableCoupons}">
-                      <div class="account-coupon-card">
+                    <c:forEach var="savedCp" items="${savedCoupons}">
+                      <div class="account-coupon-card" style="border: 1px dashed var(--pink-main); background: var(--pink-soft);">
 
                         <div class="account-coupon-top">
                           <div class="account-coupon-code">
-                            <span>🏷</span>
-                            <span><c:out value="${coupon.code}" /></span>
+                            <span>🎁</span>
+                            <span style="color: var(--pink-dark); font-weight: bold;"><c:out value="${savedCp.code}" /></span>
                           </div>
 
                           <button type="button"
                                   class="account-coupon-copy"
-                                  data-coupon-code="<c:out value='${coupon.code}'/>"
+                                  style="background: var(--pink-main); color: #fff;"
+                                  data-coupon-code="<c:out value='${savedCp.code}'/>"
                                   onclick="copyCouponCode(this.dataset.couponCode)">
                             Copy
                           </button>
                         </div>
 
-                        <div class="account-coupon-discount">
-                          Giảm <c:out value="${coupon.discountPercent}" />%
+                        <div class="account-coupon-discount" style="color: var(--text-main);">
+                          <c:choose>
+                            <c:when test="${savedCp.type eq 'FREESHIP'}">🚚 Freeship Vận Chuyển</c:when>
+                            <c:otherwise>Giảm liền ${savedCp.discountPercent}%</c:otherwise>
+                          </c:choose>
                         </div>
 
                         <div class="account-coupon-meta">
                           <div>
-                            <strong>Điều kiện:</strong>
-                            <c:choose>
-                              <c:when test="${coupon.minOrderAmount > 0}">
-                                Đơn từ
-                                <fmt:formatNumber value="${coupon.minOrderAmount}"
-                                                  type="number"
-                                                  groupingUsed="true"
-                                                  maxFractionDigits="0"/> ₫
-                              </c:when>
-                              <c:otherwise>
-                                Không yêu cầu giá trị đơn tối thiểu
-                              </c:otherwise>
-                            </c:choose>
+                            <strong>Mô tả:</strong>
+                            <c:out value="${not empty savedCp.description ? savedCp.description : 'Áp dụng giảm trừ trực tiếp vào hóa đơn khi thanh toán.'}" />
                           </div>
 
                           <div>
-                            <strong>Giảm tối đa:</strong>
+                            <strong>Điều kiện:</strong>
                             <c:choose>
-                              <c:when test="${coupon.maxDiscountAmount > 0}">
-                                <fmt:formatNumber value="${coupon.maxDiscountAmount}"
-                                                  type="number"
-                                                  groupingUsed="true"
-                                                  maxFractionDigits="0"/> ₫
+                              <c:when test="${savedCp.minOrderAmount > 0}">
+                                Đơn hàng từ <fmt:formatNumber value="${savedCp.minOrderAmount}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫
                               </c:when>
-                              <c:otherwise>
-                                Không giới hạn
-                              </c:otherwise>
+                              <c:otherwise>Không giới hạn đơn hàng tối thiểu</c:otherwise>
                             </c:choose>
                           </div>
 
                           <div>
                             <strong>Hạn dùng:</strong>
                             <c:choose>
-                              <c:when test="${not empty coupon.endDate}">
-                                <fmt:formatDate value="${coupon.endDate}" pattern="dd/MM/yyyy HH:mm"/>
+                              <c:when test="${not empty savedCp.endDate}">
+                                <span style="color: #d97706; font-weight: 500;"><c:out value="${savedCp.endDate}" /></span>
                               </c:when>
-                              <c:otherwise>
-                                Không giới hạn
-                              </c:otherwise>
+                              <c:otherwise>Không giới hạn thời gian</c:otherwise>
                             </c:choose>
                           </div>
-
-                          <c:if test="${coupon.remainingUses >= 0}">
-                            <div>
-                              <strong>Còn lượt:</strong>
-                              <c:out value="${coupon.remainingUses}" />
-                            </div>
-                          </c:if>
                         </div>
 
-                        <div class="account-coupon-rank">
-                          Dành cho: <c:out value="${coupon.minRankLabel}" /> trở lên
+                        <div class="account-coupon-rank" style="border-top: 1px solid rgba(255, 95, 162, 0.2); background: rgba(255, 95, 162, 0.05);">
+                          ✔ Sẵn sàng sử dụng tại Checkout
                         </div>
 
                       </div>
@@ -577,9 +555,12 @@
                 </c:when>
 
                 <c:otherwise>
-                  <p class="account-empty">
-                    Hiện chưa có mã giảm giá phù hợp với hạng khách hàng của bạn.
-                  </p>
+                  <div style="text-align: center; padding: 30px 10px; color: var(--text-muted);">
+                    <p style="font-size: 14px;">Bạn chưa lưu mã giảm giá nào từ trang chủ.</p>
+                    <a href="${pageContext.request.contextPath}/" style="display: inline-block; margin-top: 12px; font-size: 13px; color: #fff; background: var(--pink-main); padding: 6px 16px; border-radius: 20px; font-weight: bold;">
+                      Bấm vào đây để đi tìm mã uư đãi 🏃‍♂️
+                    </a>
+                  </div>
                 </c:otherwise>
               </c:choose>
             </div>
