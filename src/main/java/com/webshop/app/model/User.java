@@ -6,32 +6,37 @@ public class User {
 
     private int id;
     private String username;
-    private String password;   // lưu HASH (BCrypt)
+
+    // Lưu HASH BCrypt, không phải mật khẩu gốc
+    private String password;
+
     private String fullName;
     private String email;
     private String phone;
-    private String role;       // ADMIN | USER
+
+    // ADMIN | USER
+    private String role;
+
     private boolean active;
     private Timestamp createdAt;
 
     private String googleId;
     private String facebookId;
 
-    public String getGoogleId() {
-        return googleId;
+    /*
+     * Rank do admin chỉ định trực tiếp.
+     *
+     * null / blank  => AUTO, hệ thống tự tính rank theo tổng chi tiêu.
+     * MEMBER/GOLD/VIP... => dùng rank do admin chọn.
+     */
+    private String manualRankCode;
+
+    public User() {
+        this.role = "USER";
+        this.active = true;
+        this.manualRankCode = null;
     }
 
-    public void setGoogleId(String googleId) {
-        this.googleId = googleId;
-    }
-
-    public String getFacebookId() {
-        return facebookId;
-    }
-
-    public void setFacebookId(String facebookId) {
-        this.facebookId = facebookId;
-    }
     /* ================= GETTER / SETTER ================= */
 
     public int getId() {
@@ -39,7 +44,7 @@ public class User {
     }
 
     public void setId(int id) {
-        this.id = id;
+        this.id = Math.max(id, 0);
     }
 
     public String getUsername() {
@@ -47,16 +52,19 @@ public class User {
     }
 
     public void setUsername(String username) {
-        this.username = username;
+        this.username = normalizeString(username);
     }
 
-    // ⚠️ KHÔNG BAO GIỜ render password ra JSP
+    /*
+     * Chỉ dùng trong tầng DAO/Auth để kiểm tra BCrypt.
+     * Không render password trực tiếp ra JSP.
+     */
     public String getPassword() {
         return password;
     }
 
     public void setPassword(String password) {
-        this.password = password;
+        this.password = normalizeString(password);
     }
 
     public String getFullName() {
@@ -64,7 +72,7 @@ public class User {
     }
 
     public void setFullName(String fullName) {
-        this.fullName = fullName;
+        this.fullName = normalizeString(fullName);
     }
 
     public String getEmail() {
@@ -72,7 +80,8 @@ public class User {
     }
 
     public void setEmail(String email) {
-        this.email = email;
+        String value = normalizeString(email);
+        this.email = value == null ? null : value.toLowerCase();
     }
 
     public String getPhone() {
@@ -80,18 +89,29 @@ public class User {
     }
 
     public void setPhone(String phone) {
-        this.phone = phone;
+        this.phone = normalizeString(phone);
     }
 
     public String getRole() {
-        return role;
+        return role == null || role.isBlank() ? "USER" : role;
     }
 
     public void setRole(String role) {
-        this.role = role;
+        String value = normalizeString(role);
+
+        if (value == null) {
+            this.role = "USER";
+            return;
+        }
+
+        this.role = value.toUpperCase();
     }
 
     public boolean isActive() {
+        return active;
+    }
+
+    public boolean getActive() {
         return active;
     }
 
@@ -107,13 +127,126 @@ public class User {
         this.createdAt = createdAt;
     }
 
+    public String getGoogleId() {
+        return googleId;
+    }
+
+    public void setGoogleId(String googleId) {
+        this.googleId = normalizeString(googleId);
+    }
+
+    public String getFacebookId() {
+        return facebookId;
+    }
+
+    public void setFacebookId(String facebookId) {
+        this.facebookId = normalizeString(facebookId);
+    }
+
+    public String getManualRankCode() {
+        return manualRankCode;
+    }
+
+    public void setManualRankCode(String manualRankCode) {
+        String value = normalizeString(manualRankCode);
+
+        if (value == null || "AUTO".equalsIgnoreCase(value)) {
+            this.manualRankCode = null;
+            return;
+        }
+
+        this.manualRankCode = value.toUpperCase();
+    }
+
     /* ================= BUSINESS LOGIC ================= */
 
     public boolean isAdmin() {
-        return "ADMIN".equalsIgnoreCase(role);
+        return "ADMIN".equalsIgnoreCase(getRole());
+    }
+
+    public boolean isUser() {
+        return "USER".equalsIgnoreCase(getRole());
     }
 
     public boolean isEnabled() {
         return active;
+    }
+
+    public boolean hasManualRank() {
+        return manualRankCode != null && !manualRankCode.isBlank();
+    }
+
+    public boolean isAutoRank() {
+        return !hasManualRank();
+    }
+
+    public String getRankModeLabel() {
+        return isAutoRank() ? "AUTO" : "MANUAL";
+    }
+
+    public String getDisplayRankCode() {
+        return isAutoRank() ? "AUTO" : manualRankCode;
+    }
+
+    public boolean hasPassword() {
+        return password != null && !password.isBlank();
+    }
+
+    /*
+     * Dùng cho JSP nếu cần hiển thị trạng thái mật khẩu.
+     * Không trả về mật khẩu thật hoặc hash đầy đủ.
+     */
+    public String getPasswordMasked() {
+        if (!hasPassword()) {
+            return "Chưa có mật khẩu";
+        }
+
+        return "••••••••";
+    }
+
+    public String getPasswordStatusLabel() {
+        if (!hasPassword()) {
+            return "Chưa thiết lập";
+        }
+
+        return "Đã mã hóa";
+    }
+
+    public boolean hasSocialLogin() {
+        return hasGoogleLogin() || hasFacebookLogin();
+    }
+
+    public boolean hasGoogleLogin() {
+        return googleId != null && !googleId.isBlank();
+    }
+
+    public boolean hasFacebookLogin() {
+        return facebookId != null && !facebookId.isBlank();
+    }
+
+    private static String normalizeString(String value) {
+        if (value == null) {
+            return null;
+        }
+
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    @Override
+    public String toString() {
+        return "User{" +
+                "id=" + id +
+                ", username='" + username + '\'' +
+                ", fullName='" + fullName + '\'' +
+                ", email='" + email + '\'' +
+                ", phone='" + phone + '\'' +
+                ", role='" + role + '\'' +
+                ", active=" + active +
+                ", createdAt=" + createdAt +
+                ", googleId='" + googleId + '\'' +
+                ", facebookId='" + facebookId + '\'' +
+                ", manualRankCode='" + manualRankCode + '\'' +
+                '}';
     }
 }
