@@ -1,360 +1,430 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
-<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
-<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/checkout.css?v=20260522">
+<fmt:setLocale value="vi_VN"/>
 
-<c:set var="checkoutCart" value="${not empty selectedCart ? selectedCart : cart}" />
-<c:set var="orderSubtotal" value="${not empty subTotal ? subTotal : 0}" />
-<c:set var="orderDiscount" value="${not empty discount ? discount : 0}" />
-<c:set var="orderTotal" value="${not empty total ? total : orderSubtotal - orderDiscount}" />
+<section class="section container">
 
-<section class="checkout-page">
-  <div class="checkout-container">
+  <h2 class="section-title">🧾 Thanh toán</h2>
 
-    <form action="${pageContext.request.contextPath}/checkout"
-          method="post"
-          class="checkout-grid"
-          id="checkoutForm">
+  <div class="checkout-wrapper">
 
-      <!-- LEFT -->
-      <div class="checkout-left">
+    <form method="post"
+          action="${pageContext.request.contextPath}/checkout"
+          class="checkout-card">
 
-        <div class="checkout-card account-card">
-          <div class="checkout-card-header">
-            <h2>Tài khoản</h2>
+      <!-- CSRF match CsrfFilter: sessionKey=CSRF_TOKEN, param=csrf_token -->
+      <input type="hidden" name="csrf_token"
+             value="${sessionScope.CSRF_TOKEN}">
 
-            <a href="${pageContext.request.contextPath}/logout" class="checkout-logout">
-              Đăng xuất
-            </a>
-          </div>
+      <h3 class="checkout-subtitle">👤 Thông tin người nhận</h3>
 
-          <div class="account-box">
-            <div class="account-avatar">
-              <c:choose>
-                <c:when test="${not empty sessionScope.authUser.username}">
-                  ${fn:toUpperCase(fn:substring(sessionScope.authUser.username, 0, 1))}
-                </c:when>
-                <c:when test="${not empty sessionScope.user.username}">
-                  ${fn:toUpperCase(fn:substring(sessionScope.user.username, 0, 1))}
-                </c:when>
-                <c:otherwise>U</c:otherwise>
-              </c:choose>
-            </div>
-
-            <div class="account-info">
-              <strong>
-                <c:choose>
-                  <c:when test="${not empty sessionScope.authUser.fullName}">
-                    <c:out value="${sessionScope.authUser.fullName}" />
-                  </c:when>
-                  <c:when test="${not empty sessionScope.user.fullName}">
-                    <c:out value="${sessionScope.user.fullName}" />
-                  </c:when>
-                  <c:when test="${not empty sessionScope.authUser.username}">
-                    <c:out value="${sessionScope.authUser.username}" />
-                  </c:when>
-                  <c:when test="${not empty sessionScope.user.username}">
-                    <c:out value="${sessionScope.user.username}" />
-                  </c:when>
-                  <c:otherwise>Khách hàng</c:otherwise>
-                </c:choose>
-              </strong>
-
-              <span>
-                                <c:choose>
-                                  <c:when test="${not empty sessionScope.authUser.email}">
-                                    <c:out value="${sessionScope.authUser.email}" />
-                                  </c:when>
-                                  <c:when test="${not empty sessionScope.user.email}">
-                                    <c:out value="${sessionScope.user.email}" />
-                                  </c:when>
-                                  <c:otherwise>Chưa có email</c:otherwise>
-                                </c:choose>
-                            </span>
-            </div>
-          </div>
-        </div>
-
-        <div class="checkout-card">
-          <div class="checkout-card-header">
-            <h2>Thông tin giao hàng</h2>
-          </div>
-
-          <div class="checkout-field">
-            <input type="text"
-                   name="fullName"
-                   value="${not empty param.fullName ? param.fullName : sessionScope.authUser.fullName}"
-                   placeholder="Họ và tên"
-                   required>
-          </div>
-
-          <div class="checkout-field phone-field">
-            <input type="text"
-                   name="phone"
-                   value="${not empty param.phone ? param.phone : sessionScope.authUser.phone}"
-                   placeholder="Số điện thoại"
-                   required>
-            <span class="country-flag">★</span>
-          </div>
-
-          <div class="checkout-field">
-            <input type="text"
-                   name="country"
-                   value="Vietnam"
-                   placeholder="Quốc gia"
-                   readonly>
-          </div>
-
-          <div class="checkout-field">
-            <input type="text"
-                   name="address"
-                   value="${param.address}"
-                   placeholder="Địa chỉ, tên đường"
-                   required>
-          </div>
-
-          <div class="checkout-field no-margin">
-            <input type="text"
-                   name="ward"
-                   value="${param.ward}"
-                   placeholder="Tỉnh/TP, Phường/Xã"
-                   required>
-          </div>
-        </div>
-
-        <div class="checkout-card">
-          <div class="checkout-card-header">
-            <h2>Phương thức giao hàng</h2>
-          </div>
-
-          <div class="delivery-box">
-            Nhập địa chỉ để xem các phương thức giao hàng
-          </div>
-        </div>
-
-        <div class="checkout-card payment-card">
-          <div class="checkout-card-header">
-            <h2>Phương thức thanh toán</h2>
-          </div>
-
-          <div class="payment-list">
-            <label class="payment-item">
-              <input type="radio" name="paymentMethod" value="COD" checked>
-              <span class="payment-dot"></span>
-              <span class="payment-icon">💵</span>
-              <span class="payment-text">
-                                <strong>Thanh toán khi giao hàng (COD)</strong>
-                                <small>Thanh toán tiền mặt khi nhận hàng</small>
-                            </span>
-            </label>
-
-            <label class="payment-item">
-              <input type="radio" name="paymentMethod" value="VNPAY">
-              <span class="payment-dot"></span>
-              <span class="payment-icon">💳</span>
-              <span class="payment-text">
-                                <strong>Thanh toán qua VNPAY</strong>
-                                <small>Chuyển sang cổng thanh toán VNPAY</small>
-                            </span>
-            </label>
-          </div>
-        </div>
-
+      <div class="form-group">
+        <label>Họ và tên</label>
+        <input type="text" name="fullName" required>
       </div>
 
-      <!-- RIGHT -->
-      <div class="checkout-right">
+      <div class="form-group">
+        <label>Số điện thoại</label>
+        <input type="text" name="phone" required>
+      </div>
 
-        <div class="checkout-card">
-          <div class="checkout-card-header">
-            <h2>Hàng hóa</h2>
+      <div class="form-group">
+        <label>Địa chỉ giao hàng</label>
+        <textarea name="address" required></textarea>
+      </div>
+
+      <!-- ========================================================= -->
+      <!-- COUPON SECTION - ISSUE 110 -->
+      <!-- ========================================================= -->
+      <h3 class="checkout-subtitle">🎟 Mã khuyến mãi</h3>
+
+      <div class="form-group">
+        <label>Mã giảm giá</label>
+        <input type="text"
+               id="coupon-input"
+               class="form-control"
+               placeholder="Nhập mã giảm giá hoặc chọn mã bên dưới">
+
+        <button type="button"
+                id="apply-coupon"
+                class="btn-auth checkout-coupon-apply-btn">
+          Áp dụng mã
+        </button>
+      </div>
+
+      <div id="coupon-message" class="checkout-note"></div>
+
+      <!-- AVAILABLE COUPONS BY USER RANK -->
+      <div class="checkout-coupon-panel">
+
+        <div class="checkout-coupon-panel__head">
+          <div>
+            <h4 class="checkout-coupon-title">Mã giảm giá dành cho bạn</h4>
+            <p class="checkout-coupon-subtitle">
+              Danh sách mã còn hiệu lực phù hợp với hạng khách hàng hiện tại.
+            </p>
           </div>
 
-          <div class="checkout-products">
-            <c:choose>
-              <c:when test="${empty checkoutCart}">
-                <div class="checkout-empty-product">
-                  Chưa có sản phẩm để thanh toán.
-                </div>
-              </c:when>
+          <c:if test="${not empty rankLabel}">
+            <span class="checkout-rank-chip">
+              Rank: <c:out value="${rankLabel}" />
+            </span>
+          </c:if>
+        </div>
 
-              <c:otherwise>
-                <c:forEach var="entry" items="${checkoutCart}">
-                  <c:set var="item" value="${entry.value}" />
-                  <c:set var="cartKey" value="${entry.key}" />
+        <c:choose>
+          <c:when test="${not empty availableCoupons}">
+            <div class="checkout-coupon-list">
+              <c:forEach var="coupon" items="${availableCoupons}">
+                <div class="checkout-coupon-item">
 
-                  <div class="checkout-product-item">
-                    <div class="checkout-product-main">
-                      <div class="checkout-product-img">
-                        <c:choose>
-                          <c:when test="${not empty item.imageUrl}">
-                            <img src="${pageContext.request.contextPath}${item.imageUrl}"
-                                 alt="${fn:escapeXml(item.title)}"
-                                 onerror="this.onerror=null;this.src='${pageContext.request.contextPath}/assets/images/default-product.jpg';">
-                          </c:when>
-
-                          <c:otherwise>
-                            <img src="${pageContext.request.contextPath}/assets/images/default-product.jpg"
-                                 alt="default">
-                          </c:otherwise>
-                        </c:choose>
-                      </div>
-
-                      <div class="checkout-product-info">
-                        <div class="checkout-product-title">
-                          <c:out value="${item.title}" />
-                        </div>
-
-                        <div class="checkout-product-variant">
-                          <c:out value="${empty item.variantDisplayName ? 'Mặc định' : item.variantDisplayName}" />
-                          <span>›</span>
-                        </div>
-
-                        <div class="checkout-product-price">
-                          <fmt:formatNumber value="${item.price}" type="number" groupingUsed="true" />đ
-                        </div>
-                      </div>
-
-                      <a href="${pageContext.request.contextPath}/cart/remove?productId=${item.productId}&key=${cartKey}"
-                         class="checkout-remove"
-                         title="Xóa sản phẩm"
-                         onclick="return confirm('Xóa sản phẩm này khỏi đơn thanh toán?');">
-                        🗑
-                      </a>
+                  <div class="checkout-coupon-item__top">
+                    <div class="checkout-coupon-code">
+                      🏷 <c:out value="${coupon.code}" />
                     </div>
 
-                    <div class="checkout-product-bottom">
-                      <div class="checkout-qty">
-                        <a href="${pageContext.request.contextPath}/cart/decrease?productId=${item.productId}&key=${cartKey}">−</a>
-                        <span>${item.quantity}</span>
-                        <a href="${pageContext.request.contextPath}/cart/increase?productId=${item.productId}&key=${cartKey}">＋</a>
-                      </div>
-
-                      <strong class="checkout-product-subtotal">
-                        <fmt:formatNumber value="${item.subtotal}" type="number" groupingUsed="true" />đ
-                      </strong>
-                    </div>
+                    <button type="button"
+                            class="checkout-coupon-use-btn"
+                            data-coupon-code="<c:out value='${coupon.code}'/>">
+                      Dùng mã
+                    </button>
                   </div>
-                </c:forEach>
-              </c:otherwise>
-            </c:choose>
-          </div>
+
+                  <div class="checkout-coupon-discount">
+                    Giảm <c:out value="${coupon.discountPercent}" />%
+                  </div>
+
+                  <div class="checkout-coupon-info">
+
+                    <div>
+                      <strong>Điều kiện:</strong>
+                      <c:choose>
+                        <c:when test="${coupon.minOrderAmount > 0}">
+                          Đơn từ
+                          <fmt:formatNumber value="${coupon.minOrderAmount}"
+                                            type="number"
+                                            groupingUsed="true"
+                                            maxFractionDigits="0"/> ₫
+                        </c:when>
+                        <c:otherwise>
+                          Không yêu cầu giá trị đơn tối thiểu
+                        </c:otherwise>
+                      </c:choose>
+                    </div>
+
+                    <div>
+                      <strong>Giảm tối đa:</strong>
+                      <c:choose>
+                        <c:when test="${coupon.maxDiscountAmount > 0}">
+                          <fmt:formatNumber value="${coupon.maxDiscountAmount}"
+                                            type="number"
+                                            groupingUsed="true"
+                                            maxFractionDigits="0"/> ₫
+                        </c:when>
+                        <c:otherwise>
+                          Không giới hạn
+                        </c:otherwise>
+                      </c:choose>
+                    </div>
+
+                    <div>
+                      <strong>Hạn dùng:</strong>
+                      <c:choose>
+                        <c:when test="${not empty coupon.endDate}">
+                          <fmt:formatDate value="${coupon.endDate}" pattern="dd/MM/yyyy HH:mm"/>
+                        </c:when>
+                        <c:otherwise>
+                          Không giới hạn
+                        </c:otherwise>
+                      </c:choose>
+                    </div>
+
+                    <c:if test="${coupon.remainingUses >= 0}">
+                      <div>
+                        <strong>Còn lượt:</strong>
+                        <c:out value="${coupon.remainingUses}" />
+                      </div>
+                    </c:if>
+
+                  </div>
+
+                  <div class="checkout-coupon-rank">
+                    Dành cho: <c:out value="${coupon.minRankLabel}" /> trở lên
+                  </div>
+
+                </div>
+              </c:forEach>
+            </div>
+          </c:when>
+
+          <c:otherwise>
+            <p class="checkout-note">
+              Hiện chưa có mã giảm giá phù hợp với hạng khách hàng của bạn.
+            </p>
+          </c:otherwise>
+        </c:choose>
+
+      </div>
+
+      <h3 class="checkout-subtitle">📦 Tổng kết đơn hàng</h3>
+
+      <div class="order-summary">
+
+        <div class="summary-row subtotal">
+          <span>Tạm tính</span>
+          <span id="subtotal">
+            <fmt:formatNumber value="${subtotal != null ? subtotal : 0}"
+                              type="number"
+                              groupingUsed="true"/> ₫
+          </span>
         </div>
 
-        <div class="checkout-card coupon-card">
-          <div class="checkout-card-header">
-            <h2>Mã khuyến mãi</h2>
-          </div>
-
-          <button type="button" class="coupon-select-btn">
-            <span>🎟 Chọn mã</span>
-            <span>›</span>
-          </button>
-
-          <div class="coupon-input-row">
-            <input type="text"
-                   id="couponCode"
-                   name="couponCode"
-                   value="${param.couponCode}"
-                   placeholder="Mã khuyến mãi">
-
-            <button type="button" id="applyCouponBtn" class="btn-apply-coupon">
-              Áp dụng
-            </button>
-          </div>
-
-          <div id="couponMessage" class="coupon-message"></div>
+        <div class="summary-row discount coupon"
+             id="coupon-discount-row"
+             hidden>
+          <span>
+            🎟 Mã khuyến mãi
+            <small class="discount-percent"></small><br>
+            <small class="discount-max"></small>
+          </span>
+          <span class="discount-value"></span>
         </div>
 
-        <div class="checkout-card checkout-summary-card">
-          <div class="checkout-card-header">
-            <h2>Tóm tắt đơn hàng</h2>
-          </div>
+        <c:if test="${not empty rankDiscountPercent and rankDiscountPercent > 0}">
+          <div class="summary-row discount rank">
+            <span>
+              🏅 Ưu đãi hạng <b><c:out value="${rankLabel}" /></b>
+              <small>(-<c:out value="${rankDiscountPercent}" />%)</small><br>
+              <small>
+                Giảm tối đa
+                <c:choose>
+                  <c:when test="${not empty rankDiscountMax}">
+                    <c:out value="${rankDiscountMax}" />
+                  </c:when>
+                  <c:otherwise>không giới hạn</c:otherwise>
+                </c:choose>
+              </small>
+            </span>
 
-          <div class="summary-line">
-            <span>Tổng tiền hàng</span>
-            <strong id="summarySubtotal">
-              <fmt:formatNumber value="${orderSubtotal}" type="number" groupingUsed="true" />đ
-            </strong>
+            <span class="discount-value" id="rank-discount-value">
+              -<fmt:formatNumber value="${rankDiscount != null ? rankDiscount : 0}"
+                                 type="number"
+                                 groupingUsed="true"/> ₫
+            </span>
           </div>
+        </c:if>
 
-          <div class="summary-line">
-            <span>Phí vận chuyển</span>
-            <strong>-</strong>
-          </div>
+        <div class="summary-divider"></div>
 
-          <div class="summary-line">
-            <span>Giảm giá</span>
-            <strong id="summaryDiscount">
-              <fmt:formatNumber value="${orderDiscount}" type="number" groupingUsed="true" />đ
-            </strong>
-          </div>
-
-          <div class="summary-line summary-total">
-            <span>Tổng thanh</span>
-            <strong id="summaryTotal">
-              <fmt:formatNumber value="${orderTotal}" type="number" groupingUsed="true" />đ
-            </strong>
-          </div>
-
-          <button type="submit" class="btn-place-order">
-            Đặt hàng
-          </button>
+        <div class="summary-total">
+          <span>Tổng thanh toán</span>
+          <strong id="total">
+            <fmt:formatNumber value="${total != null ? total : 0}"
+                              type="number"
+                              groupingUsed="true"/> ₫
+          </strong>
         </div>
 
       </div>
+
+      <h3 class="checkout-subtitle">💳 Phương thức thanh toán</h3>
+
+      <div class="payment-options">
+        <label class="payment-option">
+          <input type="radio" name="paymentMethod" value="COD" checked>
+          <span class="custom-radio"></span>
+          <div class="payment-text">
+            <strong>Thanh toán khi nhận hàng (COD)</strong>
+            <small>Thanh toán tiền mặt</small>
+          </div>
+        </label>
+
+        <label class="payment-option">
+          <input type="radio" name="paymentMethod" value="VNPAY">
+          <span class="custom-radio"></span>
+          <div class="payment-text">
+            <strong>Thanh toán qua VNPay</strong>
+            <small>Chuyển sang cổng VNPay</small>
+          </div>
+        </label>
+      </div>
+
+      <input type="hidden" name="couponCode" id="couponCode">
+
+      <button type="submit" class="btn-auth">
+        Xác nhận đặt hàng
+      </button>
+
+      <p class="checkout-note">🔒 Thông tin được bảo mật</p>
     </form>
+
+  </div>
+
+  <div class="checkout-coupons">
+
+    <div class="checkout-title">
+      Mã giảm giá khả dụng
+    </div>
+
+    <div class="coupon-user-grid">
+
+      <c:forEach items="${availableCoupons}" var="cp">
+
+        <div
+                class="user-coupon-card"
+                onclick="
+                        document.getElementById('couponCode').value='${cp.code}'
+                        "
+        >
+
+          <div class="user-coupon-percent">
+              ${cp.discountPercent}% OFF
+          </div>
+
+          <div class="user-coupon-code">
+              ${cp.code}
+          </div>
+
+          <div class="user-coupon-expire">
+            HSD:
+              ${cp.endDate}
+          </div>
+
+        </div>
+
+      </c:forEach>
+
+    </div>
+
   </div>
 </section>
 
 <script>
   (function () {
-    const applyBtn = document.getElementById("applyCouponBtn");
-    const couponInput = document.getElementById("couponCode");
-    const couponMessage = document.getElementById("couponMessage");
+    const applyButton = document.getElementById("apply-coupon");
+    const couponInput = document.getElementById("coupon-input");
+    const couponMessage = document.getElementById("coupon-message");
+    const couponCodeField = document.getElementById("couponCode");
 
-    const summarySubtotal = document.getElementById("summarySubtotal");
-    const summaryDiscount = document.getElementById("summaryDiscount");
-    const summaryTotal = document.getElementById("summaryTotal");
+    if (!applyButton || !couponInput || !couponMessage || !couponCodeField) {
+      return;
+    }
 
     function formatVnd(value) {
-      return new Intl.NumberFormat("vi-VN").format(Math.round(Number(value || 0))) + "đ";
+      if (value === null || value === undefined || value === "") {
+        return "0 ₫";
+      }
+
+      const rawValue = String(value);
+
+      if (rawValue.includes("₫")) {
+        return rawValue;
+      }
+
+      const numericValue = Number(rawValue.replace(/[^\d.-]/g, ""));
+
+      if (!Number.isFinite(numericValue)) {
+        return rawValue + " ₫";
+      }
+
+      return new Intl.NumberFormat("vi-VN").format(numericValue) + " ₫";
     }
 
-    function setCouponMessage(message, isError) {
-      if (!couponMessage) return;
+    function setMessage(text, type) {
+      couponMessage.innerText = text;
+      couponMessage.classList.remove("checkout-message-success", "checkout-message-error");
 
-      couponMessage.textContent = message || "";
-      couponMessage.classList.toggle("error", !!isError);
-      couponMessage.classList.toggle("success", !isError && !!message);
+      if (type === "success") {
+        couponMessage.classList.add("checkout-message-success");
+      }
+
+      if (type === "error") {
+        couponMessage.classList.add("checkout-message-error");
+      }
     }
 
-    if (applyBtn && couponInput) {
-      applyBtn.addEventListener("click", function () {
-        const code = couponInput.value.trim();
+    function applyCouponCode(rawCode) {
+      const code = (rawCode || "").trim();
 
-        fetch("${pageContext.request.contextPath}/ajax/apply-coupon?code=" + encodeURIComponent(code))
-                .then(function (res) {
-                  return res.json();
-                })
-                .then(function (data) {
-                  if (data.error) {
-                    setCouponMessage(data.error, true);
-                    return;
+      if (!code) {
+        setMessage("Vui lòng nhập mã khuyến mãi", "error");
+        return;
+      }
+
+      fetch("${pageContext.request.contextPath}/ajax/apply-coupon?code=" + encodeURIComponent(code))
+              .then(function (res) {
+                return res.json();
+              })
+              .then(function (data) {
+
+                if (data.error) {
+                  setMessage(data.error, "error");
+                  couponCodeField.value = "";
+                  return;
+                }
+
+                setMessage("Áp dụng mã thành công", "success");
+
+                couponInput.value = code;
+                couponCodeField.value = code;
+
+                if (data.subtotal !== undefined) {
+                  document.getElementById("subtotal").innerText = formatVnd(data.subtotal);
+                }
+
+                if (data.total !== undefined) {
+                  document.getElementById("total").innerText = formatVnd(data.total);
+                }
+
+                if (data.rankDiscount !== undefined) {
+                  const rankDiscountValue = document.getElementById("rank-discount-value");
+
+                  if (rankDiscountValue) {
+                    rankDiscountValue.innerText = "-" + formatVnd(data.rankDiscount);
+                  }
+                }
+
+                const couponRow = document.getElementById("coupon-discount-row");
+
+                if (couponRow) {
+                  couponRow.hidden = false;
+
+                  const discountValue = couponRow.querySelector(".discount-value");
+                  const discountPercent = couponRow.querySelector(".discount-percent");
+                  const discountMax = couponRow.querySelector(".discount-max");
+
+                  if (discountValue) {
+                    discountValue.innerText = "-" + formatVnd(data.discount || 0);
                   }
 
-                  if (summarySubtotal) summarySubtotal.textContent = formatVnd(data.subtotal);
-                  if (summaryDiscount) summaryDiscount.textContent = formatVnd(data.discount);
-                  if (summaryTotal) summaryTotal.textContent = formatVnd(data.total);
+                  if (discountPercent) {
+                    discountPercent.innerText = data.percent !== undefined
+                            ? "(-" + data.percent + "%)"
+                            : "";
+                  }
 
-                  setCouponMessage("Áp dụng mã giảm giá thành công.", false);
-                })
-                .catch(function () {
-                  setCouponMessage("Không thể áp dụng mã giảm giá lúc này.", true);
-                });
-      });
+                  if (discountMax) {
+                    discountMax.innerText = data.max
+                            ? "Giảm tối đa " + formatVnd(data.max)
+                            : "";
+                  }
+                }
+              })
+              .catch(function () {
+                setMessage("Không thể áp dụng mã lúc này. Vui lòng thử lại.", "error");
+              });
     }
+
+    applyButton.addEventListener("click", function () {
+      applyCouponCode(couponInput.value);
+    });
+
+    document.querySelectorAll(".checkout-coupon-use-btn").forEach(function (button) {
+      button.addEventListener("click", function () {
+        applyCouponCode(button.dataset.couponCode);
+      });
+    });
   })();
 </script>
