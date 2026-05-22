@@ -189,3 +189,33 @@ td.product-actions{
   border-radius: 12px;
 }
 
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  text-transform: uppercase;
+}
+
+/* DISCOUNT */
+.badge-blue {
+  background: #3b82f6;
+}
+
+/* FREESHIP */
+.badge-green {
+  background: #22c55e;
+}
+
+/* PRODUCT */
+.badge-purple {
+  background: #a855f7;
+}
+
+/* fallback */
+.badge-gray {
+  background: #6b7280;
+}
+
