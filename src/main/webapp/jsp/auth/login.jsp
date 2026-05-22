@@ -164,3 +164,23 @@
 				});
 	}
 </script>
+
+<script>
+	// Hàm này chạy ngay khi trang login vừa tải xong
+	window.addEventListener('load', function() {
+		// Lấy thông số từ URL (ví dụ: login?status=success)
+		const urlParams = new URLSearchParams(window.location.search);
+		const status = urlParams.get('status');
+
+		// Nếu status là 'success' thì hiện popup
+		if (status === 'success') {
+			Swal.fire({
+				icon: 'success', // Biểu tượng thành công
+				title: 'Đăng ký thành công!',
+				text: 'Chào mừng bạn đến với MyCosmetic Shop. Vui lòng đăng nhập để bắt đầu mua sắm.',
+				confirmButtonColor: '#3085d6',
+				confirmButtonText: 'Đăng nhập ngay'
+			});
+		}
+	});
+</script>
