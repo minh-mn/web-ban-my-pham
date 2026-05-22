@@ -158,20 +158,63 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  /* ================= USER DROPDOWN ================= */
+  /* ================= USER DROPDOWN================= */
+  try {
+    var userBtn = document.querySelector(".user-btn");
+    var userMenu = document.querySelector(".user-menu");
+    var userDropdown = document.querySelector(".user-dropdown");
 
-  var userBtn = document.querySelector(".user-btn");
-  var userMenu = document.querySelector(".user-menu");
+    if (userBtn && userMenu && userDropdown) {
 
-  if (userBtn && userMenu) {
-    userBtn.addEventListener("click", function (e) {
-      e.stopPropagation();
-      userMenu.classList.toggle("show");
-    });
+      // Tạo một biến cờ hiệu nằm trên đối tượng window để dùng chung cho cả 2 thực thể JS
+      if (typeof window.isDropdownDropdownLocked === "undefined") {
+        window.isDropdownDropdownLocked = false;
+      }
 
-    document.addEventListener("click", function () {
-      userMenu.classList.remove("show");
-    });
+      userBtn.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Nếu lượt click này quá nhanh (do file JS thứ 2 kích hoạt ngay sau đó), ta bỏ qua luôn
+        if (window.isDropdownDropdownLocked) {
+          return;
+        }
+
+        // Bật khóa
+        window.isDropdownDropdownLocked = true;
+
+        // Tiến hành đóng / mở menu
+        userMenu.classList.toggle("show");
+        console.log("Đã click nút User. Trạng thái class 'show':", userMenu.classList.contains("show"));
+
+        // Sau 100ms mới mở khóa để người dùng có thể click lần tiếp theo bình thường
+        setTimeout(function() {
+          window.isDropdownDropdownLocked = false;
+        }, 100);
+      });
+
+      // Xử lý click ra ngoài để đóng menu
+      document.addEventListener("click", function (e) {
+        if (!userDropdown.contains(e.target)) {
+          userMenu.classList.remove("show");
+        }
+      });
+
+      // Xử lý nút ESC
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") {
+          userMenu.classList.remove("show");
+        }
+      });
+
+      // Click bên trong menu không bị đóng
+      userMenu.addEventListener("click", function (e) {
+        e.stopPropagation();
+      });
+
+    }
+  } catch (error) {
+    console.error("Lỗi khi thiết lập Dropdown:", error);
   }
 
   /* ================= TOGGLE PASSWORD ================= */
