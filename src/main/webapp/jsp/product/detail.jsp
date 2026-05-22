@@ -3,7 +3,6 @@
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
-<%-- ================= PREP MAIN IMAGE (đúng contextPath) ================= --%>
 <c:set var="defaultImg" value="${pageContext.request.contextPath}/assets/images/default-product.jpg"/>
 
 <c:set var="mainImg" value="${defaultImg}"/>
@@ -23,17 +22,15 @@
 
     <div class="pd-layout">
 
-      <!-- ================= IMAGE / GALLERY ================= -->
+      <!-- LEFT: PRODUCT IMAGES -->
       <div class="pd-gallery">
 
         <div class="pd-thumbs">
-          <!-- Ảnh đại diện -->
           <img class="thumb active"
                src="${mainImg}"
                data-src="${mainImg}"
                alt="${fn:escapeXml(product.title)}">
 
-          <!-- Ảnh con (gallery) nếu có -->
           <c:if test="${not empty product.images}">
             <c:forEach var="img" items="${product.images}">
               <c:if test="${not empty img.imageUrl}">
@@ -54,12 +51,13 @@
 
       </div>
 
-      <!-- ================= INFO ================= -->
+      <!-- RIGHT: PRODUCT INFO -->
       <div class="pd-info">
 
-        <h1 class="product-title"><c:out value="${product.title}"/></h1>
+        <h1 class="product-title">
+          <c:out value="${product.title}"/>
+        </h1>
 
-        <!-- ⭐ Rating -->
         <div class="rating">
           <c:forEach begin="1" end="5" var="i">
             <c:choose>
@@ -70,13 +68,13 @@
           <span>(<c:out value="${product.reviewCount}"/> đánh giá)</span>
         </div>
 
-        <!-- ===== PRICE ===== -->
         <div class="product-price">
           <c:choose>
             <c:when test="${product.finalPrice lt product.price}">
               <span class="old-price">
                 <fmt:formatNumber value="${product.price}" type="number" groupingUsed="true"/> ₫
               </span>
+
               <span class="sale-price">
                 <fmt:formatNumber value="${product.finalPrice}" type="number" groupingUsed="true"/> ₫
               </span>
@@ -94,31 +92,82 @@
           </c:choose>
         </div>
 
-        <!-- DESCRIPTION -->
-        <p class="product-desc"><c:out value="${product.description}"/></p>
+        <p class="product-desc">
+          <c:out value="${product.description}"/>
+        </p>
 
-        <!-- ADD TO CART -->
         <c:choose>
           <c:when test="${product.stock > 0}">
-            <form method="post" action="${pageContext.request.contextPath}/cart/add">
+            <form method="post"
+                  action="${pageContext.request.contextPath}/cart/add"
+                  class="pd-cart-form">
+
               <input type="hidden" name="productId" value="${product.id}">
-              <button class="pd-add-cart">Thêm vào giỏ hàng</button>
+
+              <!-- VARIANT SELECTION -->
+              <c:if test="${not empty variants}">
+                <div class="variant-box">
+                  <label for="variantId">Chọn biến thể</label>
+
+                  <select id="variantId" name="variantId" class="variant-select" required>
+                    <option value="">-- Chọn size / loại sản phẩm --</option>
+
+                    <c:forEach var="v" items="${variants}">
+                      <option value="${v.id}" ${v.stock <= 0 ? 'disabled' : ''}>
+                        <c:out value="${v.displayName}"/>
+
+                        <c:if test="${v.extraPrice > 0}">
+                          - +<fmt:formatNumber value="${v.extraPrice}" type="number" groupingUsed="true"/> ₫
+                        </c:if>
+
+                        - Còn ${v.stock}
+                      </option>
+                    </c:forEach>
+                  </select>
+                </div>
+              </c:if>
+
+              <!-- VARIANT MESSAGES -->
+              <c:if test="${param.variantRequired == '1'}">
+                <div class="variant-message">
+                  Vui lòng chọn size/loại trước khi thêm vào giỏ hàng.
+                </div>
+              </c:if>
+
+              <c:if test="${param.variantInvalid == '1'}">
+                <div class="variant-message">
+                  Biến thể không hợp lệ hoặc đã ngừng bán.
+                </div>
+              </c:if>
+
+              <c:if test="${param.variantOutOfStock == '1'}">
+                <div class="variant-message">
+                  Biến thể đã hết hàng.
+                </div>
+              </c:if>
+
+              <button type="submit" class="pd-add-cart">
+                Thêm vào giỏ hàng
+              </button>
+
             </form>
           </c:when>
+
           <c:otherwise>
-            <div class="out-of-stock">Sản phẩm hiện đã hết hàng</div>
+            <div class="out-of-stock">
+              Sản phẩm hiện đã hết hàng
+            </div>
           </c:otherwise>
         </c:choose>
 
       </div>
     </div>
 
-    <!-- ================= REVIEWS ================= -->
+    <!-- REVIEWS -->
     <section class="product-reviews">
 
       <h2 class="review-title">Đánh giá từ khách hàng</h2>
 
-      <!-- ===== REVIEW FORM ===== -->
       <c:choose>
         <c:when test="${not empty sessionScope.user}">
           <form method="post"
@@ -130,26 +179,31 @@
 
             <div class="star-input">
               <input type="hidden" name="rating" id="ratingInput" value="5">
+
               <c:forEach begin="1" end="5" var="i">
                 <span class="star" data-value="${i}">★</span>
               </c:forEach>
             </div>
 
             <textarea name="comment"
-                      placeholder="Chia sẻ cảm nhận của bạn về sản phẩm..." required></textarea>
+                      placeholder="Chia sẻ cảm nhận của bạn về sản phẩm..."
+                      required></textarea>
 
-            <button type="submit" class="btn-review">Gửi đánh giá</button>
+            <button type="submit" class="btn-review">
+              Gửi đánh giá
+            </button>
           </form>
         </c:when>
 
         <c:otherwise>
           <p class="review-note">
-            ⚠️ Vui lòng <a href="${pageContext.request.contextPath}/login">đăng nhập</a> để đánh giá.
+            Vui lòng
+            <a href="${pageContext.request.contextPath}/login">đăng nhập</a>
+            để đánh giá.
           </p>
         </c:otherwise>
       </c:choose>
 
-      <!-- ===== REVIEW LIST ===== -->
       <c:choose>
         <c:when test="${not empty reviews}">
           <div class="review-list">
@@ -158,6 +212,7 @@
 
                 <div class="review-header">
                   <strong><c:out value="${r.authorName}"/></strong>
+
                   <div class="review-stars">
                     <c:forEach begin="1" end="5" var="i">
                       <c:choose>
@@ -168,7 +223,9 @@
                   </div>
                 </div>
 
-                <p class="review-comment"><c:out value="${r.comment}"/></p>
+                <p class="review-comment">
+                  <c:out value="${r.comment}"/>
+                </p>
 
                 <span class="review-date">
                   <fmt:formatDate value="${r.createdAtDate}" pattern="dd/MM/yyyy"/>
@@ -180,7 +237,9 @@
         </c:when>
 
         <c:otherwise>
-          <p class="no-review">Chưa có đánh giá nào cho sản phẩm này.</p>
+          <p class="no-review">
+            Chưa có đánh giá nào cho sản phẩm này.
+          </p>
         </c:otherwise>
       </c:choose>
 
@@ -189,46 +248,56 @@
   </div>
 </section>
 
-<!-- ================= JS: đổi ảnh khi click thumbnail + rating ================= -->
 <script>
-document.addEventListener("DOMContentLoaded", function () {
+  document.addEventListener("DOMContentLoaded", function () {
+    const mainImg = document.getElementById("mainProductImage");
+    const thumbs = document.querySelectorAll(".pd-thumbs .thumb");
 
-  // ===== Gallery switch =====
-  const mainImg = document.getElementById("mainProductImage");
-  const thumbs = document.querySelectorAll(".pd-thumbs .thumb");
+    thumbs.forEach(function (thumb) {
+      thumb.addEventListener("click", function () {
+        thumbs.forEach(function (item) {
+          item.classList.remove("active");
+        });
 
-  thumbs.forEach(t => {
-    t.addEventListener("click", () => {
-      thumbs.forEach(x => x.classList.remove("active"));
-      t.classList.add("active");
+        thumb.classList.add("active");
 
-      const src = t.getAttribute("data-src") || t.getAttribute("src");
-      if (mainImg && src) mainImg.src = src;
+        const src = thumb.getAttribute("data-src") || thumb.getAttribute("src");
+
+        if (mainImg && src) {
+          mainImg.src = src;
+        }
+      });
     });
+
+    const stars = document.querySelectorAll(".star-input .star");
+    const ratingInput = document.getElementById("ratingInput");
+    let selectedRating = 5;
+
+    function highlight(rating) {
+      stars.forEach(function (star) {
+        const value = Number(star.dataset.value);
+        star.classList.toggle("active", value <= rating);
+      });
+    }
+
+    stars.forEach(function (star) {
+      const value = Number(star.dataset.value);
+
+      star.addEventListener("mouseenter", function () {
+        highlight(value);
+      });
+
+      star.addEventListener("click", function () {
+        selectedRating = value;
+
+        if (ratingInput) {
+          ratingInput.value = value;
+        }
+
+        highlight(value);
+      });
+    });
+
+    highlight(selectedRating);
   });
-
-  // ===== Rating UI =====
-  const stars = document.querySelectorAll(".star-input .star");
-  const ratingInput = document.getElementById("ratingInput");
-  let selectedRating = 5;
-
-  function highlight(rating) {
-    stars.forEach(s => {
-      s.classList.toggle("active", Number(s.dataset.value) <= rating);
-    });
-  }
-
-  stars.forEach(star => {
-    const value = Number(star.dataset.value);
-
-    star.addEventListener("mouseenter", () => highlight(value));
-    star.addEventListener("click", () => {
-      selectedRating = value;
-      ratingInput.value = value;
-      highlight(value);
-    });
-  });
-
-  highlight(selectedRating);
-});
 </script>
