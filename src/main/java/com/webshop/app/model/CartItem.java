@@ -10,7 +10,18 @@ public class CartItem {
     private String title;
 
     private int quantity;
+
+    /*
+     * price = giá đang bán hiện tại.
+     * Nếu sản phẩm có giảm giá thì price là giá sau giảm.
+     */
     private BigDecimal price;
+
+    /*
+     * originalPrice = giá gốc trước giảm.
+     * Dùng để hiển thị giá gốc gạch ngang trong giỏ hàng.
+     */
+    private BigDecimal originalPrice;
 
     private String imageUrl;
     private int stock;
@@ -26,9 +37,30 @@ public class CartItem {
     private BigDecimal variantExtraPrice;
 
     // ===== BUSINESS =====
+
+    /**
+     * Tổng tiền theo giá đang bán.
+     * Nếu sản phẩm có giảm giá thì đây là tổng tiền sau giảm.
+     */
     public BigDecimal getSubtotal() {
-        if (price == null) return BigDecimal.ZERO;
-        return price.multiply(BigDecimal.valueOf(quantity));
+        return getSafePrice().multiply(BigDecimal.valueOf(quantity));
+    }
+
+    /**
+     * Tổng tiền theo giá gốc.
+     * Dùng để hiện giá gốc gạch ngang ở cột tạm tính.
+     */
+    public BigDecimal getOriginalSubtotal() {
+        return getSafeOriginalPrice().multiply(BigDecimal.valueOf(quantity));
+    }
+
+    /**
+     * Kiểm tra sản phẩm có đang được giảm giá hay không.
+     */
+    public boolean isDiscounted() {
+        return originalPrice != null
+                && price != null
+                && originalPrice.compareTo(price) > 0;
     }
 
     public boolean isHasVariant() {
@@ -43,19 +75,45 @@ public class CartItem {
         boolean hasSize = variantSize != null && !variantSize.isBlank();
         boolean hasType = variantType != null && !variantType.isBlank();
 
-        if (hasSize && hasType) return variantSize + " - " + variantType;
-        if (hasSize) return variantSize;
-        if (hasType) return variantType;
+        if (hasSize && hasType) {
+            return variantSize + " - " + variantType;
+        }
+
+        if (hasSize) {
+            return variantSize;
+        }
+
+        if (hasType) {
+            return variantType;
+        }
+
         return "Mặc định";
     }
 
+    private BigDecimal getSafePrice() {
+        return price != null ? price : BigDecimal.ZERO;
+    }
+
+    private BigDecimal getSafeOriginalPrice() {
+        /*
+         * Nếu chưa có originalPrice thì lấy price hiện tại.
+         * Như vậy JSP gọi originalSubtotal sẽ không bị lỗi.
+         */
+        if (originalPrice != null) {
+            return originalPrice;
+        }
+
+        return getSafePrice();
+    }
+
     // ===== GET / SET =====
+
     public int getOrderId() {
         return orderId;
     }
 
     public void setOrderId(int orderId) {
-        this.orderId = orderId;
+        this.orderId = Math.max(orderId, 0);
     }
 
     public int getProductId() {
@@ -63,7 +121,7 @@ public class CartItem {
     }
 
     public void setProductId(int productId) {
-        this.productId = productId;
+        this.productId = Math.max(productId, 0);
     }
 
     public String getTitle() {
@@ -79,15 +137,23 @@ public class CartItem {
     }
 
     public void setQuantity(int quantity) {
-        this.quantity = quantity < 0 ? 0 : quantity;
+        this.quantity = Math.max(quantity, 0);
     }
 
     public BigDecimal getPrice() {
-        return price;
+        return getSafePrice();
     }
 
     public void setPrice(BigDecimal price) {
-        this.price = price;
+        this.price = price != null ? price : BigDecimal.ZERO;
+    }
+
+    public BigDecimal getOriginalPrice() {
+        return getSafeOriginalPrice();
+    }
+
+    public void setOriginalPrice(BigDecimal originalPrice) {
+        this.originalPrice = originalPrice;
     }
 
     public String getImageUrl() {
@@ -103,7 +169,7 @@ public class CartItem {
     }
 
     public void setStock(int stock) {
-        this.stock = stock < 0 ? 0 : stock;
+        this.stock = Math.max(stock, 0);
     }
 
     public String getCartKey() {
