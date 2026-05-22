@@ -54,8 +54,52 @@
           <!-- ✅ CSRF (STATIC INCLUDE - KHÔNG VỠ UI) -->
           <%@ include file="/jsp/common/csrf.jspf" %>
 
-          <!-- ✅ FIX LỖI VALIDATION: maxUses phải >= 1 (không đổi giao diện) -->
-          <input type="hidden" name="maxUses" value="1"/>
+          <div class="admin-field">
+
+            <div class="admin-label">
+              Số lượt sử dụng tối đa
+            </div>
+
+            <input
+                    class="admin-input"
+                    type="number"
+                    name="maxUses"
+                    min="1"
+                    required
+                    value="${not empty coupon ? coupon.maxUses : 1}"
+            />
+
+          </div>
+
+          <div class="admin-field">
+
+            <div class="admin-label">
+              Mô tả
+            </div>
+
+            <textarea
+                    class="admin-textarea"
+                    name="description"
+            >${coupon.description}</textarea>
+
+          </div>
+
+          <div class="admin-field">
+
+            <div class="admin-label">
+              Đơn hàng tối thiểu
+            </div>
+
+            <input
+                    class="admin-input"
+                    type="number"
+                    name="minOrderAmount"
+                    min="0"
+                    step="1000"
+                    value="${not empty coupon ? coupon.minOrderAmount : 0}"
+            />
+
+          </div>
 
           <input type="hidden" name="action" value="${mode == 'edit' ? 'update' : 'create'}"/>
 
@@ -110,6 +154,22 @@
               <div class="admin-label">End Date</div>
               <input class="admin-input" type="date" name="endDate" value="${endDateValue}" />
               <div class="admin-help">Để trống nếu không giới hạn thời gian.</div>
+            </div>
+
+            <div class="admin-field">
+              <div class="admin-label">Loại voucher</div>
+
+              <select name="type" class="admin-select" required>
+                <option value="DISCOUNT"
+                ${coupon.type == 'DISCOUNT' ? 'selected' : ''}>
+                  Giảm giá (%)
+                </option>
+
+                <option value="FREESHIP"
+                ${coupon.type == 'FREESHIP' ? 'selected' : ''}>
+                  Miễn phí vận chuyển
+                </option>
+              </select>
             </div>
 
             <c:if test="${mode == 'edit'}">
