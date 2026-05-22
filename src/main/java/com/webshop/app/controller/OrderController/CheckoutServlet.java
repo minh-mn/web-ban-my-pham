@@ -23,7 +23,7 @@ public class CheckoutServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private final CheckoutService checkoutService = new CheckoutService();
 
-    private BigDecimal calcSubTotal(Map<Integer, CartItem> cart) {
+    private BigDecimal calcSubTotal(Map<String, CartItem> cart) {
         BigDecimal sub = BigDecimal.ZERO;
         for (CartItem it : cart.values()) {
             if (it != null && it.getSubtotal() != null) {
@@ -53,7 +53,7 @@ public class CheckoutServlet extends HttpServlet {
             return;
         }
 
-        Map<Integer, CartItem> cart = CartUtil.getCart(session);
+        Map<String, CartItem> cart = CartUtil.getCart(session);
         if (cart == null || cart.isEmpty()) {
             resp.sendRedirect(req.getContextPath() + "/products");
             return;
@@ -108,7 +108,7 @@ public class CheckoutServlet extends HttpServlet {
         }
 
         // 2) cart
-        Map<Integer, CartItem> cart = CartUtil.getCart(session);
+        Map<String, CartItem> cart = CartUtil.getCart(session);
         if (cart == null || cart.isEmpty()) {
             resp.sendRedirect(req.getContextPath() + "/products");
             return;
