@@ -2,11 +2,14 @@ package com.webshop.app.controller.CartController;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 
 import com.webshop.app.dao.ProductDAO;
+import com.webshop.app.dao.ProductVariantDAO;
 import com.webshop.app.model.CartItem;
 import com.webshop.app.model.Product;
+import com.webshop.app.model.ProductVariant;
 import com.webshop.app.utils.CartUtil;
 
 import jakarta.servlet.annotation.WebServlet;
@@ -21,62 +24,112 @@ public class CartServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
     private final ProductDAO productDAO = new ProductDAO();
+    private final ProductVariantDAO variantDAO = new ProductVariantDAO();
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
 
-        // 1) Read productId safely
-        String raw = req.getParameter("productId");
-        int productId;
+        req.setCharacterEncoding("UTF-8");
+        resp.setCharacterEncoding("UTF-8");
 
-        try {
-            productId = Integer.parseInt(raw);
-        } catch (Exception e) {
+        int productId = parseInt(req.getParameter("productId"), -1);
+        int variantId = parseInt(req.getParameter("variantId"), 0);
+
+        if (productId <= 0) {
             resp.sendRedirect(req.getContextPath() + "/products");
             return;
         }
 
-        // 2) Load product
-        Product p = productDAO.findById(productId);
-        if (p == null) {
+        Product product = productDAO.findById(productId);
+
+        if (product == null) {
             resp.sendRedirect(req.getContextPath() + "/products");
             return;
         }
 
-        // 3) Get cart from session
+        ProductVariant selectedVariant = null;
+        List<ProductVariant> variants = variantDAO.findActiveByProductId(productId);
+        boolean productHasVariants = variants != null && !variants.isEmpty();
+
+        if (productHasVariants) {
+            if (variantId <= 0) {
+                resp.sendRedirect(req.getContextPath() + "/product/" + product.getSlug() + "?variantRequired=1");
+                return;
+            }
+
+            selectedVariant = variantDAO.findActiveByIdAndProductId(variantId, productId);
+
+            if (selectedVariant == null) {
+                resp.sendRedirect(req.getContextPath() + "/product/" + product.getSlug() + "?variantInvalid=1");
+                return;
+            }
+
+            if (selectedVariant.getStock() <= 0) {
+                resp.sendRedirect(req.getContextPath() + "/product/" + product.getSlug() + "?variantOutOfStock=1");
+                return;
+            }
+        }
+
         HttpSession session = req.getSession();
-        Map<Integer, CartItem> cart = CartUtil.getCart(session);
+        Map<String, CartItem> cart = CartUtil.getCart(session);
 
-        // 4) Add/increase
-        CartItem item = cart.get(productId);
+        int realVariantId = selectedVariant != null ? selectedVariant.getId() : 0;
+        String cartKey = CartUtil.buildKey(productId, realVariantId);
+
+        CartItem item = cart.get(cartKey);
+
+        int maxStock = selectedVariant != null ? selectedVariant.getStock() : product.getStock();
+
+        BigDecimal basePrice = product.getFinalPrice() != null
+                ? product.getFinalPrice()
+                : product.getPrice();
+
+        BigDecimal finalPrice = basePrice;
+
+        if (selectedVariant != null) {
+            finalPrice = finalPrice.add(selectedVariant.getExtraPrice());
+        }
 
         if (item == null) {
             item = new CartItem();
-            item.setProductId(p.getId());
-            item.setTitle(p.getTitle());
 
-            // Giá: nếu bạn muốn dùng finalPrice thì set p.getFinalPrice()
-            BigDecimal price = p.getFinalPrice() != null ? p.getFinalPrice() : p.getPrice();
-            item.setPrice(price);
-
-            // Các field để JSP dùng
-            item.setImageUrl(p.getImageUrl()); // JSP đang đọc item.imageUrl
-            item.setStock(p.getStock());       // JSP đang đọc item.stock
-
+            item.setCartKey(cartKey);
+            item.setProductId(product.getId());
+            item.setTitle(product.getTitle());
+            item.setPrice(finalPrice);
+            item.setImageUrl(product.getImageUrl());
+            item.setStock(maxStock);
             item.setQuantity(1);
-            cart.put(productId, item);
 
-        } else {
-            // Nếu có giới hạn tồn kho thì chặn tăng quá stock
-            int newQty = item.getQuantity() + 1;
-            if (item.getStock() > 0 && newQty > item.getStock()) {
-                newQty = item.getStock();
+            if (selectedVariant != null) {
+                item.setVariantId(selectedVariant.getId());
+                item.setVariantSize(selectedVariant.getSize());
+                item.setVariantType(selectedVariant.getType());
+                item.setVariantName(selectedVariant.getDisplayName());
+                item.setVariantExtraPrice(selectedVariant.getExtraPrice());
             }
-            item.setQuantity(newQty);
+
+            cart.put(cartKey, item);
+        } else {
+            int newQuantity = item.getQuantity() + 1;
+
+            if (maxStock > 0 && newQuantity > maxStock) {
+                newQuantity = maxStock;
+            }
+
+            item.setStock(maxStock);
+            item.setQuantity(newQuantity);
         }
 
-        // 5) Redirect to cart view
         resp.sendRedirect(req.getContextPath() + "/cart");
+    }
+
+    private int parseInt(String raw, int def) {
+        try {
+            return Integer.parseInt(raw);
+        } catch (Exception e) {
+            return def;
+        }
     }
 }
