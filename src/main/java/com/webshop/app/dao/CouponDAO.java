@@ -176,17 +176,31 @@ public class CouponDAO {
         }
     }
 
+    /*
+     * Nếu coupon đã được dùng trong đơn hàng:
+     * - Không xóa thật vì store_order.coupon_id đang tham chiếu store_coupon.id.
+     * - Chỉ tắt is_active = 0 để coupon không còn dùng được.
+     *
+     * Nếu coupon chưa từng được dùng:
+     * - Cho phép hard delete.
+     */
     public void delete(int id) {
-        String sql = """
-                DELETE FROM store_coupon
-                WHERE id = ?
-                """;
+        try (Connection connection = DBConnection.getConnection()) {
 
-        try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+            if (isUsedInOrder(connection, id)) {
+                deactivate(connection, id);
+                return;
+            }
 
-            statement.setInt(1, id);
-            statement.executeUpdate();
+            String sql = """
+                    DELETE FROM store_coupon
+                    WHERE id = ?
+                    """;
+
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setInt(1, id);
+                statement.executeUpdate();
+            }
 
         } catch (SQLException e) {
             throw new RuntimeException("CouponDAO.delete error", e);
@@ -255,6 +269,41 @@ public class CouponDAO {
         }
 
         return coupon.getMaxUses() <= 0 || coupon.getUsedCount() < coupon.getMaxUses();
+    }
+
+    /* ===================== DELETE HELPER ===================== */
+
+    private boolean isUsedInOrder(Connection connection, int couponId) throws SQLException {
+        String sql = """
+                SELECT COUNT(*) AS total
+                FROM store_order
+                WHERE coupon_id = ?
+                """;
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, couponId);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getInt("total") > 0;
+                }
+
+                return false;
+            }
+        }
+    }
+
+    private void deactivate(Connection connection, int id) throws SQLException {
+        String sql = """
+                UPDATE store_coupon
+                SET is_active = 0
+                WHERE id = ?
+                """;
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, id);
+            statement.executeUpdate();
+        }
     }
 
     /* ===================== MAPPER / HELPER ===================== */
