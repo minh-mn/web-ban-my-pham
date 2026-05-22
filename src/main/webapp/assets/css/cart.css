@@ -487,3 +487,8 @@
     padding: 14px 8px;
   }
 }
+.btn-checkout.disabled,
+.btn-checkout:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
