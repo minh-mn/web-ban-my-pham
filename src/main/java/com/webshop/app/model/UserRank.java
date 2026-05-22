@@ -16,6 +16,10 @@ public class UserRank {
     private Timestamp createdAt;
 
     public UserRank() {
+        this.minSpent = BigDecimal.ZERO;
+        this.discountPercent = 0;
+        this.cssClass = "rank-member";
+        this.active = true;
     }
 
     public UserRank(Long id,
@@ -27,12 +31,12 @@ public class UserRank {
                     Boolean active,
                     Timestamp createdAt) {
         this.id = id;
-        this.code = code;
-        this.name = name;
-        this.minSpent = minSpent;
-        this.discountPercent = discountPercent;
-        this.cssClass = cssClass;
-        this.active = active;
+        this.code = normalizeString(code);
+        this.name = normalizeString(name);
+        this.minSpent = safeMoney(minSpent);
+        this.discountPercent = normalizeDiscount(discountPercent);
+        this.cssClass = normalizeString(cssClass);
+        this.active = active != null && active;
         this.createdAt = createdAt;
     }
 
@@ -41,11 +45,11 @@ public class UserRank {
                     BigDecimal minSpent,
                     Integer discountPercent,
                     String cssClass) {
-        this.code = code;
-        this.name = name;
-        this.minSpent = minSpent;
-        this.discountPercent = discountPercent;
-        this.cssClass = cssClass;
+        this.code = normalizeString(code);
+        this.name = normalizeString(name);
+        this.minSpent = safeMoney(minSpent);
+        this.discountPercent = normalizeDiscount(discountPercent);
+        this.cssClass = normalizeString(cssClass);
         this.active = true;
     }
 
@@ -86,26 +90,15 @@ public class UserRank {
     }
 
     public void setDiscountPercent(Integer discountPercent) {
-        if (discountPercent == null) {
-            this.discountPercent = 0;
-            return;
-        }
-
-        if (discountPercent < 0) {
-            this.discountPercent = 0;
-            return;
-        }
-
-        if (discountPercent > 100) {
-            this.discountPercent = 100;
-            return;
-        }
-
-        this.discountPercent = discountPercent;
+        this.discountPercent = normalizeDiscount(discountPercent);
     }
 
     public String getCssClass() {
-        return cssClass == null || cssClass.isBlank() ? "rank-member" : cssClass;
+        if (cssClass == null || cssClass.isBlank()) {
+            return "rank-member";
+        }
+
+        return cssClass;
     }
 
     public void setCssClass(String cssClass) {
@@ -113,6 +106,10 @@ public class UserRank {
     }
 
     public Boolean getActive() {
+        return active != null && active;
+    }
+
+    public boolean isActive() {
         return active != null && active;
     }
 
@@ -170,6 +167,22 @@ public class UserRank {
         }
 
         return value.setScale(0, RoundingMode.HALF_UP);
+    }
+
+    private static Integer normalizeDiscount(Integer value) {
+        if (value == null) {
+            return 0;
+        }
+
+        if (value < 0) {
+            return 0;
+        }
+
+        if (value > 100) {
+            return 100;
+        }
+
+        return value;
     }
 
     private static String normalizeString(String value) {
