@@ -31,6 +31,18 @@ public class CouponService {
         if (cp.getMaxUses() > 0 && cp.getUsedCount() >= cp.getMaxUses())
             return null;
 
+        if (cp.getUsedCount() >= cp.getMaxUses()) {
+            return null;
+        }
+
+        LocalDate today = LocalDate.now();
+
+        if (cp.getEndDate() != null
+                && today.isAfter(cp.getEndDate())) {
+
+            return null;
+        }
+
         return cp;
     }
 
