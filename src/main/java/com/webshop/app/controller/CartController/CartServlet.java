@@ -35,6 +35,11 @@ public class CartServlet extends HttpServlet {
 
         int productId = parseInt(req.getParameter("productId"), -1);
         int variantId = parseInt(req.getParameter("variantId"), 0);
+        int quantity = parseInt(req.getParameter("quantity"), 1);
+
+        if (quantity <= 0) {
+            quantity = 1;
+        }
 
         if (productId <= 0) {
             resp.sendRedirect(req.getContextPath() + "/products");
@@ -77,9 +82,11 @@ public class CartServlet extends HttpServlet {
         int realVariantId = selectedVariant != null ? selectedVariant.getId() : 0;
         String cartKey = CartUtil.buildKey(productId, realVariantId);
 
-        CartItem item = cart.get(cartKey);
-
         int maxStock = selectedVariant != null ? selectedVariant.getStock() : product.getStock();
+
+        if (maxStock > 0 && quantity > maxStock) {
+            quantity = maxStock;
+        }
 
         BigDecimal basePrice = product.getFinalPrice() != null
                 ? product.getFinalPrice()
@@ -91,6 +98,8 @@ public class CartServlet extends HttpServlet {
             finalPrice = finalPrice.add(selectedVariant.getExtraPrice());
         }
 
+        CartItem item = cart.get(cartKey);
+
         if (item == null) {
             item = new CartItem();
 
@@ -100,7 +109,7 @@ public class CartServlet extends HttpServlet {
             item.setPrice(finalPrice);
             item.setImageUrl(product.getImageUrl());
             item.setStock(maxStock);
-            item.setQuantity(1);
+            item.setQuantity(quantity);
 
             if (selectedVariant != null) {
                 item.setVariantId(selectedVariant.getId());
@@ -112,7 +121,7 @@ public class CartServlet extends HttpServlet {
 
             cart.put(cartKey, item);
         } else {
-            int newQuantity = item.getQuantity() + 1;
+            int newQuantity = item.getQuantity() + quantity;
 
             if (maxStock > 0 && newQuantity > maxStock) {
                 newQuantity = maxStock;
