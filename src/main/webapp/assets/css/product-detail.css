@@ -499,3 +499,198 @@
     flex-direction: column;
   }
 }
+/* ===== PRODUCT DETAIL ACTION ROW FIX ===== */
+
+.pd-action-row {
+  display: flex;
+  align-items: stretch;
+  gap: 18px;
+  margin-top: 10px;
+  flex-wrap: nowrap;
+}
+
+.pd-quantity-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 0;
+  flex: 0 0 auto;
+}
+
+.pd-quantity-row .pd-option-title {
+  margin: 0;
+  min-width: max-content;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  color: #111827;
+}
+
+.pd-qty-control {
+  display: inline-grid;
+  grid-template-columns: 68px 110px 68px;
+  height: 68px;
+  overflow: hidden;
+  background: #fff0f7;
+  border: 1px solid #f4d7e6;
+  border-radius: 0;
+}
+
+.qty-btn {
+  border: none;
+  background: #fbe8f0;
+  color: #111827;
+  font-size: 34px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: 0.2s ease;
+}
+
+.qty-btn:hover {
+  background: #f7d9e8;
+}
+
+#quantityInput {
+  border: none;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 500;
+  outline: none;
+  background: #fff;
+}
+
+#quantityInput::-webkit-outer-spin-button,
+#quantityInput::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.pd-add-cart {
+  flex: 1 1 auto;
+  min-width: 300px;
+  height: 68px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #48c6ef, #4f8df7);
+  color: #fff;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  cursor: pointer;
+  box-shadow: 0 14px 28px rgba(79, 141, 247, 0.25);
+  transition: 0.2s ease;
+  margin-top: 0;
+}
+
+.pd-add-cart:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 36px rgba(79, 141, 247, 0.32);
+}
+
+@media (max-width: 768px) {
+  .pd-action-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pd-quantity-row {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .pd-add-cart {
+    width: 100%;
+    min-width: 100%;
+  }
+}
+/* ===== FIX PRODUCT DETAIL ACTION SIZE ===== */
+
+.pd-action-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 14px;
+  max-width: 760px;
+}
+
+.pd-quantity-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  flex: 0 0 auto;
+}
+
+.pd-quantity-row .pd-option-title {
+  margin: 0;
+  white-space: nowrap;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  color: #111827;
+}
+
+.pd-qty-control {
+  display: inline-grid;
+  grid-template-columns: 52px 86px 52px;
+  width: 190px;
+  height: 52px;
+  border: 1px solid #f1d4e3;
+  overflow: hidden;
+  background: #fff;
+}
+
+.pd-qty-control .qty-btn {
+  width: 52px;
+  height: 52px;
+  border: none;
+  background: #fce8f2;
+  color: #111827;
+  font-size: 24px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pd-qty-control .qty-btn:hover {
+  background: #f8d8e9;
+}
+
+#quantityInput {
+  width: 86px;
+  height: 52px;
+  border: none;
+  outline: none;
+  text-align: center;
+  background: #fff;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.pd-add-cart {
+  flex: 0 1 360px;
+  min-width: 280px;
+  max-width: 360px;
+  height: 52px;
+  margin: 0;
+  border-radius: 6px;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+@media (max-width: 900px) {
+  .pd-action-row {
+    flex-direction: column;
+    align-items: stretch;
+    max-width: 100%;
+  }
+
+  .pd-quantity-row {
+    justify-content: flex-start;
+  }
+
+  .pd-add-cart {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+}
