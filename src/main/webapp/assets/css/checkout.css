@@ -424,3 +424,48 @@
 		font-size: 24px !important;
 	}
 }
+
+.coupon-user-grid{
+	display:grid;
+	grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+	gap:16px;
+}
+
+.user-coupon-card{
+	border:2px dashed #ff4d8d;
+
+	border-radius:20px;
+
+	padding:20px;
+
+	cursor:pointer;
+
+	transition:.25s;
+
+	background:#fff;
+}
+
+.user-coupon-card:hover{
+	transform:translateY(-4px);
+	box-shadow:0 10px 25px rgba(0,0,0,.08);
+}
+
+.user-coupon-percent{
+	font-size:28px;
+	font-weight:900;
+
+	color:#ff4d8d;
+}
+
+.user-coupon-code{
+	margin-top:12px;
+
+	font-size:20px;
+	font-weight:700;
+}
+
+.user-coupon-expire{
+	margin-top:10px;
+
+	color:#666;
+}
