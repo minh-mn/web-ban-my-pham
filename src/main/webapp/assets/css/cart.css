@@ -487,8 +487,143 @@
     padding: 14px 8px;
   }
 }
-.btn-checkout.disabled,
-.btn-checkout:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
+/* ================= CART TYPOGRAPHY POLISH ================= */
+
+/* Font tổng thể trang giỏ hàng */
+.cart-section,
+.cart-section * {
+  font-family: "Inter", "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+/* Tiêu đề Giỏ hàng của bạn */
+.cart-title {
+  font-size: 34px;
+  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: -0.6px;
+  color: #111827;
+  margin-bottom: 28px;
+}
+
+/* Header bảng */
+.cart-table th {
+  font-size: 14px;
+  line-height: 1.3;
+  font-weight: 800;
+  letter-spacing: 0;
+  color: #111827;
+}
+
+/* Nội dung bảng */
+.cart-table td {
+  font-size: 14px;
+  line-height: 1.45;
+  color: #374151;
+}
+
+/* Tên sản phẩm */
+.cart-product-title {
+  font-size: 16px;
+  line-height: 1.35;
+  font-weight: 750;
+  letter-spacing: -0.2px;
+  color: #111827;
+}
+
+/* Mã sản phẩm */
+.cart-product-id {
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: #6b7280;
+}
+
+/* Biến thể */
+.variant-text,
+.cart-variant-select {
+  font-size: 13px;
+  font-weight: 650;
+}
+
+/* Giá tiền */
+.cart-price,
+.cart-subtotal {
+  font-size: 15px;
+  line-height: 1.4;
+  font-weight: 750;
+  color: #d63384;
+}
+
+/* Cụm số lượng */
+.qty-value {
+  font-size: 15px;
+  font-weight: 750;
+}
+
+.qty-btn {
+  font-size: 16px;
+  font-weight: 750;
+}
+
+.stock-note {
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+/* Dấu X xóa */
+.remove-btn {
+  font-size: 34px;
+  font-weight: 600;
+  color: #ef4444;
+}
+
+/* Khối tổng giỏ hàng */
+.cart-summary h2 {
+  font-size: 21px;
+  line-height: 1.25;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  color: #111827;
+}
+
+.summary-row span {
+  font-size: 15px;
+  font-weight: 500;
+  color: #4b5563;
+}
+
+.summary-row strong,
+#selectedCartTotal {
+  font-size: 17px;
+  font-weight: 800;
+  color: #d63384;
+}
+
+.cart-select-note {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #6b7280;
+}
+
+.btn-continue,
+.btn-checkout {
+  font-size: 15px;
+  font-weight: 750;
+  letter-spacing: -0.1px;
+}
+
+/* Giảm độ thô của chữ trên màn hình nhỏ */
+@media (max-width: 900px) {
+  .cart-title {
+    font-size: 30px;
+  }
+
+  .cart-product-title {
+    font-size: 15px;
+  }
+
+  .cart-table th,
+  .cart-table td {
+    font-size: 13.5px;
+  }
 }
