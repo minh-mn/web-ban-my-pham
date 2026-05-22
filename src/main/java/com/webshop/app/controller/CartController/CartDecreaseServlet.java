@@ -15,29 +15,38 @@ import jakarta.servlet.http.HttpSession;
 @WebServlet("/cart/decrease")
 public class CartDecreaseServlet extends HttpServlet {
 
+    private static final long serialVersionUID = 1L;
+
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp)
+            throws IOException {
 
         int productId = parseInt(req.getParameter("productId"), -1);
-        if (productId == -1) {
-            resp.sendRedirect(req.getContextPath() + "/cart");
-            return;
-        }
+        String key = CartUtil.normalizeKey(req.getParameter("key"), productId);
 
         HttpSession session = req.getSession();
-        Map<Integer, CartItem> cart = CartUtil.getCart(session);
+        Map<String, CartItem> cart = CartUtil.getCart(session);
 
-        CartItem item = cart.get(productId);
+        CartItem item = cart.get(key);
+
         if (item != null) {
-            int newQty = item.getQuantity() - 1;
-            if (newQty <= 0) cart.remove(productId);
-            else item.setQuantity(newQty);
+            int newQuantity = item.getQuantity() - 1;
+
+            if (newQuantity <= 0) {
+                cart.remove(key);
+            } else {
+                item.setQuantity(newQuantity);
+            }
         }
 
         resp.sendRedirect(req.getContextPath() + "/cart");
     }
 
-    private int parseInt(String s, int def) {
-        try { return Integer.parseInt(s); } catch (Exception e) { return def; }
+    private int parseInt(String raw, int def) {
+        try {
+            return Integer.parseInt(raw);
+        } catch (Exception e) {
+            return def;
+        }
     }
 }
