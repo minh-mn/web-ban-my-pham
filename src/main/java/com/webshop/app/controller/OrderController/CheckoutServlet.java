@@ -21,20 +21,47 @@ import jakarta.servlet.http.HttpSession;
 public class CheckoutServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
+
     private final CheckoutService checkoutService = new CheckoutService();
 
     private BigDecimal calcSubTotal(Map<String, CartItem> cart) {
-        BigDecimal sub = BigDecimal.ZERO;
-        for (CartItem it : cart.values()) {
-            if (it != null && it.getSubtotal() != null) {
-                sub = sub.add(it.getSubtotal());
+        BigDecimal subTotal = BigDecimal.ZERO;
+
+        if (cart == null || cart.isEmpty()) {
+            return subTotal;
+        }
+
+        for (CartItem item : cart.values()) {
+            if (item != null && item.getSubtotal() != null) {
+                subTotal = subTotal.add(item.getSubtotal());
             }
         }
-        return sub;
+
+        return subTotal;
     }
 
     private boolean isBlank(String s) {
         return s == null || s.trim().isEmpty();
+    }
+
+    /**
+     * Lấy giỏ hàng đã được tích chọn.
+     * Nếu chưa có sản phẩm được chọn thì redirect về cart.
+     */
+    private Map<String, CartItem> getSelectedCheckoutCart(
+            HttpServletRequest req,
+            HttpServletResponse resp,
+            HttpSession session
+    ) throws IOException {
+
+        Map<String, CartItem> selectedCart = CartUtil.getSelectedCart(session);
+
+        if (selectedCart == null || selectedCart.isEmpty()) {
+            resp.sendRedirect(req.getContextPath() + "/cart?selectRequired=1");
+            return null;
+        }
+
+        return selectedCart;
     }
 
     @Override
@@ -47,32 +74,42 @@ public class CheckoutServlet extends HttpServlet {
         HttpSession session = req.getSession(false);
 
         User user = (session != null) ? (User) session.getAttribute("user") : null;
+
         if (user == null || user.getId() <= 0) {
-            // redirect kèm param để login xong quay lại checkout
             resp.sendRedirect(req.getContextPath() + "/login?redirect=/checkout");
             return;
         }
 
-        Map<String, CartItem> cart = CartUtil.getCart(session);
-        if (cart == null || cart.isEmpty()) {
-            resp.sendRedirect(req.getContextPath() + "/products");
+        /*
+         * Mục 68:
+         * Checkout chỉ hiển thị các sản phẩm người dùng đã tích chọn ở cart.
+         */
+        Map<String, CartItem> cart = getSelectedCheckoutCart(req, resp, session);
+
+        if (cart == null) {
             return;
         }
 
         BigDecimal subTotal = calcSubTotal(cart);
 
         String appliedCoupon = (String) session.getAttribute("CHECKOUT_COUPON");
-        BigDecimal couponDiscount = (BigDecimal) session.getAttribute("CHECKOUT_COUPON_DISCOUNT");
-        if (couponDiscount == null) couponDiscount = BigDecimal.ZERO;
+
+        BigDecimal couponDiscount =
+                (BigDecimal) session.getAttribute("CHECKOUT_COUPON_DISCOUNT");
+
+        if (couponDiscount == null) {
+            couponDiscount = BigDecimal.ZERO;
+        }
 
         BigDecimal total = subTotal.subtract(couponDiscount);
-        if (total.compareTo(BigDecimal.ZERO) < 0) total = BigDecimal.ZERO;
+
+        if (total.compareTo(BigDecimal.ZERO) < 0) {
+            total = BigDecimal.ZERO;
+        }
 
         req.setAttribute("cart", cart);
-
-        // ✅ JSP đang dùng subtotal
         req.setAttribute("subtotal", subTotal);
-        req.setAttribute("subTotal", subTotal); // backward compatible
+        req.setAttribute("subTotal", subTotal);
 
         req.setAttribute("couponCode", appliedCoupon);
         req.setAttribute("couponDiscount", couponDiscount);
@@ -80,6 +117,7 @@ public class CheckoutServlet extends HttpServlet {
 
         req.setAttribute("coupon_success", session.getAttribute("coupon_success"));
         req.setAttribute("coupon_error", session.getAttribute("coupon_error"));
+
         session.removeAttribute("coupon_success");
         session.removeAttribute("coupon_error");
 
@@ -99,23 +137,30 @@ public class CheckoutServlet extends HttpServlet {
 
         HttpSession session = req.getSession();
 
-        // 1) auth + guard id
         User user = (User) session.getAttribute("user");
+
         if (user == null || user.getId() <= 0) {
             session.removeAttribute("user");
             resp.sendRedirect(req.getContextPath() + "/login?redirect=/checkout");
             return;
         }
 
-        // 2) cart
-        Map<String, CartItem> cart = CartUtil.getCart(session);
-        if (cart == null || cart.isEmpty()) {
-            resp.sendRedirect(req.getContextPath() + "/products");
+        /*
+         * Mục 68:
+         * Khi đặt hàng, chỉ lấy các sản phẩm đã tích chọn.
+         */
+        Map<String, CartItem> cart = getSelectedCheckoutCart(req, resp, session);
+
+        if (cart == null) {
             return;
         }
 
-        // 3) legacy apply-coupon (không dùng nếu bạn apply qua AJAX)
+        /*
+         * Legacy apply-coupon:
+         * Nếu form checkout vẫn submit action=apply-coupon thì tính theo selected cart.
+         */
         String action = req.getParameter("action");
+
         if ("apply-coupon".equalsIgnoreCase(action)) {
             String couponCode = req.getParameter("couponCode");
 
@@ -123,13 +168,14 @@ public class CheckoutServlet extends HttpServlet {
                 session.removeAttribute("CHECKOUT_COUPON");
                 session.removeAttribute("CHECKOUT_COUPON_DISCOUNT");
                 session.setAttribute("coupon_error", "Vui lòng nhập mã khuyến mãi");
+
                 resp.sendRedirect(req.getContextPath() + "/checkout");
                 return;
             }
 
             couponCode = couponCode.trim();
-            BigDecimal subTotal = calcSubTotal(cart);
 
+            BigDecimal subTotal = calcSubTotal(cart);
             BigDecimal discount = checkoutService.calculateCouponDiscount(couponCode, subTotal);
 
             if (discount == null || discount.compareTo(BigDecimal.ZERO) <= 0) {
@@ -146,7 +192,6 @@ public class CheckoutServlet extends HttpServlet {
             return;
         }
 
-        // 4) read checkout form
         String fullName = req.getParameter("fullName");
         String phone = req.getParameter("phone");
         String address = req.getParameter("address");
@@ -158,18 +203,23 @@ public class CheckoutServlet extends HttpServlet {
             return;
         }
 
-        if (isBlank(paymentMethod)) paymentMethod = "COD";
+        if (isBlank(paymentMethod)) {
+            paymentMethod = "COD";
+        }
 
-        // coupon ưu tiên hidden input, fallback session
         String couponCode = req.getParameter("couponCode");
+
         if (isBlank(couponCode)) {
             couponCode = (String) session.getAttribute("CHECKOUT_COUPON");
         }
-        if (!isBlank(couponCode)) couponCode = couponCode.trim();
+
+        if (!isBlank(couponCode)) {
+            couponCode = couponCode.trim();
+        }
 
         try {
             int orderId = checkoutService.checkout(
-                    user.getId(),   // ✅ users.id
+                    user.getId(),
                     cart,
                     fullName.trim(),
                     phone.trim(),
@@ -185,8 +235,14 @@ public class CheckoutServlet extends HttpServlet {
             }
 
             if ("COD".equalsIgnoreCase(paymentMethod)) {
-                // cleanup session
-                session.removeAttribute("CART");
+                /*
+                 * Quan trọng:
+                 * Chỉ xóa các sản phẩm đã tích chọn và đã đặt hàng.
+                 * Các sản phẩm chưa chọn vẫn giữ lại trong giỏ.
+                 */
+                CartUtil.removeItems(session, cart.keySet());
+                CartUtil.clearSelectedCartKeys(session);
+
                 session.removeAttribute("CHECKOUT_COUPON");
                 session.removeAttribute("CHECKOUT_COUPON_DISCOUNT");
 
@@ -197,7 +253,6 @@ public class CheckoutServlet extends HttpServlet {
             }
 
             if ("VNPAY".equalsIgnoreCase(paymentMethod)) {
-                // lưu để /vnpay/payment & callback dùng
                 session.setAttribute("VNP_ORDER_ID", orderId);
 
                 if (!isBlank(couponCode)) {
@@ -206,12 +261,23 @@ public class CheckoutServlet extends HttpServlet {
                     session.removeAttribute("VNP_COUPON");
                 }
 
-                // ✅ snapshot cart để finalize không lệ thuộc CART bị thay đổi
+                /*
+                 * Chỉ snapshot các sản phẩm đã tích chọn để VNPAY finalize.
+                 */
                 session.setAttribute("VNP_CART", new LinkedHashMap<>(cart));
 
                 resp.sendRedirect(req.getContextPath() + "/vnpay/payment");
                 return;
             }
+
+            /*
+             * Fallback cho các phương thức thanh toán khác nếu có.
+             */
+            CartUtil.removeItems(session, cart.keySet());
+            CartUtil.clearSelectedCartKeys(session);
+
+            session.removeAttribute("CHECKOUT_COUPON");
+            session.removeAttribute("CHECKOUT_COUPON_DISCOUNT");
 
             resp.sendRedirect(req.getContextPath()
                     + "/checkout/success?success=true&orderId=" + orderId
@@ -219,6 +285,7 @@ public class CheckoutServlet extends HttpServlet {
 
         } catch (Exception e) {
             e.printStackTrace();
+
             resp.sendRedirect(req.getContextPath()
                     + "/checkout/success?success=false&message=checkout_failed");
         }
