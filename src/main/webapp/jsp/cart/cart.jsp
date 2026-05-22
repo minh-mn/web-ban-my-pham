@@ -62,8 +62,12 @@
                                                   pattern="0"
                                                   groupingUsed="false" />
 
+                                <fmt:formatNumber var="itemOriginalSubtotalRaw"
+                                                  value="${item.originalSubtotal}"
+                                                  pattern="0"
+                                                  groupingUsed="false" />
+
                                 <tr>
-                                    <!-- CHỌN SẢN PHẨM -->
                                     <td class="cart-select">
                                         <input type="checkbox"
                                                class="cart-item-checkbox"
@@ -71,10 +75,10 @@
                                                name="selectedKeys"
                                                value="${cartKey}"
                                                data-subtotal="${itemSubtotalRaw}"
+                                               data-original-subtotal="${itemOriginalSubtotalRaw}"
                                                checked>
                                     </td>
 
-                                    <!-- SẢN PHẨM -->
                                     <td class="cart-product">
                                         <div class="cart-product-info">
                                             <div class="cart-img-box">
@@ -104,7 +108,6 @@
                                         </div>
                                     </td>
 
-                                    <!-- BIẾN THỂ -->
                                     <td class="cart-variant">
                                         <c:choose>
                                             <c:when test="${not empty options}">
@@ -126,7 +129,7 @@
                                                                 <c:out value="${v.displayName}" />
 
                                                                 <c:if test="${v.extraPrice > 0}">
-                                                                    - +<fmt:formatNumber value="${v.extraPrice}" type="number" groupingUsed="true" /> ₫
+                                                                    - +<fmt:formatNumber value="${v.extraPrice}" type="number" groupingUsed="true" /> đ
                                                                 </c:if>
 
                                                                 - Còn ${v.stock}
@@ -144,12 +147,10 @@
                                         </c:choose>
                                     </td>
 
-                                    <!-- ĐƠN GIÁ -->
                                     <td class="cart-price">
-                                        <fmt:formatNumber value="${item.price}" type="number" groupingUsed="true" /> ₫
+                                        <fmt:formatNumber value="${item.price}" type="number" groupingUsed="true" /> đ
                                     </td>
 
-                                    <!-- SỐ LƯỢNG -->
                                     <td class="cart-quantity">
                                         <div class="cart-quantity-inner">
                                             <div class="quantity-box">
@@ -159,9 +160,7 @@
                                                     -
                                                 </a>
 
-                                                <span class="qty-value">
-                                                        ${item.quantity}
-                                                </span>
+                                                <span class="qty-value">${item.quantity}</span>
 
                                                 <a class="qty-btn"
                                                    href="${pageContext.request.contextPath}/cart/increase?productId=${item.productId}&key=${cartKey}"
@@ -176,20 +175,18 @@
                                         </div>
                                     </td>
 
-                                    <!-- TẠM TÍNH -->
                                     <td class="cart-subtotal ${item.discounted ? 'has-discount' : ''}">
                                         <strong class="subtotal-current">
-                                            <fmt:formatNumber value="${item.subtotal}" type="number" groupingUsed="true" /> ₫
+                                            <fmt:formatNumber value="${item.subtotal}" type="number" groupingUsed="true" /> đ
                                         </strong>
 
                                         <c:if test="${item.discounted}">
                                             <span class="subtotal-original">
-                                                <fmt:formatNumber value="${item.originalSubtotal}" type="number" groupingUsed="true" /> ₫
+                                                <fmt:formatNumber value="${item.originalSubtotal}" type="number" groupingUsed="true" /> đ
                                             </span>
                                         </c:if>
                                     </td>
 
-                                    <!-- XÓA -->
                                     <td class="cart-remove">
                                         <a href="${pageContext.request.contextPath}/cart/remove?productId=${item.productId}&key=${cartKey}"
                                            class="remove-btn"
@@ -205,15 +202,24 @@
                         </table>
                     </div>
 
-                    <div class="cart-summary">
-                        <h2>Tổng giỏ hàng</h2>
+                    <aside class="cart-summary order-summary-card">
+                        <h2>Thông tin đơn hàng</h2>
 
-                        <div class="summary-row">
-                            <span>Tạm tính</span>
+                        <div class="order-summary-lines">
+                            <div class="order-summary-row">
+                                <span>Tạm tính:</span>
+                                <strong id="selectedOriginalTotal">0đ</strong>
+                            </div>
 
-                            <strong id="selectedCartTotal">
-                                0 ₫
-                            </strong>
+                            <div class="order-summary-row">
+                                <span>Giá giảm:</span>
+                                <strong id="selectedCartDiscount">0đ</strong>
+                            </div>
+
+                            <div class="order-summary-row order-summary-total">
+                                <span>Tổng cộng:</span>
+                                <strong id="selectedCartTotal">0đ</strong>
+                            </div>
                         </div>
 
                         <div class="cart-select-note" id="selectedCartNote">
@@ -221,18 +227,18 @@
                         </div>
 
                         <div class="summary-actions">
-                            <a href="${pageContext.request.contextPath}/products" class="btn-continue">
-                                Tiếp tục mua
-                            </a>
-
                             <button type="submit"
                                     form="checkoutSelectForm"
                                     class="btn-checkout"
                                     id="selectedCheckoutBtn">
-                                Thanh toán sản phẩm đã chọn
+                                Thanh toán ngay
                             </button>
+
+                            <a href="${pageContext.request.contextPath}/products" class="btn-back-to-shop">
+                                ← Tiếp tục mua hàng
+                            </a>
                         </div>
-                    </div>
+                    </aside>
 
                 </div>
             </c:otherwise>
@@ -255,6 +261,9 @@
             const selectAll = document.getElementById("selectAllCartItems");
             const itemCheckboxes = Array.from(document.querySelectorAll(".cart-item-checkbox"));
             const checkoutForm = document.getElementById("checkoutSelectForm");
+
+            const originalTotalEl = document.getElementById("selectedOriginalTotal");
+            const discountEl = document.getElementById("selectedCartDiscount");
             const totalEl = document.getElementById("selectedCartTotal");
             const noteEl = document.getElementById("selectedCartNote");
             const checkoutBtn = document.getElementById("selectedCheckoutBtn");
@@ -265,12 +274,11 @@
                 }
 
                 const number = Number(String(value).trim());
-
                 return Number.isFinite(number) ? number : 0;
             }
 
             function formatVnd(value) {
-                return new Intl.NumberFormat("en-US").format(Math.round(value)) + " ₫";
+                return new Intl.NumberFormat("en-US").format(Math.round(value)) + "đ";
             }
 
             function getCheckedItems() {
@@ -286,10 +294,6 @@
 
                 const checkedCount = getCheckedItems().length;
 
-                /*
-                  Không dùng indeterminate để tránh hiện dấu "-"
-                  khi chỉ chọn một vài sản phẩm.
-                */
                 selectAll.indeterminate = false;
                 selectAll.checked =
                     itemCheckboxes.length > 0 && checkedCount === itemCheckboxes.length;
@@ -298,14 +302,29 @@
             function updateSelectedTotal() {
                 const checkedItems = getCheckedItems();
 
-                let selectedTotal = 0;
+                let selectedSubtotal = 0;
+                let selectedOriginalTotal = 0;
 
                 checkedItems.forEach(function (checkbox) {
-                    selectedTotal += parseSubtotal(checkbox.dataset.subtotal);
+                    const subtotal = parseSubtotal(checkbox.dataset.subtotal);
+                    const originalSubtotal = parseSubtotal(checkbox.dataset.originalSubtotal);
+
+                    selectedSubtotal += subtotal;
+                    selectedOriginalTotal += originalSubtotal > 0 ? originalSubtotal : subtotal;
                 });
 
+                const discount = Math.max(selectedOriginalTotal - selectedSubtotal, 0);
+
+                if (originalTotalEl) {
+                    originalTotalEl.textContent = formatVnd(selectedOriginalTotal);
+                }
+
+                if (discountEl) {
+                    discountEl.textContent = formatVnd(discount);
+                }
+
                 if (totalEl) {
-                    totalEl.textContent = formatVnd(selectedTotal);
+                    totalEl.textContent = formatVnd(selectedSubtotal);
                 }
 
                 if (noteEl) {
