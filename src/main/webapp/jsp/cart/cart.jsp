@@ -15,16 +15,35 @@
         </c:if>
 
         <c:choose>
+            <%-- ================= GIỎ HÀNG RỖNG ================= --%>
             <c:when test="${empty cart}">
                 <div class="cart-empty">
-                    <p>Giỏ hàng của bạn đang trống.</p>
+                    <div class="cart-empty-icon">
+                        🛒
+                    </div>
 
-                    <a href="${pageContext.request.contextPath}/products" class="btn-continue">
-                        Tiếp tục mua sắm
-                    </a>
+                    <h2>Giỏ hàng của bạn đang trống</h2>
+
+                    <p>
+                        Bạn chưa có sản phẩm nào trong giỏ hàng.
+                        Hãy quay lại trang sản phẩm để tiếp tục mua sắm.
+                    </p>
+
+                    <div class="cart-empty-actions">
+                        <a href="${pageContext.request.contextPath}/products"
+                           class="btn-empty-primary">
+                            Xem sản phẩm
+                        </a>
+
+                        <a href="${pageContext.request.contextPath}/home"
+                           class="btn-empty-secondary">
+                            Về trang chủ
+                        </a>
+                    </div>
                 </div>
             </c:when>
 
+            <%-- ================= GIỎ HÀNG CÓ SẢN PHẨM ================= --%>
             <c:otherwise>
                 <form id="checkoutSelectForm"
                       method="post"
@@ -68,6 +87,7 @@
                                                   groupingUsed="false" />
 
                                 <tr>
+                                        <%-- CHỌN SẢN PHẨM --%>
                                     <td class="cart-select">
                                         <input type="checkbox"
                                                class="cart-item-checkbox"
@@ -79,6 +99,7 @@
                                                checked>
                                     </td>
 
+                                        <%-- SẢN PHẨM --%>
                                     <td class="cart-product">
                                         <div class="cart-product-info">
                                             <div class="cart-img-box">
@@ -108,6 +129,7 @@
                                         </div>
                                     </td>
 
+                                        <%-- BIẾN THỂ --%>
                                     <td class="cart-variant">
                                         <c:choose>
                                             <c:when test="${not empty options}">
@@ -147,10 +169,12 @@
                                         </c:choose>
                                     </td>
 
+                                        <%-- ĐƠN GIÁ --%>
                                     <td class="cart-price">
                                         <fmt:formatNumber value="${item.price}" type="number" groupingUsed="true" /> đ
                                     </td>
 
+                                        <%-- SỐ LƯỢNG --%>
                                     <td class="cart-quantity">
                                         <div class="cart-quantity-inner">
                                             <div class="quantity-box">
@@ -175,6 +199,7 @@
                                         </div>
                                     </td>
 
+                                        <%-- TẠM TÍNH --%>
                                     <td class="cart-subtotal ${item.discounted ? 'has-discount' : ''}">
                                         <strong class="subtotal-current">
                                             <fmt:formatNumber value="${item.subtotal}" type="number" groupingUsed="true" /> đ
@@ -187,6 +212,7 @@
                                         </c:if>
                                     </td>
 
+                                        <%-- XÓA --%>
                                     <td class="cart-remove">
                                         <a href="${pageContext.request.contextPath}/cart/remove?productId=${item.productId}&key=${cartKey}"
                                            class="remove-btn"
@@ -202,6 +228,7 @@
                         </table>
                     </div>
 
+                        <%-- THÔNG TIN ĐƠN HÀNG --%>
                     <aside class="cart-summary order-summary-card">
                         <h2>Thông tin đơn hàng</h2>
 
