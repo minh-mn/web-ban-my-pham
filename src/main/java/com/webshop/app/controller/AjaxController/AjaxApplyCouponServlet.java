@@ -27,7 +27,7 @@ public class AjaxApplyCouponServlet extends HttpServlet {
         resp.setContentType("application/json;charset=UTF-8");
 
         HttpSession session = req.getSession();
-        Map<Integer, CartItem> cart = CartUtil.getCart(session);
+        Map<String, CartItem> cart = CartUtil.getCart(session);
 
         // ===== 1) CHECK CART =====
         if (cart == null || cart.isEmpty()) {
