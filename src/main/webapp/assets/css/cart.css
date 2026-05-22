@@ -650,3 +650,116 @@
     font-size: 14px;
   }
 }
+/* ================= EMPTY CART STATE ================= */
+
+.cart-empty {
+  max-width: 720px;
+  margin: 34px auto 0;
+  padding: 48px 36px 46px;
+  border-radius: 24px;
+  background: #ffffff;
+  text-align: center;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+}
+
+.cart-empty-icon {
+  width: 68px;
+  height: 68px;
+  margin: 0 auto 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #fff0f6;
+  color: #d63384;
+  font-size: 32px;
+}
+
+.cart-empty h2 {
+  margin: 0 0 12px;
+  color: #111827;
+  font-size: 28px;
+  line-height: 1.25;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+}
+
+.cart-empty p {
+  max-width: 560px;
+  margin: 0 auto 28px;
+  color: #4b5563;
+  font-size: 16px;
+  line-height: 1.65;
+  font-weight: 500;
+}
+
+.cart-empty-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.btn-empty-primary,
+.btn-empty-secondary {
+  min-width: 156px;
+  min-height: 46px;
+  padding: 0 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-size: 15px;
+  line-height: 1;
+  font-weight: 800;
+  text-decoration: none;
+  transition: 0.2s ease;
+}
+
+.btn-empty-primary {
+  background: #d63384;
+  color: #ffffff;
+  box-shadow: 0 10px 22px rgba(214, 51, 132, 0.24);
+}
+
+.btn-empty-primary:hover {
+  background: #bf2c75;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.btn-empty-secondary {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.btn-empty-secondary:hover {
+  background: #e5e7eb;
+  color: #111827;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 576px) {
+  .cart-empty {
+    margin-top: 24px;
+    padding: 36px 20px;
+  }
+
+  .cart-empty h2 {
+    font-size: 23px;
+  }
+
+  .cart-empty p {
+    font-size: 14px;
+  }
+
+  .cart-empty-actions {
+    flex-direction: column;
+  }
+
+  .btn-empty-primary,
+  .btn-empty-secondary {
+    width: 100%;
+  }
+}
