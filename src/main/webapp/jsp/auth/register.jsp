@@ -21,111 +21,103 @@
             <span class="input-icon">📧</span>
             <input type="email" name="email" id="emailInput" placeholder="vd: example@gmail.com" required value="<c:out value='${param.email}'/>">
           </div>
-          <small id="email-error" class="error-msg"></small>
+          <small id="email-error" class="error-msg" style="display: none; color: #ff4d4f; text-align: left; margin-top: 4px; font-size: 13px;"></small>
         </div>
 
-        <button type="button" class="btn-auth" id="btnNext" onclick="handleEmailCheck()">
-          Tiếp theo
+        <button type="button" class="btn-auth" id="btnNext" onclick="handleEmailCheck(event)">
+          Tiếp tục
         </button>
 
-        <div class="auth-divider">
+        <div class="auth-separator">
           <span>HOẶC</span>
         </div>
 
         <div class="social-login-stack">
-          <a href="javascript:void(0)" class="social-btn">
-            <span class="social-icon google-icon"></span>
-            <span>Đăng ký bằng Google</span>
+          <a href="javascript:void(0)" id="btn-google" class="social-btn">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google">
+            <span>Tiếp tục bằng Google</span>
           </a>
-
-          <a href="javascript:void(0)" class="social-btn">
-            <span class="social-icon facebook-icon"></span>
-            <span>Đăng ký bằng Facebook</span>
+          <a href="javascript:void(0)" id="btn-facebook" class="social-btn">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/b/b9/2023_Facebook_icon.svg" alt="Facebook">
+            <span>Tiếp tục bằng Facebook</span>
           </a>
         </div>
       </div>
 
-      <div id="step-details" style="display: none;">
-
-        <div class="form-group" style="border: 1px dashed #ff5fa2; padding: 15px; border-radius: 4px; text-align: center;">
-          <label style="color: #ff5fa2;">🔑 Mã xác thực OTP</label>
-          <div class="input-group">
-            <input type="text" name="otp_input" id="otpInput" placeholder="Nhập 6 số" required maxlength="6"
-                   style="text-align: center; font-size: 20px; letter-spacing: 6px; padding: 0;">
-          </div>
-          <small style="color: #777; display: block; margin-top: 8px;">Kiểm tra email để lấy mã.</small>
-        </div>
+      <div id="step-profile" style="display: none;">
 
         <div class="form-group">
-          <label>Tên đăng nhập</label>
+          <label>Họ và tên của bạn</label>
           <div class="input-group">
             <span class="input-icon">👤</span>
-            <input type="text" name="userName" id="userNameInput" required>
+            <input type="text" name="fullName" id="nameInput" placeholder="Nhập họ và tên đầy đủ" value="<c:out value='${param.fullName}'/>">
           </div>
-          <small id="user-error" class="error-msg"></small>
-        </div>
-
-        <div class="form-group">
-          <label>Mật khẩu</label>
-          <div class="input-group">
-            <span class="input-icon">🔒</span>
-            <input type="password" name="password" id="passInput" required>
-            <span class="toggle-password" onclick="togglePass('passInput', this)">👁️</span>
-          </div>
-          <small id="pass-error" class="error-msg"></small>
-        </div>
-
-        <div class="form-group">
-          <label>Xác nhận mật khẩu</label>
-          <div class="input-group">
-            <span class="input-icon">🛡️</span>
-            <input type="password" name="confirmPassword" id="confirmPassInput" required>
-            <span class="toggle-password" onclick="togglePass('confirmPassInput', this)">👁️</span>
-          </div>
-          <small id="password-error" class="error-msg"></small>
-        </div>
-
-        <div class="form-group">
-          <label>Họ và tên</label>
-          <div class="input-group">
-            <span class="input-icon">🪪</span>
-            <input type="text" name="fullName" id="fullNameInput" value="${param.fullName}" required>
-          </div>
-          <small id="name-error" class="error-msg"></small>
-        </div>
-
-        <div class="form-group">
-          <label>Ngày sinh</label>
-          <div class="input-group">
-            <span class="input-icon">🎂</span>
-            <input type="date" name="birthday" required>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label>Giới tính</label>
-          <div class="gender-group-inline">
-            <label class="gender-pill"><input type="radio" name="gender" value="Male" checked> Nam</label>
-            <label class="gender-pill"><input type="radio" name="gender" value="Female"> Nữ</label>
-          </div>
+          <small id="name-error" class="error-msg" style="display: none; color: #ff4d4f; text-align: left; margin-top: 4px; font-size: 13px;"></small>
         </div>
 
         <div class="form-group">
           <label>Số điện thoại</label>
           <div class="input-group">
             <span class="input-icon">📞</span>
-            <input type="tel" name="phone" id="phoneInput" placeholder="vd: 0987654321" required>
+            <input type="tel" name="phone" id="phoneInput" placeholder="Nhập số điện thoại của bạn" value="<c:out value='${param.phone}'/>">
           </div>
-          <small id="phone-error" class="error-msg"></small>
+          <small id="phone-error" class="error-msg" style="display: none; color: #ff4d4f; text-align: left; margin-top: 4px; font-size: 13px;"></small>
         </div>
 
-        <button type="submit" class="btn-auth">
+        <div class="form-group">
+          <label>Ngày sinh</label>
+          <div class="input-group">
+            <span class="input-icon">📅</span>
+            <input type="date" name="birthDate" id="birthDateInput" value="<c:out value='${param.birthDate}'/>">
+          </div>
+          <small id="birthdate-error" class="error-msg" style="display: none; color: #ff4d4f; text-align: left; margin-top: 4px; font-size: 13px;"></small>
+        </div>
+
+        <div class="form-group">
+          <label>Giới tính</label>
+          <div class="input-group" style="display: flex; gap: 24px; padding: 10px 5px; border: none; background: transparent;">
+            <label style="font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+              <input type="radio" name="gender" value="Male" checked> Nam
+            </label>
+            <label style="font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+              <input type="radio" name="gender" value="Female"> Nữ
+            </label>
+            <label style="font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+              <input type="radio" name="gender" value="Other"> Khác
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Mật khẩu</label>
+          <div class="input-group">
+            <span class="input-icon">🔒</span>
+            <input type="password" name="password" id="passInput" placeholder="Tối thiểu 6 ký tự">
+          </div>
+          <small id="pass-error" class="error-msg" style="display: none; color: #ff4d4f; text-align: left; margin-top: 4px; font-size: 13px;"></small>
+        </div>
+
+        <div class="form-group">
+          <label>Xác nhận mật khẩu</label>
+          <div class="input-group">
+            <span class="input-icon">🛡️</span>
+            <input type="password" name="confirmPassword" id="confirmPassInput" placeholder="Nhập lại mật khẩu">
+          </div>
+          <small id="password-error" class="error-msg" style="display: none; color: #ff4d4f; text-align: left; margin-top: 4px; font-size: 13px;"></small>
+        </div>
+
+        <div class="form-group">
+          <div class="checkbox">
+            <label>
+              <input type="checkbox" name="agreeTerms" id="agreeTerms" required>
+              Tôi đã đọc và chấp nhận <a href="${pageContext.request.contextPath}/terms.jsp" target="_blank">Điều khoản sử dụng</a>
+            </label>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-register">
           Hoàn tất Đăng ký
         </button>
-
-        <div style="text-align: center; margin-top: 20px;">
-          <a href="javascript:void(0)" onclick="goBack()" class="back-link">← Quay lại chỉnh sửa email</a>
-        </div>
       </div>
     </form>
 
@@ -136,121 +128,132 @@
 </section>
 
 <script>
-  function handleEmailCheck() {
+  // Script đơn giản chặn nút đăng ký nếu chưa tích
+  const checkbox = document.getElementById('agreeTerms');
+  const btnSubmit = document.getElementById('btnSubmit'); // ID nút đăng ký của bạn
+
+  btnSubmit.disabled = true; // Mặc định khóa nút
+
+  checkbox.addEventListener('change', function() {
+    btnSubmit.disabled = !this.checked;
+  });
+
+  // 1. Hàm Xử lý AJAX kiểm tra trùng email và chuyển tiếp bước mượt mà
+  function handleEmailCheck(event) {
+    if (event) event.preventDefault();
     const emailInput = document.getElementById('emailInput');
     const emailError = document.getElementById('email-error');
-    const stepEmail = document.getElementById('step-email');
-    const stepDetails = document.getElementById('step-details');
+    // Chuyển email về chữ thường để kiểm tra đồng nhất
+    const email = emailInput.value.trim().toLowerCase();
 
-    if (!emailInput.value.includes('@') || emailInput.value.length < 5) {
-      emailError.innerText = "Vui lòng nhập địa chỉ email hợp lệ.";
+    // 1. Kiểm tra định dạng email cơ bản (Regex)
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      emailError.innerText = "Định dạng email không hợp lệ.";
       emailError.style.display = "block";
+      emailInput.classList.add('invalid');
       return;
     }
 
-    // Call API check email
-    fetch('${pageContext.request.contextPath}/check-email?email=' + encodeURIComponent(emailInput.value))
-            .then(response => response.json())
+    // 2. Kiểm tra bắt buộc phải là @gmail.com
+    if (!email.endsWith("@gmail.com")) {
+      emailError.innerText = "Vui lòng sử dụng địa chỉ email @gmail.com.";
+      emailError.style.display = "block";
+      emailInput.classList.add('invalid');
+      return;
+    }
+
+    // Nếu vượt qua các bước kiểm tra, ẩn lỗi và tiếp tục
+    emailError.style.display = "none";
+    emailInput.classList.remove('invalid');
+
+    // Gửi request kiểm tra email tồn tại
+    fetch('${pageContext.request.contextPath}/check-email?email=' + encodeURIComponent(email))
+            .then(res => res.json())
             .then(data => {
               if (data.exists) {
-                emailError.innerText = "Email này đã được sử dụng. Vui lòng chọn email khác.";
+                emailError.innerText = "Email này đã được đăng ký.";
                 emailError.style.display = "block";
+                emailInput.classList.add('invalid');
               } else {
                 emailError.style.display = "none";
-                stepEmail.style.display = 'none';
-                stepDetails.style.display = 'block';
-              }
-            })
-            .catch(() => {
-              Swal.fire('Lỗi', 'Không thể kết nối máy chủ', 'error');
-            });
-  }
-
-  function sendOTP(email) {
-    fetch('${pageContext.request.contextPath}/send-otp', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: 'email=' + encodeURIComponent(email)
-    })
-            .then(res => res.text())
-            .then(data => {
-              if(data.trim() === "success") {
-                Swal.fire('Thành công', 'Mã OTP đã gửi về Email của bạn!', 'success');
                 document.getElementById('step-email').style.display = 'none';
-                document.getElementById('step-details').style.display = 'block';
-              } else {
-                Swal.fire('Lỗi', 'Không thể gửi mã OTP. Vui lòng thử lại.', 'error');
+                document.getElementById('step-profile').style.display = 'block';
               }
             })
-            .finally(() => {
-              document.getElementById('btnNext').innerText = "Tiếp theo";
-              document.getElementById('btnNext').disabled = false;
+            .catch(err => {
+              console.error(err);
+              emailError.innerText = "Lỗi hệ thống, vui lòng thử lại sau.";
+              emailError.style.display = "block";
             });
   }
 
-  function goBack() {
-    document.getElementById('step-email').style.display = 'block';
-    document.getElementById('step-details').style.display = 'none';
-  }
-
-  function togglePass(id, el) {
-    const input = document.getElementById(id);
-    input.type = (input.type === "password") ? "text" : "password";
-    el.innerText = (input.type === "password") ? "👁️" : "🙈";
-  }
-
-  document.addEventListener('DOMContentLoaded', function() {
-    const validationRules = {
-      fullNameInput: { regex: /^.{2,50}$/, errorId: 'name-error', message: 'Họ và tên phải từ 2 đến 50 ký tự.' },
-      phoneInput: { regex: /^0\d{9}$/, errorId: 'phone-error', message: 'Số điện thoại phải 10 số, bắt đầu bằng 0.' },
-      userNameInput: { regex: /^[a-zA-Z0-9._]{3,20}$/, errorId: 'user-error', message: 'Tên đăng nhập 3-20 ký tự, không dấu.' },
-      passInput: { regex: /^(?=.*[A-Za-z])(?=.*\d).{8,}$/, errorId: 'pass-error', message: 'Mật khẩu từ 8 ký tự, gồm cả chữ và số.' }
-    };
-
-    function validateField(inputElement) {
-      const rule = validationRules[inputElement.id];
-      if(!rule) return;
-      const errorElement = document.getElementById(rule.errorId);
-      const isValid = rule.regex.test(inputElement.value);
-
-      if (!isValid) {
-        errorElement.style.display = "block";
-        errorElement.innerText = rule.message;
-        inputElement.classList.add('invalid');
-      } else {
-        errorElement.style.display = "none";
-        inputElement.classList.remove('invalid');
-        inputElement.classList.add('valid');
-      }
+  // 2. Logic Real-time Validation cho các ô nhập liệu còn lại
+  const validationRules = {
+    nameInput: { required: true, message: "Họ và tên không được để trống." },
+    phoneInput: { required: true, pattern: /^[0-9]{10,11}$/, message: "Số điện thoại gồm 10-11 chữ số hợp lệ." },
+    birthDateInput: { required: true, message: "Vui lòng chọn ngày sinh của bạn." },
+    passInput: {
+      required: true,
+      pattern: /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,20}$/,
+      message: "Mật khẩu dài 6-20 ký tự, bao gồm ít nhất 1 chữ hoa, 1 chữ thường và 1 chữ số."
     }
+  };
 
-    Object.keys(validationRules).forEach(id => {
-      const input = document.getElementById(id);
-      if (input) input.addEventListener('input', () => validateField(input));
-    });
+  function validateField(inputElement) {
+    const rule = validationRules[inputElement.id];
+    if (!rule) return;
 
-    const passInput = document.getElementById('passInput');
-    const confirmInput = document.getElementById('confirmPassInput');
-    const confirmError = document.getElementById('password-error');
+    const errorId = inputElement.id === 'nameInput' ? 'name-error' :
+            inputElement.id === 'phoneInput' ? 'phone-error' :
+                    inputElement.id === 'birthDateInput' ? 'birthdate-error' : 'pass-error';
+    const errorElement = document.getElementById(errorId);
+    let isValid = true;
 
-    confirmInput.addEventListener('input', function() {
-      if (this.value !== passInput.value) {
-        confirmError.innerText = "Mật khẩu xác nhận không khớp.";
-        confirmError.style.display = "block";
-        this.classList.add('invalid');
-      } else {
-        confirmError.style.display = "none";
-        this.classList.remove('invalid');
-        this.classList.add('valid');
-      }
-    });
+    if (rule.required && !inputElement.value.trim()) isValid = false;
+    if (rule.minLength && inputElement.value.length < rule.minLength) isValid = false;
+    if (rule.pattern && !rule.pattern.test(inputElement.value.trim())) isValid = false;
 
-    const status = document.getElementById('registerStatus').value;
-    if (status === "success") {
-      Swal.fire('Thành công!', 'Đang chuyển hướng đến đăng nhập...', 'success')
-              .then(() => window.location.href = "${pageContext.request.contextPath}/login");
-    } else if (status === "wrong_otp") {
-      Swal.fire('Lỗi', 'Mã OTP không chính xác!', 'error');
+    if (!isValid) {
+      errorElement.style.display = "block";
+      errorElement.innerText = rule.message;
+      inputElement.classList.add('invalid');
+    } else {
+      errorElement.style.display = "none";
+      inputElement.classList.remove('invalid');
+      inputElement.classList.add('valid');
+    }
+  }
+
+  Object.keys(validationRules).forEach(id => {
+    const input = document.getElementById(id);
+    if (input) input.addEventListener('input', () => validateField(input));
+  });
+
+  // Kiểm tra xác nhận mật khẩu khớp nhau
+  const passInput = document.getElementById('passInput');
+  const confirmInput = document.getElementById('confirmPassInput');
+  const confirmError = document.getElementById('password-error');
+
+  confirmInput.addEventListener('input', function() {
+    if (this.value !== passInput.value) {
+      confirmError.innerText = "Mật khẩu xác nhận không khớp.";
+      confirmError.style.display = "block";
+      this.classList.add('invalid');
+    } else {
+      confirmError.style.display = "none";
+      this.classList.remove('invalid');
+      this.classList.add('valid');
     }
   });
+
+  // Đọc Trạng thái phản hồi từ Server thông qua SweetAlert2
+  const status = document.getElementById('registerStatus').value;
+  if (status === "success") {
+    Swal.fire('Thành công!', 'Đang chuyển hướng đến đăng nhập...', 'success')
+            .then(() => window.location.href = "${pageContext.request.contextPath}/login");
+  } else if (status === "wrong_otp") {
+    Swal.fire('Lỗi', 'Mã OTP không chính xác!', 'error');
+  } else if (status === "fail") {
+    Swal.fire('Lỗi', 'Có lỗi xảy ra trong quá trình đăng ký.', 'error');
+  }
 </script>
