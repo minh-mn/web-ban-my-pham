@@ -26,15 +26,29 @@ public class User {
     /*
      * Rank do admin chỉ định trực tiếp.
      *
-     * null / blank  => AUTO, hệ thống tự tính rank theo tổng chi tiêu.
+     * null / blank => AUTO, hệ thống tự tính rank theo tổng chi tiêu.
      * MEMBER/GOLD/VIP... => dùng rank do admin chọn.
      */
     private String manualRankCode;
+
+    /*
+     * Rank hiện tại thật sự dùng để hiển thị ở Admin List.
+     *
+     * Nếu manualRankCode != null:
+     * - currentRankCode thường chính là manualRankCode.
+     *
+     * Nếu manualRankCode == null:
+     * - currentRankCode là rank hệ thống tính theo tổng chi tiêu.
+     */
+    private String currentRankCode;
+    private String currentRankName;
 
     public User() {
         this.role = "USER";
         this.active = true;
         this.manualRankCode = null;
+        this.currentRankCode = "MEMBER";
+        this.currentRankName = "Thành viên";
     }
 
     /* ================= GETTER / SETTER ================= */
@@ -158,6 +172,36 @@ public class User {
         this.manualRankCode = value.toUpperCase();
     }
 
+    public String getCurrentRankCode() {
+        return currentRankCode;
+    }
+
+    public void setCurrentRankCode(String currentRankCode) {
+        String value = normalizeString(currentRankCode);
+
+        if (value == null) {
+            this.currentRankCode = "MEMBER";
+            return;
+        }
+
+        this.currentRankCode = value.toUpperCase();
+    }
+
+    public String getCurrentRankName() {
+        return currentRankName;
+    }
+
+    public void setCurrentRankName(String currentRankName) {
+        String value = normalizeString(currentRankName);
+
+        if (value == null) {
+            this.currentRankName = "Thành viên";
+            return;
+        }
+
+        this.currentRankName = value;
+    }
+
     /* ================= BUSINESS LOGIC ================= */
 
     public boolean isAdmin() {
@@ -180,12 +224,37 @@ public class User {
         return !hasManualRank();
     }
 
+    /*
+     * Đây là chế độ xét rank:
+     * - AUTO: hệ thống tự tính theo tổng chi tiêu.
+     * - MANUAL: admin chỉ định trực tiếp.
+     */
     public String getRankModeLabel() {
         return isAutoRank() ? "AUTO" : "MANUAL";
     }
 
+    /*
+     * Đây là rank thật sự để hiển thị ở danh sách user.
+     * Không trả về AUTO nữa.
+     */
     public String getDisplayRankCode() {
-        return isAutoRank() ? "AUTO" : manualRankCode;
+        if (currentRankCode != null && !currentRankCode.isBlank()) {
+            return currentRankCode;
+        }
+
+        if (manualRankCode != null && !manualRankCode.isBlank()) {
+            return manualRankCode;
+        }
+
+        return "MEMBER";
+    }
+
+    public String getDisplayRankName() {
+        if (currentRankName != null && !currentRankName.isBlank()) {
+            return currentRankName;
+        }
+
+        return "Thành viên";
     }
 
     public boolean hasPassword() {
@@ -247,6 +316,8 @@ public class User {
                 ", googleId='" + googleId + '\'' +
                 ", facebookId='" + facebookId + '\'' +
                 ", manualRankCode='" + manualRankCode + '\'' +
+                ", currentRankCode='" + currentRankCode + '\'' +
+                ", currentRankName='" + currentRankName + '\'' +
                 '}';
     }
 }
