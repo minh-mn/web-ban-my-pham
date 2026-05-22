@@ -83,7 +83,6 @@ public class ProductDetailServlet extends HttpServlet {
         }
 
         product.setAvgRating(avgRating);
-
         product.setFinalPrice(pricingFacade.getFinalPrice(product));
 
         req.setAttribute("product", product);
@@ -94,6 +93,7 @@ public class ProductDetailServlet extends HttpServlet {
         req.setAttribute("pageCss", "product-detail.css");
         req.setAttribute("pageContent", "/jsp/product/detail.jsp");
 
-        req.getRequestDispatcher("/jsp/common/base.jsp").forward(req, resp);
+        req.getRequestDispatcher("/jsp/common/base.jsp")
+                .forward(req, resp);
     }
 }
