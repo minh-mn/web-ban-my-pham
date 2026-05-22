@@ -167,19 +167,23 @@
             </div>
           </c:if>
 
-          <div class="pd-quantity-row">
-            <span class="pd-option-title">Số lượng</span>
+          <div class="pd-action-row">
 
-            <div class="pd-qty-control">
-              <button type="button" class="qty-btn" id="qtyMinus">−</button>
-              <input type="number" name="quantity" id="quantityInput" value="1" min="1">
-              <button type="button" class="qty-btn" id="qtyPlus">+</button>
+            <div class="pd-quantity-row">
+              <span class="pd-option-title">SỐ LƯỢNG:</span>
+
+              <div class="pd-qty-control">
+                <button type="button" class="qty-btn" id="qtyMinus">−</button>
+                <input type="number" name="quantity" id="quantityInput" value="1" min="1">
+                <button type="button" class="qty-btn" id="qtyPlus">+</button>
+              </div>
             </div>
-          </div>
 
-          <button type="submit" class="pd-add-cart">
-            Thêm vào giỏ hàng
-          </button>
+            <button type="submit" class="pd-add-cart">
+              Thêm vào giỏ hàng
+            </button>
+
+          </div>
 
         </form>
 
