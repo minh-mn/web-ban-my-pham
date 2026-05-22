@@ -66,6 +66,7 @@
                   <th style="width:90px;">ID</th>
                   <th>Mã</th>
                   <th style="width:120px;">Giảm (%)</th>
+                  <th style="width:140px;">Loại</th>
                   <th style="width:170px;">Giảm tối đa</th>
                   <th style="width:110px;">Đã dùng</th>
                   <th style="width:220px;">Hiệu lực</th>
@@ -82,6 +83,21 @@
                     <td><strong><c:out value="${cp.code}"/></strong></td>
 
                     <td>${cp.discountPercent}%</td>
+                    <td>
+                      <c:choose>
+                        <c:when test="${cp.type == 'DISCOUNT'}">
+                          <span class="badge badge-blue">DISCOUNT</span>
+                        </c:when>
+
+                        <c:when test="${cp.type == 'FREESHIP'}">
+                          <span class="badge badge-green">FREESHIP</span>
+                        </c:when>
+
+                        <c:otherwise>
+                          <span class="badge badge-gray">UNKNOWN</span>
+                        </c:otherwise>
+                      </c:choose>
+                    </td>
 
                     <td>
                       <c:choose>
