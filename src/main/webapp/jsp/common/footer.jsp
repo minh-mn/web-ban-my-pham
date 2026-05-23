@@ -195,13 +195,11 @@
 
                 <ul>
                     <c:forEach var="c" items="${categoryList}">
-                        <c:if test="${c.parentId == 0}">
-                            <li>
-                                <a href="${pageContext.request.contextPath}/category?slug=${c.slug}">
-                                        ${c.name}
-                                </a>
-                            </li>
-                        </c:if>
+                        <li>
+                            <a href="${pageContext.request.contextPath}/category?slug=${c.slug}">
+                                    ${c.name}
+                            </a>
+                        </li>
                     </c:forEach>
                 </ul>
             </div>
@@ -211,21 +209,13 @@
                 <h4>Chính sách</h4>
 
                 <ul>
-                    <c:choose>
-                        <c:when test="${not empty policyList}">
-                            <c:forEach var="p" items="${policyList}">
-                                <li>
-                                    <a href="${pageContext.request.contextPath}/page/${p.slug}">
-                                            ${p.title}
-                                    </a>
-                                </li>
-                            </c:forEach>
-                        </c:when>
-
-                        <c:otherwise>
-                            <li style="color:#888">Chưa có chính sách</li>
-                        </c:otherwise>
-                    </c:choose>
+                    <c:forEach var="p" items="${policyList}">
+                        <li>
+                            <a href="${pageContext.request.contextPath}/page/${p.slug}">
+                                    ${p.title}
+                            </a>
+                        </li>
+                    </c:forEach>
                 </ul>
             </div>
 
@@ -233,12 +223,20 @@
             <div class="footer-col">
                 <h4>Kết nối với chúng tôi</h4>
 
-                <div class="footer-newsletter">
-                    <input type="email" placeholder="Nhập email của bạn...">
-                    <button type="button">
+                <form action="${pageContext.request.contextPath}/contact"
+                      method="post"
+                      class="footer-newsletter">
+
+                    <input type="email"
+                           name="email"
+                           placeholder="Nhập email của bạn..."
+                           required>
+
+                    <button type="submit">
                         <i class="fa-solid fa-paper-plane"></i>
                     </button>
-                </div>
+
+                </form>
 
                 <div class="footer-social">
 
