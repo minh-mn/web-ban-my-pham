@@ -1,10 +1,12 @@
 package com.webshop.app.service;
 
+import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.util.Map;
 
 import com.webshop.app.dao.CouponDAO;
@@ -170,21 +172,15 @@ public class CheckoutService {
 			 * =========================
 			 * LOCK & CHECK STOCK
 			 * =========================
+			 * Nếu item có variantId:
+			 * - khóa store_product_variant
+			 * - kiểm tra stock của variant
+			 *
+			 * Nếu item không có variantId:
+			 * - khóa store_product
+			 * - kiểm tra stock của product
 			 */
-			String lockSql = "SELECT stock FROM store_product WHERE id = ? FOR UPDATE";
-
-			for (CartItem item : cart.values()) {
-				try (PreparedStatement ps = conn.prepareStatement(lockSql)) {
-					ps.setInt(1, item.getProductId());
-
-					try (ResultSet rs = ps.executeQuery()) {
-						if (!rs.next() || rs.getInt("stock") < item.getQuantity()) {
-							conn.rollback();
-							throw new RuntimeException("Không đủ tồn kho cho sản phẩm ID " + item.getProductId());
-						}
-					}
-				}
-			}
+			lockAndValidateStock(conn, cart);
 
 			/*
 			 * =========================
@@ -284,22 +280,10 @@ public class CheckoutService {
 				return;
 			}
 
-			String lockSql = "SELECT stock FROM store_product WHERE id = ? FOR UPDATE";
-
-			for (CartItem item : cart.values()) {
-				try (PreparedStatement ps = conn.prepareStatement(lockSql)) {
-					ps.setInt(1, item.getProductId());
-
-					try (ResultSet rs = ps.executeQuery()) {
-						if (!rs.next() || rs.getInt("stock") < item.getQuantity()) {
-							conn.rollback();
-							throw new RuntimeException(
-									"Không đủ tồn kho khi finalize VNPAY cho sản phẩm ID " + item.getProductId()
-							);
-						}
-					}
-				}
-			}
+			/*
+			 * VNPAY finalize cũng phải kiểm tra đúng variant stock.
+			 */
+			lockAndValidateStock(conn, cart);
 
 			createOrderItemsAndUpdateStock(conn, orderId, cart);
 
@@ -785,27 +769,381 @@ public class CheckoutService {
 	 * =========================
 	 */
 
+	private void lockAndValidateStock(Connection conn,
+	                                  Map<String, CartItem> cart) throws Exception {
+
+		for (CartItem item : cart.values()) {
+			if (item == null) {
+				continue;
+			}
+
+			int quantity = Math.max(item.getQuantity(), 0);
+
+			if (quantity <= 0) {
+				throw new RuntimeException("Số lượng sản phẩm không hợp lệ.");
+			}
+
+			Integer variantId = getCartItemVariantId(item);
+
+			if (variantId != null && variantId > 0) {
+				lockVariantAndValidateStock(conn, item, variantId, quantity);
+			} else {
+				lockProductAndValidateStock(conn, item.getProductId(), quantity);
+			}
+		}
+	}
+
 	private void createOrderItemsAndUpdateStock(Connection conn,
 	                                            int orderId,
 	                                            Map<String, CartItem> cart) throws Exception {
 
-		String updateStockSql = "UPDATE store_product SET stock = stock - ? WHERE id = ?";
-
 		for (CartItem item : cart.values()) {
+			if (item == null) {
+				continue;
+			}
+
+			int quantity = Math.max(item.getQuantity(), 0);
+
+			if (quantity <= 0) {
+				throw new RuntimeException("Số lượng sản phẩm không hợp lệ.");
+			}
+
+			Integer variantId = getCartItemVariantId(item);
+			VariantSnapshot variantSnapshot = null;
+
+			if (variantId != null && variantId > 0) {
+				variantSnapshot = lockVariantAndValidateStock(conn, item, variantId, quantity);
+			}
+
 			OrderItem orderItem = new OrderItem();
 			orderItem.setOrderId(orderId);
 			orderItem.setProductId(item.getProductId());
 			orderItem.setPrice(item.getPrice());
-			orderItem.setQuantity(item.getQuantity());
+			orderItem.setQuantity(quantity);
+
+			if (variantSnapshot != null) {
+				orderItem.setVariantId(variantSnapshot.variantId);
+				orderItem.setVariantName(variantSnapshot.variantName);
+				orderItem.setVariantSize(variantSnapshot.variantSize);
+				orderItem.setVariantType(variantSnapshot.variantType);
+			}
 
 			itemDAO.create(conn, orderItem);
 
-			try (PreparedStatement ps = conn.prepareStatement(updateStockSql)) {
-				ps.setInt(1, item.getQuantity());
-				ps.setInt(2, item.getProductId());
-				ps.executeUpdate();
+			if (variantSnapshot != null) {
+				updateVariantStock(conn, item.getProductId(), variantSnapshot.variantId, quantity);
+				updateProductStockAfterVariantSold(conn, item.getProductId(), quantity);
+			} else {
+				updateProductStock(conn, item.getProductId(), quantity);
 			}
 		}
+	}
+
+	private void lockProductAndValidateStock(Connection conn,
+	                                         int productId,
+	                                         int quantity) throws Exception {
+
+		String sql = """
+                SELECT stock
+                FROM store_product
+                WHERE id = ?
+                FOR UPDATE
+                """;
+
+		try (PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, productId);
+
+			try (ResultSet rs = ps.executeQuery()) {
+				if (!rs.next()) {
+					throw new RuntimeException("Không tìm thấy sản phẩm ID " + productId);
+				}
+
+				int stock = rs.getInt("stock");
+
+				if (stock < quantity) {
+					throw new RuntimeException("Không đủ tồn kho cho sản phẩm ID " + productId);
+				}
+			}
+		}
+	}
+
+	private VariantSnapshot lockVariantAndValidateStock(Connection conn,
+	                                                    CartItem item,
+	                                                    int variantId,
+	                                                    int quantity) throws Exception {
+
+		String sql = """
+                SELECT *
+                FROM store_product_variant
+                WHERE id = ?
+                  AND product_id = ?
+                FOR UPDATE
+                """;
+
+		try (PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, variantId);
+			ps.setInt(2, item.getProductId());
+
+			try (ResultSet rs = ps.executeQuery()) {
+				if (!rs.next()) {
+					throw new RuntimeException(
+							"Không tìm thấy biến thể ID " + variantId
+									+ " của sản phẩm ID " + item.getProductId()
+					);
+				}
+
+				Integer stock = getIntegerByColumns(rs, "stock", "quantity");
+
+				if (stock == null) {
+					throw new RuntimeException(
+							"Bảng store_product_variant thiếu cột stock hoặc quantity."
+					);
+				}
+
+				if (stock < quantity) {
+					throw new RuntimeException(
+							"Không đủ tồn kho cho biến thể ID " + variantId
+									+ " của sản phẩm ID " + item.getProductId()
+					);
+				}
+
+				VariantSnapshot snapshot = new VariantSnapshot();
+				snapshot.variantId = variantId;
+
+				/*
+				 * Ưu tiên thông tin từ CartItem vì đó là thông tin user đã chọn.
+				 * Nếu CartItem không có getter variant thì fallback sang database.
+				 */
+				snapshot.variantName = firstNotBlank(
+						getCartItemString(item, "getVariantName"),
+						getStringByColumns(rs, "variant_name", "name", "title")
+				);
+
+				snapshot.variantSize = firstNotBlank(
+						getCartItemString(item, "getVariantSize"),
+						getStringByColumns(rs, "variant_size", "size")
+				);
+
+				snapshot.variantType = firstNotBlank(
+						getCartItemString(item, "getVariantType"),
+						getStringByColumns(rs, "variant_type", "type")
+				);
+
+				return snapshot;
+			}
+		}
+	}
+
+	private void updateVariantStock(Connection conn,
+	                                int productId,
+	                                int variantId,
+	                                int quantity) throws Exception {
+
+		String sql = """
+                UPDATE store_product_variant
+                SET stock = stock - ?
+                WHERE id = ?
+                  AND product_id = ?
+                  AND stock >= ?
+                """;
+
+		try (PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, quantity);
+			ps.setInt(2, variantId);
+			ps.setInt(3, productId);
+			ps.setInt(4, quantity);
+
+			int updated = ps.executeUpdate();
+
+			if (updated <= 0) {
+				throw new RuntimeException(
+						"Không thể trừ tồn kho biến thể ID " + variantId
+								+ " của sản phẩm ID " + productId
+				);
+			}
+		}
+	}
+
+	private void updateProductStock(Connection conn,
+	                                int productId,
+	                                int quantity) throws Exception {
+
+		String sql = """
+                UPDATE store_product
+                SET stock = stock - ?
+                WHERE id = ?
+                  AND stock >= ?
+                """;
+
+		try (PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, quantity);
+			ps.setInt(2, productId);
+			ps.setInt(3, quantity);
+
+			int updated = ps.executeUpdate();
+
+			if (updated <= 0) {
+				throw new RuntimeException("Không thể trừ tồn kho sản phẩm ID " + productId);
+			}
+		}
+	}
+
+	/*
+	 * Khi bán variant, vẫn cập nhật stock tổng ở store_product để trang danh sách sản phẩm
+	 * không bị lệch tồn kho tổng. Không dùng điều kiện stock >= quantity vì tồn kho tổng
+	 * đôi khi không đồng bộ chính xác với tổng variant.
+	 */
+	private void updateProductStockAfterVariantSold(Connection conn,
+	                                                int productId,
+	                                                int quantity) throws Exception {
+
+		String sql = """
+                UPDATE store_product
+                SET stock = CASE
+                    WHEN stock >= ? THEN stock - ?
+                    ELSE 0
+                END
+                WHERE id = ?
+                """;
+
+		try (PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, quantity);
+			ps.setInt(2, quantity);
+			ps.setInt(3, productId);
+
+			int updated = ps.executeUpdate();
+
+			if (updated <= 0) {
+				throw new RuntimeException("Không thể cập nhật tồn kho tổng của sản phẩm ID " + productId);
+			}
+		}
+	}
+
+	private Integer getCartItemVariantId(CartItem item) {
+		Object value = invokeGetter(item, "getVariantId");
+
+		if (value == null) {
+			return null;
+		}
+
+		if (value instanceof Integer integerValue) {
+			return integerValue > 0 ? integerValue : null;
+		}
+
+		if (value instanceof Number numberValue) {
+			int intValue = numberValue.intValue();
+			return intValue > 0 ? intValue : null;
+		}
+
+		try {
+			int intValue = Integer.parseInt(value.toString().trim());
+			return intValue > 0 ? intValue : null;
+		} catch (Exception e) {
+			return null;
+		}
+	}
+
+	private String getCartItemString(CartItem item, String getterName) {
+		Object value = invokeGetter(item, getterName);
+
+		if (value == null) {
+			return null;
+		}
+
+		String text = value.toString().trim();
+
+		return text.isEmpty() ? null : text;
+	}
+
+	private Object invokeGetter(Object target, String getterName) {
+		if (target == null || getterName == null || getterName.isBlank()) {
+			return null;
+		}
+
+		try {
+			Method method = target.getClass().getMethod(getterName);
+			return method.invoke(target);
+		} catch (Exception e) {
+			return null;
+		}
+	}
+
+	private String firstNotBlank(String first, String second) {
+		if (first != null && !first.trim().isEmpty()) {
+			return first.trim();
+		}
+
+		if (second != null && !second.trim().isEmpty()) {
+			return second.trim();
+		}
+
+		return null;
+	}
+
+	private Integer getIntegerByColumns(ResultSet rs, String... columnNames) {
+		for (String columnName : columnNames) {
+			try {
+				if (!hasColumn(rs, columnName)) {
+					continue;
+				}
+
+				int value = rs.getInt(columnName);
+
+				if (rs.wasNull()) {
+					continue;
+				}
+
+				return value;
+
+			} catch (Exception ignored) {
+			}
+		}
+
+		return null;
+	}
+
+	private String getStringByColumns(ResultSet rs, String... columnNames) {
+		for (String columnName : columnNames) {
+			try {
+				if (!hasColumn(rs, columnName)) {
+					continue;
+				}
+
+				String value = rs.getString(columnName);
+
+				if (value != null && !value.trim().isEmpty()) {
+					return value.trim();
+				}
+
+			} catch (Exception ignored) {
+			}
+		}
+
+		return null;
+	}
+
+	private boolean hasColumn(ResultSet rs, String columnName) {
+		try {
+			ResultSetMetaData metaData = rs.getMetaData();
+
+			for (int i = 1; i <= metaData.getColumnCount(); i++) {
+				if (columnName.equalsIgnoreCase(metaData.getColumnLabel(i))
+						|| columnName.equalsIgnoreCase(metaData.getColumnName(i))) {
+					return true;
+				}
+			}
+
+		} catch (Exception ignored) {
+		}
+
+		return false;
+	}
+
+	private static class VariantSnapshot {
+		private int variantId;
+		private String variantName;
+		private String variantSize;
+		private String variantType;
 	}
 
 	private void updatePaidStatus(Connection conn, int orderId, String txnRef) {
