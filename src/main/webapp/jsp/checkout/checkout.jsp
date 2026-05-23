@@ -3,7 +3,7 @@
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
-<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/checkout.css?v=20260523_shipping_fix">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/checkout.css?v=20260523_coupon_modal">
 
 <style>
   /* ================= BUTTON STATE: NHẠT / ĐẬM ================= */
@@ -37,7 +37,6 @@
     background: #c72c79 !important;
     transform: translateY(-1px);
   }
-
 
   /* ================= DELIVERY OPTIONS + FREESHIP ================= */
 
@@ -136,7 +135,161 @@
     color: #9ca3af !important;
   }
 
+  /* ================= COUPON MODAL ================= */
 
+  .coupon-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .coupon-modal.show {
+    display: flex;
+  }
+
+  .coupon-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(17, 24, 39, 0.45);
+  }
+
+  .coupon-modal-dialog {
+    position: relative;
+    width: min(560px, calc(100vw - 32px));
+    max-height: 80vh;
+    background: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.22);
+    overflow: hidden;
+    z-index: 1;
+  }
+
+  .coupon-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 22px;
+    border-bottom: 1px solid #f1f1f1;
+  }
+
+  .coupon-modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 800;
+    color: #111827;
+  }
+
+  .coupon-modal-close {
+    width: 34px;
+    height: 34px;
+    border: none;
+    border-radius: 999px;
+    background: #f3f4f6;
+    color: #374151;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .coupon-modal-close:hover {
+    background: #ffe6f0;
+    color: #d63384;
+  }
+
+  .coupon-modal-body {
+    padding: 18px 22px 22px;
+    overflow-y: auto;
+    max-height: calc(80vh - 72px);
+  }
+
+  .coupon-group-title {
+    margin: 8px 0 12px;
+    font-size: 14px;
+    font-weight: 800;
+    color: #374151;
+  }
+
+  .coupon-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  .coupon-item {
+    width: 100%;
+    display: flex;
+    align-items: stretch;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0;
+    border: 1px solid #f2c4d7;
+    border-radius: 16px;
+    background: #fff7fb;
+    overflow: hidden;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s ease;
+  }
+
+  .coupon-item:hover {
+    border-color: #d63384;
+    transform: translateY(-1px);
+    box-shadow: 0 10px 24px rgba(214, 51, 132, 0.14);
+  }
+
+  .coupon-ticket-left {
+    flex: 1;
+    padding: 14px 16px;
+  }
+
+  .coupon-code {
+    font-size: 16px;
+    font-weight: 900;
+    color: #d63384;
+    letter-spacing: 0.4px;
+  }
+
+  .coupon-desc {
+    margin-top: 5px;
+    font-size: 14px;
+    color: #111827;
+    font-weight: 600;
+  }
+
+  .coupon-condition {
+    margin-top: 5px;
+    font-size: 13px;
+    color: #6b7280;
+  }
+
+  .coupon-ticket-right {
+    width: 88px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #d63384;
+    color: #ffffff;
+    font-weight: 800;
+  }
+
+  .coupon-empty {
+    padding: 26px 12px;
+    text-align: center;
+    color: #6b7280;
+  }
+
+  .coupon-empty-icon {
+    font-size: 34px;
+    margin-bottom: 8px;
+  }
+
+  body.coupon-modal-open {
+    overflow: hidden;
+  }
 </style>
 
 <c:set var="errors" value="${requestScope.errors}" />
@@ -614,7 +767,9 @@
             <h2>Mã khuyến mãi</h2>
           </div>
 
-          <button type="button" class="coupon-select-btn">
+          <button type="button"
+                  class="coupon-select-btn"
+                  id="openCouponModal">
             <span>🎟 Chọn mã</span>
             <span class="coupon-arrow">›</span>
           </button>
@@ -623,7 +778,7 @@
             <input type="text"
                    id="couponCode"
                    name="couponCode"
-                   value="${param.couponCode}"
+                   value="${not empty couponCode ? couponCode : param.couponCode}"
                    placeholder="Mã khuyến mãi">
 
             <button type="button"
@@ -633,6 +788,12 @@
               Áp dụng
             </button>
           </div>
+
+          <c:if test="${not empty couponLoadError}">
+            <div class="coupon-message error">
+              <c:out value="${couponLoadError}" />
+            </div>
+          </c:if>
 
           <div id="couponMessage" class="coupon-message"></div>
         </div>
@@ -682,6 +843,174 @@
     </form>
   </div>
 </section>
+
+<!-- ================= COUPON MODAL ================= -->
+<div class="coupon-modal" id="couponModal">
+  <div class="coupon-modal-backdrop" data-close-coupon-modal></div>
+
+  <div class="coupon-modal-dialog">
+    <div class="coupon-modal-header">
+      <h3>Chọn mã khuyến mãi</h3>
+
+      <button type="button"
+              class="coupon-modal-close"
+              data-close-coupon-modal>
+        ×
+      </button>
+    </div>
+
+    <div class="coupon-modal-body">
+
+      <c:if test="${not empty savedCoupons}">
+        <div class="coupon-group-title">Mã khuyến mãi đã lưu</div>
+
+        <div class="coupon-list">
+          <c:forEach var="coupon" items="${savedCoupons}">
+            <button type="button"
+                    class="coupon-item js-select-coupon"
+                    data-code="${fn:escapeXml(coupon.code)}">
+
+              <div class="coupon-ticket-left">
+                <div class="coupon-code">
+                  <c:out value="${coupon.code}" />
+                </div>
+
+                <div class="coupon-desc">
+                  Giảm ${coupon.discountPercent}%
+
+                  <c:if test="${not empty coupon.maxDiscountAmount}">
+                    , tối đa
+                    <fmt:formatNumber value="${coupon.maxDiscountAmount}"
+                                      type="number"
+                                      groupingUsed="true" />đ
+                  </c:if>
+                </div>
+
+                <c:if test="${not empty coupon.minOrderAmount}">
+                  <div class="coupon-condition">
+                    Đơn từ
+                    <fmt:formatNumber value="${coupon.minOrderAmount}"
+                                      type="number"
+                                      groupingUsed="true" />đ
+                  </div>
+                </c:if>
+              </div>
+
+              <div class="coupon-ticket-right">
+                Chọn
+              </div>
+            </button>
+          </c:forEach>
+        </div>
+      </c:if>
+
+      <c:if test="${not empty availableCoupons}">
+        <div class="coupon-group-title">Mã phù hợp với đơn hàng</div>
+
+        <div class="coupon-list">
+          <c:forEach var="coupon" items="${availableCoupons}">
+            <button type="button"
+                    class="coupon-item js-select-coupon"
+                    data-code="${fn:escapeXml(coupon.code)}">
+
+              <div class="coupon-ticket-left">
+                <div class="coupon-code">
+                  <c:out value="${coupon.code}" />
+                </div>
+
+                <div class="coupon-desc">
+                  Giảm ${coupon.discountPercent}%
+
+                  <c:if test="${not empty coupon.maxDiscountAmount}">
+                    , tối đa
+                    <fmt:formatNumber value="${coupon.maxDiscountAmount}"
+                                      type="number"
+                                      groupingUsed="true" />đ
+                  </c:if>
+                </div>
+
+                <c:if test="${not empty coupon.minOrderAmount}">
+                  <div class="coupon-condition">
+                    Đơn từ
+                    <fmt:formatNumber value="${coupon.minOrderAmount}"
+                                      type="number"
+                                      groupingUsed="true" />đ
+                  </div>
+                </c:if>
+              </div>
+
+              <div class="coupon-ticket-right">
+                Chọn
+              </div>
+            </button>
+          </c:forEach>
+        </div>
+      </c:if>
+
+      <c:if test="${empty savedCoupons and empty availableCoupons}">
+        <div class="coupon-empty">
+          <div class="coupon-empty-icon">🏷️</div>
+          <p>Không có mã khuyến mãi phù hợp</p>
+        </div>
+      </c:if>
+
+    </div>
+  </div>
+</div>
+
+<!-- ================= COUPON MODAL SCRIPT ================= -->
+<script>
+  (function () {
+    const modal = document.getElementById("couponModal");
+    const openBtn = document.getElementById("openCouponModal");
+    const couponInput = document.getElementById("couponCode");
+
+    function openModal() {
+      if (!modal) return;
+
+      modal.classList.add("show");
+      document.body.classList.add("coupon-modal-open");
+    }
+
+    function closeModal() {
+      if (!modal) return;
+
+      modal.classList.remove("show");
+      document.body.classList.remove("coupon-modal-open");
+    }
+
+    if (openBtn) {
+      openBtn.addEventListener("click", openModal);
+    }
+
+    document.querySelectorAll("[data-close-coupon-modal]").forEach(function (el) {
+      el.addEventListener("click", closeModal);
+    });
+
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape") {
+        closeModal();
+      }
+    });
+
+    document.querySelectorAll(".js-select-coupon").forEach(function (button) {
+      button.addEventListener("click", function () {
+        const code = button.dataset.code;
+
+        if (couponInput && code) {
+          couponInput.value = code;
+          couponInput.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+
+        if (window.updateCheckoutButtonsState) {
+          window.updateCheckoutButtonsState();
+        }
+
+        closeModal();
+      });
+    });
+  })();
+</script>
 
 <!-- ================= FRONTEND VALIDATION ================= -->
 <script>
