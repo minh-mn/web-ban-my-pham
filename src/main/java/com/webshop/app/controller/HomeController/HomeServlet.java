@@ -22,7 +22,7 @@ public class HomeServlet extends HttpServlet {
 
     private final BannerDAO bannerDAO = new BannerDAO();
     private final ProductDAO productDAO = new ProductDAO();
-    private final CouponDAO couponDAO = new CouponDAO(); // Khởi tạo CouponDAO
+    private final CouponDAO couponDAO = new CouponDAO(); 
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
@@ -34,7 +34,7 @@ public class HomeServlet extends HttpServlet {
         List<Banner> banners = bannerDAO.findActiveBanners();
         req.setAttribute("banners", banners);
 
-        // 2. Lấy Voucher (ĐÂY LÀ PHẦN BẠN CÒN THIẾU)
+        // 2. Lấy Voucher
         List<Coupon> vouchers = couponDAO.findActiveCouponsForHome();
         req.setAttribute("vouchers", vouchers);
 
