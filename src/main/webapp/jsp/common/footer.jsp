@@ -1,14 +1,10 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ page language="java" contentType="text/html; charset=UTF-8"
-    pageEncoding="UTF-8"%>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Insert title here</title>
-</head>
-<body>
+         pageEncoding="UTF-8"%>
+
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
 <style>
     .site-footer-v2 {
         background-color: #1a1a1a;
@@ -27,7 +23,7 @@
 
     .footer-grid {
         display: grid;
-        grid-template-columns: 2fr 1fr 1.5fr 2fr; 
+        grid-template-columns: 2fr 1fr 1.5fr 2fr;
         gap: 30px;
         padding-bottom: 40px;
     }
@@ -72,7 +68,6 @@
         padding-top: 15px;
     }
 
-    /* Newsletter */
     .footer-newsletter {
         display: flex;
         border-bottom: 1px solid #444;
@@ -98,7 +93,6 @@
         padding: 0 5px;
     }
 
-    /* Social Icons */
     .footer-social {
         display: flex;
         gap: 12px;
@@ -124,7 +118,6 @@
         transform: translateY(-3px);
     }
 
-    /* Badges & Trust */
     .footer-trust {
         display: flex;
         flex-direction: column;
@@ -133,12 +126,7 @@
 
     .bct-badge {
         width: 150px;
-        height: auto;
-        display: block;
-        transition: 0.3s;
     }
-    
-    .bct-badge:hover { opacity: 0.8; }
 
     .store-system {
         font-size: 13px;
@@ -153,11 +141,6 @@
         text-align: center;
     }
 
-    .store-system:hover {
-        border-color: #ff4d94;
-        color: #ff4d94;
-    }
-
     .footer-bottom {
         background-color: #111111;
         padding: 20px 0;
@@ -169,28 +152,49 @@
 </style>
 
 <footer class="site-footer-v2">
+
     <div class="footer-container">
         <div class="footer-grid">
-            
+
+            <!-- ================= CONTACT ================= -->
             <div class="footer-col">
                 <h4>Thông tin liên hệ</h4>
+
                 <ul>
-                    <li><i class="fa-solid fa-phone" style="margin-right: 8px;"></i> Hotline: 1900 636 510 (8:00 - 21:00)</li>
-                    <li><i class="fa-solid fa-envelope" style="margin-right: 8px;"></i> sales@mycosmetic.com</li>
-                    <li><i class="fa-solid fa-briefcase" style="margin-right: 8px;"></i> hr@mycosmetic.com</li>
+                    <li>
+                        <i class="fa-solid fa-phone"></i>
+                        Hotline: ${settings.hotline}
+                    </li>
+
+                    <li>
+                        <i class="fa-solid fa-envelope"></i>
+                        Email: ${settings.sales_email}
+                    </li>
+
+                    <li>
+                        <i class="fa-solid fa-envelope"></i>
+                        HR: ${settings.hr_email}
+                    </li>
                 </ul>
+
                 <div class="company-info">
-                    <strong>CÔNG TY TNHH MYCOSMETIC SHOP</strong><br>
-                    MSDN: 0316037655 - Cấp ngày: 21/03/2026<br>
-                    <i class="fa-solid fa-location-dot"></i> Khu Công Nghệ Phần Mềm ĐHQG, Dĩ An, Bình Dương.
+
+                    <strong>${settings.company_name}</strong><br>
+
+                    MSDN: ${settings.business_code} - Cấp ngày: ${settings.business_date}<br>
+
+                    <i class="fa-solid fa-location-dot"></i>
+                    ${settings.address}
+
                 </div>
             </div>
 
+            <!-- ================= CATEGORY ================= -->
             <div class="footer-col">
                 <h4>Danh mục</h4>
+
                 <ul>
                     <c:forEach var="c" items="${categoryList}">
-                        <%-- Chỉ hiển thị nếu parentId bằng 0 (là danh mục lớn) --%>
                         <c:if test="${c.parentId == 0}">
                             <li>
                                 <a href="${pageContext.request.contextPath}/category?slug=${c.slug}">
@@ -202,42 +206,65 @@
                 </ul>
             </div>
 
+            <!-- ================= POLICY ================= -->
             <div class="footer-col">
                 <h4>Chính sách</h4>
-                <ul>
-                    <c:if test="${not empty policyList}">
-                        <c:forEach var="p" items="${policyList}">
-                            <li>
-                                <a href="${pageContext.request.contextPath}/policy-detail?slug=${p.slug}">
-                                        ${p.title}
-                                </a>
-                            </li>
-                        </c:forEach>
-                    </c:if>
 
-                    <c:if test="${empty policyList}">
-                        <li><span style="color:#888">Chưa có chính sách</span></li>
-                    </c:if>
+                <ul>
+                    <c:choose>
+                        <c:when test="${not empty policyList}">
+                            <c:forEach var="p" items="${policyList}">
+                                <li>
+                                    <a href="${pageContext.request.contextPath}/page/${p.slug}">
+                                            ${p.title}
+                                    </a>
+                                </li>
+                            </c:forEach>
+                        </c:when>
+
+                        <c:otherwise>
+                            <li style="color:#888">Chưa có chính sách</li>
+                        </c:otherwise>
+                    </c:choose>
                 </ul>
             </div>
 
+            <!-- ================= SOCIAL ================= -->
             <div class="footer-col">
                 <h4>Kết nối với chúng tôi</h4>
+
                 <div class="footer-newsletter">
                     <input type="email" placeholder="Nhập email của bạn...">
-                    <button type="button"><i class="fa-solid fa-paper-plane"></i></button>
+                    <button type="button">
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </button>
                 </div>
-                
+
                 <div class="footer-social">
-                    <a href="#" class="social-icon"><i class="fa-brands fa-facebook-f"></i></a>
-                    <a href="#" class="social-icon"><i class="fa-brands fa-instagram"></i></a>
-                    <a href="#" class="social-icon"><i class="fa-brands fa-tiktok"></i></a>
-                    <a href="#" class="social-icon"><i class="fa-solid fa-comment-dots"></i></a> </div>
+
+                    <a href="${settings.facebook}" class="social-icon">
+                        <i class="fa-brands fa-facebook-f"></i>
+                    </a>
+
+                    <a href="${settings.instagram}" class="social-icon">
+                        <i class="fa-brands fa-instagram"></i>
+                    </a>
+
+                    <a href="${settings.tiktok}" class="social-icon">
+                        <i class="fa-brands fa-tiktok"></i>
+                    </a>
+
+                    <a href="${settings.zalo}" class="social-icon">
+                        <i class="fa-solid fa-comment-dots"></i>
+                    </a>
+
+                </div>
 
                 <div class="footer-trust">
                     <a href="http://online.gov.vn/">
-                        <img src="https://thegioiskinfood.com/static/media/logoSaleNoti.6229020e.png" alt="Bộ Công Thương" class="bct-badge">
+
                     </a>
+
                     <a href="#" class="store-system">
                         <i class="fa-solid fa-shop"></i> Hệ thống cửa hàng
                     </a>
@@ -247,11 +274,11 @@
         </div>
     </div>
 
+    <!-- ================= BOTTOM ================= -->
     <div class="footer-bottom">
         <div class="footer-container">
-            Copyright © 2026 MyCosmetic Shop — All rights reserved [cite: 1, 25]
+            Copyright © ${settings.name_website} ${settings.copyright_year} – All rights reserved
         </div>
     </div>
+
 </footer>
-</body>
-</html>
