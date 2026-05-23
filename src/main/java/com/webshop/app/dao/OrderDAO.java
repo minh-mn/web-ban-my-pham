@@ -12,6 +12,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,12 +23,50 @@ public class OrderDAO {
 
     private static final String PAID = "PAID";
 
+    private static final String SELECT_COLUMNS = """
+            id,
+            user_id,
+            full_name,
+            phone,
+            address,
+            total,
+            coupon_discount,
+            payment_method,
+            payment_status,
+            status,
+            vnp_txn_ref,
+            shipping_method,
+            shipping_provider,
+            shipping_fee,
+            shipping_code,
+            shipping_status,
+            shipped_at,
+            delivered_at,
+            created_at
+            """;
+
     private static BigDecimal vnd0(BigDecimal value) {
         if (value == null) {
             return BigDecimal.ZERO;
         }
 
         return value.setScale(0, RoundingMode.HALF_UP);
+    }
+
+    private static String defaultIfBlank(String value, String defaultValue) {
+        if (value == null || value.isBlank()) {
+            return defaultValue;
+        }
+
+        return value;
+    }
+
+    private static Timestamp toTimestamp(LocalDateTime value) {
+        if (value == null) {
+            return null;
+        }
+
+        return Timestamp.valueOf(value);
     }
 
     /* ================= CREATE ================= */
@@ -47,9 +86,16 @@ public class OrderDAO {
                     payment_status,
                     status,
                     vnp_txn_ref,
+                    shipping_method,
+                    shipping_provider,
+                    shipping_fee,
+                    shipping_code,
+                    shipping_status,
+                    shipped_at,
+                    delivered_at,
                     created_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
 
         try (PreparedStatement statement = conn.prepareStatement(
@@ -57,30 +103,59 @@ public class OrderDAO {
                 PreparedStatement.RETURN_GENERATED_KEYS
         )) {
 
-            statement.setInt(1, order.getUserId());
-            statement.setString(2, order.getFullName());
-            statement.setString(3, order.getPhone());
-            statement.setString(4, order.getAddress());
+            int index = 1;
+
+            statement.setInt(index++, order.getUserId());
+            statement.setString(index++, order.getFullName());
+            statement.setString(index++, order.getPhone());
+            statement.setString(index++, order.getAddress());
 
             statement.setBigDecimal(
-                    5,
+                    index++,
                     vnd0(order.getTotal())
             );
 
             statement.setBigDecimal(
-                    6,
+                    index++,
                     order.getCouponDiscount() != null
                             ? vnd0(order.getCouponDiscount())
                             : BigDecimal.ZERO
             );
 
-            statement.setString(7, order.getPaymentMethod());
-            statement.setString(8, order.getPaymentStatus());
-            statement.setString(9, order.getStatus());
-            statement.setString(10, order.getVnpTxnRef());
+            statement.setString(index++, order.getPaymentMethod());
+            statement.setString(index++, order.getPaymentStatus());
+            statement.setString(index++, order.getStatus());
+            statement.setString(index++, order.getVnpTxnRef());
+
+            statement.setString(
+                    index++,
+                    defaultIfBlank(order.getShippingMethod(), "ECONOMY")
+            );
+
+            statement.setString(
+                    index++,
+                    defaultIfBlank(order.getShippingProvider(), "INTERNAL")
+            );
+
+            statement.setBigDecimal(
+                    index++,
+                    order.getShippingFee() != null
+                            ? vnd0(order.getShippingFee())
+                            : BigDecimal.ZERO
+            );
+
+            statement.setString(index++, order.getShippingCode());
+
+            statement.setString(
+                    index++,
+                    defaultIfBlank(order.getShippingStatus(), "PENDING")
+            );
+
+            statement.setTimestamp(index++, toTimestamp(order.getShippedAt()));
+            statement.setTimestamp(index++, toTimestamp(order.getDeliveredAt()));
 
             statement.setTimestamp(
-                    11,
+                    index++,
                     new Timestamp(System.currentTimeMillis())
             );
 
@@ -104,9 +179,8 @@ public class OrderDAO {
     public Order findById(int orderId) {
 
         String sql = """
-                SELECT id, user_id, full_name, phone, address, total,
-                       payment_method, payment_status, status,
-                       vnp_txn_ref, created_at
+                SELECT
+                """ + SELECT_COLUMNS + """
                 FROM store_order
                 WHERE id = ?
                 """;
@@ -134,9 +208,8 @@ public class OrderDAO {
             throws SQLException {
 
         String sql = """
-                SELECT id, user_id, full_name, phone, address, total,
-                       payment_method, payment_status, status,
-                       vnp_txn_ref, created_at
+                SELECT
+                """ + SELECT_COLUMNS + """
                 FROM store_order
                 WHERE id = ?
                 """;
@@ -159,9 +232,8 @@ public class OrderDAO {
     public Order findLatestByUser(int userId) {
 
         String sql = """
-                SELECT id, user_id, full_name, phone, address, total,
-                       payment_method, payment_status, status,
-                       vnp_txn_ref, created_at
+                SELECT
+                """ + SELECT_COLUMNS + """
                 FROM store_order
                 WHERE user_id = ?
                 ORDER BY id DESC
@@ -193,9 +265,8 @@ public class OrderDAO {
     public List<Order> findAll() {
 
         String sql = """
-                SELECT id, user_id, full_name, phone, address, total,
-                       payment_method, payment_status, status,
-                       vnp_txn_ref, created_at
+                SELECT
+                """ + SELECT_COLUMNS + """
                 FROM store_order
                 ORDER BY id DESC
                 """;
@@ -220,9 +291,8 @@ public class OrderDAO {
     public List<Order> findByUser(int userId) {
 
         String sql = """
-                SELECT id, user_id, full_name, phone, address, total,
-                       payment_method, payment_status, status,
-                       vnp_txn_ref, created_at
+                SELECT
+                """ + SELECT_COLUMNS + """
                 FROM store_order
                 WHERE user_id = ?
                 ORDER BY id DESC
@@ -307,7 +377,7 @@ public class OrderDAO {
         }
     }
 
-    /* ================= UPDATE ================= */
+    /* ================= UPDATE ORDER STATUS ================= */
 
     public void updateStatus(int orderId, String status) {
 
@@ -413,6 +483,75 @@ public class OrderDAO {
         }
     }
 
+    /* ================= UPDATE SHIPPING ================= */
+
+    public void updateShippingCreated(int orderId,
+                                      String shippingProvider,
+                                      String shippingCode) {
+
+        String sql = """
+                UPDATE store_order
+                SET shipping_provider = ?,
+                    shipping_code = ?,
+                    shipping_status = 'CREATED'
+                WHERE id = ?
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, defaultIfBlank(shippingProvider, "INTERNAL"));
+            statement.setString(2, shippingCode);
+            statement.setInt(3, orderId);
+
+            statement.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new RuntimeException("OrderDAO.updateShippingCreated error", e);
+        }
+    }
+
+    public void updateShippingStatus(int orderId, String shippingStatus) {
+
+        String normalizedStatus = defaultIfBlank(shippingStatus, "PENDING").toUpperCase();
+
+        String sql;
+
+        if ("DELIVERING".equals(normalizedStatus)) {
+            sql = """
+                    UPDATE store_order
+                    SET shipping_status = ?,
+                        shipped_at = COALESCE(shipped_at, NOW())
+                    WHERE id = ?
+                    """;
+        } else if ("DELIVERED".equals(normalizedStatus)) {
+            sql = """
+                    UPDATE store_order
+                    SET shipping_status = ?,
+                        delivered_at = COALESCE(delivered_at, NOW())
+                    WHERE id = ?
+                    """;
+        } else {
+            sql = """
+                    UPDATE store_order
+                    SET shipping_status = ?
+                    WHERE id = ?
+                    """;
+        }
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, normalizedStatus);
+            statement.setInt(2, orderId);
+
+            statement.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new RuntimeException("OrderDAO.updateShippingStatus error", e);
+        }
+    }
+
     /* ================= VNPAY ================= */
 
     public void setVnpTxnRef(int orderId, String txnRef) {
@@ -442,9 +581,8 @@ public class OrderDAO {
     public Order findByTxnRef(String txnRef) {
 
         String sql = """
-                SELECT id, user_id, full_name, phone, address, total,
-                       payment_method, payment_status, status,
-                       vnp_txn_ref, created_at
+                SELECT
+                """ + SELECT_COLUMNS + """
                 FROM store_order
                 WHERE vnp_txn_ref = ?
                 """;
@@ -728,6 +866,10 @@ public class OrderDAO {
                 vnd0(resultSet.getBigDecimal("total"))
         );
 
+        order.setCouponDiscount(
+                vnd0(resultSet.getBigDecimal("coupon_discount"))
+        );
+
         order.setPaymentMethod(
                 resultSet.getString("payment_method")
         );
@@ -744,12 +886,50 @@ public class OrderDAO {
                 resultSet.getString("vnp_txn_ref")
         );
 
-        Timestamp timestamp =
+        order.setShippingMethod(
+                resultSet.getString("shipping_method")
+        );
+
+        order.setShippingProvider(
+                resultSet.getString("shipping_provider")
+        );
+
+        order.setShippingFee(
+                vnd0(resultSet.getBigDecimal("shipping_fee"))
+        );
+
+        order.setShippingCode(
+                resultSet.getString("shipping_code")
+        );
+
+        order.setShippingStatus(
+                resultSet.getString("shipping_status")
+        );
+
+        Timestamp shippedAt =
+                resultSet.getTimestamp("shipped_at");
+
+        if (shippedAt != null) {
+            order.setShippedAt(
+                    shippedAt.toLocalDateTime()
+            );
+        }
+
+        Timestamp deliveredAt =
+                resultSet.getTimestamp("delivered_at");
+
+        if (deliveredAt != null) {
+            order.setDeliveredAt(
+                    deliveredAt.toLocalDateTime()
+            );
+        }
+
+        Timestamp createdAt =
                 resultSet.getTimestamp("created_at");
 
-        if (timestamp != null) {
+        if (createdAt != null) {
             order.setCreatedAt(
-                    timestamp.toLocalDateTime()
+                    createdAt.toLocalDateTime()
             );
         }
 
