@@ -1,21 +1,31 @@
 package com.webshop.app.filter;
 
-import com.webshop.app.dao.CategoryDAO;
-import com.webshop.app.dao.PolicyDAO;
+import com.webshop.app.dao.*;
+
 import jakarta.servlet.*;
-import jakarta.servlet.annotation.WebFilter; // Sửa import thành WebFilter
+import jakarta.servlet.annotation.WebFilter;
 
 import java.io.IOException;
 
-@WebFilter("/*") // Thay @WebServlet thành @WebFilter
+@WebFilter("/*")
 public class GlobalDataFilter implements Filter {
-    @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
-        CategoryDAO cdao = new CategoryDAO();
-        PolicyDAO pdao = new PolicyDAO();
 
-        request.setAttribute("categoryList", cdao.findActiveForMenu());
-        request.setAttribute("policyList", pdao.getAllPolicies());
+    private WebsiteSettingDAO settingDAO = new WebsiteSettingDAO();
+    private PageDAO pageDAO = new PageDAO();
+
+    @Override
+    public void doFilter(ServletRequest request,
+                         ServletResponse response,
+                         FilterChain chain)
+            throws IOException, ServletException {
+
+        // LOAD SETTINGS
+        request.setAttribute("settings",
+                settingDAO.getAllSettings());
+
+        // FOOTER PAGES (policy)
+        request.setAttribute("footerPages",
+                pageDAO.getFooterPages());
 
         chain.doFilter(request, response);
     }
