@@ -938,3 +938,19 @@
 	background: #c72c79 !important;
 	transform: translateY(-1px);
 }
+.delivery-option.is-disabled {
+	opacity: 0.55;
+	cursor: not-allowed;
+	background: #f9fafb;
+	border-color: #e5e7eb;
+}
+
+.delivery-option.is-disabled input {
+	cursor: not-allowed;
+}
+
+.delivery-option.is-disabled .delivery-info strong,
+.delivery-option.is-disabled .delivery-info small,
+.delivery-option.is-disabled .delivery-fee {
+	color: #9ca3af;
+}
