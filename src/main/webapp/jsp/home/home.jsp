@@ -372,7 +372,7 @@ window.onload = function () {
 
 function saveVoucher(btn) {
 
-	const code = btn.getAttribute('data-code'); // 👈 FIX QUAN TRỌNG
+	const code = btn.getAttribute('data-code'); 
 	const isLoggedIn = btn.getAttribute('data-loggedin') === 'true';
 
 	if (!isLoggedIn) {
@@ -450,7 +450,7 @@ function showVoucherDetail(code, type, desc, minOrder, endDate) {
 		html += "Đơn tối thiểu: 0₫<br>";
 	}
 
-	// 5. HẠN SỬ DỤNG 
+	// 5. HẠN SỬ DỤNG
 	if (endDate && endDate.trim() !== "") {
 		// Định dạng mặc định từ DB thường là yyyy-MM-dd, ta có thể hiển thị trực tiếp hoặc format lại
 		html += "Hạn sử dụng đến ngày: <b style='color: #e11d48;'>" + endDate + "</b><br>";
