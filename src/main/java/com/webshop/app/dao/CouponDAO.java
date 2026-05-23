@@ -18,23 +18,28 @@ public class CouponDAO {
 
     private static final String DEFAULT_RANK_CODE = "MEMBER";
 
+    private static final String COUPON_SELECT_COLUMNS = """
+            id,
+            code,
+            discount_percent,
+            max_discount_amount,
+            max_uses,
+            used_count,
+            is_active,
+            start_date,
+            end_date,
+            type,
+            description,
+            min_order_amount,
+            min_rank_code
+            """;
+
     /* ===================== FRONTEND ===================== */
 
     public Coupon findByCode(String code) {
         String sql = """
-                SELECT id,
-                       code,
-                       discount_percent,
-                       max_discount_amount,
-                       max_uses,
-                       used_count,
-                       is_active,
-                       start_date,
-                       end_date,
-                       type,
-                       description,
-                       min_order_amount,
-                       min_rank_code
+                SELECT
+                """ + COUPON_SELECT_COLUMNS + """
                 FROM store_coupon
                 WHERE code = ?
                   AND is_active = 1
@@ -71,25 +76,87 @@ public class CouponDAO {
         }
     }
 
+    public List<Coupon> findActiveCouponsForHome() {
+        List<Coupon> coupons = new ArrayList<>();
+
+        String sql = """
+                SELECT
+                """ + COUPON_SELECT_COLUMNS + """
+                FROM store_coupon
+                WHERE is_active = 1
+                  AND (start_date IS NULL OR start_date <= CURDATE())
+                  AND (end_date IS NULL OR end_date >= CURDATE())
+                  AND (max_uses <= 0 OR used_count < max_uses)
+                ORDER BY discount_percent DESC, id DESC
+                LIMIT 6
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet resultSet = statement.executeQuery()) {
+
+            while (resultSet.next()) {
+                coupons.add(mapRow(resultSet));
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("CouponDAO.findActiveCouponsForHome error", e);
+        }
+
+        return coupons;
+    }
+
+    /*
+     * Lấy danh sách mã khuyến mãi phù hợp với tổng đơn hiện tại ở checkout.
+     * Điều kiện:
+     * - Mã đang active.
+     * - Trong thời gian sử dụng.
+     * - Còn lượt dùng.
+     * - Đơn hàng đạt min_order_amount nếu mã có yêu cầu.
+     */
+    public List<Coupon> findAvailableCouponsForCheckout(BigDecimal subtotal) {
+        List<Coupon> coupons = new ArrayList<>();
+
+        BigDecimal safeSubtotal = subtotal != null ? subtotal : BigDecimal.ZERO;
+
+        String sql = """
+                SELECT
+                """ + COUPON_SELECT_COLUMNS + """
+                FROM store_coupon
+                WHERE is_active = 1
+                  AND (start_date IS NULL OR start_date <= CURDATE())
+                  AND (end_date IS NULL OR end_date >= CURDATE())
+                  AND (max_uses <= 0 OR used_count < max_uses)
+                  AND (min_order_amount IS NULL OR min_order_amount <= ?)
+                ORDER BY discount_percent DESC, id DESC
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setBigDecimal(1, safeSubtotal);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    coupons.add(mapRow(resultSet));
+                }
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("CouponDAO.findAvailableCouponsForCheckout error", e);
+        }
+
+        return coupons;
+    }
+
     /* ===================== ADMIN ===================== */
 
     public List<Coupon> findAll() {
         List<Coupon> coupons = new ArrayList<>();
 
         String sql = """
-                SELECT id,
-                       code,
-                       discount_percent,
-                       max_discount_amount,
-                       max_uses,
-                       used_count,
-                       is_active,
-                       start_date,
-                       end_date,
-                       type,
-                       description,
-                       min_order_amount,
-                       min_rank_code
+                SELECT
+                """ + COUPON_SELECT_COLUMNS + """
                 FROM store_coupon
                 ORDER BY id DESC
                 """;
@@ -111,19 +178,8 @@ public class CouponDAO {
 
     public Coupon findById(int id) {
         String sql = """
-                SELECT id,
-                       code,
-                       discount_percent,
-                       max_discount_amount,
-                       max_uses,
-                       used_count,
-                       is_active,
-                       start_date,
-                       end_date,
-                       type,
-                       description,
-                       min_order_amount,
-                       min_rank_code
+                SELECT
+                """ + COUPON_SELECT_COLUMNS + """
                 FROM store_coupon
                 WHERE id = ?
                 """;
@@ -382,50 +438,13 @@ public class CouponDAO {
         }
     }
 
-    public List<Coupon> findActiveCouponsForHome() {
-        List<Coupon> coupons = new ArrayList<>();
-
-        String sql = """
-                SELECT id,
-                       code,
-                       discount_percent,
-                       max_discount_amount,
-                       max_uses,
-                       used_count,
-                       is_active,
-                       start_date,
-                       end_date,
-                       type,
-                       description,
-                       min_order_amount,
-                       min_rank_code
-                FROM store_coupon
-                WHERE is_active = 1
-                  AND (start_date IS NULL OR start_date <= CURDATE())
-                  AND (end_date IS NULL OR end_date >= CURDATE())
-                  AND (max_uses <= 0 OR used_count < max_uses)
-                ORDER BY discount_percent DESC, id DESC
-                LIMIT 6
-                """;
-
-        try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql);
-             ResultSet resultSet = statement.executeQuery()) {
-
-            while (resultSet.next()) {
-                coupons.add(mapRow(resultSet));
-            }
-
-        } catch (SQLException e) {
-            throw new RuntimeException("CouponDAO.findActiveCouponsForHome error", e);
-        }
-
-        return coupons;
-    }
-
     /* ===================== LƯU VÀ HIỂN THỊ VOUCHER USER ===================== */
 
     public boolean saveVoucherToUserCollection(int userId, String couponCode) {
+        if (userId <= 0 || isBlank(couponCode)) {
+            return false;
+        }
+
         String sql = """
                 INSERT IGNORE INTO user_coupon (user_id, coupon_id)
                 SELECT ?, id
@@ -474,7 +493,7 @@ public class CouponDAO {
                   AND (c.start_date IS NULL OR c.start_date <= CURDATE())
                   AND (c.end_date IS NULL OR c.end_date >= CURDATE())
                   AND (c.max_uses <= 0 OR c.used_count < c.max_uses)
-                ORDER BY c.discount_percent DESC, c.id DESC
+                ORDER BY uc.saved_at DESC
                 """;
 
         try (Connection connection = DBConnection.getConnection();
@@ -552,6 +571,7 @@ public class CouponDAO {
         if (value == null || value.compareTo(BigDecimal.ZERO) < 0) {
             return BigDecimal.ZERO;
         }
+
         return value;
     }
 
@@ -561,8 +581,9 @@ public class CouponDAO {
 
     private String normalizeCouponType(String type) {
         if (type == null || type.isBlank()) {
-            return "PERCENT";
+            return "DISCOUNT";
         }
+
         return type.trim().toUpperCase();
     }
 
@@ -570,6 +591,7 @@ public class CouponDAO {
         if (rankCode == null || rankCode.isBlank()) {
             return DEFAULT_RANK_CODE;
         }
+
         return rankCode.trim().toUpperCase();
     }
 
@@ -577,6 +599,11 @@ public class CouponDAO {
         if (text == null || text.trim().isEmpty()) {
             return null;
         }
+
         return text.trim();
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 }
