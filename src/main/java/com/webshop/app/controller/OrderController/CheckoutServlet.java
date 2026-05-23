@@ -24,6 +24,8 @@ public class CheckoutServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
 
+    private static final String DEFAULT_SHIPPING_METHOD = "ECONOMY";
+
     private final CheckoutService checkoutService = new CheckoutService();
 
     private BigDecimal calcSubTotal(Map<String, CartItem> cart) {
@@ -48,6 +50,36 @@ public class CheckoutServlet extends HttpServlet {
 
     private String trim(String s) {
         return s == null ? "" : s.trim();
+    }
+
+    private String normalizeShippingMethod(String shippingMethod) {
+        String method = trim(shippingMethod).toUpperCase();
+
+        Set<String> validShippingMethods = Set.of("ECONOMY", "FAST", "EXPRESS");
+
+        if (validShippingMethods.contains(method)) {
+            return method;
+        }
+
+        return DEFAULT_SHIPPING_METHOD;
+    }
+
+    private BigDecimal parseShippingFee(String shippingFeeRaw) {
+        if (isBlank(shippingFeeRaw)) {
+            return BigDecimal.ZERO;
+        }
+
+        try {
+            BigDecimal fee = new BigDecimal(shippingFeeRaw.trim());
+
+            if (fee.compareTo(BigDecimal.ZERO) < 0) {
+                return BigDecimal.ZERO;
+            }
+
+            return fee;
+        } catch (NumberFormatException e) {
+            return BigDecimal.ZERO;
+        }
     }
 
     /**
@@ -130,6 +162,12 @@ public class CheckoutServlet extends HttpServlet {
         req.setAttribute("formWardName", trim(req.getParameter("wardName")));
         req.setAttribute("formWardCode", trim(req.getParameter("wardCode")));
         req.setAttribute("formShippingAddress", trim(req.getParameter("shippingAddress")));
+
+        req.setAttribute("formShippingMethod",
+                normalizeShippingMethod(req.getParameter("shippingMethod")));
+
+        req.setAttribute("formShippingFee",
+                parseShippingFee(req.getParameter("shippingFee")));
     }
 
     private Map<String, String> validateCheckoutForm(HttpServletRequest req,
@@ -146,6 +184,7 @@ public class CheckoutServlet extends HttpServlet {
         String wardCode = trim(req.getParameter("wardCode"));
 
         String paymentMethod = trim(req.getParameter("paymentMethod"));
+        String shippingMethod = normalizeShippingMethod(req.getParameter("shippingMethod"));
 
         if (checkoutCart == null || checkoutCart.isEmpty()) {
             errors.put("general", "Không có sản phẩm nào để thanh toán.");
@@ -183,6 +222,12 @@ public class CheckoutServlet extends HttpServlet {
             errors.put("paymentMethod", "Vui lòng chọn phương thức thanh toán.");
         } else if (!validPaymentMethods.contains(paymentMethod)) {
             errors.put("paymentMethod", "Phương thức thanh toán không hợp lệ.");
+        }
+
+        Set<String> validShippingMethods = Set.of("ECONOMY", "FAST", "EXPRESS");
+
+        if (!validShippingMethods.contains(shippingMethod)) {
+            errors.put("shippingMethod", "Phương thức vận chuyển không hợp lệ.");
         }
 
         return errors;
@@ -339,6 +384,11 @@ public class CheckoutServlet extends HttpServlet {
         String finalAddress = buildFinalShippingAddress(req);
         String paymentMethod = trim(req.getParameter("paymentMethod"));
 
+        String province = trim(req.getParameter("province"));
+
+        String shippingMethod = normalizeShippingMethod(req.getParameter("shippingMethod"));
+        BigDecimal submittedShippingFee = parseShippingFee(req.getParameter("shippingFee"));
+
         String couponCode = req.getParameter("couponCode");
 
         if (isBlank(couponCode)) {
@@ -350,24 +400,17 @@ public class CheckoutServlet extends HttpServlet {
         }
 
         try {
-            // 1. Tạo Map mới với key là Integer
-            Map<Integer, CartItem> integerCart = new HashMap<>();
-
-            // 2. Lặp qua các item để đưa vào Map mới
-            for (CartItem item : cart.values()) {
-                // Giả sử CartItem có phương thức getProductId() trả về int
-                integerCart.put(item.getProductId(), item);
-            }
-
-            // 3. Gọi hàm checkoutService với Map đã chuyển đổi
             int orderId = checkoutService.checkout(
                     user.getId(),
-                    cart, // Sử dụng biến đã convert
+                    cart,
                     fullName,
                     phone,
                     finalAddress,
                     paymentMethod,
-                    couponCode
+                    couponCode,
+                    shippingMethod,
+                    submittedShippingFee,
+                    province
             );
 
             if (orderId <= 0) {
