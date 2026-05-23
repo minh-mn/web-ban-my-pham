@@ -122,9 +122,7 @@ public class CheckoutService {
 		 * =========================
 		 * RANK DISCOUNT
 		 * =========================
-		 * Rank discount được tính sau coupon:
-		 * subtotal - couponDiscount = amountAfterCoupon
-		 * rankDiscount = amountAfterCoupon * rankPercent
+		 * Rank discount được tính sau coupon.
 		 */
 		BigDecimal rankDiscount = calculateRankDiscount(userId, amountAfterCoupon);
 
@@ -138,9 +136,7 @@ public class CheckoutService {
 		 * =========================
 		 * SHIPPING FEE + FREESHIP
 		 * =========================
-		 * - Nếu amountAfterCoupon >= 500,000 thì freeship.
-		 * - Nếu có province, backend tự tính lại phí ship.
-		 * - Nếu province null/blank, dùng submittedShippingFee làm fallback để không phá các luồng cũ.
+		 * Backend tự tính lại phí ship, không tin hoàn toàn dữ liệu từ client.
 		 */
 		BigDecimal shippingFee = calculateShippingFee(
 				shippingMethod,
@@ -155,7 +151,6 @@ public class CheckoutService {
 		try (Connection conn = DBConnection.getConnection()) {
 			conn.setAutoCommit(false);
 
-			// Kiểm tra userId phải tồn tại trong bảng users(id)
 			if (!existsUsersId(conn, userId)) {
 				conn.rollback();
 				throw new IllegalStateException("Invalid session userId (not found in users): " + userId);
@@ -165,7 +160,6 @@ public class CheckoutService {
 			 * =========================
 			 * LOCK & CHECK STOCK
 			 * =========================
-			 * MySQL dùng FOR UPDATE để khóa dòng sản phẩm trong transaction.
 			 */
 			String lockSql = "SELECT stock FROM store_product WHERE id = ? FOR UPDATE";
 
@@ -186,11 +180,6 @@ public class CheckoutService {
 			 * =========================
 			 * CREATE ORDER
 			 * =========================
-			 * Lưu ý:
-			 * - total đã bao gồm coupon discount, rank discount và shippingFee.
-			 * - Nếu muốn lưu riêng shipping_method/shipping_fee,
-			 *   cần thêm cột trong store_order, setter trong Order model,
-			 *   và sửa OrderDAO.create().
 			 */
 			Order o = new Order();
 			o.setUserId(userId);
@@ -198,7 +187,19 @@ public class CheckoutService {
 			o.setPhone(phone);
 			o.setAddress(address);
 			o.setTotal(total);
+			o.setCouponDiscount(couponDiscount);
 			o.setPaymentMethod(paymentMethod);
+
+			/*
+			 * =========================
+			 * SAVE SHIPPING INFO
+			 * =========================
+			 */
+			o.setShippingMethod(shippingMethod);
+			o.setShippingProvider(resolveShippingProvider(shippingMethod));
+			o.setShippingFee(shippingFee);
+			o.setShippingCode(null);
+			o.setShippingStatus("PENDING");
 
 			if (isCod) {
 				o.setPaymentStatus("PENDING");
@@ -260,12 +261,6 @@ public class CheckoutService {
 				throw new RuntimeException("Order not found: " + orderId);
 			}
 
-			/*
-			 * =========================
-			 * IDEMPOTENT CHECK
-			 * =========================
-			 * Nếu order item đã tồn tại, không insert lại để tránh trừ kho 2 lần.
-			 */
 			boolean hasItems = itemDAO.existsByOrderId(conn, orderId);
 
 			if (hasItems) {
@@ -279,11 +274,6 @@ public class CheckoutService {
 				return;
 			}
 
-			/*
-			 * =========================
-			 * LOCK & CHECK STOCK
-			 * =========================
-			 */
 			String lockSql = "SELECT stock FROM store_product WHERE id = ? FOR UPDATE";
 
 			for (CartItem item : cart.values()) {
@@ -303,11 +293,6 @@ public class CheckoutService {
 
 			createOrderItemsAndUpdateStock(conn, orderId, cart);
 
-			/*
-			 * =========================
-			 * UPDATE COUPON USED COUNT
-			 * =========================
-			 */
 			if (couponCode != null && !couponCode.isBlank()) {
 				Coupon coupon = couponDAO.findByCode(couponCode.trim());
 
@@ -373,10 +358,6 @@ public class CheckoutService {
 		try {
 			return money0(userRankService.calculateRankDiscountAmount(userId, safeAmount));
 		} catch (RuntimeException e) {
-			/*
-			 * Nếu bảng store_rank chưa migrate hoặc có lỗi dữ liệu rank,
-			 * không làm hỏng luồng checkout.
-			 */
 			e.printStackTrace();
 			return BigDecimal.ZERO;
 		}
@@ -405,10 +386,6 @@ public class CheckoutService {
 		return money0(total);
 	}
 
-	/*
-	 * Preview tổng mới có ship.
-	 * Có thể dùng cho AJAX nếu sau này muốn đồng bộ frontend/backend.
-	 */
 	public BigDecimal calculateTotalAfterDiscountsAndShipping(int userId,
 															  BigDecimal subTotal,
 															  String couponCode,
@@ -478,11 +455,27 @@ public class CheckoutService {
 
 		String method = shippingMethod.trim().toUpperCase();
 
-		if (SHIPPING_FAST.equals(method) || SHIPPING_EXPRESS.equals(method) || SHIPPING_ECONOMY.equals(method)) {
+		if (SHIPPING_FAST.equals(method)
+				|| SHIPPING_EXPRESS.equals(method)
+				|| SHIPPING_ECONOMY.equals(method)) {
 			return method;
 		}
 
 		return SHIPPING_ECONOMY;
+	}
+
+	private String resolveShippingProvider(String shippingMethod) {
+		String method = normalizeShippingMethod(shippingMethod);
+
+		if (SHIPPING_FAST.equals(method)) {
+			return "GHN";
+		}
+
+		if (SHIPPING_EXPRESS.equals(method)) {
+			return "INTERNAL";
+		}
+
+		return "GHTK";
 	}
 
 	private BigDecimal calculateShippingFee(String shippingMethod,
@@ -492,19 +485,12 @@ public class CheckoutService {
 
 		BigDecimal safeAmountAfterCoupon = money0(amountAfterCoupon);
 
-		/*
-		 * Freeship: đơn sau voucher/coupon từ 500k.
-		 */
 		if (safeAmountAfterCoupon.compareTo(FREE_SHIP_THRESHOLD) >= 0) {
 			return BigDecimal.ZERO;
 		}
 
 		String method = normalizeShippingMethod(shippingMethod);
 
-		/*
-		 * Nếu không có province, dùng submittedShippingFee làm fallback để tránh phá luồng cũ.
-		 * Với luồng checkout mới, province luôn được gửi từ form và backend sẽ tự tính lại.
-		 */
 		if (province == null || province.isBlank()) {
 			return money0(submittedShippingFee);
 		}
@@ -524,7 +510,9 @@ public class CheckoutService {
 				break;
 		}
 
-		BigDecimal areaExtraFee = isHcmCity(province) ? BigDecimal.ZERO : new BigDecimal("15000");
+		BigDecimal areaExtraFee = isHcmCity(province)
+				? BigDecimal.ZERO
+				: new BigDecimal("15000");
 
 		return money0(baseFee.add(areaExtraFee));
 	}
