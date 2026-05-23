@@ -6,11 +6,42 @@
 <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/checkout.css?v=20260523_coupon_modal">
 
 <style>
+  /* =========================================================
+     CHECKOUT PAGE OVERRIDES
+     Tone: hồng thương hiệu dịu, chữ xanh đen, nền sạch
+     ========================================================= */
+
+  :root {
+    --checkout-brand: #d63384;
+    --checkout-brand-dark: #b1125b;
+    --checkout-brand-strong: #c21874;
+    --checkout-brand-soft: #fff3f8;
+    --checkout-brand-soft-2: #fff8fb;
+    --checkout-brand-border: #f3b8d2;
+    --checkout-good: #16a34a;
+    --checkout-warning: #ff8a00;
+
+    --checkout-text: #1f2a44;
+    --checkout-text-2: #475569;
+    --checkout-muted: #7b8794;
+    --checkout-muted-2: #a0a8b4;
+    --checkout-border: #e8edf3;
+    --checkout-surface: #ffffff;
+    --checkout-shadow: 0 22px 60px rgba(31, 42, 68, 0.18);
+  }
+
+  .checkout-page,
+  .checkout-page *,
+  .coupon-modal,
+  .coupon-modal * {
+    font-family: "Inter", "Segoe UI", Roboto, Arial, sans-serif;
+  }
+
   /* ================= BUTTON STATE: NHẠT / ĐẬM ================= */
 
   .btn-apply-coupon,
   .btn-place-order {
-    transition: background-color 0.25s ease, opacity 0.25s ease, transform 0.2s ease;
+    transition: background-color 0.25s ease, opacity 0.25s ease, transform 0.2s ease, box-shadow 0.2s ease;
     border: none;
     outline: none;
   }
@@ -22,26 +53,28 @@
     cursor: not-allowed !important;
     opacity: 1 !important;
     transform: none !important;
+    box-shadow: none !important;
   }
 
   .btn-apply-coupon:not(:disabled),
   .btn-place-order:not(:disabled) {
-    background: #d63384 !important;
+    background: linear-gradient(180deg, #df4b93 0%, var(--checkout-brand) 100%) !important;
     color: #ffffff !important;
     cursor: pointer !important;
     opacity: 1 !important;
+    box-shadow: 0 10px 24px rgba(214, 51, 132, 0.2);
   }
 
   .btn-apply-coupon:not(:disabled):hover,
   .btn-place-order:not(:disabled):hover {
-    background: #c72c79 !important;
+    background: linear-gradient(180deg, #cf3d84 0%, #bd256f 100%) !important;
     transform: translateY(-1px);
   }
 
   /* ================= DELIVERY OPTIONS + FREESHIP ================= */
 
   .delivery-empty {
-    color: #777;
+    color: var(--checkout-muted);
     font-size: 15px;
   }
 
@@ -62,7 +95,7 @@
     align-items: center;
     gap: 14px;
     padding: 14px 16px;
-    border: 1px solid #eee;
+    border: 1px solid var(--checkout-border);
     border-radius: 16px;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -71,12 +104,12 @@
 
   .delivery-option:hover,
   .delivery-option:has(input:checked) {
-    border-color: #d63384;
-    background: #fff5fa;
+    border-color: var(--checkout-brand);
+    background: var(--checkout-brand-soft);
   }
 
   .delivery-option input {
-    accent-color: #d63384;
+    accent-color: var(--checkout-brand);
   }
 
   .delivery-info {
@@ -87,18 +120,18 @@
 
   .delivery-info strong {
     font-size: 15px;
-    color: #111827;
+    color: var(--checkout-text);
   }
 
   .delivery-info small {
     margin-top: 4px;
-    color: #6b7280;
+    color: var(--checkout-muted);
     font-size: 13px;
   }
 
   .delivery-fee {
-    font-weight: 700;
-    color: #d63384;
+    font-weight: 800;
+    color: var(--checkout-brand);
     white-space: nowrap;
   }
 
@@ -108,7 +141,7 @@
     border-radius: 14px;
     background: #ecfdf5;
     color: #047857;
-    font-weight: 700;
+    font-weight: 800;
     font-size: 14px;
   }
 
@@ -135,7 +168,66 @@
     color: #9ca3af !important;
   }
 
-  /* ================= COUPON MODAL ================= */
+  /* ================= COUPON BOX ================= */
+
+  .coupon-select-btn {
+    border-color: var(--checkout-border) !important;
+    color: var(--checkout-text-2) !important;
+    background: #ffffff !important;
+    font-weight: 750 !important;
+    letter-spacing: 0.01em;
+    transition: all 0.2s ease;
+  }
+
+  .coupon-select-btn:hover {
+    border-color: var(--checkout-brand-border) !important;
+    background: var(--checkout-brand-soft-2) !important;
+    color: var(--checkout-brand) !important;
+    box-shadow: 0 8px 18px rgba(214, 51, 132, 0.08);
+  }
+
+  .coupon-select-btn.has-selected {
+    border-color: var(--checkout-brand-border) !important;
+    background: var(--checkout-brand-soft) !important;
+    color: var(--checkout-text) !important;
+  }
+
+  .coupon-select-btn.has-selected .coupon-open-text {
+    color: var(--checkout-brand);
+    font-weight: 900;
+    letter-spacing: 0.04em;
+  }
+
+  .coupon-arrow {
+    color: #a1a8b3 !important;
+  }
+
+  .coupon-input-row input {
+    color: var(--checkout-text) !important;
+    border-color: var(--checkout-border) !important;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .coupon-input-row input::placeholder {
+    color: #98a2b3;
+    text-transform: none;
+  }
+
+  .coupon-input-row input:focus {
+    border-color: var(--checkout-brand-border) !important;
+    box-shadow: 0 0 0 4px rgba(214, 51, 132, 0.10) !important;
+  }
+
+  .coupon-message.success {
+    color: #15803d !important;
+  }
+
+  .coupon-message.error {
+    color: #dc2626 !important;
+  }
+
+  /* ================= COUPON MODAL - 1 LIST / BEST SUGGESTION ================= */
 
   .coupon-modal {
     position: fixed;
@@ -144,6 +236,7 @@
     display: none;
     align-items: center;
     justify-content: center;
+    padding: 26px;
   }
 
   .coupon-modal.show {
@@ -153,144 +246,504 @@
   .coupon-modal-backdrop {
     position: absolute;
     inset: 0;
-    background: rgba(17, 24, 39, 0.45);
+    background: rgba(15, 23, 42, 0.50);
+    backdrop-filter: blur(2.5px);
   }
 
   .coupon-modal-dialog {
     position: relative;
-    width: min(560px, calc(100vw - 32px));
-    max-height: 80vh;
-    background: #ffffff;
-    border-radius: 20px;
-    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.22);
+    width: min(700px, calc(100vw - 32px));
+    max-height: min(86vh, 780px);
+    background: var(--checkout-surface);
+    border-radius: 22px;
+    box-shadow: var(--checkout-shadow);
     overflow: hidden;
     z-index: 1;
+    border: 1px solid rgba(243, 184, 210, 0.62);
   }
 
   .coupon-modal-header {
+    position: relative;
+    min-height: 72px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 18px 22px;
-    border-bottom: 1px solid #f1f1f1;
+    justify-content: center;
+    padding: 20px 74px;
+    border-bottom: 1px solid #f0f2f5;
+    background: linear-gradient(180deg, #ffffff 0%, #fff9fc 100%);
   }
 
   .coupon-modal-header h3 {
     margin: 0;
-    font-size: 18px;
-    font-weight: 800;
-    color: #111827;
+    color: var(--checkout-text);
+    font-size: 22px;
+    line-height: 1.25;
+    font-weight: 900;
+    text-align: center;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
 
   .coupon-modal-close {
-    width: 34px;
-    height: 34px;
+    position: absolute;
+    right: 18px;
+    top: 50%;
+    width: 42px;
+    height: 42px;
+    transform: translateY(-50%);
     border: none;
-    border-radius: 999px;
-    background: #f3f4f6;
-    color: #374151;
-    font-size: 24px;
-    line-height: 1;
+    border-radius: 50%;
+    background: transparent;
+    color: #475569;
     cursor: pointer;
+    transition: 0.18s ease;
+    font-size: 0;
+  }
+
+  .coupon-modal-close::before,
+  .coupon-modal-close::after {
+    content: "";
+    position: absolute;
+    left: 12px;
+    top: 20px;
+    width: 18px;
+    height: 2px;
+    border-radius: 999px;
+    background: currentColor;
+  }
+
+  .coupon-modal-close::before {
+    transform: rotate(45deg);
+  }
+
+  .coupon-modal-close::after {
+    transform: rotate(-45deg);
   }
 
   .coupon-modal-close:hover {
-    background: #ffe6f0;
-    color: #d63384;
+    background: #fff0f6;
+    color: var(--checkout-brand);
   }
 
   .coupon-modal-body {
-    padding: 18px 22px 22px;
+    max-height: calc(min(86vh, 780px) - 150px);
     overflow-y: auto;
-    max-height: calc(80vh - 72px);
+    padding: 22px 24px 96px;
+    background: #ffffff;
   }
 
-  .coupon-group-title {
-    margin: 8px 0 12px;
-    font-size: 14px;
-    font-weight: 800;
-    color: #374151;
+  .coupon-modal-body::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .coupon-modal-body::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .coupon-modal-body::-webkit-scrollbar-thumb {
+    background: #d6dae2;
+    border-radius: 999px;
+  }
+
+  .coupon-list-title {
+    margin: 4px 0 16px;
+    color: var(--checkout-text);
+    font-size: 15px;
+    line-height: 1.35;
+    font-weight: 850;
+    letter-spacing: 0.01em;
   }
 
   .coupon-list {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    margin-bottom: 18px;
+    gap: 14px;
+    margin-bottom: 22px;
   }
 
   .coupon-item {
     width: 100%;
-    display: flex;
-    align-items: stretch;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 0;
-    border: 1px solid #f2c4d7;
-    border-radius: 16px;
-    background: #fff7fb;
-    overflow: hidden;
+    min-height: 132px;
+    position: relative;
+    display: grid;
+    grid-template-columns: 92px 1fr 54px;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 18px 18px 20px;
+    border: 1.5px solid #f1c2d6;
+    border-radius: 18px;
+    background: linear-gradient(180deg, #fff8fb 0%, #fff3f8 100%);
     cursor: pointer;
     text-align: left;
-    transition: all 0.2s ease;
+    transition: 0.2s ease;
+    color: var(--checkout-text);
+    box-shadow: 0 8px 18px rgba(31, 42, 68, 0.04);
   }
 
-  .coupon-item:hover {
-    border-color: #d63384;
+  .coupon-item::before,
+  .coupon-item::after {
+    content: "";
+    position: absolute;
+    left: 92px;
+    width: 14px;
+    height: 14px;
+    background: #ffffff;
+    border: 1.5px solid #f1c2d6;
+    border-radius: 50%;
+    z-index: 2;
+    transform: translateX(-50%);
+  }
+
+  .coupon-item::before {
+    top: -8px;
+  }
+
+  .coupon-item::after {
+    bottom: -8px;
+  }
+
+  .coupon-item.is-usable {
+    border-color: #ee7cb2;
+    background: linear-gradient(180deg, #fff8fc 0%, #fff 100%);
+  }
+
+  .coupon-item.is-usable:hover {
+    border-color: var(--checkout-brand);
+    box-shadow: 0 14px 30px rgba(214, 51, 132, 0.13);
     transform: translateY(-1px);
-    box-shadow: 0 10px 24px rgba(214, 51, 132, 0.14);
   }
 
-  .coupon-ticket-left {
-    flex: 1;
-    padding: 14px 16px;
+  .coupon-item.is-selected {
+    border-color: var(--checkout-brand);
+    background: linear-gradient(180deg, #fff4f9 0%, #ffedf5 100%);
+    box-shadow: 0 16px 34px rgba(214, 51, 132, 0.16);
   }
 
-  .coupon-code {
-    font-size: 16px;
-    font-weight: 900;
-    color: #d63384;
-    letter-spacing: 0.4px;
+  .coupon-item.is-disabled {
+    border-color: #e9edf3;
+    background: #fcfcfd;
+    color: #8a94a6;
+    opacity: 0.58;
+    cursor: not-allowed;
+    box-shadow: none;
   }
 
-  .coupon-desc {
-    margin-top: 5px;
+  .coupon-item.is-disabled:hover {
+    transform: none;
+    box-shadow: none;
+    border-color: #e9edf3;
+  }
+
+  .coupon-best-badge {
+    position: absolute;
+    top: 12px;
+    right: 68px;
+    left: auto;
+    transform: none;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    min-width: 62px;
+    height: 20px;
+    padding: 0 9px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #f4a9c8 0%, #d7659a 100%);
+    color: #ffffff;
+    font-size: 11px;
+    line-height: 1;
+    font-weight: 850;
+    letter-spacing: 0.01em;
+    box-shadow: 0 6px 14px rgba(215, 101, 154, 0.24);
+    z-index: 4;
+    pointer-events: none;
+  }
+
+  .coupon-item.is-best .coupon-best-badge {
+    display: inline-flex;
+  }
+
+  .coupon-voucher-icon {
+    width: 62px;
+    height: 62px;
+    border-radius: 50%;
+    background: linear-gradient(180deg, #f8b7cc 0%, #ea91b0 100%);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 27px;
+    box-shadow: inset 0 -5px 12px rgba(177, 18, 91, 0.08);
+  }
+
+  .coupon-item.is-disabled .coupon-voucher-icon {
+    background: #e7eaf0;
+    color: #ffffff;
+  }
+
+  .coupon-voucher-content {
+    min-width: 0;
+  }
+
+  .coupon-discount-label {
+    margin-bottom: 4px;
+    color: var(--checkout-text-2);
     font-size: 14px;
-    color: #111827;
-    font-weight: 600;
+    font-weight: 800;
+  }
+
+  .coupon-title-line {
+    margin: 0;
+    color: var(--checkout-text);
+    font-size: 22px;
+    line-height: 1.22;
+    font-weight: 900;
   }
 
   .coupon-condition {
     margin-top: 5px;
-    font-size: 13px;
-    color: #6b7280;
+    color: var(--checkout-muted);
+    font-size: 13.5px;
+    line-height: 1.45;
+    font-weight: 650;
   }
 
-  .coupon-ticket-right {
-    width: 88px;
+  .coupon-meta-line {
+    margin-top: 8px;
     display: flex;
+    flex-wrap: wrap;
+    gap: 6px 10px;
     align-items: center;
-    justify-content: center;
-    background: #d63384;
-    color: #ffffff;
+    color: #98a2b3;
+    font-size: 13px;
+    line-height: 1.4;
+    font-weight: 650;
+  }
+
+  .coupon-meta-code {
+    color: var(--checkout-text-2);
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .coupon-detail-link {
+    border: none;
+    background: transparent;
+    color: #4b72d9;
+    font-size: 13.5px;
+    font-weight: 800;
+    cursor: default;
+    padding: 0;
+  }
+
+  .coupon-disabled-reason {
+    display: none;
+    margin-top: 7px;
+    color: #b45309;
+    font-size: 13px;
+    line-height: 1.4;
     font-weight: 800;
   }
 
+  .coupon-item.is-disabled .coupon-disabled-reason {
+    display: block;
+  }
+
+  .coupon-ticket-right {
+    width: 42px;
+    height: 42px;
+    justify-self: end;
+    border-radius: 50%;
+    border: 2px solid #efc2d8;
+    background: #fff8fb;
+    color: #c65b8c;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0;
+    font-weight: 900;
+    transition: 0.18s ease;
+    box-shadow: 0 4px 10px rgba(214, 51, 132, 0.06);
+  }
+
+  .coupon-ticket-right::before {
+    content: "+";
+    font-size: 25px;
+    line-height: 1;
+    font-weight: 650;
+  }
+
+  .coupon-item.is-usable:hover .coupon-ticket-right {
+    border-color: #d7659a;
+    background: #fff0f6;
+    color: #b1125b;
+  }
+
+  .coupon-item.is-selected .coupon-ticket-right {
+    background: linear-gradient(180deg, #fde1ee 0%, #f7bfd7 100%);
+    border-color: #d63384;
+    color: #b1125b;
+    box-shadow: 0 8px 18px rgba(214, 51, 132, 0.18);
+  }
+
+  .coupon-item.is-selected .coupon-ticket-right::before {
+    content: "✓";
+    font-size: 23px;
+    font-weight: 950;
+  }
+
+  .coupon-item.is-disabled .coupon-ticket-right {
+    background: #f6f7f9;
+    border-color: #e5e8ee;
+    color: #c1c7d0;
+    box-shadow: none;
+  }
+
   .coupon-empty {
-    padding: 26px 12px;
+    padding: 34px 20px;
     text-align: center;
-    color: #6b7280;
+    color: var(--checkout-muted);
+    background: #fafafa;
+    border: 1px dashed #d7dee8;
+    border-radius: 18px;
   }
 
   .coupon-empty-icon {
-    font-size: 34px;
-    margin-bottom: 8px;
+    width: 58px;
+    height: 58px;
+    margin: 0 auto 10px;
+    border-radius: 50%;
+    background: #fff0f6;
+    color: var(--checkout-brand);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+  }
+
+  .coupon-modal-footer {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    min-height: 78px;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    background: rgba(255, 255, 255, 0.96);
+    border-top: 1px solid #f0f2f5;
+    box-shadow: 0 -10px 22px rgba(31, 42, 68, 0.06);
+    backdrop-filter: blur(8px);
+  }
+
+  .coupon-selected-count {
+    color: var(--checkout-text-2);
+    font-size: 15px;
+    font-weight: 750;
+  }
+
+  .coupon-selected-count strong {
+    color: var(--checkout-brand);
+    font-weight: 900;
+  }
+
+  .coupon-confirm-btn {
+    min-width: 160px;
+    height: 50px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(180deg, var(--checkout-brand) 0%, var(--checkout-brand-dark) 100%);
+    color: #ffffff;
+    font-size: 15.5px;
+    font-weight: 850;
+    cursor: pointer;
+    box-shadow: 0 12px 24px rgba(177, 18, 91, 0.22);
+    transition: 0.18s ease;
+  }
+
+  .coupon-confirm-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 28px rgba(177, 18, 91, 0.26);
   }
 
   body.coupon-modal-open {
     overflow: hidden;
   }
+
+  @media (max-width: 768px) {
+    .coupon-modal {
+      padding: 14px;
+    }
+
+    .coupon-modal-dialog {
+      width: 100%;
+      border-radius: 18px;
+    }
+
+    .coupon-modal-header {
+      min-height: 64px;
+      padding: 17px 64px;
+    }
+
+    .coupon-modal-header h3 {
+      font-size: 18px;
+      letter-spacing: 0.05em;
+    }
+
+    .coupon-modal-body {
+      padding: 18px 16px 92px;
+    }
+
+    .coupon-item {
+      grid-template-columns: 64px 1fr 42px;
+      min-height: 124px;
+      gap: 12px;
+      padding: 15px;
+    }
+
+    .coupon-item::before,
+    .coupon-item::after {
+      left: 70px;
+    }
+
+    .coupon-best-badge {
+      top: 10px;
+      right: 56px;
+      left: auto;
+      min-width: 56px;
+      height: 19px;
+      font-size: 10.5px;
+      padding: 0 8px;
+    }
+
+    .coupon-voucher-icon {
+      width: 48px;
+      height: 48px;
+      font-size: 23px;
+    }
+
+    .coupon-title-line {
+      font-size: 18px;
+    }
+
+    .coupon-condition,
+    .coupon-meta-line,
+    .coupon-disabled-reason {
+      font-size: 12.5px;
+    }
+
+    .coupon-modal-footer {
+      padding: 12px 16px;
+    }
+
+    .coupon-confirm-btn {
+      min-width: 128px;
+    }
+  }
 </style>
+
 
 <c:set var="errors" value="${requestScope.errors}" />
 <c:set var="checkoutCart" value="${not empty selectedCart ? selectedCart : cart}" />
@@ -770,7 +1223,7 @@
           <button type="button"
                   class="coupon-select-btn"
                   id="openCouponModal">
-            <span>🎟 Chọn mã</span>
+            <span>🎟 <span class="coupon-open-text">Chọn mã</span></span>
             <span class="coupon-arrow">›</span>
           </button>
 
@@ -848,112 +1301,168 @@
 <div class="coupon-modal" id="couponModal">
   <div class="coupon-modal-backdrop" data-close-coupon-modal></div>
 
-  <div class="coupon-modal-dialog">
+  <div class="coupon-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="couponModalTitle">
     <div class="coupon-modal-header">
-      <h3>Chọn mã khuyến mãi</h3>
+      <h3 id="couponModalTitle">Chọn mã khuyến mãi</h3>
 
       <button type="button"
               class="coupon-modal-close"
-              data-close-coupon-modal>
-        ×
+              data-close-coupon-modal
+              aria-label="Đóng cửa sổ chọn mã">
       </button>
     </div>
 
     <div class="coupon-modal-body">
+      <div class="coupon-list-title">Mã giảm giá có thể áp dụng cho đơn hàng</div>
 
-      <c:if test="${not empty savedCoupons}">
-        <div class="coupon-group-title">Mã khuyến mãi đã lưu</div>
+      <div class="coupon-list" id="checkoutCouponList">
 
-        <div class="coupon-list">
+        <c:if test="${not empty savedCoupons}">
           <c:forEach var="coupon" items="${savedCoupons}">
             <button type="button"
                     class="coupon-item js-select-coupon"
-                    data-code="${fn:escapeXml(coupon.code)}">
+                    data-code="${fn:escapeXml(coupon.code)}"
+                    data-percent="${coupon.discountPercent}"
+                    data-max-discount="${empty coupon.maxDiscountAmount ? 0 : coupon.maxDiscountAmount}"
+                    data-min-order="${empty coupon.minOrderAmount ? 0 : coupon.minOrderAmount}"
+                    data-active="${coupon.active}"
+                    data-used-count="${coupon.usedCount}"
+                    data-max-uses="${coupon.maxUses}"
+                    data-end-date="${coupon.endDate}">
 
-              <div class="coupon-ticket-left">
-                <div class="coupon-code">
-                  <c:out value="${coupon.code}" />
+              <span class="coupon-best-badge">Tốt nhất</span>
+
+              <div class="coupon-voucher-icon" aria-hidden="true">★</div>
+
+              <div class="coupon-voucher-content">
+                <div class="coupon-discount-label">Giảm ${coupon.discountPercent}%</div>
+
+                <div class="coupon-title-line">
+                  <c:choose>
+                    <c:when test="${not empty coupon.maxDiscountAmount and coupon.maxDiscountAmount > 0}">
+                      Giảm tối đa
+                      <fmt:formatNumber value="${coupon.maxDiscountAmount}"
+                                        type="number"
+                                        groupingUsed="true" />đ
+                    </c:when>
+                    <c:otherwise>
+                      Giảm ${coupon.discountPercent}% cho đơn hàng
+                    </c:otherwise>
+                  </c:choose>
                 </div>
 
-                <div class="coupon-desc">
-                  Giảm ${coupon.discountPercent}%
-
-                  <c:if test="${not empty coupon.maxDiscountAmount}">
-                    , tối đa
-                    <fmt:formatNumber value="${coupon.maxDiscountAmount}"
-                                      type="number"
-                                      groupingUsed="true" />đ
-                  </c:if>
+                <div class="coupon-condition">
+                  <c:choose>
+                    <c:when test="${not empty coupon.minOrderAmount and coupon.minOrderAmount > 0}">
+                      Đơn tối thiểu
+                      <fmt:formatNumber value="${coupon.minOrderAmount}"
+                                        type="number"
+                                        groupingUsed="true" />đ
+                    </c:when>
+                    <c:otherwise>
+                      Áp dụng cho mọi đơn hàng đủ điều kiện
+                    </c:otherwise>
+                  </c:choose>
                 </div>
 
-                <c:if test="${not empty coupon.minOrderAmount}">
-                  <div class="coupon-condition">
-                    Đơn từ
-                    <fmt:formatNumber value="${coupon.minOrderAmount}"
-                                      type="number"
-                                      groupingUsed="true" />đ
-                  </div>
-                </c:if>
+                <div class="coupon-meta-line">
+                  <span>Mã:</span>
+                  <span class="coupon-meta-code"><c:out value="${coupon.code}" /></span>
+                  <span>•</span>
+                  <span class="coupon-detail-link">Điều kiện</span>
+                </div>
+
+                <div class="coupon-disabled-reason"></div>
               </div>
 
-              <div class="coupon-ticket-right">
-                Chọn
-              </div>
+              <div class="coupon-ticket-right" aria-hidden="true"></div>
             </button>
           </c:forEach>
-        </div>
-      </c:if>
+        </c:if>
 
-      <c:if test="${not empty availableCoupons}">
-        <div class="coupon-group-title">Mã phù hợp với đơn hàng</div>
-
-        <div class="coupon-list">
+        <c:if test="${not empty availableCoupons}">
           <c:forEach var="coupon" items="${availableCoupons}">
             <button type="button"
                     class="coupon-item js-select-coupon"
-                    data-code="${fn:escapeXml(coupon.code)}">
+                    data-code="${fn:escapeXml(coupon.code)}"
+                    data-percent="${coupon.discountPercent}"
+                    data-max-discount="${empty coupon.maxDiscountAmount ? 0 : coupon.maxDiscountAmount}"
+                    data-min-order="${empty coupon.minOrderAmount ? 0 : coupon.minOrderAmount}"
+                    data-active="${coupon.active}"
+                    data-used-count="${coupon.usedCount}"
+                    data-max-uses="${coupon.maxUses}"
+                    data-end-date="${coupon.endDate}">
 
-              <div class="coupon-ticket-left">
-                <div class="coupon-code">
-                  <c:out value="${coupon.code}" />
+              <span class="coupon-best-badge">Tốt nhất</span>
+
+              <div class="coupon-voucher-icon" aria-hidden="true">★</div>
+
+              <div class="coupon-voucher-content">
+                <div class="coupon-discount-label">Giảm ${coupon.discountPercent}%</div>
+
+                <div class="coupon-title-line">
+                  <c:choose>
+                    <c:when test="${not empty coupon.maxDiscountAmount and coupon.maxDiscountAmount > 0}">
+                      Giảm tối đa
+                      <fmt:formatNumber value="${coupon.maxDiscountAmount}"
+                                        type="number"
+                                        groupingUsed="true" />đ
+                    </c:when>
+                    <c:otherwise>
+                      Giảm ${coupon.discountPercent}% cho đơn hàng
+                    </c:otherwise>
+                  </c:choose>
                 </div>
 
-                <div class="coupon-desc">
-                  Giảm ${coupon.discountPercent}%
-
-                  <c:if test="${not empty coupon.maxDiscountAmount}">
-                    , tối đa
-                    <fmt:formatNumber value="${coupon.maxDiscountAmount}"
-                                      type="number"
-                                      groupingUsed="true" />đ
-                  </c:if>
+                <div class="coupon-condition">
+                  <c:choose>
+                    <c:when test="${not empty coupon.minOrderAmount and coupon.minOrderAmount > 0}">
+                      Đơn tối thiểu
+                      <fmt:formatNumber value="${coupon.minOrderAmount}"
+                                        type="number"
+                                        groupingUsed="true" />đ
+                    </c:when>
+                    <c:otherwise>
+                      Áp dụng cho mọi đơn hàng đủ điều kiện
+                    </c:otherwise>
+                  </c:choose>
                 </div>
 
-                <c:if test="${not empty coupon.minOrderAmount}">
-                  <div class="coupon-condition">
-                    Đơn từ
-                    <fmt:formatNumber value="${coupon.minOrderAmount}"
-                                      type="number"
-                                      groupingUsed="true" />đ
-                  </div>
-                </c:if>
+                <div class="coupon-meta-line">
+                  <span>Mã:</span>
+                  <span class="coupon-meta-code"><c:out value="${coupon.code}" /></span>
+                  <span>•</span>
+                  <span class="coupon-detail-link">Điều kiện</span>
+                </div>
+
+                <div class="coupon-disabled-reason"></div>
               </div>
 
-              <div class="coupon-ticket-right">
-                Chọn
-              </div>
+              <div class="coupon-ticket-right" aria-hidden="true"></div>
             </button>
           </c:forEach>
-        </div>
-      </c:if>
+        </c:if>
 
-      <c:if test="${empty savedCoupons and empty availableCoupons}">
-        <div class="coupon-empty">
-          <div class="coupon-empty-icon">🏷️</div>
-          <p>Không có mã khuyến mãi phù hợp</p>
-        </div>
-      </c:if>
+        <c:if test="${empty savedCoupons and empty availableCoupons}">
+          <div class="coupon-empty">
+            <div class="coupon-empty-icon">🏷️</div>
+            <p>Không có mã khuyến mãi phù hợp</p>
+          </div>
+        </c:if>
 
+      </div>
+    </div>
+
+    <div class="coupon-modal-footer">
+      <div class="coupon-selected-count" id="couponSelectedCount">
+        Chưa chọn mã giảm giá
+      </div>
+
+      <button type="button"
+              class="coupon-confirm-btn"
+              id="confirmCouponSelection">
+        Đồng ý
+      </button>
     </div>
   </div>
 </div>
@@ -964,12 +1473,246 @@
     const modal = document.getElementById("couponModal");
     const openBtn = document.getElementById("openCouponModal");
     const couponInput = document.getElementById("couponCode");
+    const confirmBtn = document.getElementById("confirmCouponSelection");
+    const selectedCountEl = document.getElementById("couponSelectedCount");
+    const couponList = document.getElementById("checkoutCouponList");
 
-    function openModal() {
-      if (!modal) return;
+    let selectedCode = couponInput && couponInput.value ? normalizeCode(couponInput.value) : "";
+    let couponItems = [];
 
-      modal.classList.add("show");
-      document.body.classList.add("coupon-modal-open");
+    function normalizeCode(code) {
+      return String(code || "").trim().toUpperCase();
+    }
+
+    function parseNumber(value) {
+      if (value === null || value === undefined || value === "") {
+        return 0;
+      }
+
+      const normalized = String(value).replace(/[^0-9.-]/g, "");
+      const number = Number(normalized);
+
+      return Number.isFinite(number) ? number : 0;
+    }
+
+    function parseVndText(text) {
+      if (!text) return 0;
+      return Number(String(text).replace(/[^0-9]/g, "")) || 0;
+    }
+
+    function formatVnd(value) {
+      return new Intl.NumberFormat("vi-VN").format(Math.round(Number(value || 0))) + "đ";
+    }
+
+    function getCurrentSubtotal() {
+      const summarySubtotal = document.getElementById("summarySubtotal");
+
+      if (summarySubtotal) {
+        return parseVndText(summarySubtotal.textContent);
+      }
+
+      let subtotal = 0;
+
+      document.querySelectorAll(".js-item-subtotal").forEach(function (el) {
+        subtotal += parseNumber(el.dataset.raw);
+      });
+
+      return subtotal;
+    }
+
+    function isActiveValue(value) {
+      const normalized = String(value || "").trim().toLowerCase();
+      return normalized === "true" || normalized === "1" || normalized === "yes";
+    }
+
+    function isExpired(endDateRaw) {
+      const value = String(endDateRaw || "").trim();
+
+      if (!value || value === "null" || value === "undefined") {
+        return false;
+      }
+
+      const date = new Date(value + "T23:59:59");
+
+      if (Number.isNaN(date.getTime())) {
+        return false;
+      }
+
+      return date.getTime() < Date.now();
+    }
+
+    function estimateDiscount(item, subtotal) {
+      const percent = parseNumber(item.dataset.percent);
+      const maxDiscount = parseNumber(item.dataset.maxDiscount);
+      const rawDiscount = subtotal * percent / 100;
+
+      if (maxDiscount > 0) {
+        return Math.min(rawDiscount, maxDiscount);
+      }
+
+      return rawDiscount;
+    }
+
+    function getDisabledReason(item, subtotal) {
+      const minOrder = parseNumber(item.dataset.minOrder);
+      const usedCount = parseNumber(item.dataset.usedCount);
+      const maxUses = parseNumber(item.dataset.maxUses);
+
+      if (!isActiveValue(item.dataset.active)) {
+        return "Mã hiện không còn hoạt động";
+      }
+
+      if (isExpired(item.dataset.endDate)) {
+        return "Mã đã hết hạn sử dụng";
+      }
+
+      if (maxUses > 0 && usedCount >= maxUses) {
+        return "Mã đã hết lượt sử dụng";
+      }
+
+      if (subtotal < minOrder) {
+        return "Cần mua thêm " + formatVnd(minOrder - subtotal) + " để dùng mã này";
+      }
+
+      return "";
+    }
+
+    function isUsable(item, subtotal) {
+      return getDisabledReason(item, subtotal) === "";
+    }
+
+    function removeDuplicateCoupons() {
+      if (!couponList) return;
+
+      const seen = new Set();
+
+      Array.from(couponList.querySelectorAll(".js-select-coupon")).forEach(function (item) {
+        const code = normalizeCode(item.dataset.code);
+
+        if (!code) {
+          item.remove();
+          return;
+        }
+
+        if (seen.has(code)) {
+          item.remove();
+          return;
+        }
+
+        seen.add(code);
+      });
+    }
+
+    function getCouponItems() {
+      return Array.from(document.querySelectorAll(".js-select-coupon"));
+    }
+
+    function clearBestBadges() {
+      couponItems.forEach(function (item) {
+        item.classList.remove("is-best");
+      });
+    }
+
+    function markBestCoupon(usableItems, subtotal) {
+      clearBestBadges();
+
+      if (!usableItems.length) {
+        return;
+      }
+
+      let bestItem = null;
+      let bestDiscount = -1;
+      let bestMinOrder = Number.MAX_SAFE_INTEGER;
+
+      usableItems.forEach(function (item) {
+        const discount = estimateDiscount(item, subtotal);
+        const minOrder = parseNumber(item.dataset.minOrder);
+
+        if (discount > bestDiscount || (discount === bestDiscount && minOrder < bestMinOrder)) {
+          bestDiscount = discount;
+          bestMinOrder = minOrder;
+          bestItem = item;
+        }
+      });
+
+      if (bestItem && bestDiscount > 0) {
+        bestItem.classList.add("is-best");
+      }
+    }
+
+    function refreshCouponStates() {
+      const subtotal = getCurrentSubtotal();
+      const usableItems = [];
+      let selectedStillValid = false;
+
+      couponItems.forEach(function (item) {
+        const code = normalizeCode(item.dataset.code);
+        const reason = getDisabledReason(item, subtotal);
+        const reasonEl = item.querySelector(".coupon-disabled-reason");
+        const usable = reason === "";
+
+        item.classList.remove("is-usable", "is-disabled", "is-selected", "is-best");
+
+        if (usable) {
+          item.classList.add("is-usable");
+          item.disabled = false;
+          usableItems.push(item);
+
+          if (selectedCode && code === selectedCode) {
+            selectedStillValid = true;
+          }
+        } else {
+          item.classList.add("is-disabled");
+          item.disabled = true;
+        }
+
+        if (reasonEl) {
+          reasonEl.textContent = reason;
+        }
+      });
+
+      if (selectedCode && !selectedStillValid) {
+        selectedCode = "";
+      }
+
+      markBestCoupon(usableItems, subtotal);
+      updateSelectedState();
+    }
+
+    function updateSelectedState() {
+      let selectedCount = 0;
+
+      couponItems.forEach(function (item) {
+        const code = normalizeCode(item.dataset.code);
+        const selected = selectedCode && code === selectedCode && item.classList.contains("is-usable");
+
+        item.classList.toggle("is-selected", !!selected);
+
+        if (selected) {
+          selectedCount += 1;
+        }
+      });
+
+      if (selectedCountEl) {
+        if (selectedCode && selectedCount > 0) {
+          selectedCountEl.innerHTML = "Đã chọn <strong>1</strong> mã giảm giá";
+        } else {
+          selectedCountEl.textContent = "Chưa chọn mã giảm giá";
+        }
+      }
+    }
+
+    function updateOpenButtonText() {
+      if (!openBtn || !couponInput) return;
+
+      const code = normalizeCode(couponInput.value);
+      const textEl = openBtn.querySelector(".coupon-open-text");
+
+      openBtn.classList.toggle("has-selected", !!code);
+
+      if (textEl) {
+        textEl.textContent = code ? code : "Chọn mã";
+      }
     }
 
     function closeModal() {
@@ -977,6 +1720,50 @@
 
       modal.classList.remove("show");
       document.body.classList.remove("coupon-modal-open");
+    }
+
+    function openModal() {
+      if (!modal) return;
+
+      selectedCode = couponInput && couponInput.value ? normalizeCode(couponInput.value) : "";
+      refreshCouponStates();
+
+      modal.classList.add("show");
+      document.body.classList.add("coupon-modal-open");
+    }
+
+    function bindCouponEvents() {
+      couponItems.forEach(function (item) {
+        item.addEventListener("click", function () {
+          if (item.classList.contains("is-disabled")) {
+            return;
+          }
+
+          const code = normalizeCode(item.dataset.code);
+
+          if (selectedCode === code) {
+            selectedCode = "";
+          } else {
+            selectedCode = code;
+          }
+
+          updateSelectedState();
+        });
+      });
+    }
+
+    function confirmSelection() {
+      if (!couponInput) return;
+
+      couponInput.value = selectedCode || "";
+      couponInput.dispatchEvent(new Event("input", { bubbles: true }));
+
+      if (window.updateCheckoutButtonsState) {
+        window.updateCheckoutButtonsState();
+      }
+
+      updateOpenButtonText();
+      closeModal();
     }
 
     if (openBtn) {
@@ -993,22 +1780,19 @@
       }
     });
 
-    document.querySelectorAll(".js-select-coupon").forEach(function (button) {
-      button.addEventListener("click", function () {
-        const code = button.dataset.code;
+    if (confirmBtn) {
+      confirmBtn.addEventListener("click", confirmSelection);
+    }
 
-        if (couponInput && code) {
-          couponInput.value = code;
-          couponInput.dispatchEvent(new Event("input", { bubbles: true }));
-        }
+    if (couponInput) {
+      couponInput.addEventListener("input", updateOpenButtonText);
+    }
 
-        if (window.updateCheckoutButtonsState) {
-          window.updateCheckoutButtonsState();
-        }
-
-        closeModal();
-      });
-    });
+    removeDuplicateCoupons();
+    couponItems = getCouponItems();
+    bindCouponEvents();
+    refreshCouponStates();
+    updateOpenButtonText();
   })();
 </script>
 
