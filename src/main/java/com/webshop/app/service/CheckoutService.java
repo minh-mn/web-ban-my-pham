@@ -30,7 +30,6 @@ public class CheckoutService {
 	private final OrderItemDAO itemDAO = new OrderItemDAO();
 	private final CouponDAO couponDAO = new CouponDAO();
 	private final CouponService couponService = new CouponService();
-	private final UserRankService userRankService = new UserRankService();
 
 	/*
 	 * Giữ method cũ để các chỗ khác đang gọi checkout 7 tham số không bị lỗi.
@@ -89,6 +88,12 @@ public class CheckoutService {
 		boolean isVnp = "VNPAY".equalsIgnoreCase(paymentMethod);
 
 		BigDecimal subtotal = calculateCartSubtotal(cart);
+
+		/*
+		 * Rank hiện tại của user.
+		 * Ưu tiên users.manual_rank_code nếu admin đã gán thủ công.
+		 * Nếu không có manual rank thì tự tính theo tổng chi tiêu.
+		 */
 		String userRankCode = resolveUserRankCode(userId);
 
 		/*
@@ -127,8 +132,9 @@ public class CheckoutService {
 		 * RANK DISCOUNT
 		 * =========================
 		 * Rank discount được tính sau coupon.
+		 * Quan trọng: tính theo userRankCode đã xét manual_rank_code.
 		 */
-		BigDecimal rankDiscount = calculateRankDiscount(userId, amountAfterCoupon);
+		BigDecimal rankDiscount = calculateRankDiscountByRankCode(userRankCode, amountAfterCoupon);
 
 		BigDecimal amountAfterAllDiscounts = amountAfterCoupon.subtract(rankDiscount);
 
@@ -374,24 +380,19 @@ public class CheckoutService {
 		return money0(discount);
 	}
 
+	/*
+	 * Method public cũ: giữ lại để các file khác đang gọi không lỗi.
+	 * Nay đã tính discount theo manual_rank_code nếu admin có gán.
+	 */
 	public BigDecimal calculateRankDiscount(int userId, BigDecimal amountAfterCoupon) {
 
 		if (userId <= 0) {
 			return BigDecimal.ZERO;
 		}
 
-		BigDecimal safeAmount = money0(amountAfterCoupon);
+		String userRankCode = resolveUserRankCode(userId);
 
-		if (safeAmount.compareTo(BigDecimal.ZERO) <= 0) {
-			return BigDecimal.ZERO;
-		}
-
-		try {
-			return money0(userRankService.calculateRankDiscountAmount(userId, safeAmount));
-		} catch (RuntimeException e) {
-			e.printStackTrace();
-			return BigDecimal.ZERO;
-		}
+		return calculateRankDiscountByRankCode(userRankCode, amountAfterCoupon);
 	}
 
 	public BigDecimal calculateTotalAfterCouponAndRank(int userId,
@@ -399,15 +400,16 @@ public class CheckoutService {
 	                                                   String couponCode) {
 
 		BigDecimal safeSubTotal = money0(subTotal);
+		String userRankCode = resolveUserRankCode(userId);
 
-		BigDecimal couponDiscount = calculateCouponDiscount(userId, couponCode, safeSubTotal);
+		BigDecimal couponDiscount = calculateCouponDiscountByRank(couponCode, safeSubTotal, userRankCode);
 		BigDecimal amountAfterCoupon = safeSubTotal.subtract(couponDiscount);
 
 		if (amountAfterCoupon.compareTo(BigDecimal.ZERO) < 0) {
 			amountAfterCoupon = BigDecimal.ZERO;
 		}
 
-		BigDecimal rankDiscount = calculateRankDiscount(userId, amountAfterCoupon);
+		BigDecimal rankDiscount = calculateRankDiscountByRankCode(userRankCode, amountAfterCoupon);
 		BigDecimal total = amountAfterCoupon.subtract(rankDiscount);
 
 		if (total.compareTo(BigDecimal.ZERO) < 0) {
@@ -424,15 +426,16 @@ public class CheckoutService {
 	                                                          String province) {
 
 		BigDecimal safeSubTotal = money0(subTotal);
+		String userRankCode = resolveUserRankCode(userId);
 
-		BigDecimal couponDiscount = calculateCouponDiscount(userId, couponCode, safeSubTotal);
+		BigDecimal couponDiscount = calculateCouponDiscountByRank(couponCode, safeSubTotal, userRankCode);
 		BigDecimal amountAfterCoupon = safeSubTotal.subtract(couponDiscount);
 
 		if (amountAfterCoupon.compareTo(BigDecimal.ZERO) < 0) {
 			amountAfterCoupon = BigDecimal.ZERO;
 		}
 
-		BigDecimal rankDiscount = calculateRankDiscount(userId, amountAfterCoupon);
+		BigDecimal rankDiscount = calculateRankDiscountByRankCode(userRankCode, amountAfterCoupon);
 		BigDecimal amountAfterAllDiscounts = amountAfterCoupon.subtract(rankDiscount);
 
 		if (amountAfterAllDiscounts.compareTo(BigDecimal.ZERO) < 0) {
@@ -487,6 +490,10 @@ public class CheckoutService {
 	 * =========================
 	 */
 
+	public String resolveEffectiveRankCode(int userId) {
+		return resolveUserRankCode(userId);
+	}
+
 	private String resolveUserRankCode(int userId) {
 
 		if (userId <= 0) {
@@ -503,12 +510,20 @@ public class CheckoutService {
 
 	private String resolveUserRankCode(Connection conn, int userId) {
 
+		/*
+		 * Ưu tiên 1:
+		 * Rank admin gán thủ công trong users.manual_rank_code.
+		 */
 		String manualRankCode = findManualRankCode(conn, userId);
 
 		if (manualRankCode != null && !manualRankCode.isBlank()) {
 			return normalizeRankCode(manualRankCode);
 		}
 
+		/*
+		 * Ưu tiên 2:
+		 * Nếu không có manual rank thì tự tính theo tổng chi tiêu.
+		 */
 		BigDecimal totalSpent = findCompletedOrderTotal(conn, userId);
 		String rankBySpent = findRankCodeByTotalSpent(conn, totalSpent);
 
@@ -534,7 +549,10 @@ public class CheckoutService {
 			}
 
 		} catch (Exception e) {
-			// Nếu database cũ chưa có manual_rank_code thì fallback về rank theo chi tiêu.
+			/*
+			 * Nếu database cũ chưa có manual_rank_code
+			 * thì fallback về rank theo chi tiêu.
+			 */
 			return null;
 		}
 
@@ -596,6 +614,64 @@ public class CheckoutService {
 		}
 
 		return DEFAULT_RANK_CODE;
+	}
+
+	private BigDecimal findRankDiscountPercentByCode(String rankCode) {
+
+		String sql = """
+                SELECT discount_percent
+                FROM store_rank
+                WHERE code = ?
+                  AND is_active = 1
+                LIMIT 1
+                """;
+
+		try (Connection conn = DBConnection.getConnection();
+		     PreparedStatement ps = conn.prepareStatement(sql)) {
+
+			ps.setString(1, normalizeRankCode(rankCode));
+
+			try (ResultSet rs = ps.executeQuery()) {
+				if (rs.next()) {
+					BigDecimal percent = rs.getBigDecimal("discount_percent");
+					return percent == null ? BigDecimal.ZERO : percent;
+				}
+			}
+
+		} catch (Exception e) {
+			return BigDecimal.ZERO;
+		}
+
+		return BigDecimal.ZERO;
+	}
+
+	private BigDecimal calculateRankDiscountByRankCode(String rankCode, BigDecimal amountAfterCoupon) {
+
+		BigDecimal safeAmount = money0(amountAfterCoupon);
+
+		if (safeAmount.compareTo(BigDecimal.ZERO) <= 0) {
+			return BigDecimal.ZERO;
+		}
+
+		BigDecimal discountPercent = findRankDiscountPercentByCode(rankCode);
+
+		if (discountPercent.compareTo(BigDecimal.ZERO) <= 0) {
+			return BigDecimal.ZERO;
+		}
+
+		BigDecimal discount = safeAmount
+				.multiply(discountPercent)
+				.divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+
+		if (discount.compareTo(BigDecimal.ZERO) < 0) {
+			return BigDecimal.ZERO;
+		}
+
+		if (discount.compareTo(safeAmount) > 0) {
+			return safeAmount;
+		}
+
+		return money0(discount);
 	}
 
 	private String normalizeRankCode(String rankCode) {
