@@ -3,7 +3,7 @@
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
-<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/checkout.css?v=20260522_5">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/checkout.css?v=20260523_shipping_fix">
 
 <style>
   /* ================= BUTTON STATE: NHẠT / ĐẬM ================= */
@@ -112,6 +112,30 @@
     font-weight: 700;
     font-size: 14px;
   }
+
+  .delivery-option.is-disabled {
+    opacity: 0.55;
+    cursor: not-allowed !important;
+    background: #f9fafb !important;
+    border-color: #e5e7eb !important;
+    box-shadow: none !important;
+  }
+
+  .delivery-option.is-disabled:hover {
+    border-color: #e5e7eb !important;
+    background: #f9fafb !important;
+  }
+
+  .delivery-option.is-disabled input {
+    cursor: not-allowed !important;
+  }
+
+  .delivery-option.is-disabled .delivery-info strong,
+  .delivery-option.is-disabled .delivery-info small,
+  .delivery-option.is-disabled .delivery-fee {
+    color: #9ca3af !important;
+  }
+
 
 </style>
 
@@ -1130,24 +1154,11 @@
               || value.includes("thành phố hồ chí minh");
     }
 
-    function getAreaExtraFee() {
+    function hasValidLocation() {
       const province = provinceInput ? provinceInput.value.trim() : "";
+      const ward = wardInput ? wardInput.value.trim() : "";
 
-      if (!province) {
-        return 0;
-      }
-
-      return isHcmCity(province) ? 0 : 15000;
-    }
-
-    function getSelectedBaseFee() {
-      const selected = document.querySelector("input[name='shippingMethod']:checked");
-
-      if (!selected) {
-        return 0;
-      }
-
-      return Number(selected.dataset.baseFee || 0);
+      return province !== "" && ward !== "";
     }
 
     function getOrderValueAfterVoucher() {
@@ -1161,11 +1172,99 @@
       return getOrderValueAfterVoucher() >= FREE_SHIP_THRESHOLD;
     }
 
+    function getSelectedShippingInput() {
+      return document.querySelector("input[name='shippingMethod']:checked");
+    }
+
+    function getSelectedShippingMethod() {
+      const selected = getSelectedShippingInput();
+      return selected ? selected.value : "ECONOMY";
+    }
+
+    function calculateShippingFeeByMethod(method, provinceName) {
+      const hcm = isHcmCity(provinceName);
+
+      if (method === "ECONOMY") {
+        return hcm ? 20000 : 35000;
+      }
+
+      if (method === "FAST") {
+        return hcm ? 35000 : 50000;
+      }
+
+      if (method === "EXPRESS") {
+        // Hỏa tốc chỉ áp dụng nội thành / TP.HCM.
+        return hcm ? 50000 : 0;
+      }
+
+      return hcm ? 20000 : 35000;
+    }
+
+    function updateShippingMethodLabels() {
+      const province = provinceInput ? provinceInput.value.trim() : "";
+      const hcm = isHcmCity(province);
+      const validLocation = hasValidLocation();
+
+      document.querySelectorAll("input[name='shippingMethod']").forEach(function (input) {
+        const option = input.closest(".delivery-option");
+        const feeEl = option ? option.querySelector(".delivery-fee") : null;
+        const descEl = option ? option.querySelector(".delivery-info small") : null;
+
+        if (!option || !feeEl) {
+          return;
+        }
+
+        option.classList.remove("is-disabled");
+        input.disabled = false;
+
+        if (!validLocation) {
+          return;
+        }
+
+        if (input.value === "ECONOMY") {
+          feeEl.textContent = hcm ? "20.000đ" : "35.000đ";
+          if (descEl) {
+            descEl.textContent = hcm ? "Thời gian dự kiến: 3 - 5 ngày" : "Ngoại tỉnh: 3 - 5 ngày";
+          }
+        }
+
+        if (input.value === "FAST") {
+          feeEl.textContent = hcm ? "35.000đ" : "50.000đ";
+          if (descEl) {
+            descEl.textContent = hcm ? "Thời gian dự kiến: 1 - 3 ngày" : "Ngoại tỉnh: 1 - 3 ngày";
+          }
+        }
+
+        if (input.value === "EXPRESS") {
+          if (hcm) {
+            feeEl.textContent = "50.000đ";
+            if (descEl) {
+              descEl.textContent = "Giao trong ngày, ưu tiên nội thành";
+            }
+          } else {
+            feeEl.textContent = "Không hỗ trợ";
+            if (descEl) {
+              descEl.textContent = "Chỉ áp dụng cho khu vực TP.HCM";
+            }
+
+            input.disabled = true;
+            option.classList.add("is-disabled");
+
+            if (input.checked) {
+              const economy = document.querySelector("input[name='shippingMethod'][value='ECONOMY']");
+              if (economy) {
+                economy.checked = true;
+              }
+            }
+          }
+        }
+      });
+    }
+
     function calculateShippingFee() {
       const province = provinceInput ? provinceInput.value.trim() : "";
-      const ward = wardInput ? wardInput.value.trim() : "";
 
-      if (!province || !ward) {
+      if (!hasValidLocation()) {
         return 0;
       }
 
@@ -1173,7 +1272,7 @@
         return 0;
       }
 
-      return getSelectedBaseFee() + getAreaExtraFee();
+      return calculateShippingFeeByMethod(getSelectedShippingMethod(), province);
     }
 
     function updateCheckoutTotal() {
@@ -1189,10 +1288,9 @@
     }
 
     function updateShippingDisplay() {
-      const province = provinceInput ? provinceInput.value.trim() : "";
-      const ward = wardInput ? wardInput.value.trim() : "";
+      updateShippingMethodLabels();
 
-      if (!province || !ward) {
+      if (!hasValidLocation()) {
         if (deliveryEmpty) {
           deliveryEmpty.classList.remove("hidden");
         }
@@ -1225,8 +1323,8 @@
         deliveryOptions.classList.remove("hidden");
       }
 
-      const fee = calculateShippingFee();
       const freeship = isFreeShipEligible();
+      const fee = calculateShippingFee();
 
       if (summaryShippingFee) {
         summaryShippingFee.textContent = freeship ? "Miễn phí" : formatVnd(fee);
