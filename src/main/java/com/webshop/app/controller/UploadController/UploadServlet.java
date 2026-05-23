@@ -1,13 +1,15 @@
 package com.webshop.app.controller.UploadController;
 
+import com.webshop.app.config.UploadConfig;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
-
-import com.webshop.app.config.UploadConfig;
+import java.util.Locale;
+import java.util.Set;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -20,15 +22,45 @@ public class UploadServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
 
+    /*
+     * Chỉ public các loại file cần thiết.
+     * Tránh lỡ public file lạ trong MyCosmeticShopUploads.
+     */
+    private static final Set<String> ALLOWED_EXTENSIONS = Set.of(
+            ".jpg",
+            ".jpeg",
+            ".png",
+            ".webp",
+            ".gif",
+            ".svg",
+            ".pdf"
+    );
+
+    @Override
+    public void init() throws ServletException {
+        super.init();
+
+        /*
+         * Đảm bảo các thư mục:
+         * MyCosmeticShopUploads/banner
+         * MyCosmeticShopUploads/product
+         * MyCosmeticShopUploads/product/gallery
+         * MyCosmeticShopUploads/policy
+         * đã tồn tại khi app chạy.
+         */
+        UploadConfig.ensureUploadDirectories();
+    }
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
         /*
-         * Ví dụ:
+         * Ví dụ URL:
          * /uploads/banner/abc.png
          * /uploads/product/abc.png
          * /uploads/product/gallery/abc.png
+         * /uploads/policy/abc.pdf
          */
         String pathInfo = req.getPathInfo();
 
@@ -37,14 +69,24 @@ public class UploadServlet extends HttpServlet {
             return;
         }
 
-        // Chặn path traversal cơ bản
-        if (pathInfo.contains("..") || pathInfo.contains("\\") || pathInfo.contains("//")) {
+        /*
+         * Chặn path traversal cơ bản trước khi resolve path.
+         */
+        if (hasUnsafePath(pathInfo)) {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN);
             return;
         }
 
-        // Bỏ dấu "/" đầu tiên
-        String relative = pathInfo.startsWith("/") ? pathInfo.substring(1) : pathInfo;
+        /*
+         * Bỏ dấu "/" đầu tiên.
+         * Ví dụ:
+         * /product/a.png -> product/a.png
+         */
+        String relative = pathInfo.startsWith("/")
+                ? pathInfo.substring(1)
+                : pathInfo;
+
+        relative = normalizeRelativePath(relative);
 
         if (relative.isBlank()) {
             resp.sendError(HttpServletResponse.SC_NOT_FOUND);
@@ -53,9 +95,16 @@ public class UploadServlet extends HttpServlet {
 
         /*
          * Chỉ cho public các thư mục upload hợp lệ.
-         * Tránh việc lỡ có file khác trong BASE_DIR cũng bị public.
          */
         if (!isAllowedUploadPath(relative)) {
+            resp.sendError(HttpServletResponse.SC_FORBIDDEN);
+            return;
+        }
+
+        /*
+         * Chỉ cho phép extension ảnh/pdf hợp lệ.
+         */
+        if (!isAllowedExtension(relative)) {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN);
             return;
         }
@@ -63,7 +112,9 @@ public class UploadServlet extends HttpServlet {
         Path baseDir = UploadConfig.BASE_DIR.toAbsolutePath().normalize();
         Path filePath = baseDir.resolve(relative).toAbsolutePath().normalize();
 
-        // Bảo vệ path traversal sau normalize
+        /*
+         * Bảo vệ path traversal sau normalize.
+         */
         if (!filePath.startsWith(baseDir)) {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN);
             return;
@@ -76,17 +127,19 @@ public class UploadServlet extends HttpServlet {
 
         String mime = URLConnection.guessContentTypeFromName(filePath.getFileName().toString());
 
-        if (mime == null) {
+        if (mime == null || mime.isBlank()) {
             mime = "application/octet-stream";
         }
 
         resp.setContentType(mime);
         resp.setHeader("Cache-Control", "public, max-age=86400");
         resp.setHeader("X-Content-Type-Options", "nosniff");
+        resp.setHeader("Content-Disposition", "inline");
 
         try {
             resp.setContentLengthLong(Files.size(filePath));
         } catch (Exception ignored) {
+            // Không bắt buộc set Content-Length.
         }
 
         try (InputStream inputStream = Files.newInputStream(filePath);
@@ -100,5 +153,36 @@ public class UploadServlet extends HttpServlet {
         return relative.startsWith("banner/")
                 || relative.startsWith("product/")
                 || relative.startsWith("policy/");
+    }
+
+    private boolean isAllowedExtension(String relative) {
+        String value = relative.toLowerCase(Locale.ROOT);
+
+        return ALLOWED_EXTENSIONS.stream().anyMatch(value::endsWith);
+    }
+
+    private boolean hasUnsafePath(String path) {
+        if (path == null || path.isBlank()) {
+            return true;
+        }
+
+        return path.contains("..")
+                || path.contains("\\")
+                || path.contains("//")
+                || path.contains("%2e")
+                || path.contains("%2E")
+                || path.contains("%5c")
+                || path.contains("%5C");
+    }
+
+    private String normalizeRelativePath(String relative) {
+        if (relative == null) {
+            return "";
+        }
+
+        return relative
+                .trim()
+                .replace("\\", "/")
+                .replaceAll("/{2,}", "/");
     }
 }
