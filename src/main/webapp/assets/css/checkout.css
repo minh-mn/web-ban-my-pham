@@ -810,3 +810,35 @@
 .checkout-field input.is-invalid::placeholder {
 	color: #c96b87;
 }
+/* ================= BUTTON STATE: NHẠT / ĐẬM ================= */
+
+.btn-apply-coupon,
+.btn-place-order {
+	transition: background-color 0.25s ease, opacity 0.25s ease, transform 0.2s ease;
+	border: none;
+	outline: none;
+}
+
+/* Trạng thái chưa nhập / chưa đủ điều kiện */
+.btn-apply-coupon:disabled,
+.btn-place-order:disabled {
+	background: #e7a3b8 !important;
+	color: #ffffff !important;
+	cursor: not-allowed;
+	opacity: 1;
+}
+
+/* Trạng thái đã nhập / hợp lệ */
+.btn-apply-coupon:not(:disabled),
+.btn-place-order:not(:disabled) {
+	background: #d63384 !important;
+	color: #ffffff !important;
+	cursor: pointer;
+}
+
+/* Hover khi active */
+.btn-apply-coupon:not(:disabled):hover,
+.btn-place-order:not(:disabled):hover {
+	background: #c72c79 !important;
+	transform: translateY(-1px);
+}
