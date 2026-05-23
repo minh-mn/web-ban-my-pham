@@ -5,6 +5,40 @@
 
 <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/checkout.css?v=20260522_5">
 
+<style>
+  /* ================= BUTTON STATE: NHẠT / ĐẬM ================= */
+
+  .btn-apply-coupon,
+  .btn-place-order {
+    transition: background-color 0.25s ease, opacity 0.25s ease, transform 0.2s ease;
+    border: none;
+    outline: none;
+  }
+
+  .btn-apply-coupon:disabled,
+  .btn-place-order:disabled {
+    background: #e7a3b8 !important;
+    color: #ffffff !important;
+    cursor: not-allowed !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .btn-apply-coupon:not(:disabled),
+  .btn-place-order:not(:disabled) {
+    background: #d63384 !important;
+    color: #ffffff !important;
+    cursor: pointer !important;
+    opacity: 1 !important;
+  }
+
+  .btn-apply-coupon:not(:disabled):hover,
+  .btn-place-order:not(:disabled):hover {
+    background: #c72c79 !important;
+    transform: translateY(-1px);
+  }
+</style>
+
 <c:set var="errors" value="${requestScope.errors}" />
 <c:set var="checkoutCart" value="${not empty selectedCart ? selectedCart : cart}" />
 
@@ -31,6 +65,10 @@
           class="checkout-grid"
           id="checkoutForm"
           novalidate>
+
+      <input type="hidden"
+             name="csrf_token"
+             value="${sessionScope.CSRF_TOKEN}">
 
       <!-- ================= LEFT COLUMN ================= -->
       <div class="checkout-left">
@@ -79,16 +117,16 @@
               </strong>
 
               <span>
-                                <c:choose>
-                                  <c:when test="${not empty sessionScope.authUser.email}">
-                                    <c:out value="${sessionScope.authUser.email}" />
-                                  </c:when>
-                                  <c:when test="${not empty sessionScope.user.email}">
-                                    <c:out value="${sessionScope.user.email}" />
-                                  </c:when>
-                                  <c:otherwise>Chưa có email</c:otherwise>
-                                </c:choose>
-                            </span>
+                <c:choose>
+                  <c:when test="${not empty sessionScope.authUser.email}">
+                    <c:out value="${sessionScope.authUser.email}" />
+                  </c:when>
+                  <c:when test="${not empty sessionScope.user.email}">
+                    <c:out value="${sessionScope.user.email}" />
+                  </c:when>
+                  <c:otherwise>Chưa có email</c:otherwise>
+                </c:choose>
+              </span>
             </div>
           </div>
         </div>
@@ -277,9 +315,9 @@
               <span class="payment-icon">💵</span>
 
               <span class="payment-text">
-                                <strong>Thanh toán khi giao hàng (COD)</strong>
-                                <small>Thanh toán tiền mặt khi nhận hàng</small>
-                            </span>
+                <strong>Thanh toán khi giao hàng (COD)</strong>
+                <small>Thanh toán tiền mặt khi nhận hàng</small>
+              </span>
             </label>
 
             <label class="payment-item">
@@ -293,9 +331,9 @@
               <span class="payment-icon">💳</span>
 
               <span class="payment-text">
-                                <strong>Thanh toán qua VNPAY</strong>
-                                <small>Chuyển sang cổng thanh toán VNPAY</small>
-                            </span>
+                <strong>Thanh toán qua VNPAY</strong>
+                <small>Chuyển sang cổng thanh toán VNPAY</small>
+              </span>
             </label>
           </div>
 
@@ -432,7 +470,8 @@
 
             <button type="button"
                     id="applyCouponBtn"
-                    class="btn-apply-coupon">
+                    class="btn-apply-coupon"
+                    disabled>
               Áp dụng
             </button>
           </div>
@@ -472,7 +511,10 @@
             </strong>
           </div>
 
-          <button type="submit" class="btn-place-order">
+          <button type="submit"
+                  class="btn-place-order"
+                  id="placeOrderBtn"
+                  disabled>
             Đặt hàng
           </button>
         </div>
@@ -497,6 +539,10 @@
     const wardInput = document.getElementById("wardInput");
 
     const paymentList = document.getElementById("paymentList");
+    const placeOrderBtn = document.getElementById("placeOrderBtn");
+
+    const couponInput = document.getElementById("couponCode");
+    const applyCouponBtn = document.getElementById("applyCouponBtn");
 
     function setFieldError(input, errorId, message) {
       const errorEl = document.getElementById(errorId);
@@ -626,10 +672,47 @@
       return true;
     }
 
+    function hasValue(input) {
+      return input && input.value && input.value.trim() !== "";
+    }
+
+    function updateApplyCouponButton() {
+      if (!applyCouponBtn || !couponInput) {
+        return;
+      }
+
+      applyCouponBtn.disabled = !hasValue(couponInput);
+    }
+
+    function isCheckoutFilled() {
+      const checkedPayment = document.querySelector("input[name='paymentMethod']:checked");
+
+      return hasValue(fullNameInput)
+              && hasValue(phoneInput)
+              && hasValue(addressInput)
+              && hasValue(provinceInput)
+              && hasValue(wardInput)
+              && !!checkedPayment;
+    }
+
+    function updatePlaceOrderButton() {
+      if (!placeOrderBtn) {
+        return;
+      }
+
+      placeOrderBtn.disabled = !isCheckoutFilled();
+    }
+
+    window.updateCheckoutButtonsState = function () {
+      updateApplyCouponButton();
+      updatePlaceOrderButton();
+    };
+
     if (fullNameInput) {
       fullNameInput.addEventListener("blur", validateFullName);
       fullNameInput.addEventListener("input", function () {
         setFieldError(fullNameInput, "fullNameError", "");
+        updatePlaceOrderButton();
       });
     }
 
@@ -638,6 +721,7 @@
       phoneInput.addEventListener("input", function () {
         this.value = this.value.replace(/[^\d]/g, "");
         setFieldError(phoneInput, "phoneError", "");
+        updatePlaceOrderButton();
       });
     }
 
@@ -645,11 +729,20 @@
       addressInput.addEventListener("blur", validateAddress);
       addressInput.addEventListener("input", function () {
         setFieldError(addressInput, "addressError", "");
+        updatePlaceOrderButton();
       });
     }
 
+    if (couponInput) {
+      couponInput.addEventListener("input", updateApplyCouponButton);
+      couponInput.addEventListener("blur", updateApplyCouponButton);
+    }
+
     document.querySelectorAll("input[name='paymentMethod']").forEach(function (radio) {
-      radio.addEventListener("change", validatePaymentMethod);
+      radio.addEventListener("change", function () {
+        validatePaymentMethod();
+        updatePlaceOrderButton();
+      });
     });
 
     if (form) {
@@ -671,9 +764,14 @@
               block: "center"
             });
           }
+
+          updatePlaceOrderButton();
         }
       });
     }
+
+    updateApplyCouponButton();
+    updatePlaceOrderButton();
   })();
 </script>
 
@@ -704,6 +802,11 @@
       applyBtn.addEventListener("click", function () {
         const code = couponInput.value.trim();
 
+        if (!code) {
+          setCouponMessage("Vui lòng nhập mã khuyến mãi.", true);
+          return;
+        }
+
         fetch("${pageContext.request.contextPath}/ajax/apply-coupon?code=" + encodeURIComponent(code))
                 .then(function (res) {
                   return res.json();
@@ -732,6 +835,7 @@
 <script>
   (function () {
     const contextPath = "${pageContext.request.contextPath}";
+    const csrfToken = "${sessionScope.CSRF_TOKEN}";
 
     const summarySubtotal = document.getElementById("summarySubtotal");
     const summaryDiscount = document.getElementById("summaryDiscount");
@@ -797,6 +901,7 @@
         const action = button.dataset.action;
 
         const params = new URLSearchParams();
+        params.append("csrf_token", csrfToken);
         params.append("productId", productId);
         params.append("key", cartKey);
         params.append("action", action);
@@ -876,6 +981,12 @@
     let selectedProvince = null;
     let selectedWard = null;
     let provinceLoaded = false;
+
+    function notifyButtonState() {
+      if (window.updateCheckoutButtonsState) {
+        window.updateCheckoutButtonsState();
+      }
+    }
 
     function showDropdown() {
       locationField.classList.add("active");
@@ -1031,6 +1142,8 @@
 
       locationInput.value = province.name || "";
 
+      notifyButtonState();
+
       wardTab.classList.remove("disabled");
       setActiveTab("ward");
       setLoading(wardList, "Đang tải danh sách Phường/Xã...");
@@ -1109,6 +1222,7 @@
 
           updateShippingAddress();
           updateDeliveryText();
+          notifyButtonState();
 
           hideDropdown();
         });
@@ -1190,6 +1304,7 @@
       addressInput.addEventListener("input", function () {
         updateShippingAddress();
         updateDeliveryText();
+        notifyButtonState();
       });
     }
 
@@ -1206,5 +1321,6 @@
     });
 
     loadProvinces();
+    notifyButtonState();
   })();
 </script>
