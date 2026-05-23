@@ -15,7 +15,6 @@ import java.util.List;
 public class UserRankDAO {
 
     private static final String PAID = "PAID";
-    private static final String DEFAULT_RANK_CODE = "MEMBER";
 
     private static BigDecimal money0(BigDecimal value) {
         if (value == null) {
@@ -29,211 +28,7 @@ public class UserRankDAO {
         return value.setScale(0, RoundingMode.HALF_UP);
     }
 
-    private static String normalizeCode(String code) {
-        return code == null ? "" : code.trim().toUpperCase();
-    }
-
-    /* ================= ADMIN CRUD ================= */
-
-    public List<UserRank> findAllForAdmin() {
-
-        String sql = """
-                SELECT
-                    id,
-                    code,
-                    name,
-                    min_spent,
-                    discount_percent,
-                    css_class,
-                    active,
-                    created_at
-                FROM store_rank
-                ORDER BY min_spent ASC, id ASC
-                """;
-
-        List<UserRank> ranks = new ArrayList<>();
-
-        try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql);
-             ResultSet resultSet = statement.executeQuery()) {
-
-            while (resultSet.next()) {
-                ranks.add(mapRank(resultSet));
-            }
-
-            return ranks;
-
-        } catch (SQLException e) {
-            throw new RuntimeException("UserRankDAO.findAllForAdmin error", e);
-        }
-    }
-
-    public UserRank findById(long id) {
-
-        String sql = """
-                SELECT
-                    id,
-                    code,
-                    name,
-                    min_spent,
-                    discount_percent,
-                    css_class,
-                    active,
-                    created_at
-                FROM store_rank
-                WHERE id = ?
-                LIMIT 1
-                """;
-
-        try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-
-            statement.setLong(1, id);
-
-            try (ResultSet resultSet = statement.executeQuery()) {
-                if (resultSet.next()) {
-                    return mapRank(resultSet);
-                }
-            }
-
-            return null;
-
-        } catch (SQLException e) {
-            throw new RuntimeException("UserRankDAO.findById error", e);
-        }
-    }
-
-    public void create(UserRank rank) {
-
-        String sql = """
-                INSERT INTO store_rank
-                    (code, name, min_spent, discount_percent, css_class, active)
-                VALUES
-                    (?, ?, ?, ?, ?, ?)
-                """;
-
-        try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-
-            statement.setString(1, normalizeCode(rank.getCode()));
-            statement.setString(2, rank.getName());
-            statement.setBigDecimal(3, money0(rank.getMinSpent()));
-            statement.setInt(4, rank.getDiscountPercent());
-            statement.setString(5, rank.getCssClass());
-            statement.setBoolean(6, rank.isActive());
-
-            statement.executeUpdate();
-
-        } catch (SQLException e) {
-            throw new RuntimeException("UserRankDAO.create error", e);
-        }
-    }
-
-    public void update(UserRank rank) {
-
-        String sql = """
-                UPDATE store_rank
-                SET
-                    code = ?,
-                    name = ?,
-                    min_spent = ?,
-                    discount_percent = ?,
-                    css_class = ?,
-                    active = ?
-                WHERE id = ?
-                """;
-
-        try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-
-            statement.setString(1, normalizeCode(rank.getCode()));
-            statement.setString(2, rank.getName());
-            statement.setBigDecimal(3, money0(rank.getMinSpent()));
-            statement.setInt(4, rank.getDiscountPercent());
-            statement.setString(5, rank.getCssClass());
-            statement.setBoolean(6, rank.isActive());
-            statement.setLong(7, rank.getId());
-
-            statement.executeUpdate();
-
-        } catch (SQLException e) {
-            throw new RuntimeException("UserRankDAO.update error", e);
-        }
-    }
-
-    public void deactivate(long id) {
-
-        String sql = """
-                UPDATE store_rank
-                SET active = 0
-                WHERE id = ?
-                AND UPPER(code) <> ?
-                """;
-
-        try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-
-            statement.setLong(1, id);
-            statement.setString(2, DEFAULT_RANK_CODE);
-
-            statement.executeUpdate();
-
-        } catch (SQLException e) {
-            throw new RuntimeException("UserRankDAO.deactivate error", e);
-        }
-    }
-
-    public void toggleActive(long id) {
-
-        String sql = """
-                UPDATE store_rank
-                SET active = CASE WHEN active = 1 THEN 0 ELSE 1 END
-                WHERE id = ?
-                AND UPPER(code) <> ?
-                """;
-
-        try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-
-            statement.setLong(1, id);
-            statement.setString(2, DEFAULT_RANK_CODE);
-
-            statement.executeUpdate();
-
-        } catch (SQLException e) {
-            throw new RuntimeException("UserRankDAO.toggleActive error", e);
-        }
-    }
-
-    public boolean existsByCodeExceptId(String code, long excludedId) {
-
-        String sql = """
-                SELECT COUNT(*) AS total
-                FROM store_rank
-                WHERE UPPER(code) = ?
-                AND id <> ?
-                """;
-
-        try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-
-            statement.setString(1, normalizeCode(code));
-            statement.setLong(2, excludedId);
-
-            try (ResultSet resultSet = statement.executeQuery()) {
-                if (resultSet.next()) {
-                    return resultSet.getInt("total") > 0;
-                }
-            }
-
-            return false;
-
-        } catch (SQLException e) {
-            throw new RuntimeException("UserRankDAO.existsByCodeExceptId error", e);
-        }
-    }
-
-    /* ================= FIND RANK ================= */
+    /* ================= FIND RANK - USER SIDE ================= */
 
     public List<UserRank> findAllActive() {
 
@@ -282,7 +77,7 @@ public class UserRankDAO {
                     active,
                     created_at
                 FROM store_rank
-                WHERE UPPER(code) = ?
+                WHERE code = ?
                 AND active = 1
                 LIMIT 1
                 """;
@@ -290,7 +85,7 @@ public class UserRankDAO {
         try (Connection connection = DBConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            statement.setString(1, normalizeCode(code));
+            statement.setString(1, code);
 
             try (ResultSet resultSet = statement.executeQuery()) {
                 if (resultSet.next()) {
@@ -380,6 +175,203 @@ public class UserRankDAO {
 
         } catch (SQLException e) {
             throw new RuntimeException("UserRankDAO.findNextRank error", e);
+        }
+    }
+
+    /* ================= ADMIN CRUD SUPPORT ================= */
+
+    public List<UserRank> findAllForAdmin() {
+
+        String sql = """
+                SELECT
+                    id,
+                    code,
+                    name,
+                    min_spent,
+                    discount_percent,
+                    css_class,
+                    active,
+                    created_at
+                FROM store_rank
+                ORDER BY min_spent ASC, id ASC
+                """;
+
+        List<UserRank> ranks = new ArrayList<>();
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet resultSet = statement.executeQuery()) {
+
+            while (resultSet.next()) {
+                ranks.add(mapRank(resultSet));
+            }
+
+            return ranks;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("UserRankDAO.findAllForAdmin error", e);
+        }
+    }
+
+    public UserRank findById(long id) {
+
+        String sql = """
+                SELECT
+                    id,
+                    code,
+                    name,
+                    min_spent,
+                    discount_percent,
+                    css_class,
+                    active,
+                    created_at
+                FROM store_rank
+                WHERE id = ?
+                LIMIT 1
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setLong(1, id);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return mapRank(resultSet);
+                }
+            }
+
+            return null;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("UserRankDAO.findById error", e);
+        }
+    }
+
+    public void create(UserRank rank) {
+
+        String sql = """
+                INSERT INTO store_rank
+                    (code, name, min_spent, discount_percent, css_class, active)
+                VALUES
+                    (?, ?, ?, ?, ?, ?)
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, rank.getCode());
+            statement.setString(2, rank.getName());
+            statement.setBigDecimal(3, money0(rank.getMinSpent()));
+            statement.setInt(4, rank.getDiscountPercent());
+            statement.setString(5, rank.getCssClass());
+            statement.setBoolean(6, rank.isActive());
+
+            statement.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new RuntimeException("UserRankDAO.create error", e);
+        }
+    }
+
+    public void update(UserRank rank) {
+
+        String sql = """
+                UPDATE store_rank
+                SET
+                    code = ?,
+                    name = ?,
+                    min_spent = ?,
+                    discount_percent = ?,
+                    css_class = ?,
+                    active = ?
+                WHERE id = ?
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, rank.getCode());
+            statement.setString(2, rank.getName());
+            statement.setBigDecimal(3, money0(rank.getMinSpent()));
+            statement.setInt(4, rank.getDiscountPercent());
+            statement.setString(5, rank.getCssClass());
+            statement.setBoolean(6, rank.isActive());
+            statement.setLong(7, rank.getId());
+
+            statement.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new RuntimeException("UserRankDAO.update error", e);
+        }
+    }
+
+    public void deactivate(long id) {
+
+        String sql = """
+                UPDATE store_rank
+                SET active = 0
+                WHERE id = ?
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setLong(1, id);
+            statement.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new RuntimeException("UserRankDAO.deactivate error", e);
+        }
+    }
+
+    public void toggleActive(long id) {
+
+        String sql = """
+                UPDATE store_rank
+                SET active = CASE
+                    WHEN active = 1 THEN 0
+                    ELSE 1
+                END
+                WHERE id = ?
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setLong(1, id);
+            statement.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new RuntimeException("UserRankDAO.toggleActive error", e);
+        }
+    }
+
+    public boolean existsByCodeExceptId(String code, long exceptId) {
+
+        String sql = """
+                SELECT COUNT(*) AS total
+                FROM store_rank
+                WHERE UPPER(code) = UPPER(?)
+                AND id <> ?
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, code);
+            statement.setLong(2, exceptId);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getInt("total") > 0;
+                }
+            }
+
+            return false;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("UserRankDAO.existsByCodeExceptId error", e);
         }
     }
 
