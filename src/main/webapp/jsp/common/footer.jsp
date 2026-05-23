@@ -156,7 +156,7 @@
     <div class="footer-container">
         <div class="footer-grid">
 
-            <!-- ================= CONTACT ================= -->
+            <!-- CONTACT -->
             <div class="footer-col">
                 <h4>Thông tin liên hệ</h4>
 
@@ -189,7 +189,7 @@
                 </div>
             </div>
 
-            <!-- ================= CATEGORY ================= -->
+            <!--  CATEGORY  -->
             <div class="footer-col">
                 <h4>Danh mục</h4>
 
@@ -204,7 +204,7 @@
                 </ul>
             </div>
 
-            <!-- ================= POLICY ================= -->
+            <!--  POLICY -->
             <div class="footer-col">
                 <h4>Chính sách</h4>
 
@@ -219,7 +219,7 @@
                 </ul>
             </div>
 
-            <!-- ================= SOCIAL ================= -->
+            <!--  SOCIAL -->
             <div class="footer-col">
                 <h4>Kết nối với chúng tôi</h4>
 
@@ -272,7 +272,7 @@
         </div>
     </div>
 
-    <!-- ================= BOTTOM ================= -->
+    <!--  BOTTOM  -->
     <div class="footer-bottom">
         <div class="footer-container">
             Copyright © ${settings.name_website} ${settings.copyright_year} – All rights reserved
