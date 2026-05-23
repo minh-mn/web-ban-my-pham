@@ -13,52 +13,126 @@ import java.util.List;
 
 public class UserDAO {
 
+    private static final String DEFAULT_ROLE = "USER";
+
+    /*
+     * Các cột user dùng chung cho những câu SELECT.
+     * Có manual_rank_code để account/checkout/admin nhận đúng rank admin gán thủ công.
+     */
+    private static final String USER_COLUMNS = """
+            id,
+            username,
+            password,
+            role,
+            full_name,
+            email,
+            phone,
+            active,
+            created_at,
+            google_id,
+            facebook_id,
+            birth_date,
+            gender,
+            manual_rank_code
+            """;
+
     /* ================= INTERNAL MAPPER (users table) ================= */
+
     private User mapUser(ResultSet rs) throws SQLException {
-        User u = new User();
+        User user = new User();
 
-        u.setId(rs.getInt("id"));
-        u.setUsername(rs.getString("username"));
-        u.setRole(rs.getString("role"));
+        user.setId(rs.getInt("id"));
+        user.setUsername(rs.getString("username"));
+        user.setRole(rs.getString("role"));
 
-        // Bọc trong try-catch phòng trường hợp câu SELECT không lấy đầy đủ cột (Ví dụ SELECT viết rút gọn)
-        try { u.setFullName(rs.getString("full_name")); } catch (SQLException ignored) {}
-        try { u.setEmail(rs.getString("email")); } catch (SQLException ignored) {}
-        try { u.setPhone(rs.getString("phone")); } catch (SQLException ignored) {}
-        try { u.setActive(rs.getBoolean("active")); } catch (SQLException ignored) {}
-        try { u.setCreatedAt(rs.getTimestamp("created_at")); } catch (SQLException ignored) {}
+        /*
+         * Bọc try-catch để an toàn nếu một vài câu SELECT cũ/rút gọn
+         * không lấy đủ toàn bộ cột.
+         */
+        try {
+            user.setPassword(rs.getString("password"));
+        } catch (SQLException ignored) {
+        }
 
-        // BỔ SUNG ĐẦY ĐỦ CÁC TRƯỜNG DỮ LIỆU CÒN LẠI ĐÚNG THEO DB
-        try { u.setGoogleId(rs.getString("google_id")); } catch (SQLException ignored) {}
-        try { u.setFacebookId(rs.getString("facebook_id")); } catch (SQLException ignored) {}
+        try {
+            user.setFullName(rs.getString("full_name"));
+        } catch (SQLException ignored) {
+        }
+
+        try {
+            user.setEmail(rs.getString("email"));
+        } catch (SQLException ignored) {
+        }
+
+        try {
+            user.setPhone(rs.getString("phone"));
+        } catch (SQLException ignored) {
+        }
+
+        try {
+            user.setActive(rs.getBoolean("active"));
+        } catch (SQLException ignored) {
+        }
+
+        try {
+            user.setCreatedAt(rs.getTimestamp("created_at"));
+        } catch (SQLException ignored) {
+        }
+
+        try {
+            user.setGoogleId(rs.getString("google_id"));
+        } catch (SQLException ignored) {
+        }
+
+        try {
+            user.setFacebookId(rs.getString("facebook_id"));
+        } catch (SQLException ignored) {
+        }
 
         try {
             if (rs.getDate("birth_date") != null) {
-                u.setBirthDate(rs.getDate("birth_date").toString()); // Đọc ra chuỗi định dạng "yyyy-MM-dd" để dễ xử lý ở View
+                user.setBirthDate(rs.getDate("birth_date").toString());
             }
-        } catch (SQLException ignored) {}
+        } catch (SQLException ignored) {
+        }
 
-        try { u.setGender(rs.getString("gender")); } catch (SQLException ignored) {}
+        try {
+            user.setGender(rs.getString("gender"));
+        } catch (SQLException ignored) {
+        }
 
-        return u;
+        /*
+         * Quan trọng cho Ưu tiên 2:
+         * Admin gán manual_rank_code thì User object phải giữ được giá trị này.
+         */
+        try {
+            user.setManualRankCode(normalizeRankCode(rs.getString("manual_rank_code")));
+        } catch (SQLException ignored) {
+        }
+
+        return user;
     }
 
     /* ================= FIND BY USERNAME (users) ================= */
+
     public User findByUsername(String username) {
-        String sql = "SELECT id, username, role, full_name, email, phone, active, created_at "
-                + "FROM users WHERE username = ?";
+        String sql = """
+                SELECT %s
+                FROM users
+                WHERE username = ?
+                """.formatted(USER_COLUMNS);
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            ps.setString(1, username);
+            statement.setString(1, username);
 
-            try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) {
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (!resultSet.next()) {
                     return null;
                 }
 
-                return mapUser(rs);
+                return mapUser(resultSet);
             }
 
         } catch (SQLException e) {
@@ -67,21 +141,25 @@ public class UserDAO {
     }
 
     /* ================= FIND BY ID (users.id) ================= */
+
     public User findById(int id) {
-        String sql = "SELECT id, username, role, full_name, email, phone, active, created_at "
-                + "FROM users WHERE id = ?";
+        String sql = """
+                SELECT %s
+                FROM users
+                WHERE id = ?
+                """.formatted(USER_COLUMNS);
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            ps.setInt(1, id);
+            statement.setInt(1, id);
 
-            try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) {
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (!resultSet.next()) {
                     return null;
                 }
 
-                return mapUser(rs);
+                return mapUser(resultSet);
             }
 
         } catch (SQLException e) {
@@ -90,21 +168,25 @@ public class UserDAO {
     }
 
     /* ================= FIND ALL ================= */
+
     public List<User> findAll() {
-        String sql = "SELECT id, username, role, full_name, email, phone, active, created_at "
-                + "FROM users ORDER BY id DESC";
+        String sql = """
+                SELECT %s
+                FROM users
+                ORDER BY id DESC
+                """.formatted(USER_COLUMNS);
 
-        List<User> list = new ArrayList<>();
+        List<User> users = new ArrayList<>();
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet resultSet = statement.executeQuery()) {
 
-            while (rs.next()) {
-                list.add(mapUser(rs));
+            while (resultSet.next()) {
+                users.add(mapUser(resultSet));
             }
 
-            return list;
+            return users;
 
         } catch (SQLException e) {
             throw new RuntimeException("UserDAO.findAll error", e);
@@ -112,31 +194,35 @@ public class UserDAO {
     }
 
     /* ================= LOGIN ================= */
+
     public User login(String username, String plainPassword) {
-        String sql = "SELECT id, username, password, role, full_name, email, phone, active, created_at "
-                + "FROM users WHERE username = ?";
+        String sql = """
+                SELECT %s
+                FROM users
+                WHERE username = ?
+                """.formatted(USER_COLUMNS);
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            ps.setString(1, username);
+            statement.setString(1, username);
 
-            try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) {
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (!resultSet.next()) {
                     return null;
                 }
 
-                if (!rs.getBoolean("active")) {
+                if (!resultSet.getBoolean("active")) {
                     return null;
                 }
 
-                String hashed = rs.getString("password");
+                String hashedPassword = resultSet.getString("password");
 
-                if (!PasswordUtils.verify(plainPassword, hashed)) {
+                if (!PasswordUtils.verify(plainPassword, hashedPassword)) {
                     return null;
                 }
 
-                return mapUser(rs);
+                return mapUser(resultSet);
             }
 
         } catch (SQLException e) {
@@ -145,20 +231,25 @@ public class UserDAO {
     }
 
     /* ================= CHECK PASSWORD (BY USERNAME) ================= */
+
     public boolean checkPasswordByUsername(String username, String plainPassword) {
-        String sql = "SELECT password FROM users WHERE username = ?";
+        String sql = """
+                SELECT password
+                FROM users
+                WHERE username = ?
+                """;
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            ps.setString(1, username);
+            statement.setString(1, username);
 
-            try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) {
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (!resultSet.next()) {
                     return false;
                 }
 
-                return PasswordUtils.verify(plainPassword, rs.getString("password"));
+                return PasswordUtils.verify(plainPassword, resultSet.getString("password"));
             }
 
         } catch (SQLException e) {
@@ -167,20 +258,25 @@ public class UserDAO {
     }
 
     /* ================= CHECK PASSWORD (BY users.id) ================= */
+
     public boolean checkPassword(int userId, String plainPassword) {
-        String sql = "SELECT password FROM users WHERE id = ?";
+        String sql = """
+                SELECT password
+                FROM users
+                WHERE id = ?
+                """;
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            ps.setInt(1, userId);
+            statement.setInt(1, userId);
 
-            try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) {
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (!resultSet.next()) {
                     return false;
                 }
 
-                return PasswordUtils.verify(plainPassword, rs.getString("password"));
+                return PasswordUtils.verify(plainPassword, resultSet.getString("password"));
             }
 
         } catch (SQLException e) {
@@ -189,15 +285,20 @@ public class UserDAO {
     }
 
     /* ================= UPDATE PASSWORD ================= */
+
     public void updatePassword(int userId, String newPlainPassword) {
-        String sql = "UPDATE users SET password = ? WHERE id = ?";
+        String sql = """
+                UPDATE users
+                SET password = ?
+                WHERE id = ?
+                """;
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            ps.setString(1, PasswordUtils.hash(newPlainPassword));
-            ps.setInt(2, userId);
-            ps.executeUpdate();
+            statement.setString(1, PasswordUtils.hash(newPlainPassword));
+            statement.setInt(2, userId);
+            statement.executeUpdate();
 
         } catch (SQLException e) {
             throw new RuntimeException("UserDAO.updatePassword error", e);
@@ -205,15 +306,19 @@ public class UserDAO {
     }
 
     public boolean updatePasswordAdmin(int userId, String newPlainPassword) {
-        String sql = "UPDATE users SET password = ? WHERE id = ?";
+        String sql = """
+                UPDATE users
+                SET password = ?
+                WHERE id = ?
+                """;
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            ps.setString(1, PasswordUtils.hash(newPlainPassword));
-            ps.setInt(2, userId);
+            statement.setString(1, PasswordUtils.hash(newPlainPassword));
+            statement.setInt(2, userId);
 
-            return ps.executeUpdate() > 0;
+            return statement.executeUpdate() > 0;
 
         } catch (SQLException e) {
             throw new RuntimeException("UserDAO.updatePasswordAdmin error", e);
@@ -221,43 +326,120 @@ public class UserDAO {
     }
 
     /* ================= UPDATE INFO (ADMIN) ================= */
-    public boolean updateInfoAdmin(User u) {
-        String sql = "UPDATE users SET full_name = ?, email = ?, phone = ?, role = ?, active = ? WHERE id = ?";
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+    public boolean updateInfoAdmin(User user) {
+        String sql = """
+                UPDATE users
+                SET full_name = ?,
+                    email = ?,
+                    phone = ?,
+                    role = ?,
+                    active = ?,
+                    manual_rank_code = ?
+                WHERE id = ?
+                """;
 
-            ps.setString(1, u.getFullName());
-            ps.setString(2, u.getEmail());
-            ps.setString(3, u.getPhone());
-            ps.setString(4, u.getRole());
-            ps.setBoolean(5, u.isActive());
-            ps.setInt(6, u.getId());
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            return ps.executeUpdate() > 0;
+            statement.setString(1, user.getFullName());
+            statement.setString(2, user.getEmail());
+            statement.setString(3, user.getPhone());
+            statement.setString(4, user.getRole());
+            statement.setBoolean(5, user.isActive());
+            statement.setString(6, normalizeNullableRankCode(user.getManualRankCode()));
+            statement.setInt(7, user.getId());
+
+            return statement.executeUpdate() > 0;
 
         } catch (SQLException e) {
             throw new RuntimeException("UserDAO.updateInfoAdmin error", e);
         }
     }
 
+    /*
+     * Dùng khi chỉ muốn cập nhật rank thủ công mà không đụng thông tin user khác.
+     */
+    public boolean updateManualRankCode(int userId, String manualRankCode) {
+        String sql = """
+                UPDATE users
+                SET manual_rank_code = ?
+                WHERE id = ?
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, normalizeNullableRankCode(manualRankCode));
+            statement.setInt(2, userId);
+
+            return statement.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("UserDAO.updateManualRankCode error", e);
+        }
+    }
+
+    /*
+     * Lấy manual rank trực tiếp theo userId.
+     * CheckoutService/UserRankService có thể dùng hàm này để ưu tiên rank admin gán.
+     */
+    public String findManualRankCodeByUserId(int userId) {
+        String sql = """
+                SELECT manual_rank_code
+                FROM users
+                WHERE id = ?
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setInt(1, userId);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (!resultSet.next()) {
+                    return null;
+                }
+
+                return normalizeNullableRankCode(resultSet.getString("manual_rank_code"));
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("UserDAO.findManualRankCodeByUserId error", e);
+        }
+    }
+
     /* ================= REGISTER ================= */
-    public void create(User u, String plainPassword) {
-        String sqlUsers = "INSERT INTO users (username, password, role, full_name, email, phone, active) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sqlUsers)) {
+    public void create(User user, String plainPassword) {
+        String sql = """
+                INSERT INTO users
+                (
+                    username,
+                    password,
+                    role,
+                    full_name,
+                    email,
+                    phone,
+                    active,
+                    manual_rank_code
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """;
 
-            ps.setString(1, u.getUsername());
-            ps.setString(2, PasswordUtils.hash(plainPassword));
-            ps.setString(3, u.getRole() != null ? u.getRole() : "USER");
-            ps.setString(4, u.getFullName());
-            ps.setString(5, u.getEmail());
-            ps.setString(6, u.getPhone());
-            ps.setBoolean(7, u.isActive());
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            ps.executeUpdate();
+            statement.setString(1, user.getUsername());
+            statement.setString(2, PasswordUtils.hash(plainPassword));
+            statement.setString(3, user.getRole() != null ? user.getRole() : DEFAULT_ROLE);
+            statement.setString(4, user.getFullName());
+            statement.setString(5, user.getEmail());
+            statement.setString(6, user.getPhone());
+            statement.setBoolean(7, user.isActive());
+            statement.setString(8, normalizeNullableRankCode(user.getManualRankCode()));
+
+            statement.executeUpdate();
 
         } catch (SQLException e) {
             throw new RuntimeException("UserDAO.create error", e);
@@ -265,25 +447,29 @@ public class UserDAO {
     }
 
     /* ================= FIND BY EMAIL ================= */
+
     public User findByEmail(String email) {
-        String sql = "SELECT id, username, role, full_name, email, phone, active, created_at "
-                + "FROM users WHERE email = ?";
+        String sql = """
+                SELECT %s
+                FROM users
+                WHERE email = ?
+                """.formatted(USER_COLUMNS);
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            ps.setString(1, email);
+            statement.setString(1, email);
 
-            try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) {
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (!resultSet.next()) {
                     return null;
                 }
 
-                if (!rs.getBoolean("active")) {
+                if (!resultSet.getBoolean("active")) {
                     return null;
                 }
 
-                return mapUser(rs);
+                return mapUser(resultSet);
             }
 
         } catch (SQLException e) {
@@ -292,16 +478,21 @@ public class UserDAO {
     }
 
     public boolean updateContact(int userId, String email, String phone) {
-        String sql = "UPDATE users SET email = ?, phone = ? WHERE id = ?";
+        String sql = """
+                UPDATE users
+                SET email = ?,
+                    phone = ?
+                WHERE id = ?
+                """;
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            ps.setString(1, email);
-            ps.setString(2, phone);
-            ps.setInt(3, userId);
+            statement.setString(1, email);
+            statement.setString(2, phone);
+            statement.setInt(3, userId);
 
-            return ps.executeUpdate() > 0;
+            return statement.executeUpdate() > 0;
 
         } catch (SQLException e) {
             throw new RuntimeException("UserDAO.updateContact error", e);
@@ -309,23 +500,27 @@ public class UserDAO {
     }
 
     /* ================= SOCIAL LOGIN METHODS ================= */
+
     public User findBySocialId(String provider, String socialId) {
-        String column = "google".equals(provider) ? "google_id" : "facebook_id";
+        String column = "google".equalsIgnoreCase(provider) ? "google_id" : "facebook_id";
 
-        String sql = "SELECT id, username, role, full_name, email, phone, active, created_at "
-                + "FROM users WHERE " + column + " = ?";
+        String sql = """
+                SELECT %s
+                FROM users
+                WHERE %s = ?
+                """.formatted(USER_COLUMNS, column);
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            ps.setString(1, socialId);
+            statement.setString(1, socialId);
 
-            try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) {
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (!resultSet.next()) {
                     return null;
                 }
 
-                return mapUser(rs);
+                return mapUser(resultSet);
             }
 
         } catch (SQLException e) {
@@ -333,23 +528,35 @@ public class UserDAO {
         }
     }
 
-    public void saveSocialUser(User u, String provider, String socialId) {
-        String column = "google".equals(provider) ? "google_id" : "facebook_id";
+    public void saveSocialUser(User user, String provider, String socialId) {
+        String column = "google".equalsIgnoreCase(provider) ? "google_id" : "facebook_id";
 
-        String sql = "INSERT INTO users (username, role, full_name, email, active, " + column + ") "
-                + "VALUES (?, ?, ?, ?, ?, ?)";
+        String sql = """
+                INSERT INTO users
+                (
+                    username,
+                    role,
+                    full_name,
+                    email,
+                    active,
+                    %s,
+                    manual_rank_code
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """.formatted(column);
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            ps.setString(1, u.getUsername());
-            ps.setString(2, "USER");
-            ps.setString(3, u.getFullName());
-            ps.setString(4, u.getEmail());
-            ps.setBoolean(5, true);
-            ps.setString(6, socialId);
+            statement.setString(1, user.getUsername());
+            statement.setString(2, DEFAULT_ROLE);
+            statement.setString(3, user.getFullName());
+            statement.setString(4, user.getEmail());
+            statement.setBoolean(5, true);
+            statement.setString(6, socialId);
+            statement.setString(7, normalizeNullableRankCode(user.getManualRankCode()));
 
-            ps.executeUpdate();
+            statement.executeUpdate();
 
         } catch (SQLException e) {
             throw new RuntimeException("UserDAO.saveSocialUser error", e);
@@ -357,17 +564,21 @@ public class UserDAO {
     }
 
     public void updateSocialId(int userId, String provider, String socialId) {
-        String column = "google".equals(provider) ? "google_id" : "facebook_id";
+        String column = "google".equalsIgnoreCase(provider) ? "google_id" : "facebook_id";
 
-        String sql = "UPDATE users SET " + column + " = ? WHERE id = ?";
+        String sql = """
+                UPDATE users
+                SET %s = ?
+                WHERE id = ?
+                """.formatted(column);
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            ps.setString(1, socialId);
-            ps.setInt(2, userId);
+            statement.setString(1, socialId);
+            statement.setInt(2, userId);
 
-            ps.executeUpdate();
+            statement.executeUpdate();
 
         } catch (SQLException e) {
             throw new RuntimeException("UserDAO.updateSocialId error", e);
@@ -379,40 +590,71 @@ public class UserDAO {
      * Password được hash tại đây để tránh lưu mật khẩu thô vào database.
      */
     public boolean insert(User user) {
-        // Câu lệnh SQL tuân thủ đúng thứ tự xuất hiện của cấu trúc dữ liệu bảng users của bạn
-        String sql = "INSERT INTO users (username, password, full_name, email, phone, role, active, google_id, facebook_id, birth_date, gender) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = """
+                INSERT INTO users
+                (
+                    username,
+                    password,
+                    full_name,
+                    email,
+                    phone,
+                    role,
+                    active,
+                    google_id,
+                    facebook_id,
+                    birth_date,
+                    gender,
+                    manual_rank_code
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """;
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            // Index tương ứng từ 1 -> 11 của chuỗi VALUES phía trên:
-            ps.setString(1, user.getUsername());
-            ps.setString(2, PasswordUtils.hash(user.getPassword())); // Mã hóa mật khẩu bảo mật
-            ps.setString(3, user.getFullName());
-            ps.setString(4, user.getEmail());
-            ps.setString(5, user.getPhone());
-            ps.setString(6, user.getRole() != null ? user.getRole() : "USER");
-            ps.setBoolean(7, user.isActive());
+            statement.setString(1, user.getUsername());
+            statement.setString(2, PasswordUtils.hash(user.getPassword()));
+            statement.setString(3, user.getFullName());
+            statement.setString(4, user.getEmail());
+            statement.setString(5, user.getPhone());
+            statement.setString(6, user.getRole() != null ? user.getRole() : DEFAULT_ROLE);
+            statement.setBoolean(7, user.isActive());
 
-            // Tài khoản đăng ký thông thường, mặc định 2 trường Google/FB Id là null
-            ps.setString(8, null);
-            ps.setString(9, null);
+            statement.setString(8, null);
+            statement.setString(9, null);
 
-            // Xử lý định dạng Ngày sinh: Đưa từ String (yyyy-MM-dd) thành java.sql.Date
             if (user.getBirthDate() != null && !user.getBirthDate().isBlank()) {
-                ps.setDate(10, java.sql.Date.valueOf(user.getBirthDate()));
+                statement.setDate(10, java.sql.Date.valueOf(user.getBirthDate()));
             } else {
-                ps.setNull(10, java.sql.Types.DATE);
+                statement.setNull(10, java.sql.Types.DATE);
             }
 
-            // Giới tính (Male / Female / Other)
-            ps.setString(11, user.getGender());
+            statement.setString(11, user.getGender());
+            statement.setString(12, normalizeNullableRankCode(user.getManualRankCode()));
 
-            return ps.executeUpdate() > 0;
+            return statement.executeUpdate() > 0;
 
         } catch (SQLException e) {
             throw new RuntimeException("UserDAO.insert error", e);
         }
+    }
+
+    /* ================= HELPERS ================= */
+
+    private String normalizeRankCode(String rankCode) {
+        if (rankCode == null || rankCode.isBlank()) {
+            return null;
+        }
+
+        String normalized = rankCode.trim().toUpperCase();
+
+        return switch (normalized) {
+            case "MEMBER", "SILVER", "GOLD", "DIAMOND", "VIP" -> normalized;
+            default -> null;
+        };
+    }
+
+    private String normalizeNullableRankCode(String rankCode) {
+        return normalizeRankCode(rankCode);
     }
 }
