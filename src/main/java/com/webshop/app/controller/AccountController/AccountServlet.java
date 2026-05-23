@@ -1,7 +1,11 @@
 package com.webshop.app.controller.AccountController;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.webshop.app.dao.*;
+import com.webshop.app.dao.AdminStatsDAO;
+import com.webshop.app.dao.CouponDAO;
+import com.webshop.app.dao.OrderDAO;
+import com.webshop.app.dao.UserCouponDAO;
+import com.webshop.app.dao.UserDAO;
 import com.webshop.app.model.User;
 import com.webshop.app.service.UserRankService;
 
@@ -27,6 +31,7 @@ public class AccountServlet extends HttpServlet {
 
     private final UserRankService userRankService = new UserRankService();
     private final UserCouponDAO userCouponDAO = new UserCouponDAO();
+    private final CouponDAO couponDAO = new CouponDAO();
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -49,7 +54,8 @@ public class AccountServlet extends HttpServlet {
          * =========================
          * RELOAD USER
          * =========================
-         * Reload user từ DB để lấy email/phone mới nhất.
+         * Reload user từ DB để lấy email/phone/manual_rank_code mới nhất.
+         * Quan trọng: UserDAO phải SELECT và map manual_rank_code.
          */
         User fresh = userDAO.findById(user.getId());
 
@@ -66,7 +72,7 @@ public class AccountServlet extends HttpServlet {
          * =========================
          * DEFAULT RANK ATTRIBUTES
          * =========================
-         * Nếu chưa có bảng store_rank hoặc dữ liệu rank lỗi,
+         * Nếu bảng store_rank hoặc dữ liệu rank bị lỗi,
          * giao diện vẫn không bị crash.
          */
         setDefaultRankAttributes(req);
@@ -75,36 +81,56 @@ public class AccountServlet extends HttpServlet {
          * =========================
          * USER RANK
          * =========================
-         * Tính rank dựa trên tổng chi tiêu từ đơn PAID,
-         * không tính đơn đã hủy.
+         * Ưu tiên manual_rank_code nếu admin đã gán.
+         *
+         * Cũ:
+         * userRankService.buildRankAttributes(user.getId())
+         *
+         * Mới:
+         * userRankService.buildRankAttributes(user)
+         *
+         * Lý do:
+         * - user.getManualRankCode() được truyền vào UserRankService.
+         * - Nếu manualRankCode có giá trị thì account hiển thị đúng rank admin gán.
+         * - Nếu manualRankCode null/AUTO thì vẫn tự tính theo tổng chi tiêu.
          */
-        String currentRankCode = "MEMBER";
+        String currentRankCode = normalizeRankCode(user.getManualRankCode());
 
         try {
-            Map<String, Object> rankAttributes = userRankService.buildRankAttributes(user.getId());
+            Map<String, Object> rankAttributes = userRankService.buildRankAttributes(user);
             rankAttributes.forEach(req::setAttribute);
 
             Object rankCodeObj = rankAttributes.get("rankCode");
 
             if (rankCodeObj != null && !rankCodeObj.toString().isBlank()) {
-                currentRankCode = rankCodeObj.toString().trim().toUpperCase();
+                currentRankCode = normalizeRankCode(rankCodeObj.toString());
             }
 
         } catch (RuntimeException e) {
             /*
              * Giữ default MEMBER để trang account vẫn chạy
-             * nếu DB chưa migrate store_rank.
+             * nếu DB chưa migrate store_rank hoặc query rank lỗi.
              */
             e.printStackTrace();
         }
+
+        if (currentRankCode == null || currentRankCode.isBlank()) {
+            currentRankCode = "MEMBER";
+        }
+
+        /*
+         * Dùng cho JSP nếu cần kiểm tra nhanh rank hiện tại.
+         */
+        req.setAttribute("currentRankCode", currentRankCode);
 
         /*
          * =========================
          * USER COUPONS BY RANK
          * =========================
          * Issue 110:
-         * Hiển thị danh sách mã giảm giá còn hiệu lực
-         * theo hạng khách hàng hiện tại.
+         * Hiển thị danh sách mã giảm giá còn hiệu lực theo hạng khách hàng hiện tại.
+         *
+         * currentRankCode ở đây đã xét manual rank.
          */
         try {
             req.setAttribute(
@@ -129,8 +155,11 @@ public class AccountServlet extends HttpServlet {
         req.setAttribute("total_spent_vnd", orderDAO.totalSpentByUserVnd(user.getId()));
         req.setAttribute("latest_order", orderDAO.findLatestByUser(user.getId()));
 
-        CouponDAO couponDAO = new com.webshop.app.dao.CouponDAO();
+        /*
+         * Mã giảm giá user đã lưu.
+         */
         req.setAttribute("savedCoupons", couponDAO.findSavedCouponsByUserId(user.getId()));
+
         /*
          * Chart.js cần JSON hợp lệ.
          * Nếu DAO trả về List thì convert sang JSON.
@@ -224,6 +253,7 @@ public class AccountServlet extends HttpServlet {
 
         req.setAttribute("rankLabel", "Thành viên");
         req.setAttribute("rankCode", "MEMBER");
+        req.setAttribute("currentRankCode", "MEMBER");
         req.setAttribute("rankCss", "rank-member");
         req.setAttribute("rankDiscount", 0);
         req.setAttribute("rankDiscountLabel", "Không có ưu đãi");
@@ -240,9 +270,30 @@ public class AccountServlet extends HttpServlet {
         req.setAttribute("maxRank", false);
 
         /*
+         * Default cho manual rank.
+         */
+        req.setAttribute("manualRank", false);
+        req.setAttribute("rankMode", "AUTO");
+        req.setAttribute("rankModeLabel", "Rank tự động theo tổng chi tiêu");
+
+        /*
          * Default cho Issue 110.
          */
         req.setAttribute("availableCoupons", Collections.emptyList());
+    }
+
+    private String normalizeRankCode(String rankCode) {
+
+        if (rankCode == null || rankCode.isBlank()) {
+            return "MEMBER";
+        }
+
+        String normalized = rankCode.trim().toUpperCase();
+
+        return switch (normalized) {
+            case "MEMBER", "SILVER", "GOLD", "DIAMOND", "VIP" -> normalized;
+            default -> "MEMBER";
+        };
     }
 
     private BigDecimal safeMoney(BigDecimal value) {
