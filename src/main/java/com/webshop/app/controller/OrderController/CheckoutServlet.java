@@ -26,6 +26,9 @@ public class CheckoutServlet extends HttpServlet {
 
     private static final String DEFAULT_SHIPPING_METHOD = "ECONOMY";
 
+    private static final String SESSION_CHECKOUT_COUPON = "CHECKOUT_COUPON";
+    private static final String SESSION_CHECKOUT_COUPON_DISCOUNT = "CHECKOUT_COUPON_DISCOUNT";
+
     private final CheckoutService checkoutService = new CheckoutService();
 
     private BigDecimal calcSubTotal(Map<String, CartItem> cart) {
@@ -77,6 +80,7 @@ public class CheckoutServlet extends HttpServlet {
             }
 
             return fee;
+
         } catch (NumberFormatException e) {
             return BigDecimal.ZERO;
         }
@@ -104,7 +108,7 @@ public class CheckoutServlet extends HttpServlet {
 
     private BigDecimal getCheckoutCouponDiscount(HttpSession session) {
         BigDecimal couponDiscount =
-                (BigDecimal) session.getAttribute("CHECKOUT_COUPON_DISCOUNT");
+                (BigDecimal) session.getAttribute(SESSION_CHECKOUT_COUPON_DISCOUNT);
 
         return couponDiscount != null ? couponDiscount : BigDecimal.ZERO;
     }
@@ -119,14 +123,79 @@ public class CheckoutServlet extends HttpServlet {
         return total;
     }
 
+    private void clearCheckoutCoupon(HttpSession session) {
+        session.removeAttribute(SESSION_CHECKOUT_COUPON);
+        session.removeAttribute(SESSION_CHECKOUT_COUPON_DISCOUNT);
+    }
+
+    private String normalizeCouponCode(String couponCode) {
+        if (couponCode == null || couponCode.trim().isEmpty()) {
+            return "";
+        }
+
+        return couponCode.trim().toUpperCase();
+    }
+
+    private boolean isCouponConditionMessage(String message) {
+        if (message == null || message.isBlank()) {
+            return false;
+        }
+
+        return message.contains("Mã giảm giá")
+                || message.contains("mã giảm giá")
+                || message.contains("Mã khuyến mãi")
+                || message.contains("mã khuyến mãi")
+                || message.contains("Hạng thành viên")
+                || message.contains("hạng thành viên")
+                || message.contains("Đơn hàng")
+                || message.contains("đơn hàng");
+    }
+
     private void prepareCheckoutView(HttpServletRequest req,
                                      HttpSession session,
-                                     Map<String, CartItem> cart) {
+                                     Map<String, CartItem> cart,
+                                     int userId) {
 
         BigDecimal subTotal = calcSubTotal(cart);
 
-        String appliedCoupon = (String) session.getAttribute("CHECKOUT_COUPON");
-        BigDecimal couponDiscount = getCheckoutCouponDiscount(session);
+        String appliedCoupon = (String) session.getAttribute(SESSION_CHECKOUT_COUPON);
+        BigDecimal couponDiscount = BigDecimal.ZERO;
+
+        /*
+         * Re-check coupon mỗi lần mở checkout.
+         * Mục tiêu:
+         * - Nếu giỏ hàng thay đổi làm đơn không còn đủ min_order_amount thì tự bỏ coupon.
+         * - Nếu rank user không đủ min_rank_code thì không giữ coupon cũ trong session.
+         */
+        if (!isBlank(appliedCoupon)) {
+            appliedCoupon = normalizeCouponCode(appliedCoupon);
+
+            couponDiscount = checkoutService.calculateCouponDiscount(
+                    userId,
+                    appliedCoupon,
+                    subTotal
+            );
+
+            if (couponDiscount.compareTo(BigDecimal.ZERO) > 0) {
+                session.setAttribute(SESSION_CHECKOUT_COUPON, appliedCoupon);
+                session.setAttribute(SESSION_CHECKOUT_COUPON_DISCOUNT, couponDiscount);
+            } else {
+                clearCheckoutCoupon(session);
+                appliedCoupon = null;
+                couponDiscount = BigDecimal.ZERO;
+
+                if (session.getAttribute("coupon_error") == null) {
+                    session.setAttribute(
+                            "coupon_error",
+                            "Mã khuyến mãi không còn đủ điều kiện áp dụng cho giỏ hàng hiện tại."
+                    );
+                }
+            }
+        } else {
+            session.removeAttribute(SESSION_CHECKOUT_COUPON_DISCOUNT);
+            couponDiscount = getCheckoutCouponDiscount(session);
+        }
+
         BigDecimal total = calcTotal(subTotal, couponDiscount);
 
         req.setAttribute("cart", cart);
@@ -294,7 +363,7 @@ public class CheckoutServlet extends HttpServlet {
             return;
         }
 
-        prepareCheckoutView(req, session, cart);
+        prepareCheckoutView(req, session, cart, user.getId());
 
         req.getRequestDispatcher("/jsp/common/base.jsp").forward(req, resp);
     }
@@ -333,30 +402,40 @@ public class CheckoutServlet extends HttpServlet {
         String action = req.getParameter("action");
 
         if ("apply-coupon".equalsIgnoreCase(action)) {
-            String couponCode = req.getParameter("couponCode");
+            String couponCode = normalizeCouponCode(req.getParameter("couponCode"));
 
             if (isBlank(couponCode)) {
-                session.removeAttribute("CHECKOUT_COUPON");
-                session.removeAttribute("CHECKOUT_COUPON_DISCOUNT");
-                session.setAttribute("coupon_error", "Vui lòng nhập mã khuyến mãi");
+                clearCheckoutCoupon(session);
+                session.setAttribute("coupon_error", "Vui lòng nhập mã khuyến mãi.");
 
                 resp.sendRedirect(req.getContextPath() + "/checkout");
                 return;
             }
 
-            couponCode = couponCode.trim();
-
             BigDecimal subTotal = calcSubTotal(cart);
-            BigDecimal discount = checkoutService.calculateCouponDiscount(couponCode, subTotal);
+
+            /*
+             * Quan trọng:
+             * Dùng overload có userId để CouponService kiểm tra đúng:
+             * - min_order_amount
+             * - min_rank_code
+             */
+            BigDecimal discount = checkoutService.calculateCouponDiscount(
+                    user.getId(),
+                    couponCode,
+                    subTotal
+            );
 
             if (discount == null || discount.compareTo(BigDecimal.ZERO) <= 0) {
-                session.removeAttribute("CHECKOUT_COUPON");
-                session.removeAttribute("CHECKOUT_COUPON_DISCOUNT");
-                session.setAttribute("coupon_error", "Mã khuyến mãi không hợp lệ hoặc đã hết hạn");
+                clearCheckoutCoupon(session);
+                session.setAttribute(
+                        "coupon_error",
+                        "Mã khuyến mãi không hợp lệ, đã hết hạn, hết lượt dùng, đơn chưa đủ tối thiểu hoặc hạng thành viên chưa phù hợp."
+                );
             } else {
-                session.setAttribute("CHECKOUT_COUPON", couponCode);
-                session.setAttribute("CHECKOUT_COUPON_DISCOUNT", discount);
-                session.setAttribute("coupon_success", "Áp dụng mã thành công");
+                session.setAttribute(SESSION_CHECKOUT_COUPON, couponCode);
+                session.setAttribute(SESSION_CHECKOUT_COUPON_DISCOUNT, discount);
+                session.setAttribute("coupon_success", "Áp dụng mã thành công.");
             }
 
             resp.sendRedirect(req.getContextPath() + "/checkout");
@@ -373,7 +452,7 @@ public class CheckoutServlet extends HttpServlet {
             req.setAttribute("errors", errors);
 
             keepFormValues(req);
-            prepareCheckoutView(req, session, cart);
+            prepareCheckoutView(req, session, cart, user.getId());
 
             req.getRequestDispatcher("/jsp/common/base.jsp").forward(req, resp);
             return;
@@ -389,14 +468,10 @@ public class CheckoutServlet extends HttpServlet {
         String shippingMethod = normalizeShippingMethod(req.getParameter("shippingMethod"));
         BigDecimal submittedShippingFee = parseShippingFee(req.getParameter("shippingFee"));
 
-        String couponCode = req.getParameter("couponCode");
+        String couponCode = normalizeCouponCode(req.getParameter("couponCode"));
 
         if (isBlank(couponCode)) {
-            couponCode = (String) session.getAttribute("CHECKOUT_COUPON");
-        }
-
-        if (!isBlank(couponCode)) {
-            couponCode = couponCode.trim();
+            couponCode = normalizeCouponCode((String) session.getAttribute(SESSION_CHECKOUT_COUPON));
         }
 
         try {
@@ -428,8 +503,7 @@ public class CheckoutServlet extends HttpServlet {
                 CartUtil.removeItems(session, cart.keySet());
                 CartUtil.clearSelectedCartKeys(session);
 
-                session.removeAttribute("CHECKOUT_COUPON");
-                session.removeAttribute("CHECKOUT_COUPON_DISCOUNT");
+                clearCheckoutCoupon(session);
 
                 resp.sendRedirect(req.getContextPath()
                         + "/checkout/success?success=true&orderId=" + orderId
@@ -461,18 +535,58 @@ public class CheckoutServlet extends HttpServlet {
             CartUtil.removeItems(session, cart.keySet());
             CartUtil.clearSelectedCartKeys(session);
 
-            session.removeAttribute("CHECKOUT_COUPON");
-            session.removeAttribute("CHECKOUT_COUPON_DISCOUNT");
+            clearCheckoutCoupon(session);
 
             resp.sendRedirect(req.getContextPath()
                     + "/checkout/success?success=true&orderId=" + orderId
                     + "&method=" + paymentMethod);
 
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+
+            String message = e.getMessage();
+
+            if (message == null || message.isBlank()) {
+                message = "Dữ liệu thanh toán không hợp lệ.";
+            }
+
+            Map<String, String> checkoutErrors = new HashMap<>();
+            checkoutErrors.put("general", message);
+
+            if (isCouponConditionMessage(message)) {
+                clearCheckoutCoupon(session);
+                req.setAttribute("coupon_error", message);
+            }
+
+            req.setAttribute("errors", checkoutErrors);
+
+            keepFormValues(req);
+            prepareCheckoutView(req, session, cart, user.getId());
+
+            /*
+             * Đặt lại sau prepareCheckoutView vì hàm đó có thể đọc/xóa coupon_error từ session.
+             */
+            if (isCouponConditionMessage(message)) {
+                req.setAttribute("coupon_error", message);
+            }
+
+            req.getRequestDispatcher("/jsp/common/base.jsp").forward(req, resp);
+
         } catch (Exception e) {
             e.printStackTrace();
 
-            resp.sendRedirect(req.getContextPath()
-                    + "/checkout/success?success=false&message=checkout_failed");
+            Map<String, String> checkoutErrors = new HashMap<>();
+            checkoutErrors.put(
+                    "general",
+                    "Thanh toán thất bại. Vui lòng kiểm tra lại thông tin và thử lại."
+            );
+
+            req.setAttribute("errors", checkoutErrors);
+
+            keepFormValues(req);
+            prepareCheckoutView(req, session, cart, user.getId());
+
+            req.getRequestDispatcher("/jsp/common/base.jsp").forward(req, resp);
         }
     }
 }
