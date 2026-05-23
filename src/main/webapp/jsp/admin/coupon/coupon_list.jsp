@@ -15,7 +15,9 @@
     <div class="admin-topbar">
       <div>
         <h1 class="admin-h1">Mã giảm giá</h1>
-        <p class="admin-subtext">Quản lý coupon giảm giá theo %.</p>
+        <p class="admin-subtext">
+          Quản lý coupon, điều kiện đơn tối thiểu và rank khách hàng được áp dụng.
+        </p>
       </div>
 
       <a class="admin-btn admin-btn--primary"
@@ -41,9 +43,9 @@
                    placeholder="Tìm theo mã coupon...">
 
             <select class="admin-select" name="status">
-              <option value="" ${empty param.status ? "selected" : ""}>Tất cả trạng thái</option>
-              <option value="active" ${param.status == "active" ? "selected" : ""}>ACTIVE</option>
-              <option value="inactive" ${param.status == "inactive" ? "selected" : ""}>INACTIVE</option>
+              <option value="" ${empty param.status ? 'selected' : ''}>Tất cả trạng thái</option>
+              <option value="active" ${param.status == 'active' ? 'selected' : ''}>ACTIVE</option>
+              <option value="inactive" ${param.status == 'inactive' ? 'selected' : ''}>INACTIVE</option>
             </select>
 
             <button class="admin-btn" type="submit">Lọc</button>
@@ -62,118 +64,186 @@
           <c:otherwise>
             <table class="admin-table">
               <thead>
-                <tr>
-                  <th style="width:90px;">ID</th>
-                  <th>Mã</th>
-                  <th style="width:120px;">Giảm (%)</th>
-                  <th style="width:140px;">Loại</th>
-                  <th style="width:170px;">Giảm tối đa</th>
-                  <th style="width:110px;">Đã dùng</th>
-                  <th style="width:220px;">Hiệu lực</th>
-                  <th style="width:140px;">Trạng thái</th>
-                  <th style="width:260px;">Thao tác</th>
-                </tr>
+              <tr>
+                <th style="width:70px;">ID</th>
+                <th style="width:150px;">Mã</th>
+                <th style="width:110px;">Giảm (%)</th>
+                <th style="width:130px;">Loại</th>
+                <th style="width:150px;">Giảm tối đa</th>
+                <th style="width:170px;">Đơn tối thiểu</th>
+                <th style="width:150px;">Rank áp dụng</th>
+                <th style="width:100px;">Đã dùng</th>
+                <th style="width:210px;">Hiệu lực</th>
+                <th style="width:130px;">Trạng thái</th>
+                <th style="width:260px;">Thao tác</th>
+              </tr>
               </thead>
 
               <tbody>
-                <c:forEach var="cp" items="${coupons}">
-                  <tr>
-                    <td>#${cp.id}</td>
+              <c:forEach var="cp" items="${coupons}">
+                <tr>
+                  <td>#${cp.id}</td>
 
-                    <td><strong><c:out value="${cp.code}"/></strong></td>
+                  <td>
+                    <strong><c:out value="${cp.code}"/></strong>
+                  </td>
 
-                    <td>${cp.discountPercent}%</td>
-                    <td>
-                      <c:choose>
-                        <c:when test="${cp.type == 'DISCOUNT'}">
-                          <span class="badge badge-blue">DISCOUNT</span>
-                        </c:when>
+                  <td>${cp.discountPercent}%</td>
 
-                        <c:when test="${cp.type == 'FREESHIP'}">
-                          <span class="badge badge-green">FREESHIP</span>
-                        </c:when>
+                  <td>
+                    <c:choose>
+                      <c:when test="${cp.type == 'DISCOUNT'}">
+                        <span class="badge badge-blue">DISCOUNT</span>
+                      </c:when>
 
-                        <c:otherwise>
-                          <span class="badge badge-gray">UNKNOWN</span>
-                        </c:otherwise>
-                      </c:choose>
-                    </td>
+                      <c:when test="${cp.type == 'PERCENT'}">
+                        <span class="badge badge-blue">PERCENT</span>
+                      </c:when>
 
-                    <td>
-                      <c:choose>
-                        <c:when test="${not empty cp.maxDiscountAmount}">
-                          <fmt:formatNumber value="${cp.maxDiscountAmount}" type="number" groupingUsed="true"/> ₫
-                        </c:when>
-                        <c:otherwise>—</c:otherwise>
-                      </c:choose>
-                    </td>
+                      <c:when test="${cp.type == 'FREESHIP'}">
+                        <span class="badge badge-green">FREESHIP</span>
+                      </c:when>
 
-                    <td>${cp.usedCount}</td>
+                      <c:when test="${cp.type == 'PRODUCT'}">
+                        <span class="badge badge-gray">PRODUCT</span>
+                      </c:when>
 
-                    <td>
-                      <c:choose>
-                        <c:when test="${not empty cp.startDate || not empty cp.endDate}">
+                      <c:otherwise>
+                          <span class="badge badge-gray">
+                            <c:out value="${empty cp.type ? 'UNKNOWN' : cp.type}"/>
+                          </span>
+                      </c:otherwise>
+                    </c:choose>
+                  </td>
+
+                  <td>
+                    <c:choose>
+                      <c:when test="${not empty cp.maxDiscountAmount}">
+                        <fmt:formatNumber value="${cp.maxDiscountAmount}"
+                                          type="number"
+                                          groupingUsed="true"/> ₫
+                      </c:when>
+                      <c:otherwise>
+                        <span class="admin-muted">Không giới hạn</span>
+                      </c:otherwise>
+                    </c:choose>
+                  </td>
+
+                  <td>
+                    <c:choose>
+                      <c:when test="${not empty cp.minOrderAmount && cp.minOrderAmount > 0}">
+                        <fmt:formatNumber value="${cp.minOrderAmount}"
+                                          type="number"
+                                          groupingUsed="true"/> ₫
+                      </c:when>
+                      <c:otherwise>
+                        <span class="admin-muted">Không yêu cầu</span>
+                      </c:otherwise>
+                    </c:choose>
+                  </td>
+
+                  <td>
+                    <c:choose>
+                      <c:when test="${empty cp.minRankCode || cp.minRankCode == 'MEMBER'}">
+                        <span class="badge badge-gray">MEMBER+</span>
+                      </c:when>
+
+                      <c:when test="${cp.minRankCode == 'SILVER'}">
+                        <span class="badge badge-blue">SILVER+</span>
+                      </c:when>
+
+                      <c:when test="${cp.minRankCode == 'GOLD'}">
+                        <span class="badge badge-green">GOLD+</span>
+                      </c:when>
+
+                      <c:when test="${cp.minRankCode == 'DIAMOND'}">
+                        <span class="badge badge-blue">DIAMOND+</span>
+                      </c:when>
+
+                      <c:when test="${cp.minRankCode == 'VIP'}">
+                        <span class="badge badge-green">VIP</span>
+                      </c:when>
+
+                      <c:otherwise>
+                          <span class="badge badge-gray">
+                            <c:out value="${cp.minRankCode}"/>
+                          </span>
+                      </c:otherwise>
+                    </c:choose>
+                  </td>
+
+                  <td>
+                      ${cp.usedCount}
+                    <span class="admin-muted">/ ${cp.maxUses}</span>
+                  </td>
+
+                  <td>
+                    <c:choose>
+                      <c:when test="${not empty cp.startDate || not empty cp.endDate}">
                           <span class="admin-muted">
                             <c:out value="${cp.startDate != null ? cp.startDate : '—'}"/> →
                             <c:out value="${cp.endDate != null ? cp.endDate : '—'}"/>
                           </span>
-                        </c:when>
-                        <c:otherwise>
-                          <span class="admin-muted">Không giới hạn</span>
-                        </c:otherwise>
-                      </c:choose>
-                    </td>
+                      </c:when>
 
-                    <td class="admin-status-cell">
-                      <c:choose>
-                        <c:when test="${cp.active}">
-                          <span class="admin-pill admin-pill--ok">ACTIVE</span>
-                        </c:when>
-                        <c:otherwise>
-                          <span class="admin-pill admin-pill--danger">INACTIVE</span>
-                        </c:otherwise>
-                      </c:choose>
-                    </td>
+                      <c:otherwise>
+                        <span class="admin-muted">Không giới hạn</span>
+                      </c:otherwise>
+                    </c:choose>
+                  </td>
 
-                    <td class="admin-actions">
-                      <a class="admin-btn"
-                         href="${pageContext.request.contextPath}/admin/coupons?action=edit&id=${cp.id}">
-                        Sửa
-                      </a>
+                  <td class="admin-status-cell">
+                    <c:choose>
+                      <c:when test="${cp.active}">
+                        <span class="admin-pill admin-pill--ok">ACTIVE</span>
+                      </c:when>
+                      <c:otherwise>
+                        <span class="admin-pill admin-pill--danger">INACTIVE</span>
+                      </c:otherwise>
+                    </c:choose>
+                  </td>
 
-                      <form method="post"
-                            action="${pageContext.request.contextPath}/admin/coupons"
-                            class="admin-inline">
+                  <td class="admin-actions">
+                    <a class="admin-btn"
+                       href="${pageContext.request.contextPath}/admin/coupons?action=edit&id=${cp.id}">
+                      Sửa
+                    </a>
 
-                        <!-- ✅ CSRF (STATIC INCLUDE - KHÔNG VỠ UI) -->
-                        <%@ include file="/jsp/common/csrf.jspf" %>
+                    <form method="post"
+                          action="${pageContext.request.contextPath}/admin/coupons"
+                          class="admin-inline">
 
-                        <input type="hidden" name="action" value="toggle">
-                        <input type="hidden" name="id" value="${cp.id}">
-                        <button class="admin-btn" type="submit">
-                          <c:choose>
-                            <c:when test="${cp.active}">Tắt</c:when>
-                            <c:otherwise>Bật</c:otherwise>
-                          </c:choose>
-                        </button>
-                      </form>
+                      <%@ include file="/jsp/common/csrf.jspf" %>
 
-                      <form method="post"
-                            action="${pageContext.request.contextPath}/admin/coupons"
-                            class="admin-inline"
-                            onsubmit="return confirm('Xóa coupon này?')">
+                      <input type="hidden" name="action" value="toggle">
+                      <input type="hidden" name="id" value="${cp.id}">
 
-                        <!-- ✅ CSRF (STATIC INCLUDE - KHÔNG VỠ UI) -->
-                        <%@ include file="/jsp/common/csrf.jspf" %>
+                      <button class="admin-btn" type="submit">
+                        <c:choose>
+                          <c:when test="${cp.active}">Tắt</c:when>
+                          <c:otherwise>Bật</c:otherwise>
+                        </c:choose>
+                      </button>
+                    </form>
 
-                        <input type="hidden" name="action" value="delete">
-                        <input type="hidden" name="id" value="${cp.id}">
-                        <button class="admin-btn admin-btn--danger" type="submit">Xóa</button>
-                      </form>
-                    </td>
+                    <form method="post"
+                          action="${pageContext.request.contextPath}/admin/coupons"
+                          class="admin-inline"
+                          onsubmit="return confirm('Xóa coupon này?')">
 
-                  </tr>
-                </c:forEach>
+                      <%@ include file="/jsp/common/csrf.jspf" %>
+
+                      <input type="hidden" name="action" value="delete">
+                      <input type="hidden" name="id" value="${cp.id}">
+
+                      <button class="admin-btn admin-btn--danger" type="submit">
+                        Xóa
+                      </button>
+                    </form>
+                  </td>
+
+                </tr>
+              </c:forEach>
               </tbody>
             </table>
           </c:otherwise>
