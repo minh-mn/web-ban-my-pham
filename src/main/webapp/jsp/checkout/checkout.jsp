@@ -37,6 +37,82 @@
     background: #c72c79 !important;
     transform: translateY(-1px);
   }
+
+
+  /* ================= DELIVERY OPTIONS + FREESHIP ================= */
+
+  .delivery-empty {
+    color: #777;
+    font-size: 15px;
+  }
+
+  .delivery-options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .delivery-options.hidden,
+  .delivery-empty.hidden,
+  .freeship-note.hidden {
+    display: none !important;
+  }
+
+  .delivery-option {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    border: 1px solid #eee;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: #fff;
+  }
+
+  .delivery-option:hover,
+  .delivery-option:has(input:checked) {
+    border-color: #d63384;
+    background: #fff5fa;
+  }
+
+  .delivery-option input {
+    accent-color: #d63384;
+  }
+
+  .delivery-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  .delivery-info strong {
+    font-size: 15px;
+    color: #111827;
+  }
+
+  .delivery-info small {
+    margin-top: 4px;
+    color: #6b7280;
+    font-size: 13px;
+  }
+
+  .delivery-fee {
+    font-weight: 700;
+    color: #d63384;
+    white-space: nowrap;
+  }
+
+  .freeship-note {
+    margin-top: 12px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: #ecfdf5;
+    color: #047857;
+    font-weight: 700;
+    font-size: 14px;
+  }
+
 </style>
 
 <c:set var="errors" value="${requestScope.errors}" />
@@ -291,7 +367,65 @@
           </div>
 
           <div class="delivery-box" id="deliveryBox">
-            Nhập địa chỉ để xem các phương thức giao hàng
+            <div class="delivery-empty" id="deliveryEmpty">
+              Nhập địa chỉ để xem các phương thức giao hàng
+            </div>
+
+            <div class="delivery-options hidden" id="deliveryOptions">
+
+              <label class="delivery-option">
+                <input type="radio"
+                       name="shippingMethod"
+                       value="ECONOMY"
+                       data-base-fee="20000"
+                       checked>
+
+                <span class="delivery-info">
+                  <strong>Giao hàng tiết kiệm</strong>
+                  <small>Thời gian dự kiến: 3 - 5 ngày</small>
+                </span>
+
+                <span class="delivery-fee">20.000đ</span>
+              </label>
+
+              <label class="delivery-option">
+                <input type="radio"
+                       name="shippingMethod"
+                       value="FAST"
+                       data-base-fee="35000">
+
+                <span class="delivery-info">
+                  <strong>Giao hàng nhanh</strong>
+                  <small>Thời gian dự kiến: 1 - 3 ngày</small>
+                </span>
+
+                <span class="delivery-fee">35.000đ</span>
+              </label>
+
+              <label class="delivery-option">
+                <input type="radio"
+                       name="shippingMethod"
+                       value="EXPRESS"
+                       data-base-fee="50000">
+
+                <span class="delivery-info">
+                  <strong>Hỏa tốc</strong>
+                  <small>Giao trong ngày, ưu tiên nội thành</small>
+                </span>
+
+                <span class="delivery-fee">50.000đ</span>
+              </label>
+
+            </div>
+
+            <div class="freeship-note hidden" id="freeshipNote">
+              🎉 Đơn hàng đã đạt điều kiện miễn phí vận chuyển.
+            </div>
+
+            <input type="hidden"
+                   id="shippingFeeInput"
+                   name="shippingFee"
+                   value="0">
           </div>
         </div>
 
@@ -494,7 +628,7 @@
 
           <div class="summary-line">
             <span>Phí vận chuyển</span>
-            <strong>-</strong>
+            <strong id="summaryShippingFee">-</strong>
           </div>
 
           <div class="summary-line">
@@ -821,6 +955,10 @@
                   if (summaryDiscount) summaryDiscount.textContent = formatVnd(data.discount);
                   if (summaryTotal) summaryTotal.textContent = formatVnd(data.total);
 
+                  if (window.updateShippingFeeByLocation) {
+                    window.updateShippingFeeByLocation();
+                  }
+
                   setCouponMessage("Áp dụng mã giảm giá thành công.", false);
                 })
                 .catch(function () {
@@ -938,6 +1076,10 @@
                   }
 
                   recalculateSummary();
+
+                  if (window.updateShippingFeeByLocation) {
+                    window.updateShippingFeeByLocation();
+                  }
                 })
                 .catch(function () {
                   alert("Không thể cập nhật số lượng lúc này.");
@@ -947,6 +1089,167 @@
                 });
       });
     });
+  })();
+</script>
+
+<!-- ================= SHIPPING FEE / FREESHIP ================= -->
+<script>
+  (function () {
+    const FREE_SHIP_THRESHOLD = 500000;
+
+    const provinceInput = document.getElementById("provinceInput");
+    const wardInput = document.getElementById("wardInput");
+
+    const deliveryEmpty = document.getElementById("deliveryEmpty");
+    const deliveryOptions = document.getElementById("deliveryOptions");
+    const freeshipNote = document.getElementById("freeshipNote");
+
+    const shippingFeeInput = document.getElementById("shippingFeeInput");
+    const summaryShippingFee = document.getElementById("summaryShippingFee");
+
+    const summarySubtotal = document.getElementById("summarySubtotal");
+    const summaryDiscount = document.getElementById("summaryDiscount");
+    const summaryTotal = document.getElementById("summaryTotal");
+
+    function parseVndText(text) {
+      if (!text) return 0;
+      return Number(String(text).replace(/[^\d]/g, "")) || 0;
+    }
+
+    function formatVnd(value) {
+      return new Intl.NumberFormat("vi-VN").format(Math.round(Number(value || 0))) + "đ";
+    }
+
+    function isHcmCity(provinceName) {
+      const value = String(provinceName || "").toLowerCase();
+
+      return value.includes("hồ chí minh")
+              || value.includes("ho chi minh")
+              || value.includes("tp. hcm")
+              || value.includes("tphcm")
+              || value.includes("thành phố hồ chí minh");
+    }
+
+    function getAreaExtraFee() {
+      const province = provinceInput ? provinceInput.value.trim() : "";
+
+      if (!province) {
+        return 0;
+      }
+
+      return isHcmCity(province) ? 0 : 15000;
+    }
+
+    function getSelectedBaseFee() {
+      const selected = document.querySelector("input[name='shippingMethod']:checked");
+
+      if (!selected) {
+        return 0;
+      }
+
+      return Number(selected.dataset.baseFee || 0);
+    }
+
+    function getOrderValueAfterVoucher() {
+      const subtotal = parseVndText(summarySubtotal ? summarySubtotal.textContent : "0");
+      const discount = parseVndText(summaryDiscount ? summaryDiscount.textContent : "0");
+
+      return Math.max(subtotal - discount, 0);
+    }
+
+    function isFreeShipEligible() {
+      return getOrderValueAfterVoucher() >= FREE_SHIP_THRESHOLD;
+    }
+
+    function calculateShippingFee() {
+      const province = provinceInput ? provinceInput.value.trim() : "";
+      const ward = wardInput ? wardInput.value.trim() : "";
+
+      if (!province || !ward) {
+        return 0;
+      }
+
+      if (isFreeShipEligible()) {
+        return 0;
+      }
+
+      return getSelectedBaseFee() + getAreaExtraFee();
+    }
+
+    function updateCheckoutTotal() {
+      const subtotal = parseVndText(summarySubtotal ? summarySubtotal.textContent : "0");
+      const discount = parseVndText(summaryDiscount ? summaryDiscount.textContent : "0");
+      const shippingFee = Number(shippingFeeInput ? shippingFeeInput.value : 0) || 0;
+
+      const total = Math.max(subtotal - discount + shippingFee, 0);
+
+      if (summaryTotal) {
+        summaryTotal.textContent = formatVnd(total);
+      }
+    }
+
+    function updateShippingDisplay() {
+      const province = provinceInput ? provinceInput.value.trim() : "";
+      const ward = wardInput ? wardInput.value.trim() : "";
+
+      if (!province || !ward) {
+        if (deliveryEmpty) {
+          deliveryEmpty.classList.remove("hidden");
+        }
+
+        if (deliveryOptions) {
+          deliveryOptions.classList.add("hidden");
+        }
+
+        if (freeshipNote) {
+          freeshipNote.classList.add("hidden");
+        }
+
+        if (summaryShippingFee) {
+          summaryShippingFee.textContent = "-";
+        }
+
+        if (shippingFeeInput) {
+          shippingFeeInput.value = "0";
+        }
+
+        updateCheckoutTotal();
+        return;
+      }
+
+      if (deliveryEmpty) {
+        deliveryEmpty.classList.add("hidden");
+      }
+
+      if (deliveryOptions) {
+        deliveryOptions.classList.remove("hidden");
+      }
+
+      const fee = calculateShippingFee();
+      const freeship = isFreeShipEligible();
+
+      if (summaryShippingFee) {
+        summaryShippingFee.textContent = freeship ? "Miễn phí" : formatVnd(fee);
+      }
+
+      if (shippingFeeInput) {
+        shippingFeeInput.value = String(fee);
+      }
+
+      if (freeshipNote) {
+        freeshipNote.classList.toggle("hidden", !freeship);
+      }
+
+      updateCheckoutTotal();
+    }
+
+    document.querySelectorAll("input[name='shippingMethod']").forEach(function (radio) {
+      radio.addEventListener("change", updateShippingDisplay);
+    });
+
+    window.updateShippingFeeByLocation = updateShippingDisplay;
+
+    updateShippingDisplay();
   })();
 </script>
 
@@ -1224,6 +1527,10 @@
           updateDeliveryText();
           notifyButtonState();
 
+          if (window.updateShippingFeeByLocation) {
+            window.updateShippingFeeByLocation();
+          }
+
           hideDropdown();
         });
 
@@ -1255,11 +1562,13 @@
       if (!deliveryBox) return;
 
       if (addressInput && addressInput.value.trim() && selectedProvince && selectedWard) {
-        deliveryBox.textContent = "Giao hàng tiêu chuẩn";
         deliveryBox.classList.add("available");
       } else {
-        deliveryBox.textContent = "Nhập địa chỉ để xem các phương thức giao hàng";
         deliveryBox.classList.remove("available");
+      }
+
+      if (window.updateShippingFeeByLocation) {
+        window.updateShippingFeeByLocation();
       }
     }
 
@@ -1305,6 +1614,10 @@
         updateShippingAddress();
         updateDeliveryText();
         notifyButtonState();
+
+        if (window.updateShippingFeeByLocation) {
+          window.updateShippingFeeByLocation();
+        }
       });
     }
 
