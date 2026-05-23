@@ -18,11 +18,13 @@ public class CsrfFilter implements Filter {
 
     public static final String CSRF_SESSION_KEY = "CSRF_TOKEN";
     public static final String CSRF_PARAM = "csrf_token";
-    private static final Set<String> SAFE = Set.of("GET", "HEAD", "OPTIONS");
+    public static final String CSRF_HEADER = "X-CSRF-TOKEN";
+
+    private static final Set<String> SAFE_METHODS = Set.of("GET", "HEAD", "OPTIONS");
 
     private final SecureRandom random = new SecureRandom();
 
-    
+    @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
 
@@ -31,20 +33,43 @@ public class CsrfFilter implements Filter {
 
         HttpSession session = req.getSession(true);
 
-        String token = (String) session.getAttribute(CSRF_SESSION_KEY);
-        if (token == null || token.isBlank()) {
-            token = generate();
-            session.setAttribute(CSRF_SESSION_KEY, token);
+        String sessionToken = (String) session.getAttribute(CSRF_SESSION_KEY);
+
+        if (sessionToken == null || sessionToken.isBlank()) {
+            sessionToken = generateToken();
+            session.setAttribute(CSRF_SESSION_KEY, sessionToken);
         }
 
         String method = req.getMethod().toUpperCase();
-        if (SAFE.contains(method)) {
+
+        // GET, HEAD, OPTIONS: chỉ tạo token rồi cho đi tiếp
+        if (SAFE_METHODS.contains(method)) {
             chain.doFilter(request, response);
             return;
         }
 
-        String reqToken = req.getParameter(CSRF_PARAM);
-        if (reqToken == null || !token.equals(reqToken)) {
+        /*
+         * Chỉ kiểm tra CSRF cho admin và orders.
+         *
+         * Tạm thời KHÔNG kiểm tra:
+         * - /cart/add
+         * - /cart/select-checkout
+         * - /checkout
+         *
+         * Vì các form cart/checkout hiện chưa đồng bộ CSRF hoàn toàn.
+         */
+        if (!requiresCsrf(req)) {
+            chain.doFilter(request, response);
+            return;
+        }
+
+        String requestToken = req.getParameter(CSRF_PARAM);
+
+        if (requestToken == null || requestToken.isBlank()) {
+            requestToken = req.getHeader(CSRF_HEADER);
+        }
+
+        if (requestToken == null || requestToken.isBlank() || !sessionToken.equals(requestToken)) {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN, "CSRF invalid");
             return;
         }
@@ -52,14 +77,24 @@ public class CsrfFilter implements Filter {
         chain.doFilter(request, response);
     }
 
-    private String generate() {
-        byte[] b = new byte[32];
-        random.nextBytes(b);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(b);
+    private boolean requiresCsrf(HttpServletRequest req) {
+        String path = req.getServletPath();
+
+        if (path == null || path.isBlank()) {
+            return false;
+        }
+
+        return path.startsWith("/admin/")
+                || path.equals("/orders")
+                || path.startsWith("/orders/");
     }
 
-	public boolean test(int arg0) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    private String generateToken() {
+        byte[] bytes = new byte[32];
+        random.nextBytes(bytes);
+
+        return Base64.getUrlEncoder()
+                .withoutPadding()
+                .encodeToString(bytes);
+    }
 }
