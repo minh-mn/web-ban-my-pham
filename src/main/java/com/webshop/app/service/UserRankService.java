@@ -1,5 +1,6 @@
 package com.webshop.app.service;
 
+import com.webshop.app.dao.UserDAO;
 import com.webshop.app.dao.UserRankDAO;
 import com.webshop.app.model.User;
 import com.webshop.app.model.UserRank;
@@ -12,47 +13,72 @@ import java.util.Map;
 public class UserRankService {
 
     private final UserRankDAO userRankDAO;
+    private final UserDAO userDAO;
 
     public UserRankService() {
-        this.userRankDAO = new UserRankDAO();
+        this(new UserRankDAO(), new UserDAO());
     }
 
     public UserRankService(UserRankDAO userRankDAO) {
-        this.userRankDAO = userRankDAO;
+        this(userRankDAO, new UserDAO());
+    }
+
+    public UserRankService(UserRankDAO userRankDAO, UserDAO userDAO) {
+        this.userRankDAO = userRankDAO == null ? new UserRankDAO() : userRankDAO;
+        this.userDAO = userDAO == null ? new UserDAO() : userDAO;
     }
 
     /* ================= MAIN RANK LOGIC ================= */
 
     /*
-     * Cơ chế cũ: chỉ tính rank tự động theo tổng chi tiêu.
-     * Giữ lại để các controller cũ không bị lỗi.
+     * Hàm cũ nhưng đã được nâng cấp:
+     * Nếu chỉ truyền userId, service vẫn tự đọc users.manual_rank_code.
+     * Nếu admin có gán manual rank thì ưu tiên manual rank.
+     * Nếu không có manual rank thì tự tính rank theo tổng chi tiêu.
      */
     public RankInfo getRankInfo(long userId) {
-        return getRankInfo(userId, null);
+        String manualRankCode = resolveManualRankCodeByUserId(userId);
+        return getRankInfo(userId, manualRankCode);
     }
 
     /*
-     * Cơ chế mới: nhận User để kiểm tra manualRankCode.
-     * Nếu user.manualRankCode có giá trị => ưu tiên rank do admin chọn.
-     * Nếu user.manualRankCode null/AUTO => tự động tính theo tổng chi tiêu.
+     * Hàm dùng khi controller đã có User object.
+     * Ưu tiên manualRankCode trong User.
+     * Nếu User object cũ chưa có manualRankCode thì đọc lại từ DB theo userId.
      */
     public RankInfo getRankInfo(User user) {
         if (user == null) {
             return getRankInfo(0L, null);
         }
 
-        return getRankInfo(user.getId(), user.getManualRankCode());
+        String manualRankCode = normalizeManualRankCode(user.getManualRankCode());
+
+        if (manualRankCode == null) {
+            manualRankCode = resolveManualRankCodeByUserId(user.getId());
+        }
+
+        return getRankInfo(user.getId(), manualRankCode);
     }
 
+    /*
+     * Hàm lõi:
+     * - totalSpent vẫn luôn tính để hiển thị tiến độ.
+     * - manualRankCode hợp lệ thì dùng rank admin gán.
+     * - manualRankCode null/AUTO/không hợp lệ thì dùng rank tự động.
+     */
     public RankInfo getRankInfo(long userId, String manualRankCode) {
 
         BigDecimal totalSpent = getTotalPaidSpent(userId);
         int paidOrderCount = getPaidOrderCount(userId);
 
-        UserRank currentRank = resolveCurrentRank(totalSpent, manualRankCode);
-        boolean manualRank = isValidManualRank(manualRankCode) && currentRank != null;
+        UserRank manualRank = resolveManualRank(manualRankCode);
+        boolean manualRankApplied = manualRank != null;
 
-        UserRank nextRank = resolveNextRank(totalSpent, currentRank, manualRank);
+        UserRank currentRank = manualRankApplied
+                ? manualRank
+                : userRankDAO.findBestRankByTotalSpent(totalSpent);
+
+        UserRank nextRank = resolveNextRank(totalSpent, currentRank, manualRankApplied);
 
         BigDecimal amountToNextRank = calculateAmountToNextRank(totalSpent, nextRank);
         int progressPercent = calculateRankProgressPercent(totalSpent, currentRank, nextRank);
@@ -64,44 +90,60 @@ public class UserRankService {
                 amountToNextRank,
                 paidOrderCount,
                 progressPercent,
-                manualRank
+                manualRankApplied
         );
     }
 
     /*
-     * Cơ chế cũ: lấy rank tự động.
+     * Hàm cũ nhưng đã được nâng cấp:
+     * Lấy rank hiện tại có xét manual_rank_code.
      */
     public UserRank getCurrentRank(long userId) {
-        BigDecimal totalSpent = getTotalPaidSpent(userId);
-        return userRankDAO.findBestRankByTotalSpent(totalSpent);
+        String manualRankCode = resolveManualRankCodeByUserId(userId);
+        return getCurrentRank(userId, manualRankCode);
     }
 
     /*
-     * Cơ chế mới: lấy rank có xét manualRankCode.
+     * Lấy rank hiện tại từ User object.
      */
     public UserRank getCurrentRank(User user) {
         if (user == null) {
             return userRankDAO.findBestRankByTotalSpent(BigDecimal.ZERO);
         }
 
-        return getCurrentRank(user.getId(), user.getManualRankCode());
+        String manualRankCode = normalizeManualRankCode(user.getManualRankCode());
+
+        if (manualRankCode == null) {
+            manualRankCode = resolveManualRankCodeByUserId(user.getId());
+        }
+
+        return getCurrentRank(user.getId(), manualRankCode);
     }
 
+    /*
+     * Lấy rank hiện tại theo userId + manualRankCode truyền sẵn.
+     */
     public UserRank getCurrentRank(long userId, String manualRankCode) {
         BigDecimal totalSpent = getTotalPaidSpent(userId);
-        return resolveCurrentRank(totalSpent, manualRankCode);
+
+        UserRank manualRank = resolveManualRank(manualRankCode);
+        if (manualRank != null) {
+            return manualRank;
+        }
+
+        return userRankDAO.findBestRankByTotalSpent(totalSpent);
     }
 
+    /*
+     * Hàm cũ nhưng đã được nâng cấp:
+     * Next rank cũng xét manual rank nếu admin đã gán.
+     */
     public UserRank getNextRank(long userId) {
-        BigDecimal totalSpent = getTotalPaidSpent(userId);
-        return userRankDAO.findNextRank(totalSpent);
+        RankInfo rankInfo = getRankInfo(userId);
+        return rankInfo.getNextRank();
     }
 
     public UserRank getNextRank(User user) {
-        if (user == null) {
-            return userRankDAO.findNextRank(BigDecimal.ZERO);
-        }
-
         RankInfo rankInfo = getRankInfo(user);
         return rankInfo.getNextRank();
     }
@@ -111,21 +153,19 @@ public class UserRankService {
     }
 
     public int getPaidOrderCount(long userId) {
-        return userRankDAO.countPaidOrdersByUserId(userId);
+        return Math.max(0, userRankDAO.countPaidOrdersByUserId(userId));
     }
 
+    /*
+     * Hàm cũ nhưng đã được nâng cấp:
+     * Nếu manual rank đang cao hơn rank tự động thì amountToNextRank tính theo rank manual.
+     */
     public BigDecimal getAmountToNextRank(long userId) {
-        BigDecimal totalSpent = getTotalPaidSpent(userId);
-        UserRank nextRank = userRankDAO.findNextRank(totalSpent);
-
-        return calculateAmountToNextRank(totalSpent, nextRank);
+        RankInfo rankInfo = getRankInfo(userId);
+        return rankInfo.getAmountToNextRank();
     }
 
     public BigDecimal getAmountToNextRank(User user) {
-        if (user == null) {
-            return BigDecimal.ZERO;
-        }
-
         RankInfo rankInfo = getRankInfo(user);
         return rankInfo.getAmountToNextRank();
     }
@@ -133,34 +173,36 @@ public class UserRankService {
     /* ================= DISCOUNT LOGIC ================= */
 
     /*
-     * Cơ chế cũ: tính giảm giá theo rank tự động.
+     * Hàm cũ nhưng đã được nâng cấp:
+     * Chỉ cần truyền userId vẫn tự xét users.manual_rank_code.
      */
     public BigDecimal calculateRankDiscountAmount(long userId, BigDecimal subtotal) {
-
         UserRank currentRank = getCurrentRank(userId);
-
         return calculateRankDiscountAmount(currentRank, subtotal);
     }
 
     /*
-     * Cơ chế mới: tính giảm giá theo rank có xét manualRankCode.
+     * Tính giảm giá theo rank có xét manualRankCode từ User object.
      */
     public BigDecimal calculateRankDiscountAmount(User user, BigDecimal subtotal) {
-
         UserRank currentRank = getCurrentRank(user);
-
         return calculateRankDiscountAmount(currentRank, subtotal);
     }
 
+    /*
+     * Tính giảm giá theo userId + manualRankCode truyền sẵn.
+     */
     public BigDecimal calculateRankDiscountAmount(long userId,
                                                   String manualRankCode,
                                                   BigDecimal subtotal) {
 
         UserRank currentRank = getCurrentRank(userId, manualRankCode);
-
         return calculateRankDiscountAmount(currentRank, subtotal);
     }
 
+    /*
+     * Tính số tiền được giảm theo phần trăm của rank.
+     */
     public BigDecimal calculateRankDiscountAmount(UserRank rank, BigDecimal subtotal) {
 
         BigDecimal safeSubtotal = money0(subtotal);
@@ -175,13 +217,24 @@ public class UserRankService {
             return BigDecimal.ZERO;
         }
 
-        return safeSubtotal
+        BigDecimal discount = safeSubtotal
                 .multiply(BigDecimal.valueOf(discountPercent))
                 .divide(BigDecimal.valueOf(100), 0, RoundingMode.HALF_UP);
+
+        if (discount.compareTo(BigDecimal.ZERO) < 0) {
+            return BigDecimal.ZERO;
+        }
+
+        if (discount.compareTo(safeSubtotal) > 0) {
+            return safeSubtotal;
+        }
+
+        return money0(discount);
     }
 
     /*
-     * Cơ chế cũ.
+     * Hàm cũ nhưng đã được nâng cấp:
+     * applyRankDiscount(userId, subtotal) cũng xét manual_rank_code.
      */
     public BigDecimal applyRankDiscount(long userId, BigDecimal subtotal) {
 
@@ -191,9 +244,6 @@ public class UserRankService {
         return subtractDiscount(safeSubtotal, discountAmount);
     }
 
-    /*
-     * Cơ chế mới.
-     */
     public BigDecimal applyRankDiscount(User user, BigDecimal subtotal) {
 
         BigDecimal safeSubtotal = money0(subtotal);
@@ -215,8 +265,8 @@ public class UserRankService {
     /* ================= ACCOUNT JSP SUPPORT ================= */
 
     /*
-     * Cơ chế cũ.
-     * Nếu controller chỉ truyền userId thì rank vẫn tính tự động.
+     * Hàm cũ nhưng đã được nâng cấp:
+     * Account hoặc controller cũ chỉ truyền userId vẫn tự xét manual_rank_code.
      */
     public Map<String, Object> buildRankAttributes(long userId) {
 
@@ -226,8 +276,8 @@ public class UserRankService {
     }
 
     /*
-     * Cơ chế mới.
-     * AccountServlet nên gọi hàm này để rank thủ công có hiệu lực.
+     * Hàm khuyến nghị cho AccountServlet:
+     * Truyền User object sau khi đã reload từ UserDAO.
      */
     public Map<String, Object> buildRankAttributes(User user) {
 
@@ -254,6 +304,7 @@ public class UserRankService {
 
         attributes.put("rankLabel", currentRank == null ? "Thành viên" : currentRank.getDisplayName());
         attributes.put("rankCode", currentRank == null ? "MEMBER" : currentRank.getCode());
+        attributes.put("currentRankCode", currentRank == null ? "MEMBER" : currentRank.getCode());
         attributes.put("rankCss", currentRank == null ? "rank-member" : currentRank.getCssClass());
         attributes.put("rankDiscount", currentRank == null ? 0 : currentRank.getDiscountPercent());
         attributes.put("rankDiscountLabel", currentRank == null ? "Không có ưu đãi" : currentRank.getDiscountLabel());
@@ -263,6 +314,7 @@ public class UserRankService {
 
         attributes.put("nextRank", nextRank);
         attributes.put("nextRankLabel", nextRank == null ? null : nextRank.getDisplayName());
+        attributes.put("nextRankCode", nextRank == null ? null : nextRank.getCode());
         attributes.put("nextRankMinSpent", nextRank == null ? BigDecimal.ZERO : nextRank.getMinSpent());
 
         attributes.put("amountToNextRank", rankInfo.getAmountToNextRank());
@@ -271,15 +323,13 @@ public class UserRankService {
         attributes.put("maxRank", nextRank == null);
 
         /*
-         * Dùng cho JSP nếu muốn hiển thị:
+         * Dùng cho JSP:
          * - AUTO: rank tự động theo tổng chi tiêu.
-         * - MANUAL: rank do admin nâng trực tiếp.
+         * - MANUAL: rank do admin chỉ định.
          */
         attributes.put("manualRank", rankInfo.isManualRank());
-        attributes.put("rankMode", rankInfo.isManualRank() ? "MANUAL" : "AUTO");
-        attributes.put("rankModeLabel", rankInfo.isManualRank()
-                ? "Rank do admin chỉ định"
-                : "Rank tự động theo tổng chi tiêu");
+        attributes.put("rankMode", rankInfo.getRankMode());
+        attributes.put("rankModeLabel", rankInfo.getRankModeLabel());
 
         return attributes;
     }
@@ -288,19 +338,64 @@ public class UserRankService {
         userRankDAO.insertDefaultRanksIfEmpty();
     }
 
-    /* ================= MANUAL RANK HELPERS ================= */
+    /* ================= PUBLIC EFFECTIVE RANK HELPERS ================= */
 
-    private UserRank resolveCurrentRank(BigDecimal totalSpent, String manualRankCode) {
+    /*
+     * Lấy mã rank hiệu lực cuối cùng của user.
+     * Dùng cho checkout/coupon/account nếu cần đồng bộ rank.
+     */
+    public String resolveEffectiveRankCode(long userId) {
+        UserRank currentRank = getCurrentRank(userId);
 
-        if (isValidManualRank(manualRankCode)) {
-            UserRank manualRank = userRankDAO.findByCode(normalizeRankCode(manualRankCode));
-
-            if (manualRank != null) {
-                return manualRank;
-            }
+        if (currentRank == null || currentRank.getCode() == null || currentRank.getCode().isBlank()) {
+            return "MEMBER";
         }
 
-        return userRankDAO.findBestRankByTotalSpent(totalSpent);
+        return currentRank.getCode().trim().toUpperCase();
+    }
+
+    public String resolveEffectiveRankCode(User user) {
+        UserRank currentRank = getCurrentRank(user);
+
+        if (currentRank == null || currentRank.getCode() == null || currentRank.getCode().isBlank()) {
+            return "MEMBER";
+        }
+
+        return currentRank.getCode().trim().toUpperCase();
+    }
+
+    /* ================= MANUAL RANK HELPERS ================= */
+
+    private String resolveManualRankCodeByUserId(long userId) {
+
+        if (userId <= 0) {
+            return null;
+        }
+
+        try {
+            return normalizeManualRankCode(userDAO.findManualRankCodeByUserId((int) userId));
+        } catch (RuntimeException e) {
+            /*
+             * Nếu database cũ chưa có manual_rank_code hoặc UserDAO chưa migrate,
+             * fallback về rank tự động để không làm crash account/checkout.
+             */
+            return null;
+        }
+    }
+
+    private UserRank resolveManualRank(String manualRankCode) {
+
+        String normalized = normalizeManualRankCode(manualRankCode);
+
+        if (normalized == null) {
+            return null;
+        }
+
+        try {
+            return userRankDAO.findByCode(normalized);
+        } catch (RuntimeException e) {
+            return null;
+        }
     }
 
     private UserRank resolveNextRank(BigDecimal totalSpent,
@@ -316,7 +411,7 @@ public class UserRankService {
          * - Next rank dựa theo tổng chi tiêu hiện tại.
          *
          * Nếu rank là MANUAL:
-         * - Next rank phải dựa theo mốc của rank hiện tại admin đã chọn.
+         * - Next rank dựa theo mốc của rank hiện tại admin đã chọn.
          * - Tránh trường hợp admin set GOLD nhưng totalSpent thấp,
          *   hệ thống lại báo next rank là SILVER.
          */
@@ -327,22 +422,21 @@ public class UserRankService {
         return userRankDAO.findNextRank(totalSpent);
     }
 
-    private boolean isValidManualRank(String manualRankCode) {
-        return manualRankCode != null
-                && !manualRankCode.isBlank()
-                && !"AUTO".equalsIgnoreCase(manualRankCode);
-    }
-
-    private String normalizeRankCode(String manualRankCode) {
+    private String normalizeManualRankCode(String manualRankCode) {
         if (manualRankCode == null || manualRankCode.isBlank()) {
             return null;
         }
 
-        if ("AUTO".equalsIgnoreCase(manualRankCode)) {
+        String normalized = manualRankCode.trim().toUpperCase();
+
+        if ("AUTO".equals(normalized)) {
             return null;
         }
 
-        return manualRankCode.trim().toUpperCase();
+        return switch (normalized) {
+            case "MEMBER", "SILVER", "GOLD", "DIAMOND", "VIP" -> normalized;
+            default -> null;
+        };
     }
 
     /* ================= CALCULATION HELPERS ================= */
@@ -505,12 +599,28 @@ public class UserRankService {
             return manualRank ? "Rank do admin chỉ định" : "Rank tự động theo tổng chi tiêu";
         }
 
+        public String getCurrentRankCode() {
+            if (currentRank == null || currentRank.getCode() == null || currentRank.getCode().isBlank()) {
+                return "MEMBER";
+            }
+
+            return currentRank.getCode();
+        }
+
         public String getCurrentRankName() {
             if (currentRank == null) {
                 return "Thành viên";
             }
 
             return currentRank.getDisplayName();
+        }
+
+        public String getNextRankCode() {
+            if (nextRank == null || nextRank.getCode() == null || nextRank.getCode().isBlank()) {
+                return null;
+            }
+
+            return nextRank.getCode();
         }
 
         public String getNextRankName() {
