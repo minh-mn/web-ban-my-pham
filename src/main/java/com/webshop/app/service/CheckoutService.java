@@ -18,12 +18,21 @@ import com.webshop.app.utils.DBConnection;
 
 public class CheckoutService {
 
+	private static final BigDecimal FREE_SHIP_THRESHOLD = new BigDecimal("500000");
+
+	private static final String SHIPPING_ECONOMY = "ECONOMY";
+	private static final String SHIPPING_FAST = "FAST";
+	private static final String SHIPPING_EXPRESS = "EXPRESS";
+
 	private final OrderDAO orderDAO = new OrderDAO();
 	private final OrderItemDAO itemDAO = new OrderItemDAO();
 	private final CouponDAO couponDAO = new CouponDAO();
 	private final CouponService couponService = new CouponService();
 	private final UserRankService userRankService = new UserRankService();
 
+	/*
+	 * Giữ method cũ để các chỗ khác đang gọi checkout 7 tham số không bị lỗi.
+	 */
 	public int checkout(int userId,
 						Map<String, CartItem> cart,
 						String fullName,
@@ -31,6 +40,34 @@ public class CheckoutService {
 						String address,
 						String paymentMethod,
 						String couponCode) {
+
+		return checkout(
+				userId,
+				cart,
+				fullName,
+				phone,
+				address,
+				paymentMethod,
+				couponCode,
+				SHIPPING_ECONOMY,
+				BigDecimal.ZERO,
+				null
+		);
+	}
+
+	/*
+	 * Method mới dùng cho checkout có phương thức vận chuyển, phí ship và freeship.
+	 */
+	public int checkout(int userId,
+						Map<String, CartItem> cart,
+						String fullName,
+						String phone,
+						String address,
+						String paymentMethod,
+						String couponCode,
+						String shippingMethod,
+						BigDecimal submittedShippingFee,
+						String province) {
 
 		if (userId <= 0) {
 			throw new IllegalArgumentException("Invalid userId");
@@ -43,6 +80,8 @@ public class CheckoutService {
 		if (paymentMethod == null || paymentMethod.isBlank()) {
 			paymentMethod = "COD";
 		}
+
+		shippingMethod = normalizeShippingMethod(shippingMethod);
 
 		boolean isCod = "COD".equalsIgnoreCase(paymentMethod);
 		boolean isVnp = "VNPAY".equalsIgnoreCase(paymentMethod);
@@ -69,11 +108,9 @@ public class CheckoutService {
 
 		/*
 		 * =========================
-		 * RANK DISCOUNT
+		 * AMOUNT AFTER COUPON
 		 * =========================
-		 * Rank discount được tính sau coupon:
-		 * subtotal - couponDiscount = amountAfterCoupon
-		 * rankDiscount = amountAfterCoupon * rankPercent
+		 * Freeship được xét theo tổng sau voucher/coupon.
 		 */
 		BigDecimal amountAfterCoupon = subtotal.subtract(couponDiscount);
 
@@ -81,14 +118,38 @@ public class CheckoutService {
 			amountAfterCoupon = BigDecimal.ZERO;
 		}
 
+		/*
+		 * =========================
+		 * RANK DISCOUNT
+		 * =========================
+		 * Rank discount được tính sau coupon:
+		 * subtotal - couponDiscount = amountAfterCoupon
+		 * rankDiscount = amountAfterCoupon * rankPercent
+		 */
 		BigDecimal rankDiscount = calculateRankDiscount(userId, amountAfterCoupon);
 
-		BigDecimal total = amountAfterCoupon.subtract(rankDiscount);
+		BigDecimal amountAfterAllDiscounts = amountAfterCoupon.subtract(rankDiscount);
 
-		if (total.compareTo(BigDecimal.ZERO) < 0) {
-			total = BigDecimal.ZERO;
+		if (amountAfterAllDiscounts.compareTo(BigDecimal.ZERO) < 0) {
+			amountAfterAllDiscounts = BigDecimal.ZERO;
 		}
 
+		/*
+		 * =========================
+		 * SHIPPING FEE + FREESHIP
+		 * =========================
+		 * - Nếu amountAfterCoupon >= 500,000 thì freeship.
+		 * - Nếu có province, backend tự tính lại phí ship.
+		 * - Nếu province null/blank, dùng submittedShippingFee làm fallback để không phá các luồng cũ.
+		 */
+		BigDecimal shippingFee = calculateShippingFee(
+				shippingMethod,
+				province,
+				amountAfterCoupon,
+				submittedShippingFee
+		);
+
+		BigDecimal total = amountAfterAllDiscounts.add(shippingFee);
 		total = money0(total);
 
 		try (Connection conn = DBConnection.getConnection()) {
@@ -126,9 +187,10 @@ public class CheckoutService {
 			 * CREATE ORDER
 			 * =========================
 			 * Lưu ý:
-			 * - total đã bao gồm coupon discount và rank discount.
-			 * - Nếu muốn lưu riêng rank_discount/coupon_discount,
-			 *   cần thêm cột trong store_order và setter trong Order model.
+			 * - total đã bao gồm coupon discount, rank discount và shippingFee.
+			 * - Nếu muốn lưu riêng shipping_method/shipping_fee,
+			 *   cần thêm cột trong store_order, setter trong Order model,
+			 *   và sửa OrderDAO.create().
 			 */
 			Order o = new Order();
 			o.setUserId(userId);
@@ -267,10 +329,6 @@ public class CheckoutService {
 	 * =========================
 	 * DISCOUNT PREVIEW METHODS
 	 * =========================
-	 * Các method này dùng cho servlet/JSP checkout preview nếu cần hiển thị:
-	 * - giảm giá coupon
-	 * - giảm giá rank
-	 * - tổng tiền sau giảm
 	 */
 
 	public BigDecimal calculateCouponDiscount(String couponCode, BigDecimal subTotal) {
@@ -347,6 +405,42 @@ public class CheckoutService {
 		return money0(total);
 	}
 
+	/*
+	 * Preview tổng mới có ship.
+	 * Có thể dùng cho AJAX nếu sau này muốn đồng bộ frontend/backend.
+	 */
+	public BigDecimal calculateTotalAfterDiscountsAndShipping(int userId,
+															  BigDecimal subTotal,
+															  String couponCode,
+															  String shippingMethod,
+															  String province) {
+
+		BigDecimal safeSubTotal = money0(subTotal);
+
+		BigDecimal couponDiscount = calculateCouponDiscount(couponCode, safeSubTotal);
+		BigDecimal amountAfterCoupon = safeSubTotal.subtract(couponDiscount);
+
+		if (amountAfterCoupon.compareTo(BigDecimal.ZERO) < 0) {
+			amountAfterCoupon = BigDecimal.ZERO;
+		}
+
+		BigDecimal rankDiscount = calculateRankDiscount(userId, amountAfterCoupon);
+		BigDecimal amountAfterAllDiscounts = amountAfterCoupon.subtract(rankDiscount);
+
+		if (amountAfterAllDiscounts.compareTo(BigDecimal.ZERO) < 0) {
+			amountAfterAllDiscounts = BigDecimal.ZERO;
+		}
+
+		BigDecimal shippingFee = calculateShippingFee(
+				shippingMethod,
+				province,
+				amountAfterCoupon,
+				BigDecimal.ZERO
+		);
+
+		return money0(amountAfterAllDiscounts.add(shippingFee));
+	}
+
 	private BigDecimal calculateDiscountFromCoupon(Coupon coupon, BigDecimal subTotal) {
 
 		if (coupon == null || subTotal == null) {
@@ -368,6 +462,86 @@ public class CheckoutService {
 		}
 
 		return discount;
+	}
+
+	/*
+	 * =========================
+	 * SHIPPING HELPERS
+	 * =========================
+	 */
+
+	private String normalizeShippingMethod(String shippingMethod) {
+
+		if (shippingMethod == null || shippingMethod.isBlank()) {
+			return SHIPPING_ECONOMY;
+		}
+
+		String method = shippingMethod.trim().toUpperCase();
+
+		if (SHIPPING_FAST.equals(method) || SHIPPING_EXPRESS.equals(method) || SHIPPING_ECONOMY.equals(method)) {
+			return method;
+		}
+
+		return SHIPPING_ECONOMY;
+	}
+
+	private BigDecimal calculateShippingFee(String shippingMethod,
+											String province,
+											BigDecimal amountAfterCoupon,
+											BigDecimal submittedShippingFee) {
+
+		BigDecimal safeAmountAfterCoupon = money0(amountAfterCoupon);
+
+		/*
+		 * Freeship: đơn sau voucher/coupon từ 500k.
+		 */
+		if (safeAmountAfterCoupon.compareTo(FREE_SHIP_THRESHOLD) >= 0) {
+			return BigDecimal.ZERO;
+		}
+
+		String method = normalizeShippingMethod(shippingMethod);
+
+		/*
+		 * Nếu không có province, dùng submittedShippingFee làm fallback để tránh phá luồng cũ.
+		 * Với luồng checkout mới, province luôn được gửi từ form và backend sẽ tự tính lại.
+		 */
+		if (province == null || province.isBlank()) {
+			return money0(submittedShippingFee);
+		}
+
+		BigDecimal baseFee;
+
+		switch (method) {
+			case SHIPPING_FAST:
+				baseFee = new BigDecimal("35000");
+				break;
+			case SHIPPING_EXPRESS:
+				baseFee = new BigDecimal("50000");
+				break;
+			case SHIPPING_ECONOMY:
+			default:
+				baseFee = new BigDecimal("20000");
+				break;
+		}
+
+		BigDecimal areaExtraFee = isHcmCity(province) ? BigDecimal.ZERO : new BigDecimal("15000");
+
+		return money0(baseFee.add(areaExtraFee));
+	}
+
+	private boolean isHcmCity(String province) {
+
+		if (province == null || province.isBlank()) {
+			return false;
+		}
+
+		String value = province.trim().toLowerCase();
+
+		return value.contains("hồ chí minh")
+				|| value.contains("ho chi minh")
+				|| value.contains("tp. hcm")
+				|| value.contains("tphcm")
+				|| value.contains("thành phố hồ chí minh");
 	}
 
 	/*
