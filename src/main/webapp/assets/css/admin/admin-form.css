@@ -308,3 +308,63 @@
     text-align: left;
   }
 }
+
+/* ===== FORM SPACING IMPROVEMENT ===== */
+
+.admin-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px; /*tạo khoảng cách giữa fields */
+}
+
+.admin-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.admin-input,
+.admin-select,
+.admin-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  outline: none;
+  transition: 0.2s;
+  background: #fff;
+}
+
+.admin-input:focus,
+.admin-select:focus,
+.admin-textarea:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+/* Card spacing nội dung */
+.admin-card__body {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* TOP spacing giữa sections */
+.admin-topbar {
+  margin-bottom: 18px;
+}
+
+/* Button area */
+.admin-actions {
+  margin-top: 16px;
+}
+
+/* improve textarea */
+.admin-textarea {
+  min-height: 160px;
+  resize: vertical;
+}
+
+
