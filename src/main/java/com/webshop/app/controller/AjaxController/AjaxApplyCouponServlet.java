@@ -52,7 +52,7 @@ public class AjaxApplyCouponServlet extends HttpServlet {
         // 4. Tính toán số tiền được giảm giá dựa trên giỏ hàng hiện tại (nếu có)
         // Việc này giúp đảm bảo JavaScript ở home.jsp lấy được thuộc tính 'data.discount' mà không bị lỗi crash
         BigDecimal discount = BigDecimal.ZERO;
-        Map<Integer, CartItem> cart = CartUtil.getCart(session);
+        Map<String, CartItem> cart = CartUtil.getCart(session);
 
         if (cart != null && !cart.isEmpty()) {
             BigDecimal subTotal = cart.values().stream()
