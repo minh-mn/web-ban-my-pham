@@ -18,7 +18,6 @@ public class Order {
 	private BigDecimal total;
 	private BigDecimal couponDiscount;
 
-
 	private String paymentMethod; // COD | VNPAY
 	private String paymentStatus; // PENDING | PAID | CANCELED
 	private String status; // processing | confirmed | shipping | completed | cancelled
@@ -26,6 +25,15 @@ public class Order {
 	private String statusLabel; // HIỂN THỊ (VIEW)
 	private String vnpTxnRef;
 	private LocalDateTime createdAt;
+
+	// ================= SHIPPING =================
+	private String shippingMethod;   // ECONOMY | FAST | EXPRESS
+	private String shippingProvider; // GHTK | GHN | INTERNAL
+	private BigDecimal shippingFee;  // phí vận chuyển thực tế
+	private String shippingCode;     // mã vận đơn
+	private String shippingStatus;   // PENDING | CREATED | PICKING | DELIVERING | DELIVERED
+	private LocalDateTime shippedAt;
+	private LocalDateTime deliveredAt;
 
 	// ================= GET / SET =================
 
@@ -77,6 +85,14 @@ public class Order {
 		this.total = total;
 	}
 
+	public BigDecimal getCouponDiscount() {
+		return couponDiscount;
+	}
+
+	public void setCouponDiscount(BigDecimal couponDiscount) {
+		this.couponDiscount = couponDiscount;
+	}
+
 	public String getPaymentMethod() {
 		return paymentMethod;
 	}
@@ -104,8 +120,10 @@ public class Order {
 	/* ===== STATUS LABEL (VIEW ONLY) ===== */
 
 	public String getStatusLabel() {
-		if (statusLabel != null && !statusLabel.isBlank())
+		if (statusLabel != null && !statusLabel.isBlank()) {
 			return statusLabel;
+		}
+
 		return com.webshop.app.model.OrderStatus.labelOf(this.status);
 	}
 
@@ -129,40 +147,192 @@ public class Order {
 		this.createdAt = createdAt;
 	}
 
+	// ================= SHIPPING GET / SET =================
+
+	public String getShippingMethod() {
+		return shippingMethod;
+	}
+
+	public void setShippingMethod(String shippingMethod) {
+		this.shippingMethod = shippingMethod;
+	}
+
+	public String getShippingProvider() {
+		return shippingProvider;
+	}
+
+	public void setShippingProvider(String shippingProvider) {
+		this.shippingProvider = shippingProvider;
+	}
+
+	public BigDecimal getShippingFee() {
+		return shippingFee;
+	}
+
+	public void setShippingFee(BigDecimal shippingFee) {
+		this.shippingFee = shippingFee;
+	}
+
+	public String getShippingCode() {
+		return shippingCode;
+	}
+
+	public void setShippingCode(String shippingCode) {
+		this.shippingCode = shippingCode;
+	}
+
+	public String getShippingStatus() {
+		return shippingStatus;
+	}
+
+	public void setShippingStatus(String shippingStatus) {
+		this.shippingStatus = shippingStatus;
+	}
+
+	public LocalDateTime getShippedAt() {
+		return shippedAt;
+	}
+
+	public void setShippedAt(LocalDateTime shippedAt) {
+		this.shippedAt = shippedAt;
+	}
+
+	public LocalDateTime getDeliveredAt() {
+		return deliveredAt;
+	}
+
+	public void setDeliveredAt(LocalDateTime deliveredAt) {
+		this.deliveredAt = deliveredAt;
+	}
+
 	// =========================================================
 	// VIEW PROPERTIES FOR JSP
 	// =========================================================
 
 	/**
-	 * JSP gọi: ${order.totalVnd} => Java gọi getTotalVnd() Trả chuỗi đã format kiểu
-	 * VN: 1.234.567
+	 * JSP gọi: ${order.totalVnd}
 	 */
 	public String getTotalVnd() {
-		if (total == null)
-			return null;
-
-		NumberFormat nf = NumberFormat.getInstance(new Locale("vi", "VN"));
-		nf.setGroupingUsed(true);
-		nf.setMaximumFractionDigits(0); // bỏ phần lẻ
-
-		return nf.format(total);
+		return formatVnd(total);
 	}
 
 	/**
-	 * JSP/JSTL fmt:formatDate ăn chắc với java.util.Date hơn LocalDateTime. JSP
-	 * gọi: ${order.createdAtDate} => Java gọi getCreatedAtDate()
+	 * JSP gọi: ${order.couponDiscountVnd}
 	 */
-	public Date getCreatedAtDate() {
-		if (createdAt == null)
-			return null;
-		return Date.from(createdAt.atZone(ZoneId.systemDefault()).toInstant());
+	public String getCouponDiscountVnd() {
+		return formatVnd(couponDiscount);
 	}
 
-	public BigDecimal getCouponDiscount() {
-	    return couponDiscount;
+	/**
+	 * JSP gọi: ${order.shippingFeeVnd}
+	 */
+	public String getShippingFeeVnd() {
+		return formatVnd(shippingFee);
 	}
-	
-	public void setCouponDiscount(BigDecimal couponDiscount) {
-	    this.couponDiscount = couponDiscount;
+
+	/**
+	 * JSP gọi: ${order.shippingMethodLabel}
+	 */
+	public String getShippingMethodLabel() {
+		if (shippingMethod == null || shippingMethod.isBlank()) {
+			return "Giao hàng tiết kiệm";
+		}
+
+		switch (shippingMethod.toUpperCase()) {
+			case "FAST":
+				return "Giao hàng nhanh";
+			case "EXPRESS":
+				return "Hỏa tốc";
+			case "ECONOMY":
+			default:
+				return "Giao hàng tiết kiệm";
+		}
+	}
+
+	/**
+	 * JSP gọi: ${order.shippingProviderLabel}
+	 */
+	public String getShippingProviderLabel() {
+		if (shippingProvider == null || shippingProvider.isBlank()) {
+			return "Nội bộ";
+		}
+
+		switch (shippingProvider.toUpperCase()) {
+			case "GHTK":
+				return "Giao hàng tiết kiệm";
+			case "GHN":
+				return "Giao hàng nhanh";
+			case "INTERNAL":
+				return "Vận chuyển nội bộ";
+			default:
+				return shippingProvider;
+		}
+	}
+
+	/**
+	 * JSP gọi: ${order.shippingStatusLabel}
+	 */
+	public String getShippingStatusLabel() {
+		if (shippingStatus == null || shippingStatus.isBlank()) {
+			return "Chờ tạo vận đơn";
+		}
+
+		switch (shippingStatus.toUpperCase()) {
+			case "CREATED":
+				return "Đã tạo vận đơn";
+			case "PICKING":
+				return "Đang lấy hàng";
+			case "DELIVERING":
+				return "Đang giao hàng";
+			case "DELIVERED":
+				return "Đã giao hàng";
+			case "CANCELED":
+				return "Đã hủy vận chuyển";
+			case "PENDING":
+			default:
+				return "Chờ tạo vận đơn";
+		}
+	}
+
+	/**
+	 * JSP/JSTL fmt:formatDate dùng Date tốt hơn LocalDateTime.
+	 * JSP gọi: ${order.createdAtDate}
+	 */
+	public Date getCreatedAtDate() {
+		return toDate(createdAt);
+	}
+
+	/**
+	 * JSP gọi: ${order.shippedAtDate}
+	 */
+	public Date getShippedAtDate() {
+		return toDate(shippedAt);
+	}
+
+	/**
+	 * JSP gọi: ${order.deliveredAtDate}
+	 */
+	public Date getDeliveredAtDate() {
+		return toDate(deliveredAt);
+	}
+
+	private String formatVnd(BigDecimal value) {
+		if (value == null) {
+			return null;
+		}
+
+		NumberFormat nf = NumberFormat.getInstance(new Locale("vi", "VN"));
+		nf.setGroupingUsed(true);
+		nf.setMaximumFractionDigits(0);
+
+		return nf.format(value);
+	}
+
+	private Date toDate(LocalDateTime dateTime) {
+		if (dateTime == null) {
+			return null;
+		}
+
+		return Date.from(dateTime.atZone(ZoneId.systemDefault()).toInstant());
 	}
 }
