@@ -12,6 +12,7 @@ public class GlobalDataFilter implements Filter {
 
     private WebsiteSettingDAO settingDAO = new WebsiteSettingDAO();
     private PageDAO pageDAO = new PageDAO();
+    private CategoryDAO categoryDAO = new CategoryDAO();
 
     @Override
     public void doFilter(ServletRequest request,
@@ -19,13 +20,29 @@ public class GlobalDataFilter implements Filter {
                          FilterChain chain)
             throws IOException, ServletException {
 
-        // LOAD SETTINGS
-        request.setAttribute("settings",
-                settingDAO.getAllSettings());
+        // SETTINGS
+        request.setAttribute(
+                "settings",
+                settingDAO.getAllSettings()
+        );
 
-        // FOOTER PAGES (policy)
-        request.setAttribute("footerPages",
-                pageDAO.getFooterPages());
+        // FOOTER PAGES
+        request.setAttribute(
+                "policyList",
+                pageDAO.getByType("policy")
+        );
+
+        // FOOTER QUICK LINKS
+        request.setAttribute(
+                "footerPages",
+                pageDAO.getFooterPages()
+        );
+
+        // CATEGORY MENU
+        request.setAttribute(
+                "categoryList",
+                categoryDAO.findActiveForMenu()
+        );
 
         chain.doFilter(request, response);
     }
