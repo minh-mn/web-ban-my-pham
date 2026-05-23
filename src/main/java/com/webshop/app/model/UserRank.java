@@ -1,7 +1,6 @@
 package com.webshop.app.model;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.sql.Timestamp;
 
 public class UserRank {
@@ -10,48 +9,34 @@ public class UserRank {
     private String code;
     private String name;
     private BigDecimal minSpent;
-    private Integer discountPercent;
+    private int discountPercent;
     private String cssClass;
-    private Boolean active;
+    private boolean active;
     private Timestamp createdAt;
 
     public UserRank() {
+        this.code = "MEMBER";
+        this.name = "Thành viên";
         this.minSpent = BigDecimal.ZERO;
         this.discountPercent = 0;
         this.cssClass = "rank-member";
         this.active = true;
     }
 
-    public UserRank(Long id,
-                    String code,
-                    String name,
-                    BigDecimal minSpent,
-                    Integer discountPercent,
-                    String cssClass,
-                    Boolean active,
-                    Timestamp createdAt) {
-        this.id = id;
-        this.code = normalizeString(code);
-        this.name = normalizeString(name);
-        this.minSpent = safeMoney(minSpent);
-        this.discountPercent = normalizeDiscount(discountPercent);
-        this.cssClass = normalizeString(cssClass);
-        this.active = active != null && active;
-        this.createdAt = createdAt;
-    }
-
     public UserRank(String code,
                     String name,
                     BigDecimal minSpent,
-                    Integer discountPercent,
+                    int discountPercent,
                     String cssClass) {
-        this.code = normalizeString(code);
-        this.name = normalizeString(name);
-        this.minSpent = safeMoney(minSpent);
-        this.discountPercent = normalizeDiscount(discountPercent);
-        this.cssClass = normalizeString(cssClass);
+        this.code = normalizeCode(code);
+        this.name = safeText(name, "Thành viên");
+        this.minSpent = normalizeMoney(minSpent);
+        this.discountPercent = Math.max(0, discountPercent);
+        this.cssClass = safeText(cssClass, "rank-member");
         this.active = true;
     }
+
+    /* ================= BASIC GETTER / SETTER ================= */
 
     public Long getId() {
         return id;
@@ -61,12 +46,16 @@ public class UserRank {
         this.id = id;
     }
 
+    public void setId(long id) {
+        this.id = id;
+    }
+
     public String getCode() {
         return code;
     }
 
     public void setCode(String code) {
-        this.code = normalizeString(code);
+        this.code = normalizeCode(code);
     }
 
     public String getName() {
@@ -74,23 +63,23 @@ public class UserRank {
     }
 
     public void setName(String name) {
-        this.name = normalizeString(name);
+        this.name = safeText(name, "Thành viên");
     }
 
     public BigDecimal getMinSpent() {
-        return safeMoney(minSpent);
+        return normalizeMoney(minSpent);
     }
 
     public void setMinSpent(BigDecimal minSpent) {
-        this.minSpent = safeMoney(minSpent);
+        this.minSpent = normalizeMoney(minSpent);
     }
 
-    public Integer getDiscountPercent() {
-        return discountPercent == null ? 0 : discountPercent;
+    public int getDiscountPercent() {
+        return Math.max(0, discountPercent);
     }
 
-    public void setDiscountPercent(Integer discountPercent) {
-        this.discountPercent = normalizeDiscount(discountPercent);
+    public void setDiscountPercent(int discountPercent) {
+        this.discountPercent = Math.max(0, discountPercent);
     }
 
     public String getCssClass() {
@@ -98,23 +87,23 @@ public class UserRank {
             return "rank-member";
         }
 
-        return cssClass;
+        return cssClass.trim();
     }
 
     public void setCssClass(String cssClass) {
-        this.cssClass = normalizeString(cssClass);
-    }
-
-    public Boolean getActive() {
-        return active != null && active;
+        this.cssClass = safeText(cssClass, "rank-member");
     }
 
     public boolean isActive() {
-        return active != null && active;
+        return active;
     }
 
-    public void setActive(Boolean active) {
-        this.active = active != null && active;
+    public boolean getActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 
     public Timestamp getCreatedAt() {
@@ -125,39 +114,61 @@ public class UserRank {
         this.createdAt = createdAt;
     }
 
+    /* ================= VIEW SUPPORT ================= */
+
+    public String getDisplayName() {
+        if (name != null && !name.isBlank()) {
+            return name.trim();
+        }
+
+        if (code != null && !code.isBlank()) {
+            return code.trim();
+        }
+
+        return "Thành viên";
+    }
+
+    public String getDiscountLabel() {
+        int percent = getDiscountPercent();
+
+        if (percent <= 0) {
+            return "Không ưu đãi";
+        }
+
+        return "Giảm " + percent + "%";
+    }
+
     public boolean hasDiscount() {
         return getDiscountPercent() > 0;
     }
 
-    public String getDisplayName() {
-        if (name == null || name.isBlank()) {
-            return "Thành viên";
-        }
-
-        return name;
+    public boolean isDefaultRank() {
+        return "MEMBER".equalsIgnoreCase(getCode());
     }
 
-    public String getDiscountLabel() {
-        if (!hasDiscount()) {
-            return "Không có ưu đãi";
-        }
-
-        return getDiscountPercent() + "%";
+    public String getMinSpentLabel() {
+        return getMinSpent().toPlainString();
     }
 
-    public BigDecimal calculateDiscountAmount(BigDecimal amount) {
-        BigDecimal safeAmount = safeMoney(amount);
+    /* ================= HELPER ================= */
 
-        if (safeAmount.compareTo(BigDecimal.ZERO) <= 0 || getDiscountPercent() <= 0) {
-            return BigDecimal.ZERO;
+    private String normalizeCode(String value) {
+        if (value == null || value.isBlank()) {
+            return "MEMBER";
         }
 
-        return safeAmount
-                .multiply(BigDecimal.valueOf(getDiscountPercent()))
-                .divide(BigDecimal.valueOf(100), 0, RoundingMode.HALF_UP);
+        return value.trim().toUpperCase();
     }
 
-    private static BigDecimal safeMoney(BigDecimal value) {
+    private String safeText(String value, String defaultValue) {
+        if (value == null || value.isBlank()) {
+            return defaultValue;
+        }
+
+        return value.trim();
+    }
+
+    private BigDecimal normalizeMoney(BigDecimal value) {
         if (value == null) {
             return BigDecimal.ZERO;
         }
@@ -166,45 +177,6 @@ public class UserRank {
             return BigDecimal.ZERO;
         }
 
-        return value.setScale(0, RoundingMode.HALF_UP);
-    }
-
-    private static Integer normalizeDiscount(Integer value) {
-        if (value == null) {
-            return 0;
-        }
-
-        if (value < 0) {
-            return 0;
-        }
-
-        if (value > 100) {
-            return 100;
-        }
-
         return value;
-    }
-
-    private static String normalizeString(String value) {
-        if (value == null) {
-            return null;
-        }
-
-        String trimmed = value.trim();
-        return trimmed.isEmpty() ? null : trimmed;
-    }
-
-    @Override
-    public String toString() {
-        return "UserRank{" +
-                "id=" + id +
-                ", code='" + code + '\'' +
-                ", name='" + name + '\'' +
-                ", minSpent=" + minSpent +
-                ", discountPercent=" + discountPercent +
-                ", cssClass='" + cssClass + '\'' +
-                ", active=" + active +
-                ", createdAt=" + createdAt +
-                '}';
     }
 }
