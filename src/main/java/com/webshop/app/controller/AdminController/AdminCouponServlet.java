@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.webshop.app.dao.CouponDAO;
@@ -18,23 +19,52 @@ import jakarta.servlet.http.HttpServletResponse;
 @WebServlet("/admin/coupons")
 public class AdminCouponServlet extends HttpServlet {
 
+    private static final Set<String> VALID_COUPON_TYPES = Set.of(
+            "DISCOUNT",
+            "FREESHIP",
+            "PRODUCT",
+            "PERCENT"
+    );
+
+    private static final Set<String> VALID_RANK_CODES = Set.of(
+            "MEMBER",
+            "SILVER",
+            "GOLD",
+            "DIAMOND",
+            "VIP"
+    );
+
+    private static final String DEFAULT_COUPON_TYPE = "DISCOUNT";
+    private static final String DEFAULT_RANK_CODE = "MEMBER";
+
     private final CouponDAO couponDAO = new CouponDAO();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
+
         couponDAO.deactivateExpiredCoupons();
 
         req.setCharacterEncoding("UTF-8");
         resp.setCharacterEncoding("UTF-8");
+        resp.setContentType("text/html;charset=UTF-8");
 
         String action = req.getParameter("action");
-        if (action == null) action = "list";
+        if (action == null || action.isBlank()) {
+            action = "list";
+        }
 
         switch (action) {
 
             case "new": {
+                Coupon coupon = new Coupon();
+                coupon.setActive(true);
+                coupon.setType(DEFAULT_COUPON_TYPE);
+                coupon.setMinOrderAmount(BigDecimal.ZERO);
+                coupon.setMinRankCode(DEFAULT_RANK_CODE);
+
                 req.setAttribute("mode", "create");
+                req.setAttribute("coupon", coupon);
                 req.getRequestDispatcher("/jsp/admin/coupon/coupon_form.jsp").forward(req, resp);
                 return;
             }
@@ -46,39 +76,47 @@ public class AdminCouponServlet extends HttpServlet {
                     return;
                 }
 
-                Coupon cp = couponDAO.findById(id);
-                if (cp == null) {
+                Coupon coupon = couponDAO.findById(id);
+                if (coupon == null) {
                     resp.sendRedirect(req.getContextPath() + "/admin/coupons");
                     return;
                 }
 
                 req.setAttribute("mode", "edit");
-                req.setAttribute("coupon", cp);
+                req.setAttribute("coupon", coupon);
                 req.getRequestDispatcher("/jsp/admin/coupon/coupon_form.jsp").forward(req, resp);
                 return;
             }
 
             case "list":
             default: {
-                // Hỗ trợ filter theo UI: q + status (optional)
                 String q = safe(req.getParameter("q"));
-                String status = safe(req.getParameter("status")); // active/inactive/empty
+                String status = safe(req.getParameter("status"));
 
                 List<Coupon> coupons = couponDAO.findAll();
 
                 if (!q.isEmpty()) {
-                    String qUp = q.toUpperCase();
+                    String keyword = q.toUpperCase();
                     coupons = coupons.stream()
-                            .filter(c -> c.getCode() != null && c.getCode().toUpperCase().contains(qUp))
+                            .filter(coupon ->
+                                    coupon.getCode() != null
+                                            && coupon.getCode().toUpperCase().contains(keyword)
+                            )
                             .collect(Collectors.toList());
                 }
 
                 if ("active".equalsIgnoreCase(status)) {
-                    coupons = coupons.stream().filter(Coupon::isActive).collect(Collectors.toList());
+                    coupons = coupons.stream()
+                            .filter(Coupon::isActive)
+                            .collect(Collectors.toList());
                 } else if ("inactive".equalsIgnoreCase(status)) {
-                    coupons = coupons.stream().filter(c -> !c.isActive()).collect(Collectors.toList());
+                    coupons = coupons.stream()
+                            .filter(coupon -> !coupon.isActive())
+                            .collect(Collectors.toList());
                 }
 
+                req.setAttribute("q", q);
+                req.setAttribute("status", status);
                 req.setAttribute("coupons", coupons);
                 req.getRequestDispatcher("/jsp/admin/coupon/coupon_list.jsp").forward(req, resp);
                 return;
@@ -92,18 +130,24 @@ public class AdminCouponServlet extends HttpServlet {
 
         req.setCharacterEncoding("UTF-8");
         resp.setCharacterEncoding("UTF-8");
+        resp.setContentType("text/html;charset=UTF-8");
 
         String action = req.getParameter("action");
-        if (action == null) action = "create";
+        if (action == null || action.isBlank()) {
+            action = "create";
+        }
 
         try {
             switch (action) {
 
                 case "create": {
-                    Coupon cp = new Coupon();
-                    bind(req, cp);
-                    validate(cp, false);
-                    couponDAO.create(cp);
+                    Coupon coupon = new Coupon();
+
+                    bind(req, coupon);
+                    validate(coupon, false);
+
+                    couponDAO.create(coupon);
+
                     resp.sendRedirect(req.getContextPath() + "/admin/coupons");
                     return;
                 }
@@ -115,170 +159,249 @@ public class AdminCouponServlet extends HttpServlet {
                         return;
                     }
 
-                    Coupon cp = couponDAO.findById(id);
-                    if (cp == null) {
+                    Coupon coupon = couponDAO.findById(id);
+                    if (coupon == null) {
                         resp.sendRedirect(req.getContextPath() + "/admin/coupons");
                         return;
                     }
 
-                    bind(req, cp);
-                    cp.setId(id);
-                    validate(cp, true);
-                    couponDAO.update(cp);
+                    bind(req, coupon);
+                    coupon.setId(id);
+                    validate(coupon, true);
+
+                    couponDAO.update(coupon);
+
                     resp.sendRedirect(req.getContextPath() + "/admin/coupons");
                     return;
                 }
 
                 case "delete": {
                     int id = safeInt(req.getParameter("id"), -1);
-                    if (id > 0) couponDAO.softDisable(id);
+                    if (id > 0) {
+                        couponDAO.softDisable(id);
+                    }
+
                     resp.sendRedirect(req.getContextPath() + "/admin/coupons");
                     return;
                 }
 
                 case "toggle": {
                     int id = safeInt(req.getParameter("id"), -1);
-                    if (id > 0) couponDAO.toggleActive(id);
+                    if (id > 0) {
+                        couponDAO.toggleActive(id);
+                    }
+
                     resp.sendRedirect(req.getContextPath() + "/admin/coupons");
                     return;
                 }
 
-                default:
+                default: {
                     resp.sendRedirect(req.getContextPath() + "/admin/coupons");
                     return;
+                }
             }
 
         } catch (IllegalArgumentException ex) {
-            // Forward lại form + giữ dữ liệu
-            req.setAttribute("error", ex.getMessage());
+            Coupon coupon = new Coupon();
 
-            Coupon cp = new Coupon();
-            if ("update".equals(action)) {
+            if ("update".equalsIgnoreCase(action)) {
                 req.setAttribute("mode", "edit");
-                cp.setId(safeInt(req.getParameter("id"), 0));
+                coupon.setId(safeInt(req.getParameter("id"), 0));
             } else {
                 req.setAttribute("mode", "create");
             }
 
-            try { bind(req, cp); } catch (Exception ignore) {}
-            req.setAttribute("coupon", cp);
+            try {
+                bind(req, coupon);
+            } catch (Exception ignore) {
+                // Giữ lỗi validate chính để hiển thị cho admin.
+            }
 
+            req.setAttribute("error", ex.getMessage());
+            req.setAttribute("coupon", coupon);
             req.getRequestDispatcher("/jsp/admin/coupon/coupon_form.jsp").forward(req, resp);
         }
     }
 
     /* ===================== BIND + VALIDATE ===================== */
 
-    private void bind(HttpServletRequest req, Coupon cp) {
+    private void bind(HttpServletRequest req, Coupon coupon) {
 
-        // CODE
         String code = safe(req.getParameter("code")).toUpperCase();
-        cp.setCode(code);
+        coupon.setCode(code);
 
-        // TYPE
         String type = safe(req.getParameter("type")).toUpperCase();
         if (type.isEmpty()) {
-            type = "DISCOUNT"; // default
+            type = DEFAULT_COUPON_TYPE;
         }
-        cp.setType(type);
+        coupon.setType(type);
 
-        // Description
-        cp.setDescription(safe(req.getParameter("description")));
+        coupon.setDescription(safe(req.getParameter("description")));
 
-        // Min Order Amount
-        String minOrderStr = req.getParameter("minOrderAmount");
-        if (minOrderStr == null || minOrderStr.trim().isEmpty()) {
-            cp.setMinOrderAmount(BigDecimal.ZERO);
+        BigDecimal minOrderAmount = parseBigDecimal(
+                req.getParameter("minOrderAmount"),
+                BigDecimal.ZERO,
+                "Đơn tối thiểu không hợp lệ."
+        );
+        coupon.setMinOrderAmount(minOrderAmount);
+
+        String minRankCode = safe(req.getParameter("minRankCode")).toUpperCase();
+        if (minRankCode.isEmpty()) {
+            minRankCode = DEFAULT_RANK_CODE;
+        }
+        coupon.setMinRankCode(minRankCode);
+
+        coupon.setDiscountPercent(safeInt(req.getParameter("discountPercent"), 0));
+
+        coupon.setMaxUses(safeInt(req.getParameter("maxUses"), 1));
+
+        String maxDiscountAmountRaw = req.getParameter("maxDiscountAmount");
+        if (maxDiscountAmountRaw == null || maxDiscountAmountRaw.trim().isEmpty()) {
+            coupon.setMaxDiscountAmount(null);
         } else {
-            try {
-                cp.setMinOrderAmount(new BigDecimal(minOrderStr.trim()));
-            } catch (Exception e) {
-                cp.setMinOrderAmount(BigDecimal.ZERO);
-            }
+            BigDecimal maxDiscountAmount = parseBigDecimal(
+                    maxDiscountAmountRaw,
+                    null,
+                    "Số tiền giảm tối đa không hợp lệ."
+            );
+            coupon.setMaxDiscountAmount(maxDiscountAmount);
         }
 
-        // discount %
-        cp.setDiscountPercent(safeInt(req.getParameter("discountPercent"), 0));
+        coupon.setStartDate(safeDate(req.getParameter("startDate")));
+        coupon.setEndDate(safeDate(req.getParameter("endDate")));
 
-        // max uses
-        cp.setMaxUses(safeInt(req.getParameter("maxUses"), 1));
-
-        // max discount amount
-        String maxStr = req.getParameter("maxDiscountAmount");
-        if (maxStr == null || maxStr.trim().isEmpty()) {
-            cp.setMaxDiscountAmount(null);
-        } else {
-            try {
-                cp.setMaxDiscountAmount(new BigDecimal(maxStr.trim()));
-            } catch (Exception e) {
-                throw new IllegalArgumentException("maxDiscountAmount không hợp lệ.");
-            }
-        }
-
-        // dates
-        cp.setStartDate(safeDate(req.getParameter("startDate")));
-        cp.setEndDate(safeDate(req.getParameter("endDate")));
-
-        // active
         boolean active =
-                "1".equals(req.getParameter("active")) ||
-                        "true".equalsIgnoreCase(req.getParameter("active"));
+                "1".equals(req.getParameter("active"))
+                        || "true".equalsIgnoreCase(req.getParameter("active"))
+                        || "on".equalsIgnoreCase(req.getParameter("active"));
 
-        cp.setActive(active);
+        coupon.setActive(active);
     }
 
-    private void validate(Coupon cp, boolean isUpdate) {
+    private void validate(Coupon coupon, boolean isUpdate) {
 
-        if (cp.getCode() == null || cp.getCode().isBlank())
-            throw new IllegalArgumentException("Code không được trống.");
-
-        if (cp.getDiscountPercent() <= 0 || cp.getDiscountPercent() > 100)
-            throw new IllegalArgumentException("discountPercent phải 1-100.");
-
-        if (cp.getMaxUses() < 1)
-            throw new IllegalArgumentException("maxUses phải >= 1.");
-
-        // ⭐ FIX TYPE
-        if (cp.getType() == null || cp.getType().isBlank())
-            throw new IllegalArgumentException("type không được trống.");
-
-        if (!cp.getType().equals("DISCOUNT")
-                && !cp.getType().equals("FREESHIP")
-                && !cp.getType().equals("PRODUCT")) {
-            throw new IllegalArgumentException("type không hợp lệ.");
+        if (coupon.getCode() == null || coupon.getCode().isBlank()) {
+            throw new IllegalArgumentException("Mã coupon không được để trống.");
         }
 
-        if (cp.getStartDate() != null && cp.getEndDate() != null &&
-                cp.getEndDate().isBefore(cp.getStartDate())) {
-            throw new IllegalArgumentException("endDate phải sau startDate.");
+        if (!isUpdate && couponDAO.existsByCode(coupon.getCode())) {
+            throw new IllegalArgumentException("Mã coupon đã tồn tại.");
         }
+
+        if (isUpdate && isDuplicateCodeForOtherCoupon(coupon)) {
+            throw new IllegalArgumentException("Mã coupon đã được sử dụng bởi coupon khác.");
+        }
+
+        if (coupon.getType() == null || coupon.getType().isBlank()) {
+            throw new IllegalArgumentException("Loại coupon không được để trống.");
+        }
+
+        if (!VALID_COUPON_TYPES.contains(coupon.getType())) {
+            throw new IllegalArgumentException("Loại coupon không hợp lệ.");
+        }
+
+        if (coupon.getDiscountPercent() <= 0 || coupon.getDiscountPercent() > 100) {
+            throw new IllegalArgumentException("Phần trăm giảm giá phải nằm trong khoảng 1 đến 100.");
+        }
+
+        if (coupon.getMaxUses() < 1) {
+            throw new IllegalArgumentException("Số lượt dùng tối đa phải lớn hơn hoặc bằng 1.");
+        }
+
+        if (coupon.getMaxDiscountAmount() != null
+                && coupon.getMaxDiscountAmount().compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Số tiền giảm tối đa không được âm.");
+        }
+
+        if (coupon.getMinOrderAmount() == null) {
+            coupon.setMinOrderAmount(BigDecimal.ZERO);
+        }
+
+        if (coupon.getMinOrderAmount().compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Đơn tối thiểu không được âm.");
+        }
+
+        if (coupon.getMinRankCode() == null || coupon.getMinRankCode().isBlank()) {
+            coupon.setMinRankCode(DEFAULT_RANK_CODE);
+        }
+
+        if (!VALID_RANK_CODES.contains(coupon.getMinRankCode())) {
+            throw new IllegalArgumentException("Rank tối thiểu không hợp lệ.");
+        }
+
+        if (coupon.getStartDate() != null
+                && coupon.getEndDate() != null
+                && coupon.getEndDate().isBefore(coupon.getStartDate())) {
+            throw new IllegalArgumentException("Ngày kết thúc phải sau hoặc bằng ngày bắt đầu.");
+        }
+    }
+
+    private boolean isDuplicateCodeForOtherCoupon(Coupon coupon) {
+        return couponDAO.findAll()
+                .stream()
+                .anyMatch(existing ->
+                        existing.getId() != coupon.getId()
+                                && existing.getCode() != null
+                                && existing.getCode().equalsIgnoreCase(coupon.getCode())
+                );
     }
 
     /* ===================== HELPERS ===================== */
 
-    private int safeInt(String s, int def) {
+    private int safeInt(String value, int defaultValue) {
         try {
-            if (s == null) return def;
-            String t = s.trim();
-            if (t.isEmpty()) return def;
-            return Integer.parseInt(t);
+            if (value == null) {
+                return defaultValue;
+            }
+
+            String trimmed = value.trim();
+            if (trimmed.isEmpty()) {
+                return defaultValue;
+            }
+
+            return Integer.parseInt(trimmed);
+
         } catch (Exception e) {
-            return def;
+            return defaultValue;
         }
     }
 
-    private String safe(String s) {
-        return s == null ? "" : s.trim();
+    private String safe(String value) {
+        return value == null ? "" : value.trim();
     }
 
-    private LocalDate safeDate(String s) {
+    private LocalDate safeDate(String value) {
         try {
-            if (s == null) return null;
-            String t = s.trim();
-            if (t.isEmpty()) return null;
-            return LocalDate.parse(t); // yyyy-MM-dd
+            if (value == null) {
+                return null;
+            }
+
+            String trimmed = value.trim();
+            if (trimmed.isEmpty()) {
+                return null;
+            }
+
+            return LocalDate.parse(trimmed);
+
         } catch (Exception e) {
-            throw new IllegalArgumentException("Ngày không hợp lệ (định dạng yyyy-MM-dd): " + s);
+            throw new IllegalArgumentException("Ngày không hợp lệ, định dạng đúng là yyyy-MM-dd: " + value);
+        }
+    }
+
+    private BigDecimal parseBigDecimal(
+            String value,
+            BigDecimal defaultValue,
+            String errorMessage
+    ) {
+        try {
+            if (value == null || value.trim().isEmpty()) {
+                return defaultValue;
+            }
+
+            return new BigDecimal(value.trim());
+
+        } catch (Exception e) {
+            throw new IllegalArgumentException(errorMessage);
         }
     }
 }
