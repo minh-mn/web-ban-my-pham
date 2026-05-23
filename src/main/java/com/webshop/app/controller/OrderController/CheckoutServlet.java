@@ -350,9 +350,19 @@ public class CheckoutServlet extends HttpServlet {
         }
 
         try {
+            // 1. Tạo Map mới với key là Integer
+            Map<Integer, CartItem> integerCart = new HashMap<>();
+
+            // 2. Lặp qua các item để đưa vào Map mới
+            for (CartItem item : cart.values()) {
+                // Giả sử CartItem có phương thức getProductId() trả về int
+                integerCart.put(item.getProductId(), item);
+            }
+
+            // 3. Gọi hàm checkoutService với Map đã chuyển đổi
             int orderId = checkoutService.checkout(
                     user.getId(),
-                    cart,
+                    cart, // Sử dụng biến đã convert
                     fullName,
                     phone,
                     finalAddress,
