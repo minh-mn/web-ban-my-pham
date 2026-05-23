@@ -22,7 +22,7 @@ public class HomeServlet extends HttpServlet {
 
     private final BannerDAO bannerDAO = new BannerDAO();
     private final ProductDAO productDAO = new ProductDAO();
-    private final CouponDAO couponDAO = new CouponDAO(); 
+    private final CouponDAO couponDAO = new CouponDAO(); // Khởi tạo CouponDAO
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
@@ -54,7 +54,7 @@ public class HomeServlet extends HttpServlet {
         // ================= META =================
         req.setAttribute("pageTitle", "MyCosmetic | Trang chủ");
 
-        // ✅ JSP include CSS
+        // JSP include CSS
         req.setAttribute("pageCss", "home.css");
 
         // ================= CONTENT =================
