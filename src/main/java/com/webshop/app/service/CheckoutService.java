@@ -20,6 +20,8 @@ public class CheckoutService {
 
 	private static final BigDecimal FREE_SHIP_THRESHOLD = new BigDecimal("500000");
 
+	private static final String DEFAULT_RANK_CODE = "MEMBER";
+
 	private static final String SHIPPING_ECONOMY = "ECONOMY";
 	private static final String SHIPPING_FAST = "FAST";
 	private static final String SHIPPING_EXPRESS = "EXPRESS";
@@ -34,12 +36,12 @@ public class CheckoutService {
 	 * Giữ method cũ để các chỗ khác đang gọi checkout 7 tham số không bị lỗi.
 	 */
 	public int checkout(int userId,
-						Map<String, CartItem> cart,
-						String fullName,
-						String phone,
-						String address,
-						String paymentMethod,
-						String couponCode) {
+	                    Map<String, CartItem> cart,
+	                    String fullName,
+	                    String phone,
+	                    String address,
+	                    String paymentMethod,
+	                    String couponCode) {
 
 		return checkout(
 				userId,
@@ -59,15 +61,15 @@ public class CheckoutService {
 	 * Method mới dùng cho checkout có phương thức vận chuyển, phí ship và freeship.
 	 */
 	public int checkout(int userId,
-						Map<String, CartItem> cart,
-						String fullName,
-						String phone,
-						String address,
-						String paymentMethod,
-						String couponCode,
-						String shippingMethod,
-						BigDecimal submittedShippingFee,
-						String province) {
+	                    Map<String, CartItem> cart,
+	                    String fullName,
+	                    String phone,
+	                    String address,
+	                    String paymentMethod,
+	                    String couponCode,
+	                    String shippingMethod,
+	                    BigDecimal submittedShippingFee,
+	                    String province) {
 
 		if (userId <= 0) {
 			throw new IllegalArgumentException("Invalid userId");
@@ -87,21 +89,23 @@ public class CheckoutService {
 		boolean isVnp = "VNPAY".equalsIgnoreCase(paymentMethod);
 
 		BigDecimal subtotal = calculateCartSubtotal(cart);
+		String userRankCode = resolveUserRankCode(userId);
 
 		/*
 		 * =========================
 		 * COUPON DISCOUNT
 		 * =========================
+		 * Coupon được validate theo:
+		 * - active / ngày hiệu lực / lượt dùng
+		 * - min_order_amount
+		 * - min_rank_code
 		 */
 		Coupon coupon = null;
 		BigDecimal couponDiscount = BigDecimal.ZERO;
 
 		if (couponCode != null && !couponCode.isBlank()) {
-			coupon = couponService.validateCoupon(couponCode, subtotal);
-
-			if (coupon != null) {
-				couponDiscount = couponService.calculateDiscount(coupon, subtotal);
-			}
+			coupon = validateCouponForCheckoutOrThrow(couponCode, subtotal, userRankCode);
+			couponDiscount = couponService.calculateDiscount(coupon, subtotal);
 		}
 
 		couponDiscount = money0(couponDiscount);
@@ -181,38 +185,38 @@ public class CheckoutService {
 			 * CREATE ORDER
 			 * =========================
 			 */
-			Order o = new Order();
-			o.setUserId(userId);
-			o.setFullName(fullName);
-			o.setPhone(phone);
-			o.setAddress(address);
-			o.setTotal(total);
-			o.setCouponDiscount(couponDiscount);
-			o.setPaymentMethod(paymentMethod);
+			Order order = new Order();
+			order.setUserId(userId);
+			order.setFullName(fullName);
+			order.setPhone(phone);
+			order.setAddress(address);
+			order.setTotal(total);
+			order.setCouponDiscount(couponDiscount);
+			order.setPaymentMethod(paymentMethod);
 
 			/*
 			 * =========================
 			 * SAVE SHIPPING INFO
 			 * =========================
 			 */
-			o.setShippingMethod(shippingMethod);
-			o.setShippingProvider(resolveShippingProvider(shippingMethod));
-			o.setShippingFee(shippingFee);
-			o.setShippingCode(null);
-			o.setShippingStatus("PENDING");
+			order.setShippingMethod(shippingMethod);
+			order.setShippingProvider(resolveShippingProvider(shippingMethod));
+			order.setShippingFee(shippingFee);
+			order.setShippingCode(null);
+			order.setShippingStatus("PENDING");
 
 			if (isCod) {
-				o.setPaymentStatus("PENDING");
-				o.setStatus("confirmed");
+				order.setPaymentStatus("PENDING");
+				order.setStatus("confirmed");
 			} else if (isVnp) {
-				o.setPaymentStatus("PENDING");
-				o.setStatus("processing");
+				order.setPaymentStatus("PENDING");
+				order.setStatus("processing");
 			} else {
-				o.setPaymentStatus("PENDING");
-				o.setStatus("processing");
+				order.setPaymentStatus("PENDING");
+				order.setStatus("processing");
 			}
 
-			int orderId = orderDAO.create(conn, o);
+			int orderId = orderDAO.create(conn, order);
 
 			/*
 			 * =========================
@@ -248,15 +252,15 @@ public class CheckoutService {
 		try (Connection conn = DBConnection.getConnection()) {
 			conn.setAutoCommit(false);
 
-			Order o;
+			Order order;
 
 			try {
-				o = orderDAO.findById(conn, orderId);
+				order = orderDAO.findById(conn, orderId);
 			} catch (Exception ignore) {
-				o = orderDAO.findById(orderId);
+				order = orderDAO.findById(orderId);
 			}
 
-			if (o == null) {
+			if (order == null) {
 				conn.rollback();
 				throw new RuntimeException("Order not found: " + orderId);
 			}
@@ -264,8 +268,8 @@ public class CheckoutService {
 			boolean hasItems = itemDAO.existsByOrderId(conn, orderId);
 
 			if (hasItems) {
-				if (!"PAID".equalsIgnoreCase(o.getPaymentStatus())) {
-					updatePaidStatus(conn, orderId, o.getVnpTxnRef());
+				if (!"PAID".equalsIgnoreCase(order.getPaymentStatus())) {
+					updatePaidStatus(conn, orderId, order.getVnpTxnRef());
 					conn.commit();
 					return;
 				}
@@ -301,7 +305,7 @@ public class CheckoutService {
 				}
 			}
 
-			updatePaidStatus(conn, orderId, o.getVnpTxnRef());
+			updatePaidStatus(conn, orderId, order.getVnpTxnRef());
 
 			conn.commit();
 
@@ -316,7 +320,34 @@ public class CheckoutService {
 	 * =========================
 	 */
 
+	/*
+	 * Method cũ: giữ lại để tránh lỗi các file khác đang gọi.
+	 * Vì không có userId nên mặc định rank là MEMBER.
+	 */
 	public BigDecimal calculateCouponDiscount(String couponCode, BigDecimal subTotal) {
+		return calculateCouponDiscountByRank(couponCode, subTotal, DEFAULT_RANK_CODE);
+	}
+
+	/*
+	 * Method mới: preview coupon discount theo userId.
+	 * Dùng cho CheckoutServlet hoặc AjaxApplyCouponServlet để tính đúng theo rank user.
+	 */
+	public BigDecimal calculateCouponDiscount(int userId, String couponCode, BigDecimal subTotal) {
+
+		if (userId <= 0) {
+			return BigDecimal.ZERO;
+		}
+
+		String userRankCode = resolveUserRankCode(userId);
+
+		return calculateCouponDiscountByRank(couponCode, subTotal, userRankCode);
+	}
+
+	public BigDecimal calculateCouponDiscountByRank(
+			String couponCode,
+			BigDecimal subTotal,
+			String userRankCode
+	) {
 
 		BigDecimal safeSubTotal = money0(subTotal);
 
@@ -328,13 +359,13 @@ public class CheckoutService {
 			return BigDecimal.ZERO;
 		}
 
-		Coupon coupon = couponService.validateCoupon(couponCode, safeSubTotal);
+		Coupon coupon = couponService.validateCoupon(couponCode, safeSubTotal, userRankCode);
 
 		if (coupon == null) {
 			return BigDecimal.ZERO;
 		}
 
-		BigDecimal discount = calculateDiscountFromCoupon(coupon, safeSubTotal);
+		BigDecimal discount = couponService.calculateDiscount(coupon, safeSubTotal);
 
 		if (discount.compareTo(BigDecimal.ZERO) <= 0) {
 			return BigDecimal.ZERO;
@@ -364,12 +395,12 @@ public class CheckoutService {
 	}
 
 	public BigDecimal calculateTotalAfterCouponAndRank(int userId,
-													   BigDecimal subTotal,
-													   String couponCode) {
+	                                                   BigDecimal subTotal,
+	                                                   String couponCode) {
 
 		BigDecimal safeSubTotal = money0(subTotal);
 
-		BigDecimal couponDiscount = calculateCouponDiscount(couponCode, safeSubTotal);
+		BigDecimal couponDiscount = calculateCouponDiscount(userId, couponCode, safeSubTotal);
 		BigDecimal amountAfterCoupon = safeSubTotal.subtract(couponDiscount);
 
 		if (amountAfterCoupon.compareTo(BigDecimal.ZERO) < 0) {
@@ -387,14 +418,14 @@ public class CheckoutService {
 	}
 
 	public BigDecimal calculateTotalAfterDiscountsAndShipping(int userId,
-															  BigDecimal subTotal,
-															  String couponCode,
-															  String shippingMethod,
-															  String province) {
+	                                                          BigDecimal subTotal,
+	                                                          String couponCode,
+	                                                          String shippingMethod,
+	                                                          String province) {
 
 		BigDecimal safeSubTotal = money0(subTotal);
 
-		BigDecimal couponDiscount = calculateCouponDiscount(couponCode, safeSubTotal);
+		BigDecimal couponDiscount = calculateCouponDiscount(userId, couponCode, safeSubTotal);
 		BigDecimal amountAfterCoupon = safeSubTotal.subtract(couponDiscount);
 
 		if (amountAfterCoupon.compareTo(BigDecimal.ZERO) < 0) {
@@ -418,27 +449,167 @@ public class CheckoutService {
 		return money0(amountAfterAllDiscounts.add(shippingFee));
 	}
 
-	private BigDecimal calculateDiscountFromCoupon(Coupon coupon, BigDecimal subTotal) {
+	/*
+	 * =========================
+	 * COUPON VALIDATION HELPERS
+	 * =========================
+	 */
 
-		if (coupon == null || subTotal == null) {
+	private Coupon validateCouponForCheckoutOrThrow(
+			String couponCode,
+			BigDecimal subtotal,
+			String userRankCode
+	) {
+
+		Coupon coupon = couponService.validateCoupon(couponCode, subtotal, userRankCode);
+
+		if (coupon != null) {
+			return coupon;
+		}
+
+		Coupon existingCoupon = couponDAO.findByCode(couponCode.trim());
+		String message = couponService.buildCouponErrorMessage(
+				existingCoupon,
+				subtotal,
+				userRankCode
+		);
+
+		if (message == null || message.isBlank()) {
+			message = "Mã giảm giá không hợp lệ hoặc không đủ điều kiện áp dụng.";
+		}
+
+		throw new IllegalArgumentException(message);
+	}
+
+	/*
+	 * =========================
+	 * USER RANK HELPERS
+	 * =========================
+	 */
+
+	private String resolveUserRankCode(int userId) {
+
+		if (userId <= 0) {
+			return DEFAULT_RANK_CODE;
+		}
+
+		try (Connection conn = DBConnection.getConnection()) {
+			return resolveUserRankCode(conn, userId);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return DEFAULT_RANK_CODE;
+		}
+	}
+
+	private String resolveUserRankCode(Connection conn, int userId) {
+
+		String manualRankCode = findManualRankCode(conn, userId);
+
+		if (manualRankCode != null && !manualRankCode.isBlank()) {
+			return normalizeRankCode(manualRankCode);
+		}
+
+		BigDecimal totalSpent = findCompletedOrderTotal(conn, userId);
+		String rankBySpent = findRankCodeByTotalSpent(conn, totalSpent);
+
+		return normalizeRankCode(rankBySpent);
+	}
+
+	private String findManualRankCode(Connection conn, int userId) {
+
+		String sql = """
+                SELECT manual_rank_code
+                FROM users
+                WHERE id = ?
+                LIMIT 1
+                """;
+
+		try (PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, userId);
+
+			try (ResultSet rs = ps.executeQuery()) {
+				if (rs.next()) {
+					return rs.getString("manual_rank_code");
+				}
+			}
+
+		} catch (Exception e) {
+			// Nếu database cũ chưa có manual_rank_code thì fallback về rank theo chi tiêu.
+			return null;
+		}
+
+		return null;
+	}
+
+	private BigDecimal findCompletedOrderTotal(Connection conn, int userId) {
+
+		String sql = """
+                SELECT COALESCE(SUM(total), 0) AS total_spent
+                FROM store_order
+                WHERE user_id = ?
+                  AND LOWER(status) = 'completed'
+                  AND (
+                        payment_status IS NULL
+                        OR UPPER(payment_status) IN ('PAID', 'PENDING')
+                  )
+                """;
+
+		try (PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, userId);
+
+			try (ResultSet rs = ps.executeQuery()) {
+				if (rs.next()) {
+					BigDecimal totalSpent = rs.getBigDecimal("total_spent");
+					return totalSpent == null ? BigDecimal.ZERO : totalSpent;
+				}
+			}
+
+		} catch (Exception e) {
 			return BigDecimal.ZERO;
 		}
 
-		BigDecimal percent = BigDecimal.valueOf(coupon.getDiscountPercent());
+		return BigDecimal.ZERO;
+	}
 
-		BigDecimal discount = subTotal
-				.multiply(percent)
-				.divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+	private String findRankCodeByTotalSpent(Connection conn, BigDecimal totalSpent) {
 
-		if (coupon.getMaxDiscountAmount() != null) {
-			discount = discount.min(coupon.getMaxDiscountAmount());
+		String sql = """
+                SELECT code
+                FROM store_rank
+                WHERE is_active = 1
+                  AND min_spent <= ?
+                ORDER BY priority DESC, min_spent DESC
+                LIMIT 1
+                """;
+
+		try (PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setBigDecimal(1, money0(totalSpent));
+
+			try (ResultSet rs = ps.executeQuery()) {
+				if (rs.next()) {
+					return rs.getString("code");
+				}
+			}
+
+		} catch (Exception e) {
+			return DEFAULT_RANK_CODE;
 		}
 
-		if (discount.compareTo(BigDecimal.ZERO) < 0) {
-			discount = BigDecimal.ZERO;
+		return DEFAULT_RANK_CODE;
+	}
+
+	private String normalizeRankCode(String rankCode) {
+
+		if (rankCode == null || rankCode.isBlank()) {
+			return DEFAULT_RANK_CODE;
 		}
 
-		return discount;
+		String normalized = rankCode.trim().toUpperCase();
+
+		return switch (normalized) {
+			case "MEMBER", "SILVER", "GOLD", "DIAMOND", "VIP" -> normalized;
+			default -> DEFAULT_RANK_CODE;
+		};
 	}
 
 	/*
@@ -479,9 +650,9 @@ public class CheckoutService {
 	}
 
 	private BigDecimal calculateShippingFee(String shippingMethod,
-											String province,
-											BigDecimal amountAfterCoupon,
-											BigDecimal submittedShippingFee) {
+	                                        String province,
+	                                        BigDecimal amountAfterCoupon,
+	                                        BigDecimal submittedShippingFee) {
 
 		BigDecimal safeAmountAfterCoupon = money0(amountAfterCoupon);
 
@@ -539,19 +710,19 @@ public class CheckoutService {
 	 */
 
 	private void createOrderItemsAndUpdateStock(Connection conn,
-												int orderId,
-												Map<String, CartItem> cart) throws Exception {
+	                                            int orderId,
+	                                            Map<String, CartItem> cart) throws Exception {
 
 		String updateStockSql = "UPDATE store_product SET stock = stock - ? WHERE id = ?";
 
 		for (CartItem item : cart.values()) {
-			OrderItem oi = new OrderItem();
-			oi.setOrderId(orderId);
-			oi.setProductId(item.getProductId());
-			oi.setPrice(item.getPrice());
-			oi.setQuantity(item.getQuantity());
+			OrderItem orderItem = new OrderItem();
+			orderItem.setOrderId(orderId);
+			orderItem.setProductId(item.getProductId());
+			orderItem.setPrice(item.getPrice());
+			orderItem.setQuantity(item.getQuantity());
 
-			itemDAO.create(conn, oi);
+			itemDAO.create(conn, orderItem);
 
 			try (PreparedStatement ps = conn.prepareStatement(updateStockSql)) {
 				ps.setInt(1, item.getQuantity());
