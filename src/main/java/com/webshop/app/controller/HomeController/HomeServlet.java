@@ -4,8 +4,10 @@ import java.io.IOException;
 import java.util.List;
 
 import com.webshop.app.dao.BannerDAO;
+import com.webshop.app.dao.CouponDAO;
 import com.webshop.app.dao.ProductDAO;
 import com.webshop.app.model.Banner;
+import com.webshop.app.model.Coupon;
 import com.webshop.app.model.Product;
 
 import jakarta.servlet.ServletException;
@@ -13,7 +15,6 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
 @WebServlet("/home")
 public class HomeServlet extends HttpServlet {
 
@@ -21,16 +22,23 @@ public class HomeServlet extends HttpServlet {
 
     private final BannerDAO bannerDAO = new BannerDAO();
     private final ProductDAO productDAO = new ProductDAO();
+    private final CouponDAO couponDAO = new CouponDAO(); // Khởi tạo CouponDAO
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
         // ================= DATA =================
+
+        // 1. Lấy Banner
         List<Banner> banners = bannerDAO.findActiveBanners();
         req.setAttribute("banners", banners);
 
-        // ✅ CHỈ LẤY 12 SẢN PHẨM NỔI BẬT:
+        // 2. Lấy Voucher (ĐÂY LÀ PHẦN BẠN CÒN THIẾU)
+        List<Coupon> vouchers = couponDAO.findActiveCouponsForHome();
+        req.setAttribute("vouchers", vouchers);
+
+        // 3. Lấy Sản phẩm
         // tiêu chí: bán chạy (sold_qty) -> giảm giá sâu -> mới nhất
         List<Product> featuredProducts;
 
