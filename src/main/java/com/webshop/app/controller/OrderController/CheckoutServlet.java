@@ -2,12 +2,16 @@ package com.webshop.app.controller.OrderController;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.webshop.app.dao.CouponDAO;
 import com.webshop.app.model.CartItem;
+import com.webshop.app.model.Coupon;
 import com.webshop.app.model.User;
 import com.webshop.app.service.CheckoutService;
 import com.webshop.app.utils.CartUtil;
@@ -30,6 +34,7 @@ public class CheckoutServlet extends HttpServlet {
     private static final String SESSION_CHECKOUT_COUPON_DISCOUNT = "CHECKOUT_COUPON_DISCOUNT";
 
     private final CheckoutService checkoutService = new CheckoutService();
+    private final CouponDAO couponDAO = new CouponDAO();
 
     private BigDecimal calcSubTotal(Map<String, CartItem> cart) {
         BigDecimal subTotal = BigDecimal.ZERO;
@@ -151,6 +156,34 @@ public class CheckoutServlet extends HttpServlet {
                 || message.contains("đơn hàng");
     }
 
+    private void loadCouponsForModal(HttpServletRequest req,
+                                     int userId,
+                                     BigDecimal subTotal) {
+
+        List<Coupon> savedCoupons = new ArrayList<>();
+        List<Coupon> availableCoupons = new ArrayList<>();
+
+        try {
+            if (userId > 0) {
+                savedCoupons = couponDAO.findSavedCouponsByUserId(userId);
+            }
+
+            availableCoupons = couponDAO.findAvailableCouponsForCheckout(subTotal);
+
+        } catch (RuntimeException e) {
+            /*
+             * Không để lỗi load coupon làm hỏng toàn bộ trang checkout.
+             * Nếu database coupon/user_coupon thiếu cột hoặc thiếu bảng,
+             * trang checkout vẫn mở được, chỉ không hiển thị danh sách mã.
+             */
+            e.printStackTrace();
+            req.setAttribute("couponLoadError", "Không thể tải danh sách mã khuyến mãi.");
+        }
+
+        req.setAttribute("savedCoupons", savedCoupons);
+        req.setAttribute("availableCoupons", availableCoupons);
+    }
+
     private void prepareCheckoutView(HttpServletRequest req,
                                      HttpSession session,
                                      Map<String, CartItem> cart,
@@ -197,6 +230,13 @@ public class CheckoutServlet extends HttpServlet {
         }
 
         BigDecimal total = calcTotal(subTotal, couponDiscount);
+
+        /*
+         * LOAD COUPONS FOR MODAL
+         * - savedCoupons: mã user đã lưu trong bảng user_coupon.
+         * - availableCoupons: mã còn hạn, còn lượt, active và đủ min_order_amount.
+         */
+        loadCouponsForModal(req, userId, subTotal);
 
         req.setAttribute("cart", cart);
         req.setAttribute("selectedCart", cart);
