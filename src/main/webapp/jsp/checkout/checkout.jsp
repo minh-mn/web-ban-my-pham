@@ -969,13 +969,13 @@
 
           <!-- ADDRESS -->
           <div class="checkout-field">
-            <label for="address">Địa chỉ, tên đường</label>
+            <label for="address">Địa chỉ cụ thể</label>
 
             <input type="text"
                    id="address"
                    name="address"
                    value="${not empty requestScope.formAddress ? requestScope.formAddress : param.address}"
-                   placeholder="Ví dụ: 123 Nguyễn Văn A, đường Linh Trung"
+                   placeholder="Ví dụ: Số nhà, hẻm, tổ/khu phố/ấp, tên đường hoặc khu vực"
                    class="${not empty errors.address ? 'is-invalid' : ''}"
                    autocomplete="street-address">
 
@@ -986,7 +986,7 @@
             </button>
 
             <div class="field-hint" id="addressHint">
-              Nhập số nhà, tên đường. Nếu địa chỉ ngắn như “123”, hãy dùng vị trí hiện tại để xác minh.
+              Nhập rõ số nhà, hẻm, tổ/khu phố/ấp/xã, tên đường hoặc khu vực giao hàng.
             </div>
 
             <input type="hidden"
@@ -2209,7 +2209,7 @@
 
       /*
        * Chặn chuỗi nhập bừa kiểu aaaaaa, 111111, //////...
-       * Số nhà ngắn như 7, 12, 123 vẫn có thể hợp lệ nếu đã có GPS xác minh,
+       * Địa chỉ ngắn vẫn có thể hợp lệ nếu đã có GPS xác minh,
        * nên không chặn mọi chuỗi toàn số.
        */
       if (compact.length >= 6 && /^(.)\1{5,}$/.test(compact)) {
@@ -2231,7 +2231,7 @@
       const hasDigit = /[0-9]/.test(normalized);
 
       /*
-       * Nếu chưa xác minh GPS, chỉ nhập "123" là quá mơ hồ.
+       * Nếu chưa xác minh GPS, chỉ nhập mỗi số nhà là quá mơ hồ.
        */
       if (!hasLetter) {
         return true;
@@ -2254,6 +2254,10 @@
         "toa",
         "lau",
         "can ho",
+        "xa",
+        "phuong",
+        "thi tran",
+        "doi",
         "tan",
         "linh",
         "nguyen",
@@ -2372,7 +2376,7 @@
         setFieldError(
                 addressInput,
                 "addressError",
-                "Vui lòng nhập thêm tên đường, khu vực hoặc dùng vị trí hiện tại để xác minh địa chỉ."
+                "Vui lòng nhập rõ số nhà, hẻm, tổ/khu phố/ấp/xã, tên đường hoặc khu vực giao hàng."
         );
         return false;
       }
@@ -3884,27 +3888,72 @@
               });
     }
 
+    function addRoadPrefixIfNeeded(road) {
+      const value = String(road || "").trim();
+
+      if (!value) {
+        return "";
+      }
+
+      const normalized = normalizeText(value);
+      const alreadyHasRoadPrefix = normalized.includes("duong")
+              || normalized.includes("street")
+              || normalized.includes("road")
+              || normalized.includes("ql")
+              || normalized.includes("quoc lo")
+              || normalized.includes("tinh lo")
+              || normalized.includes("hem")
+              || normalized.includes("ngo");
+
+      return alreadyHasRoadPrefix ? value : "Đường " + value;
+    }
+
     function buildStreetAddress(address, data) {
       const houseNumber = address.house_number || "";
-      const road = address.road || address.pedestrian || address.footway || address.path || "";
-      const neighbourhood = address.neighbourhood || address.quarter || address.suburb || "";
+      const road = addRoadPrefixIfNeeded(
+              address.road || address.pedestrian || address.footway || address.path || ""
+      );
 
       const roadLine = compactParts([houseNumber, road]).join(" ").trim();
 
-      if (roadLine) {
-        return roadLine;
+      const areaLine = compactParts([
+        address.hamlet,
+        address.village,
+        address.neighbourhood,
+        address.quarter,
+        address.suburb,
+        address.residential,
+        address.city_district,
+        address.district
+      ])[0] || "";
+
+      const detailedLine = compactParts([roadLine, areaLine]).join(", ").trim();
+
+      if (detailedLine) {
+        return detailedLine;
       }
 
       const displayName = data && data.display_name ? String(data.display_name) : "";
 
       if (displayName) {
-        const firstPart = displayName.split(",")[0].trim();
-        if (firstPart && normalizeText(firstPart) !== normalizeText(neighbourhood)) {
-          return firstPart;
-        }
+        const parts = displayName
+                .split(",")
+                .map(function (part) { return part.trim(); })
+                .filter(Boolean)
+                .filter(function (part) {
+                  const normalized = normalizeText(part);
+                  return normalized !== "viet nam"
+                          && normalized !== "vietnam"
+                          && !/^\d{5,6}$/.test(normalized)
+                          && !normalized.includes("tinh ")
+                          && !normalized.includes("thanh pho ");
+                })
+                .slice(0, 3);
+
+        return compactParts(parts).join(", ");
       }
 
-      return neighbourhood || "";
+      return "";
     }
 
     function getProvinceCandidates(address) {
@@ -3944,8 +3993,8 @@
       addressInput.addEventListener("input", function () {
         /*
          * Cho phép user bổ sung số nhà sau khi hệ thống đã xác minh GPS.
-         * Không xóa latitude/longitude, vì địa chỉ ngắn như "123" vẫn hợp lý
-         * nếu tọa độ hiện tại đã khớp Tỉnh/TP đã chọn.
+         * Không xóa latitude/longitude, vì user có thể bổ sung số nhà/tổ/khu phố
+         * sau khi tọa độ hiện tại đã khớp Tỉnh/TP đã chọn.
          */
         if (useCurrentLocationBtn.textContent.includes("Đã điền")
                 || useCurrentLocationBtn.textContent.includes("Vị trí khớp")) {
