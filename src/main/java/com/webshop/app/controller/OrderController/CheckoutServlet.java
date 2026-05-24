@@ -31,6 +31,17 @@ public class CheckoutServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
     private static final String DEFAULT_SHIPPING_METHOD = "ECONOMY";
+    private static final String SHIPPING_ECONOMY = "ECONOMY";
+    private static final String SHIPPING_FAST = "FAST";
+    private static final String SHIPPING_EXPRESS = "EXPRESS";
+
+    private static final BigDecimal FREE_SHIP_THRESHOLD = new BigDecimal("500000");
+    private static final BigDecimal HCM_ECONOMY_FEE = new BigDecimal("20000");
+    private static final BigDecimal HCM_FAST_FEE = new BigDecimal("35000");
+    private static final BigDecimal HCM_EXPRESS_FEE = new BigDecimal("50000");
+    private static final BigDecimal OTHER_ECONOMY_FEE = new BigDecimal("35000");
+    private static final BigDecimal OTHER_FAST_FEE = new BigDecimal("50000");
+
     private static final String DEFAULT_RANK_CODE = "MEMBER";
 
     private static final String SESSION_CHECKOUT_COUPON = "CHECKOUT_COUPON";
@@ -66,7 +77,7 @@ public class CheckoutServlet extends HttpServlet {
     private String normalizeShippingMethod(String shippingMethod) {
         String method = trim(shippingMethod).toUpperCase();
 
-        Set<String> validShippingMethods = Set.of("ECONOMY", "FAST", "EXPRESS");
+        Set<String> validShippingMethods = Set.of(SHIPPING_ECONOMY, SHIPPING_FAST, SHIPPING_EXPRESS);
 
         if (validShippingMethods.contains(method)) {
             return method;
@@ -87,11 +98,75 @@ public class CheckoutServlet extends HttpServlet {
                 return BigDecimal.ZERO;
             }
 
-            return fee;
+            return fee.setScale(0, RoundingMode.HALF_UP);
 
         } catch (NumberFormatException e) {
             return BigDecimal.ZERO;
         }
+    }
+
+    /**
+     * Chuẩn hóa cách nhận diện TP.HCM để tính phí nội thành.
+     */
+    private boolean isHcmCity(String province) {
+        if (province == null || province.trim().isEmpty()) {
+            return false;
+        }
+
+        String value = province.trim().toLowerCase();
+
+        return value.contains("hồ chí minh")
+                || value.contains("ho chi minh")
+                || value.contains("tp. hcm")
+                || value.contains("tp hcm")
+                || value.contains("tphcm")
+                || value.contains("thành phố hồ chí minh");
+    }
+
+    private boolean isExpressSupported(String province) {
+        return isHcmCity(province);
+    }
+
+    /**
+     * Tính phí ship ở backend, không tin hoàn toàn vào input hidden từ trình duyệt.
+     *
+     * Quy tắc:
+     * - Freeship nếu tổng sau voucher >= 500.000đ.
+     * - TP.HCM: ECONOMY 20k, FAST 35k, EXPRESS 50k.
+     * - Ngoại tỉnh: ECONOMY 35k, FAST 50k, EXPRESS không hỗ trợ.
+     */
+    private BigDecimal calculateServerShippingFee(String shippingMethod,
+                                                  String province,
+                                                  BigDecimal amountAfterCoupon) {
+        BigDecimal safeAmountAfterCoupon = amountAfterCoupon != null
+                ? amountAfterCoupon.setScale(0, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
+
+        if (safeAmountAfterCoupon.compareTo(FREE_SHIP_THRESHOLD) >= 0) {
+            return BigDecimal.ZERO;
+        }
+
+        String method = normalizeShippingMethod(shippingMethod);
+        boolean hcm = isHcmCity(province);
+
+        if (SHIPPING_EXPRESS.equals(method) && !hcm) {
+            return BigDecimal.ZERO;
+        }
+
+        if (hcm) {
+            return switch (method) {
+                case SHIPPING_FAST -> HCM_FAST_FEE;
+                case SHIPPING_EXPRESS -> HCM_EXPRESS_FEE;
+                case SHIPPING_ECONOMY -> HCM_ECONOMY_FEE;
+                default -> HCM_ECONOMY_FEE;
+            };
+        }
+
+        return switch (method) {
+            case SHIPPING_FAST -> OTHER_FAST_FEE;
+            case SHIPPING_ECONOMY -> OTHER_ECONOMY_FEE;
+            default -> OTHER_ECONOMY_FEE;
+        };
     }
 
     /**
@@ -634,10 +709,14 @@ public class CheckoutServlet extends HttpServlet {
             errors.put("paymentMethod", "Phương thức thanh toán không hợp lệ.");
         }
 
-        Set<String> validShippingMethods = Set.of("ECONOMY", "FAST", "EXPRESS");
+        Set<String> validShippingMethods = Set.of(SHIPPING_ECONOMY, SHIPPING_FAST, SHIPPING_EXPRESS);
 
         if (!validShippingMethods.contains(shippingMethod)) {
             errors.put("shippingMethod", "Phương thức vận chuyển không hợp lệ.");
+        }
+
+        if (SHIPPING_EXPRESS.equals(shippingMethod) && !isBlank(province) && !isExpressSupported(province)) {
+            errors.put("shippingMethod", "Hỏa tốc chỉ hỗ trợ khu vực TP.HCM. Vui lòng chọn Giao hàng tiết kiệm hoặc Giao hàng nhanh.");
         }
 
         return errors;
@@ -835,7 +914,6 @@ public class CheckoutServlet extends HttpServlet {
         String province = trim(req.getParameter("province"));
 
         String shippingMethod = normalizeShippingMethod(req.getParameter("shippingMethod"));
-        BigDecimal submittedShippingFee = parseShippingFee(req.getParameter("shippingFee"));
 
         /*
          * Chỉ dùng mã đã được áp dụng thành công trong session.
@@ -843,6 +921,28 @@ public class CheckoutServlet extends HttpServlet {
          * để tránh user nhập đại mã rồi submit checkout.
          */
         String couponCode = normalizeCouponCode((String) session.getAttribute(SESSION_CHECKOUT_COUPON));
+
+        BigDecimal checkoutSubTotal = calcSubTotal(cart);
+        BigDecimal checkoutDiscount = BigDecimal.ZERO;
+
+        if (!isBlank(couponCode)) {
+            checkoutDiscount = checkoutService.calculateCouponDiscount(
+                    user.getId(),
+                    couponCode,
+                    checkoutSubTotal
+            );
+
+            if (checkoutDiscount == null || checkoutDiscount.compareTo(BigDecimal.ZERO) < 0) {
+                checkoutDiscount = BigDecimal.ZERO;
+            }
+        }
+
+        BigDecimal amountAfterCoupon = calcTotal(checkoutSubTotal, checkoutDiscount);
+        BigDecimal serverShippingFee = calculateServerShippingFee(
+                shippingMethod,
+                province,
+                amountAfterCoupon
+        );
 
         try {
             int orderId = checkoutService.checkout(
@@ -854,7 +954,7 @@ public class CheckoutServlet extends HttpServlet {
                     paymentMethod,
                     couponCode,
                     shippingMethod,
-                    submittedShippingFee,
+                    serverShippingFee,
                     province
             );
 
