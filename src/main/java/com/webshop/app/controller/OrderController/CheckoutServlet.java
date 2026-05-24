@@ -31,16 +31,13 @@ public class CheckoutServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
     private static final String DEFAULT_SHIPPING_METHOD = "ECONOMY";
+    private static final String DEFAULT_RANK_CODE = "MEMBER";
 
     private static final String SESSION_CHECKOUT_COUPON = "CHECKOUT_COUPON";
     private static final String SESSION_CHECKOUT_COUPON_DISCOUNT = "CHECKOUT_COUPON_DISCOUNT";
 
     private final CheckoutService checkoutService = new CheckoutService();
     private final CouponDAO couponDAO = new CouponDAO();
-
-    /* =========================================================
-       CART / MONEY HELPERS
-    ========================================================= */
 
     private BigDecimal calcSubTotal(Map<String, CartItem> cart) {
         BigDecimal subTotal = BigDecimal.ZERO;
@@ -58,123 +55,12 @@ public class CheckoutServlet extends HttpServlet {
         return subTotal.setScale(0, RoundingMode.HALF_UP);
     }
 
-    private BigDecimal calcTotal(BigDecimal subTotal, BigDecimal discount) {
-        BigDecimal safeSubTotal = subTotal != null ? subTotal : BigDecimal.ZERO;
-        BigDecimal safeDiscount = discount != null ? discount : BigDecimal.ZERO;
-
-        BigDecimal total = safeSubTotal.subtract(safeDiscount);
-
-        if (total.compareTo(BigDecimal.ZERO) < 0) {
-            total = BigDecimal.ZERO;
-        }
-
-        return total.setScale(0, RoundingMode.HALF_UP);
-    }
-
-    /**
-     * Tính số tiền giảm thực tế của coupon theo tổng tiền hàng hiện tại.
-     *
-     * Công thức:
-     * discount = subtotal * discountPercent / 100
-     * nếu maxDiscountAmount > 0 thì discount = min(discount, maxDiscountAmount)
-     *
-     * Ví dụ subtotal = 399.200:
-     * - FREESHIP10: 10%, tối đa 30.000 => 30.000
-     * - NEWYEAR10: 10%, tối đa 50.000 => 39.920
-     * - GIAM20K: 10%, tối đa 20.000 => 20.000
-     * - GIAM50K: 15%, tối đa 50.000, đơn từ 300.000 => 50.000
-     *
-     * Vậy GIAM50K mới là mã tốt nhất nếu đang active và đủ điều kiện.
-     */
-    private BigDecimal estimateCouponDiscount(Coupon coupon, BigDecimal subTotal) {
-        if (coupon == null || subTotal == null || subTotal.compareTo(BigDecimal.ZERO) <= 0) {
-            return BigDecimal.ZERO;
-        }
-
-        BigDecimal safeSubTotal = subTotal.setScale(0, RoundingMode.HALF_UP);
-
-        BigDecimal minOrderAmount = coupon.getMinOrderAmount() != null
-                ? coupon.getMinOrderAmount()
-                : BigDecimal.ZERO;
-
-        /*
-         * Quan trọng:
-         * Nếu đơn chưa đủ điều kiện tối thiểu thì mã này không được tính là tốt nhất.
-         */
-        if (safeSubTotal.compareTo(minOrderAmount) < 0) {
-            return BigDecimal.ZERO;
-        }
-
-        int percentValue = Math.max(coupon.getDiscountPercent(), 0);
-
-        if (percentValue <= 0) {
-            return BigDecimal.ZERO;
-        }
-
-        BigDecimal discount = safeSubTotal
-                .multiply(BigDecimal.valueOf(percentValue))
-                .divide(BigDecimal.valueOf(100), 0, RoundingMode.HALF_UP);
-
-        BigDecimal maxDiscountAmount = coupon.getMaxDiscountAmount() != null
-                ? coupon.getMaxDiscountAmount()
-                : BigDecimal.ZERO;
-
-        if (maxDiscountAmount.compareTo(BigDecimal.ZERO) > 0) {
-            discount = discount.min(maxDiscountAmount);
-        }
-
-        if (discount.compareTo(BigDecimal.ZERO) < 0) {
-            return BigDecimal.ZERO;
-        }
-
-        return discount.setScale(0, RoundingMode.HALF_UP);
-    }
-
-    private BigDecimal getCheckoutCouponDiscount(HttpSession session) {
-        BigDecimal couponDiscount =
-                (BigDecimal) session.getAttribute(SESSION_CHECKOUT_COUPON_DISCOUNT);
-
-        return couponDiscount != null ? couponDiscount : BigDecimal.ZERO;
-    }
-
-    /**
-     * Lấy giỏ hàng đã được tích chọn.
-     * Nếu chưa có sản phẩm được chọn thì redirect về cart.
-     */
-    private Map<String, CartItem> getSelectedCheckoutCart(
-            HttpServletRequest req,
-            HttpServletResponse resp,
-            HttpSession session
-    ) throws IOException {
-
-        Map<String, CartItem> selectedCart = CartUtil.getSelectedCart(session);
-
-        if (selectedCart == null || selectedCart.isEmpty()) {
-            resp.sendRedirect(req.getContextPath() + "/cart?selectRequired=1");
-            return null;
-        }
-
-        return selectedCart;
-    }
-
-    /* =========================================================
-       STRING / NORMALIZE HELPERS
-    ========================================================= */
-
     private boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
     }
 
     private String trim(String value) {
         return value == null ? "" : value.trim();
-    }
-
-    private String normalizeCouponCode(String couponCode) {
-        if (couponCode == null || couponCode.trim().isEmpty()) {
-            return "";
-        }
-
-        return couponCode.trim().toUpperCase();
     }
 
     private String normalizeShippingMethod(String shippingMethod) {
@@ -201,20 +87,64 @@ public class CheckoutServlet extends HttpServlet {
                 return BigDecimal.ZERO;
             }
 
-            return fee.setScale(0, RoundingMode.HALF_UP);
+            return fee;
 
         } catch (NumberFormatException e) {
             return BigDecimal.ZERO;
         }
     }
 
-    /* =========================================================
-       COUPON HELPERS
-    ========================================================= */
+    /**
+     * Lấy giỏ hàng đã được tích chọn.
+     * Nếu chưa có sản phẩm được chọn thì redirect về cart.
+     */
+    private Map<String, CartItem> getSelectedCheckoutCart(
+            HttpServletRequest req,
+            HttpServletResponse resp,
+            HttpSession session
+    ) throws IOException {
+
+        Map<String, CartItem> selectedCart = CartUtil.getSelectedCart(session);
+
+        if (selectedCart == null || selectedCart.isEmpty()) {
+            resp.sendRedirect(req.getContextPath() + "/cart?selectRequired=1");
+            return null;
+        }
+
+        return selectedCart;
+    }
+
+    private BigDecimal getCheckoutCouponDiscount(HttpSession session) {
+        BigDecimal couponDiscount =
+                (BigDecimal) session.getAttribute(SESSION_CHECKOUT_COUPON_DISCOUNT);
+
+        return couponDiscount != null ? couponDiscount : BigDecimal.ZERO;
+    }
+
+    private BigDecimal calcTotal(BigDecimal subTotal, BigDecimal discount) {
+        BigDecimal safeSubTotal = subTotal != null ? subTotal : BigDecimal.ZERO;
+        BigDecimal safeDiscount = discount != null ? discount : BigDecimal.ZERO;
+
+        BigDecimal total = safeSubTotal.subtract(safeDiscount);
+
+        if (total.compareTo(BigDecimal.ZERO) < 0) {
+            total = BigDecimal.ZERO;
+        }
+
+        return total.setScale(0, RoundingMode.HALF_UP);
+    }
 
     private void clearCheckoutCoupon(HttpSession session) {
         session.removeAttribute(SESSION_CHECKOUT_COUPON);
         session.removeAttribute(SESSION_CHECKOUT_COUPON_DISCOUNT);
+    }
+
+    private String normalizeCouponCode(String couponCode) {
+        if (couponCode == null || couponCode.trim().isEmpty()) {
+            return "";
+        }
+
+        return couponCode.trim().toUpperCase();
     }
 
     private boolean isCouponConditionMessage(String message) {
@@ -254,31 +184,112 @@ public class CheckoutServlet extends HttpServlet {
         return coupon.getMaxUses() <= 0 || coupon.getUsedCount() < coupon.getMaxUses();
     }
 
-    private boolean isCouponUsableForCurrentOrder(Coupon coupon, BigDecimal subTotal) {
-        if (!isCouponBaseUsable(coupon)) {
-            return false;
+    /**
+     * Tính số tiền giảm thực tế theo đơn hiện tại.
+     * Đây là cơ sở để chọn mã "Tốt nhất".
+     */
+    private BigDecimal estimateCouponDiscount(Coupon coupon, BigDecimal subTotal) {
+        if (coupon == null || subTotal == null || subTotal.compareTo(BigDecimal.ZERO) <= 0) {
+            return BigDecimal.ZERO;
         }
 
-        BigDecimal safeSubTotal = subTotal != null ? subTotal : BigDecimal.ZERO;
-
+        BigDecimal safeSubTotal = subTotal.setScale(0, RoundingMode.HALF_UP);
         BigDecimal minOrderAmount = coupon.getMinOrderAmount() != null
                 ? coupon.getMinOrderAmount()
                 : BigDecimal.ZERO;
 
-        return safeSubTotal.compareTo(minOrderAmount) >= 0;
+        if (safeSubTotal.compareTo(minOrderAmount) < 0) {
+            return BigDecimal.ZERO;
+        }
+
+        int percentValue = Math.max(coupon.getDiscountPercent(), 0);
+
+        if (percentValue <= 0) {
+            return BigDecimal.ZERO;
+        }
+
+        BigDecimal discount = safeSubTotal
+                .multiply(BigDecimal.valueOf(percentValue))
+                .divide(BigDecimal.valueOf(100), 0, RoundingMode.HALF_UP);
+
+        BigDecimal maxDiscountAmount = coupon.getMaxDiscountAmount() != null
+                ? coupon.getMaxDiscountAmount()
+                : BigDecimal.ZERO;
+
+        if (maxDiscountAmount.compareTo(BigDecimal.ZERO) > 0) {
+            discount = discount.min(maxDiscountAmount);
+        }
+
+        if (discount.compareTo(BigDecimal.ZERO) < 0) {
+            return BigDecimal.ZERO;
+        }
+
+        return discount.setScale(0, RoundingMode.HALF_UP);
+    }
+
+    private String normalizeRankCode(String rankCode) {
+        if (rankCode == null || rankCode.trim().isEmpty()) {
+            return DEFAULT_RANK_CODE;
+        }
+
+        return rankCode.trim().toUpperCase();
+    }
+
+    private int rankLevel(String rankCode) {
+        String code = normalizeRankCode(rankCode);
+
+        return switch (code) {
+            case "MEMBER" -> 1;
+            case "SILVER" -> 2;
+            case "GOLD" -> 3;
+            case "DIAMOND" -> 4;
+            case "VIP" -> 5;
+            default -> 1;
+        };
     }
 
     /**
-     * Validate riêng cho mục 72 - nhập mã giảm giá thủ công.
-     *
-     * Mục tiêu:
-     * - Không cho áp dụng mã không tồn tại trong database.
-     * - Phân biệt lỗi rõ ràng: bị tắt, chưa tới ngày dùng, hết hạn, hết lượt, chưa đủ đơn tối thiểu.
-     * - Rank/min_rank_code vẫn để CheckoutService/CouponService kiểm tra bằng overload có userId.
+     * Lấy hạng hiện tại từ session User.
+     * Nếu model User chưa có getManualRankCode/getRankCode thì fallback MEMBER.
      */
-    private String validateManualCouponBaseCondition(String couponCode, BigDecimal subTotal) {
-        Coupon coupon = couponDAO.findByCode(couponCode);
+    private String getUserRankCode(User user) {
+        if (user == null) {
+            return DEFAULT_RANK_CODE;
+        }
 
+        String[] getterNames = {"getManualRankCode", "getRankCode"};
+
+        for (String getterName : getterNames) {
+            try {
+                Object rank = user.getClass().getMethod(getterName).invoke(user);
+
+                if (rank != null && !rank.toString().trim().isEmpty()) {
+                    return normalizeRankCode(rank.toString());
+                }
+            } catch (Exception ignored) {
+                // Model User không có getter này thì thử getter tiếp theo.
+            }
+        }
+
+        return DEFAULT_RANK_CODE;
+    }
+
+    private boolean isRankEligible(Coupon coupon, String userRankCode) {
+        if (coupon == null) {
+            return false;
+        }
+
+        String requiredRank = normalizeRankCode(coupon.getMinRankCode());
+        String currentRank = normalizeRankCode(userRankCode);
+
+        return rankLevel(currentRank) >= rankLevel(requiredRank);
+    }
+
+    /**
+     * Trả về lý do mã không dùng được với user và đơn hàng hiện tại.
+     * Nếu trả về null nghĩa là mã dùng được.
+     */
+    private String getCouponInvalidReasonForUser(User user, Coupon coupon, BigDecimal subTotal) {
         if (coupon == null) {
             return "Mã khuyến mãi không tồn tại trong hệ thống.";
         }
@@ -301,6 +312,14 @@ public class CheckoutServlet extends HttpServlet {
             return "Mã khuyến mãi đã hết lượt sử dụng.";
         }
 
+        String userRankCode = getUserRankCode(user);
+
+        if (!isRankEligible(coupon, userRankCode)) {
+            return "Hạng thành viên hiện tại chưa phù hợp. Mã này yêu cầu hạng "
+                    + normalizeRankCode(coupon.getMinRankCode())
+                    + " trở lên.";
+        }
+
         BigDecimal safeSubTotal = subTotal != null ? subTotal : BigDecimal.ZERO;
         BigDecimal minOrderAmount = coupon.getMinOrderAmount() != null
                 ? coupon.getMinOrderAmount()
@@ -313,17 +332,27 @@ public class CheckoutServlet extends HttpServlet {
         return null;
     }
 
+    private boolean isCouponUsableForUserAndOrder(User user, Coupon coupon, BigDecimal subTotal) {
+        return getCouponInvalidReasonForUser(user, coupon, subTotal) == null;
+    }
+
+
     /**
-     * Load coupon cho checkout.
+     * Validate riêng cho mục 72 - nhập mã giảm giá thủ công.
      *
-     * Logic đúng:
-     * - Không hard-code mã tốt nhất.
-     * - Mã "Tốt nhất" = mã dùng được và giảm thực tế nhiều tiền nhất theo đơn hiện tại.
-     * - Mã dùng được nằm trên.
-     * - Mã chưa đủ điều kiện nằm dưới, JSP có thể render dạng mờ.
+     * Mục tiêu:
+     * - Không cho áp dụng mã không tồn tại trong database.
+     * - Phân biệt lỗi rõ ràng: bị tắt, chưa tới ngày dùng, hết hạn, hết lượt, chưa đủ đơn tối thiểu.
+     * - Rank/min_rank_code vẫn để CheckoutService/CouponService kiểm tra bằng overload có userId.
      */
+    private String validateManualCouponBaseCondition(User user, String couponCode, BigDecimal subTotal) {
+        Coupon coupon = couponDAO.findByCode(couponCode);
+
+        return getCouponInvalidReasonForUser(user, coupon, subTotal);
+    }
+
     private void loadCouponsForModal(HttpServletRequest req,
-                                     int userId,
+                                     User user,
                                      BigDecimal subTotal) {
 
         List<Coupon> savedCoupons = new ArrayList<>();
@@ -332,47 +361,55 @@ public class CheckoutServlet extends HttpServlet {
 
         Map<String, BigDecimal> couponEstimatedDiscountMap = new HashMap<>();
         Map<String, Boolean> couponUsableMap = new HashMap<>();
+        Map<String, Boolean> couponRankEligibleMap = new HashMap<>();
+        Map<String, String> couponDisabledReasonMap = new HashMap<>();
 
         BigDecimal safeSubTotal = subTotal != null ? subTotal : BigDecimal.ZERO;
+        String userRankCode = getUserRankCode(user);
         String bestCouponCode = "";
 
         try {
-            if (userId > 0) {
-                savedCoupons = couponDAO.findSavedCouponsByUserId(userId);
+            if (user != null && user.getId() > 0) {
+                savedCoupons = couponDAO.findSavedCouponsByUserId(user.getId());
             }
 
             /*
-             * Lấy tất cả mã còn active, còn hạn, còn lượt.
-             * Không lọc min_order_amount để modal vẫn hiển thị mã chưa đủ điều kiện ở trạng thái mờ.
+             * allCoupons:
+             * - Lấy tất cả mã để modal hiển thị được cả mã đủ điều kiện và chưa đủ điều kiện.
+             * - Mã chưa đủ điều kiện sẽ bị mờ và không chọn được.
+             * - Mã "Tốt nhất" chỉ xét trong nhóm user hiện tại thật sự dùng được.
              */
-            allCoupons = couponDAO.findAllActiveCouponsForCheckout();
+            List<Coupon> rawCoupons = couponDAO.findAll();
 
-            /*
-             * Tính trước trạng thái usable và số tiền giảm thực tế cho từng mã.
-             */
-            for (Coupon coupon : allCoupons) {
-                if (coupon == null || coupon.getCode() == null) {
+            for (Coupon coupon : rawCoupons) {
+                if (!isCouponBaseUsable(coupon)) {
                     continue;
                 }
 
                 String code = coupon.getCode();
 
-                boolean usable = isCouponUsableForCurrentOrder(coupon, safeSubTotal);
+                if (code == null || code.trim().isEmpty()) {
+                    continue;
+                }
+
+                String disabledReason = getCouponInvalidReasonForUser(user, coupon, safeSubTotal);
+                boolean usable = disabledReason == null || disabledReason.isBlank();
+                boolean rankEligible = isRankEligible(coupon, userRankCode);
                 BigDecimal estimatedDiscount = usable
                         ? estimateCouponDiscount(coupon, safeSubTotal)
                         : BigDecimal.ZERO;
 
+                allCoupons.add(coupon);
                 couponUsableMap.put(code, usable);
+                couponRankEligibleMap.put(code, rankEligible);
+                couponDisabledReasonMap.put(code, usable ? "" : disabledReason);
                 couponEstimatedDiscountMap.put(code, estimatedDiscount);
+
+                if (usable) {
+                    availableCoupons.add(coupon);
+                }
             }
 
-            /*
-             * Sort coupon theo đúng UX:
-             * 1. Mã dùng được lên trước.
-             * 2. Mã giảm thực tế nhiều tiền nhất lên đầu.
-             * 3. Nếu giảm bằng nhau, ưu tiên mã yêu cầu đơn tối thiểu thấp hơn.
-             * 4. Nếu vẫn bằng nhau, sort theo code để ổn định.
-             */
             allCoupons.sort((a, b) -> {
                 String codeA = a != null && a.getCode() != null ? a.getCode() : "";
                 String codeB = b != null && b.getCode() != null ? b.getCode() : "";
@@ -410,22 +447,14 @@ public class CheckoutServlet extends HttpServlet {
                 return codeA.compareToIgnoreCase(codeB);
             });
 
-            /*
-             * Mã đầu tiên sau khi sort, nếu dùng được và giảm > 0, là mã tốt nhất.
-             */
             for (Coupon coupon : allCoupons) {
                 if (coupon == null || coupon.getCode() == null) {
                     continue;
                 }
 
                 String code = coupon.getCode();
-
-                BigDecimal estimatedDiscount = couponEstimatedDiscountMap.getOrDefault(
-                        code,
-                        BigDecimal.ZERO
-                );
-
                 boolean usable = couponUsableMap.getOrDefault(code, false);
+                BigDecimal estimatedDiscount = couponEstimatedDiscountMap.getOrDefault(code, BigDecimal.ZERO);
 
                 if (usable && estimatedDiscount.compareTo(BigDecimal.ZERO) > 0) {
                     bestCouponCode = code;
@@ -433,114 +462,32 @@ public class CheckoutServlet extends HttpServlet {
                 }
             }
 
-            /*
-             * Giữ lại availableCoupons để tương thích JSP cũ nếu còn dùng.
-             */
-            availableCoupons = couponDAO.findAvailableCouponsForCheckout(safeSubTotal);
-
         } catch (RuntimeException e) {
             /*
-             * Không để lỗi coupon làm hỏng toàn bộ trang checkout.
+             * Không để lỗi load coupon làm hỏng toàn bộ trang checkout.
              */
             e.printStackTrace();
             req.setAttribute("couponLoadError", "Không thể tải danh sách mã khuyến mãi.");
         }
 
-        /*
-         * Biến cũ: giữ để JSP cũ không lỗi.
-         */
         req.setAttribute("savedCoupons", savedCoupons);
         req.setAttribute("availableCoupons", availableCoupons);
         req.setAttribute("allCoupons", allCoupons);
-
-        /*
-         * Biến mới: JSP nên dùng couponOptions để render 1 danh sách duy nhất.
-         */
         req.setAttribute("checkoutCoupons", allCoupons);
         req.setAttribute("couponOptions", allCoupons);
 
-        /*
-         * Biến hỗ trợ JSP:
-         * - bestCouponCode: mã tốt nhất theo giá trị đơn hàng hiện tại.
-         * - couponEstimatedDiscountMap: số tiền giảm ước lượng của từng mã.
-         * - couponUsableMap: mã có đủ điều kiện theo đơn hiện tại không.
-         */
         req.setAttribute("bestCouponCode", bestCouponCode);
+        req.setAttribute("currentUserRankCode", userRankCode);
         req.setAttribute("couponEstimatedDiscountMap", couponEstimatedDiscountMap);
         req.setAttribute("couponUsableMap", couponUsableMap);
+        req.setAttribute("couponRankEligibleMap", couponRankEligibleMap);
+        req.setAttribute("couponDisabledReasonMap", couponDisabledReasonMap);
     }
-
-    private boolean applyCoupon(HttpServletRequest req,
-                                HttpServletResponse resp,
-                                HttpSession session,
-                                User user,
-                                Map<String, CartItem> cart) throws IOException {
-
-        String couponCode = normalizeCouponCode(req.getParameter("couponCode"));
-
-        if (isBlank(couponCode)) {
-            clearCheckoutCoupon(session);
-            session.setAttribute("coupon_error", "Vui lòng nhập mã khuyến mãi.");
-
-            resp.sendRedirect(req.getContextPath() + "/checkout");
-            return true;
-        }
-
-        BigDecimal subTotal = calcSubTotal(cart);
-
-        /*
-         * Mục 72:
-         * Kiểm tra mã nhập thủ công phải tồn tại trong hệ thống trước.
-         */
-        String baseError = validateManualCouponBaseCondition(couponCode, subTotal);
-
-        if (baseError != null) {
-            clearCheckoutCoupon(session);
-            session.setAttribute("coupon_error", baseError);
-
-            resp.sendRedirect(req.getContextPath() + "/checkout");
-            return true;
-        }
-
-        /*
-         * Kiểm tra tiếp các điều kiện nghiệp vụ nâng cao:
-         * - min_rank_code
-         * - rule tính discount
-         * - các rule trong CouponService/CheckoutService
-         */
-        BigDecimal discount = checkoutService.calculateCouponDiscount(
-                user.getId(),
-                couponCode,
-                subTotal
-        );
-
-        if (discount == null || discount.compareTo(BigDecimal.ZERO) <= 0) {
-            clearCheckoutCoupon(session);
-            session.setAttribute(
-                    "coupon_error",
-                    "Mã khuyến mãi không đủ điều kiện áp dụng cho đơn hàng hoặc hạng thành viên hiện tại."
-            );
-
-            resp.sendRedirect(req.getContextPath() + "/checkout");
-            return true;
-        }
-
-        session.setAttribute(SESSION_CHECKOUT_COUPON, couponCode);
-        session.setAttribute(SESSION_CHECKOUT_COUPON_DISCOUNT, discount);
-        session.setAttribute("coupon_success", "Áp dụng mã giảm giá thành công.");
-
-        resp.sendRedirect(req.getContextPath() + "/checkout");
-        return true;
-    }
-
-    /* =========================================================
-       PREPARE VIEW
-    ========================================================= */
 
     private void prepareCheckoutView(HttpServletRequest req,
                                      HttpSession session,
                                      Map<String, CartItem> cart,
-                                     int userId) {
+                                     User user) {
 
         BigDecimal subTotal = calcSubTotal(cart);
 
@@ -556,11 +503,11 @@ public class CheckoutServlet extends HttpServlet {
         if (!isBlank(appliedCoupon)) {
             appliedCoupon = normalizeCouponCode(appliedCoupon);
 
-            String baseError = validateManualCouponBaseCondition(appliedCoupon, subTotal);
+            String baseError = validateManualCouponBaseCondition(user, appliedCoupon, subTotal);
 
             if (baseError == null) {
                 couponDiscount = checkoutService.calculateCouponDiscount(
-                        userId,
+                        user.getId(),
                         appliedCoupon,
                         subTotal
                 );
@@ -590,7 +537,7 @@ public class CheckoutServlet extends HttpServlet {
 
         BigDecimal total = calcTotal(subTotal, couponDiscount);
 
-        loadCouponsForModal(req, userId, subTotal);
+        loadCouponsForModal(req, user, subTotal);
 
         req.setAttribute("cart", cart);
         req.setAttribute("selectedCart", cart);
@@ -613,10 +560,6 @@ public class CheckoutServlet extends HttpServlet {
         req.setAttribute("pageCss", "/checkout.css");
         req.setAttribute("pageContent", "/jsp/checkout/checkout.jsp");
     }
-
-    /* =========================================================
-       FORM HELPERS
-    ========================================================= */
 
     private void keepFormValues(HttpServletRequest req) {
         req.setAttribute("formFullName", trim(req.getParameter("fullName")));
@@ -735,9 +678,68 @@ public class CheckoutServlet extends HttpServlet {
         return builder.toString();
     }
 
-    /* =========================================================
-       SERVLET METHODS
-    ========================================================= */
+    private boolean applyCoupon(HttpServletRequest req,
+                                HttpServletResponse resp,
+                                HttpSession session,
+                                User user,
+                                Map<String, CartItem> cart) throws IOException {
+
+        String couponCode = normalizeCouponCode(req.getParameter("couponCode"));
+
+        if (isBlank(couponCode)) {
+            clearCheckoutCoupon(session);
+            session.setAttribute("coupon_error", "Vui lòng nhập mã khuyến mãi.");
+
+            resp.sendRedirect(req.getContextPath() + "/checkout");
+            return true;
+        }
+
+        BigDecimal subTotal = calcSubTotal(cart);
+
+        /*
+         * Mục 72:
+         * Kiểm tra mã nhập thủ công phải tồn tại trong hệ thống trước.
+         */
+        String baseError = validateManualCouponBaseCondition(user, couponCode, subTotal);
+
+        if (baseError != null) {
+            clearCheckoutCoupon(session);
+            session.setAttribute("coupon_error", baseError);
+
+            resp.sendRedirect(req.getContextPath() + "/checkout");
+            return true;
+        }
+
+        /*
+         * Kiểm tra tiếp các điều kiện nghiệp vụ nâng cao:
+         * - min_rank_code
+         * - rule tính discount
+         * - các rule trong CouponService/CheckoutService
+         */
+        BigDecimal discount = checkoutService.calculateCouponDiscount(
+                user.getId(),
+                couponCode,
+                subTotal
+        );
+
+        if (discount == null || discount.compareTo(BigDecimal.ZERO) <= 0) {
+            clearCheckoutCoupon(session);
+            session.setAttribute(
+                    "coupon_error",
+                    "Mã khuyến mãi không đủ điều kiện áp dụng cho đơn hàng hoặc hạng thành viên hiện tại."
+            );
+
+            resp.sendRedirect(req.getContextPath() + "/checkout");
+            return true;
+        }
+
+        session.setAttribute(SESSION_CHECKOUT_COUPON, couponCode);
+        session.setAttribute(SESSION_CHECKOUT_COUPON_DISCOUNT, discount);
+        session.setAttribute("coupon_success", "Áp dụng mã giảm giá thành công.");
+
+        resp.sendRedirect(req.getContextPath() + "/checkout");
+        return true;
+    }
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
@@ -765,7 +767,7 @@ public class CheckoutServlet extends HttpServlet {
             return;
         }
 
-        prepareCheckoutView(req, session, cart, user.getId());
+        prepareCheckoutView(req, session, cart, user);
 
         req.getRequestDispatcher("/jsp/common/base.jsp").forward(req, resp);
     }
@@ -819,7 +821,7 @@ public class CheckoutServlet extends HttpServlet {
             req.setAttribute("errors", errors);
 
             keepFormValues(req);
-            prepareCheckoutView(req, session, cart, user.getId());
+            prepareCheckoutView(req, session, cart, user);
 
             req.getRequestDispatcher("/jsp/common/base.jsp").forward(req, resp);
             return;
@@ -929,7 +931,7 @@ public class CheckoutServlet extends HttpServlet {
             req.setAttribute("errors", checkoutErrors);
 
             keepFormValues(req);
-            prepareCheckoutView(req, session, cart, user.getId());
+            prepareCheckoutView(req, session, cart, user);
 
             /*
              * Đặt lại sau prepareCheckoutView vì hàm đó có thể đọc/xóa coupon_error từ session.
@@ -952,7 +954,7 @@ public class CheckoutServlet extends HttpServlet {
             req.setAttribute("errors", checkoutErrors);
 
             keepFormValues(req);
-            prepareCheckoutView(req, session, cart, user.getId());
+            prepareCheckoutView(req, session, cart, user);
 
             req.getRequestDispatcher("/jsp/common/base.jsp").forward(req, resp);
         }
