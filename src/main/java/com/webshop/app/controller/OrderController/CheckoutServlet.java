@@ -756,7 +756,7 @@ public class CheckoutServlet extends HttpServlet {
 
         /*
          * Chặn chuỗi nhập bừa kiểu aaaaaa, 111111, //////...
-         * Riêng số nhà ngắn như 7, 12, 123 vẫn có thể hợp lệ nếu có GPS xác minh,
+         * Địa chỉ ngắn vẫn có thể hợp lệ nếu có GPS xác minh,
          * nên chỉ chặn chuỗi lặp quá dài.
          */
         if (compactAddress.length() >= 6 && compactAddress.matches("^(.)\\1{5,}$")) {
@@ -781,7 +781,7 @@ public class CheckoutServlet extends HttpServlet {
         boolean hasDigit = normalizedAddress.matches(".*[0-9].*");
 
         /*
-         * Nếu chưa xác minh GPS, chỉ nhập "123" là quá mơ hồ.
+         * Nếu chưa xác minh GPS, chỉ nhập mỗi số nhà là quá mơ hồ.
          */
         if (!hasLetter) {
             return true;
@@ -804,6 +804,10 @@ public class CheckoutServlet extends HttpServlet {
                 "toa",
                 "lau",
                 "can ho",
+                "xa",
+                "phuong",
+                "thi tran",
+                "doi",
                 "tan",
                 "linh",
                 "nguyen",
@@ -1060,7 +1064,7 @@ public class CheckoutServlet extends HttpServlet {
         } else if (!hasVerifiedCurrentLocation && isWeakManualAddress(address)) {
             errors.put(
                     "address",
-                    "Vui lòng nhập thêm tên đường, khu vực hoặc dùng vị trí hiện tại để xác minh địa chỉ."
+                    "Vui lòng nhập rõ số nhà, hẻm, tổ/khu phố/ấp/xã, tên đường hoặc khu vực giao hàng."
             );
         } else if (isAddressProvinceConflict(address, province)) {
             errors.put("address", "Địa chỉ cụ thể không khớp với Tỉnh/TP đã chọn.");
