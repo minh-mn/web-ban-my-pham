@@ -2453,29 +2453,34 @@
         ECONOMY: {
           fee: 20000,
           label: "20.000đ",
-          description: "Nội thành TP.HCM: 3 - 5 ngày"
+          description: "Nội thành TP.HCM: 3 - 5 ngày",
+          disabled: false
         },
         FAST: {
           fee: 35000,
           label: "35.000đ",
-          description: "Nội thành TP.HCM: 1 - 3 ngày"
+          description: "Nội thành TP.HCM: 1 - 3 ngày",
+          disabled: false
         },
         EXPRESS: {
           fee: 50000,
           label: "50.000đ",
-          description: "Hỏa tốc trong ngày, chỉ áp dụng TP.HCM"
+          description: "Hỏa tốc trong ngày, chỉ áp dụng TP.HCM",
+          disabled: false
         }
       },
       OTHER: {
         ECONOMY: {
           fee: 35000,
           label: "35.000đ",
-          description: "Ngoại tỉnh: 3 - 5 ngày"
+          description: "Ngoại tỉnh: 3 - 5 ngày",
+          disabled: false
         },
         FAST: {
           fee: 50000,
           label: "50.000đ",
-          description: "Ngoại tỉnh: 1 - 3 ngày"
+          description: "Ngoại tỉnh: 1 - 3 ngày",
+          disabled: false
         },
         EXPRESS: {
           fee: 0,
@@ -2541,7 +2546,18 @@
     }
 
     function getSubtotal() {
-      return parseVndText(summarySubtotal ? summarySubtotal.textContent : "0");
+      const subtotalFromSummary = parseVndText(summarySubtotal ? summarySubtotal.textContent : "0");
+
+      if (subtotalFromSummary > 0) {
+        return subtotalFromSummary;
+      }
+
+      let subtotalFromItems = 0;
+      document.querySelectorAll(".js-item-subtotal").forEach(function (el) {
+        subtotalFromItems += Number(el.dataset.raw || 0) || 0;
+      });
+
+      return subtotalFromItems;
     }
 
     function getDiscount() {
@@ -2553,6 +2569,10 @@
     }
 
     function isFreeShipEligible() {
+      /*
+       * Freeship áp dụng toàn quốc.
+       * Không phân biệt TP.HCM hay tỉnh khác.
+       */
       return getOrderValueAfterVoucher() >= FREE_SHIP_THRESHOLD;
     }
 
@@ -2592,10 +2612,33 @@
       }
     }
 
+    function ensureSupportedShippingMethod() {
+      const selectedInput = getSelectedShippingInput();
+
+      if (!selectedInput) {
+        const economy = document.querySelector("input[name='shippingMethod'][value='ECONOMY']");
+        if (economy) economy.checked = true;
+        return false;
+      }
+
+      const selectedRule = getRule(selectedInput.value);
+
+      if (!hasValidLocation() || !selectedRule.disabled) {
+        return false;
+      }
+
+      const economy = document.querySelector("input[name='shippingMethod'][value='ECONOMY']");
+
+      if (economy) {
+        economy.checked = true;
+      }
+
+      return true;
+    }
+
     function updateShippingMethodLabels() {
       const validLocation = hasValidLocation();
       const freeship = validLocation && isFreeShipEligible();
-      let checkedInput = getSelectedShippingInput();
 
       document.querySelectorAll("input[name='shippingMethod']").forEach(function (input) {
         const option = input.closest(".delivery-option");
@@ -2612,40 +2655,29 @@
 
         if (!validLocation) {
           feeEl.textContent = rule.label;
-          if (descEl) {
-            descEl.textContent = rule.description;
-          }
+          if (descEl) descEl.textContent = rule.description;
           return;
         }
 
         if (rule.disabled) {
+          /*
+           * Hỏa tốc ngoại tỉnh vẫn không hỗ trợ.
+           * Freeship toàn quốc áp dụng cho các phương thức giao hàng được hỗ trợ.
+           */
           feeEl.textContent = rule.label;
-          if (descEl) {
-            descEl.textContent = rule.description;
-          }
+          if (descEl) descEl.textContent = rule.description;
           input.disabled = true;
           option.classList.add("is-disabled");
-
-          if (input.checked) {
-            checkedInput = document.querySelector("input[name='shippingMethod'][value='ECONOMY']");
-          }
           return;
         }
 
         feeEl.textContent = freeship ? "Miễn phí" : rule.label;
         if (descEl) {
           descEl.textContent = freeship
-                  ? "Đơn hàng đạt điều kiện miễn phí vận chuyển"
+                  ? "Đơn sau voucher đạt từ " + formatVnd(FREE_SHIP_THRESHOLD) + ", miễn phí vận chuyển toàn quốc"
                   : rule.description;
         }
       });
-
-      if (checkedInput && checkedInput.disabled) {
-        const economy = document.querySelector("input[name='shippingMethod'][value='ECONOMY']");
-        if (economy) {
-          economy.checked = true;
-        }
-      }
     }
 
     function calculateShippingFee() {
@@ -2653,6 +2685,11 @@
         return 0;
       }
 
+      /*
+       * Quan trọng:
+       * Kiểm tra freeship trước khi tính phí theo khu vực.
+       * Điều kiện freeship áp dụng cho cả TP.HCM và tỉnh khác.
+       */
       if (isFreeShipEligible()) {
         return 0;
       }
@@ -2661,7 +2698,7 @@
       const rule = getRule(method);
 
       if (rule.disabled) {
-        return 0;
+        return SHIPPING_RULES.OTHER.ECONOMY.fee;
       }
 
       return Number(rule.fee || 0);
@@ -2673,6 +2710,10 @@
       const shippingFee = Number(shippingFeeInput ? shippingFeeInput.value : 0) || 0;
       const total = Math.max(subtotal - discount + shippingFee, 0);
 
+      if (summarySubtotal && parseVndText(summarySubtotal.textContent) === 0 && subtotal > 0) {
+        summarySubtotal.textContent = formatVnd(subtotal);
+      }
+
       if (summaryTotal) {
         summaryTotal.textContent = formatVnd(total);
       }
@@ -2680,51 +2721,26 @@
 
     function updateShippingDisplay() {
       const validLocation = hasValidLocation();
+      const changedUnsupportedMethod = ensureSupportedShippingMethod();
 
       updateShippingMethodLabels();
 
       if (!validLocation) {
-        if (deliveryEmpty) {
-          deliveryEmpty.classList.remove("hidden");
-        }
-
-        if (deliveryOptions) {
-          deliveryOptions.classList.add("hidden");
-        }
-
-        if (freeshipNote) {
-          freeshipNote.classList.add("hidden");
-        }
-
-        if (summaryShippingFee) {
-          summaryShippingFee.textContent = "-";
-        }
-
-        if (shippingFeeInput) {
-          shippingFeeInput.value = "0";
-        }
+        if (deliveryEmpty) deliveryEmpty.classList.remove("hidden");
+        if (deliveryOptions) deliveryOptions.classList.add("hidden");
+        if (freeshipNote) freeshipNote.classList.add("hidden");
+        if (summaryShippingFee) summaryShippingFee.textContent = "-";
+        if (shippingFeeInput) shippingFeeInput.value = "0";
 
         clearShippingError();
         updateCheckoutTotal();
         return;
       }
 
-      if (deliveryEmpty) {
-        deliveryEmpty.classList.add("hidden");
-      }
+      if (deliveryEmpty) deliveryEmpty.classList.add("hidden");
+      if (deliveryOptions) deliveryOptions.classList.remove("hidden");
 
-      if (deliveryOptions) {
-        deliveryOptions.classList.remove("hidden");
-      }
-
-      const method = getSelectedShippingMethod();
-      const selectedRule = getRule(method);
-
-      if (selectedRule.disabled) {
-        const economy = document.querySelector("input[name='shippingMethod'][value='ECONOMY']");
-        if (economy) {
-          economy.checked = true;
-        }
+      if (changedUnsupportedMethod) {
         setShippingError("Hỏa tốc chỉ hỗ trợ khu vực TP.HCM. Hệ thống đã chuyển về Giao hàng tiết kiệm.");
       } else {
         clearShippingError();
@@ -2744,7 +2760,9 @@
       if (freeshipNote) {
         freeshipNote.classList.toggle("hidden", !freeship);
         if (freeship) {
-          freeshipNote.textContent = "🎉 Đơn hàng sau voucher đạt từ " + formatVnd(FREE_SHIP_THRESHOLD) + ", phí vận chuyển = 0đ.";
+          freeshipNote.textContent = "🎉 Đơn hàng sau voucher đạt từ "
+                  + formatVnd(FREE_SHIP_THRESHOLD)
+                  + ", miễn phí vận chuyển toàn quốc.";
         }
       }
 
