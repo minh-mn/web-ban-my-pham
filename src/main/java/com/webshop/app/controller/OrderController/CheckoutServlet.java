@@ -55,7 +55,7 @@ public class CheckoutServlet extends HttpServlet {
             }
         }
 
-        return subTotal;
+        return subTotal.setScale(0, RoundingMode.HALF_UP);
     }
 
     private BigDecimal calcTotal(BigDecimal subTotal, BigDecimal discount) {
@@ -68,34 +68,66 @@ public class CheckoutServlet extends HttpServlet {
             total = BigDecimal.ZERO;
         }
 
-        return total;
+        return total.setScale(0, RoundingMode.HALF_UP);
     }
 
     /**
-     * Ước lượng số tiền giảm để sắp xếp mã tốt nhất lên đầu modal.
-     * Hàm này chỉ dùng cho UI gợi ý, không thay thế logic tính giảm giá thật trong CheckoutService.
+     * Tính số tiền giảm thực tế của coupon theo tổng tiền hàng hiện tại.
+     *
+     * Công thức:
+     * discount = subtotal * discountPercent / 100
+     * nếu maxDiscountAmount > 0 thì discount = min(discount, maxDiscountAmount)
+     *
+     * Ví dụ subtotal = 399.200:
+     * - FREESHIP10: 10%, tối đa 30.000 => 30.000
+     * - NEWYEAR10: 10%, tối đa 50.000 => 39.920
+     * - GIAM20K: 10%, tối đa 20.000 => 20.000
+     * - GIAM50K: 15%, tối đa 50.000, đơn từ 300.000 => 50.000
+     *
+     * Vậy GIAM50K mới là mã tốt nhất nếu đang active và đủ điều kiện.
      */
     private BigDecimal estimateCouponDiscount(Coupon coupon, BigDecimal subTotal) {
         if (coupon == null || subTotal == null || subTotal.compareTo(BigDecimal.ZERO) <= 0) {
             return BigDecimal.ZERO;
         }
 
-        BigDecimal percent = BigDecimal.valueOf(Math.max(coupon.getDiscountPercent(), 0));
+        BigDecimal safeSubTotal = subTotal.setScale(0, RoundingMode.HALF_UP);
 
-        BigDecimal discount = subTotal
-                .multiply(percent)
+        BigDecimal minOrderAmount = coupon.getMinOrderAmount() != null
+                ? coupon.getMinOrderAmount()
+                : BigDecimal.ZERO;
+
+        /*
+         * Quan trọng:
+         * Nếu đơn chưa đủ điều kiện tối thiểu thì mã này không được tính là tốt nhất.
+         */
+        if (safeSubTotal.compareTo(minOrderAmount) < 0) {
+            return BigDecimal.ZERO;
+        }
+
+        int percentValue = Math.max(coupon.getDiscountPercent(), 0);
+
+        if (percentValue <= 0) {
+            return BigDecimal.ZERO;
+        }
+
+        BigDecimal discount = safeSubTotal
+                .multiply(BigDecimal.valueOf(percentValue))
                 .divide(BigDecimal.valueOf(100), 0, RoundingMode.HALF_UP);
 
-        if (coupon.getMaxDiscountAmount() != null
-                && coupon.getMaxDiscountAmount().compareTo(BigDecimal.ZERO) > 0) {
-            discount = discount.min(coupon.getMaxDiscountAmount());
+        BigDecimal maxDiscountAmount = coupon.getMaxDiscountAmount() != null
+                ? coupon.getMaxDiscountAmount()
+                : BigDecimal.ZERO;
+
+        if (maxDiscountAmount.compareTo(BigDecimal.ZERO) > 0) {
+            discount = discount.min(maxDiscountAmount);
         }
 
         if (discount.compareTo(BigDecimal.ZERO) < 0) {
             return BigDecimal.ZERO;
         }
 
-        return discount;
+        return discount.setScale(0, RoundingMode.HALF_UP);
     }
 
     private BigDecimal getCheckoutCouponDiscount(HttpSession session) {
@@ -169,7 +201,7 @@ public class CheckoutServlet extends HttpServlet {
                 return BigDecimal.ZERO;
             }
 
-            return fee;
+            return fee.setScale(0, RoundingMode.HALF_UP);
 
         } catch (NumberFormatException e) {
             return BigDecimal.ZERO;
@@ -222,6 +254,20 @@ public class CheckoutServlet extends HttpServlet {
         return coupon.getMaxUses() <= 0 || coupon.getUsedCount() < coupon.getMaxUses();
     }
 
+    private boolean isCouponUsableForCurrentOrder(Coupon coupon, BigDecimal subTotal) {
+        if (!isCouponBaseUsable(coupon)) {
+            return false;
+        }
+
+        BigDecimal safeSubTotal = subTotal != null ? subTotal : BigDecimal.ZERO;
+
+        BigDecimal minOrderAmount = coupon.getMinOrderAmount() != null
+                ? coupon.getMinOrderAmount()
+                : BigDecimal.ZERO;
+
+        return safeSubTotal.compareTo(minOrderAmount) >= 0;
+    }
+
     /**
      * Validate riêng cho mục 72 - nhập mã giảm giá thủ công.
      *
@@ -270,10 +316,11 @@ public class CheckoutServlet extends HttpServlet {
     /**
      * Load coupon cho checkout.
      *
-     * Điểm sửa chính:
-     * - Trả về couponOptions là 1 danh sách duy nhất.
-     * - Mã đủ điều kiện và giảm lợi nhất nằm trên cùng.
-     * - Truyền bestCouponCode để JSP chỉ gắn badge "Tốt nhất" cho đúng 1 mã.
+     * Logic đúng:
+     * - Không hard-code mã tốt nhất.
+     * - Mã "Tốt nhất" = mã dùng được và giảm thực tế nhiều tiền nhất theo đơn hiện tại.
+     * - Mã dùng được nằm trên.
+     * - Mã chưa đủ điều kiện nằm dưới, JSP có thể render dạng mờ.
      */
     private void loadCouponsForModal(HttpServletRequest req,
                                      int userId,
@@ -282,6 +329,9 @@ public class CheckoutServlet extends HttpServlet {
         List<Coupon> savedCoupons = new ArrayList<>();
         List<Coupon> availableCoupons = new ArrayList<>();
         List<Coupon> allCoupons = new ArrayList<>();
+
+        Map<String, BigDecimal> couponEstimatedDiscountMap = new HashMap<>();
+        Map<String, Boolean> couponUsableMap = new HashMap<>();
 
         BigDecimal safeSubTotal = subTotal != null ? subTotal : BigDecimal.ZERO;
         String bestCouponCode = "";
@@ -292,28 +342,50 @@ public class CheckoutServlet extends HttpServlet {
             }
 
             /*
-             * Dùng findAllActiveCouponsForCheckout:
-             * - Lấy mã active, còn hạn, còn lượt.
-             * - Không lọc min_order_amount để JSP có thể hiện mã chưa đủ điều kiện dạng mờ.
+             * Lấy tất cả mã còn active, còn hạn, còn lượt.
+             * Không lọc min_order_amount để modal vẫn hiển thị mã chưa đủ điều kiện ở trạng thái mờ.
              */
             allCoupons = couponDAO.findAllActiveCouponsForCheckout();
 
             /*
-             * Sắp xếp:
-             * 1. Mã đủ điều kiện lên trước.
-             * 2. Trong nhóm đủ điều kiện, mã giảm lợi nhất lên đầu.
-             * 3. Nếu bằng tiền giảm thì mã có đơn tối thiểu thấp hơn lên trước.
+             * Tính trước trạng thái usable và số tiền giảm thực tế cho từng mã.
+             */
+            for (Coupon coupon : allCoupons) {
+                if (coupon == null || coupon.getCode() == null) {
+                    continue;
+                }
+
+                String code = coupon.getCode();
+
+                boolean usable = isCouponUsableForCurrentOrder(coupon, safeSubTotal);
+                BigDecimal estimatedDiscount = usable
+                        ? estimateCouponDiscount(coupon, safeSubTotal)
+                        : BigDecimal.ZERO;
+
+                couponUsableMap.put(code, usable);
+                couponEstimatedDiscountMap.put(code, estimatedDiscount);
+            }
+
+            /*
+             * Sort coupon theo đúng UX:
+             * 1. Mã dùng được lên trước.
+             * 2. Mã giảm thực tế nhiều tiền nhất lên đầu.
+             * 3. Nếu giảm bằng nhau, ưu tiên mã yêu cầu đơn tối thiểu thấp hơn.
+             * 4. Nếu vẫn bằng nhau, sort theo code để ổn định.
              */
             allCoupons.sort((a, b) -> {
-                boolean usableA = couponDAO.isUsableForSubtotal(a, safeSubTotal);
-                boolean usableB = couponDAO.isUsableForSubtotal(b, safeSubTotal);
+                String codeA = a != null && a.getCode() != null ? a.getCode() : "";
+                String codeB = b != null && b.getCode() != null ? b.getCode() : "";
+
+                boolean usableA = couponUsableMap.getOrDefault(codeA, false);
+                boolean usableB = couponUsableMap.getOrDefault(codeB, false);
 
                 if (usableA != usableB) {
                     return usableA ? -1 : 1;
                 }
 
-                BigDecimal discountA = estimateCouponDiscount(a, safeSubTotal);
-                BigDecimal discountB = estimateCouponDiscount(b, safeSubTotal);
+                BigDecimal discountA = couponEstimatedDiscountMap.getOrDefault(codeA, BigDecimal.ZERO);
+                BigDecimal discountB = couponEstimatedDiscountMap.getOrDefault(codeB, BigDecimal.ZERO);
 
                 int compareDiscount = discountB.compareTo(discountA);
 
@@ -321,11 +393,11 @@ public class CheckoutServlet extends HttpServlet {
                     return compareDiscount;
                 }
 
-                BigDecimal minA = a.getMinOrderAmount() != null
+                BigDecimal minA = a != null && a.getMinOrderAmount() != null
                         ? a.getMinOrderAmount()
                         : BigDecimal.ZERO;
 
-                BigDecimal minB = b.getMinOrderAmount() != null
+                BigDecimal minB = b != null && b.getMinOrderAmount() != null
                         ? b.getMinOrderAmount()
                         : BigDecimal.ZERO;
 
@@ -335,22 +407,36 @@ public class CheckoutServlet extends HttpServlet {
                     return compareMinOrder;
                 }
 
-                return Integer.compare(b.getId(), a.getId());
+                return codeA.compareToIgnoreCase(codeB);
             });
 
             /*
-             * availableCoupons giữ lại để tương thích JSP cũ.
-             * JSP mới nên dùng couponOptions.
+             * Mã đầu tiên sau khi sort, nếu dùng được và giảm > 0, là mã tốt nhất.
              */
-            availableCoupons = couponDAO.findAvailableCouponsForCheckout(safeSubTotal);
-
             for (Coupon coupon : allCoupons) {
-                if (couponDAO.isUsableForSubtotal(coupon, safeSubTotal)
-                        && estimateCouponDiscount(coupon, safeSubTotal).compareTo(BigDecimal.ZERO) > 0) {
-                    bestCouponCode = coupon.getCode();
+                if (coupon == null || coupon.getCode() == null) {
+                    continue;
+                }
+
+                String code = coupon.getCode();
+
+                BigDecimal estimatedDiscount = couponEstimatedDiscountMap.getOrDefault(
+                        code,
+                        BigDecimal.ZERO
+                );
+
+                boolean usable = couponUsableMap.getOrDefault(code, false);
+
+                if (usable && estimatedDiscount.compareTo(BigDecimal.ZERO) > 0) {
+                    bestCouponCode = code;
                     break;
                 }
             }
+
+            /*
+             * Giữ lại availableCoupons để tương thích JSP cũ nếu còn dùng.
+             */
+            availableCoupons = couponDAO.findAvailableCouponsForCheckout(safeSubTotal);
 
         } catch (RuntimeException e) {
             /*
@@ -372,7 +458,16 @@ public class CheckoutServlet extends HttpServlet {
          */
         req.setAttribute("checkoutCoupons", allCoupons);
         req.setAttribute("couponOptions", allCoupons);
+
+        /*
+         * Biến hỗ trợ JSP:
+         * - bestCouponCode: mã tốt nhất theo giá trị đơn hàng hiện tại.
+         * - couponEstimatedDiscountMap: số tiền giảm ước lượng của từng mã.
+         * - couponUsableMap: mã có đủ điều kiện theo đơn hiện tại không.
+         */
         req.setAttribute("bestCouponCode", bestCouponCode);
+        req.setAttribute("couponEstimatedDiscountMap", couponEstimatedDiscountMap);
+        req.setAttribute("couponUsableMap", couponUsableMap);
     }
 
     private boolean applyCoupon(HttpServletRequest req,
