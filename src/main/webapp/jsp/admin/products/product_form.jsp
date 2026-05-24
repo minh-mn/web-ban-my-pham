@@ -60,9 +60,9 @@
 
             <%--
               existingImage giữ lại ảnh cũ nếu admin không chọn ảnh đại diện mới.
-              Servlet nên đọc field này khi update.
+              Dùng product.image để khớp với ProductDAO và Product model.
             --%>
-            <input type="hidden" name="existingImage" value="${product.imageUrl}"/>
+            <input type="hidden" name="existingImage" value="${product.image}"/>
           </c:if>
 
           <div class="admin-grid-2">
@@ -222,12 +222,13 @@
                 <b>MyCosmeticShopUploads/product/gallery/</b>
                 và database lưu dạng
                 <b>/uploads/product/gallery/tên-file</b>.
+                Nếu chọn gallery mới khi sửa sản phẩm, hệ thống sẽ thay gallery cũ bằng gallery mới.
               </div>
             </div>
 
           </div>
 
-          <c:if test="${not empty product && not empty product.imageUrl}">
+          <c:if test="${not empty product && not empty product.image}">
             <hr class="admin-divider"/>
 
             <div class="admin-field">
@@ -235,23 +236,23 @@
 
               <div class="admin-preview">
                 <img class="admin-preview__img"
-                     src="${pageContext.request.contextPath}${product.imageUrl}"
+                     src="${pageContext.request.contextPath}${product.image}"
                      alt="${not empty product.title ? product.title : 'product'}">
 
                 <div class="admin-help admin-break">
                   Đường dẫn hiện tại:
-                  <c:out value="${product.imageUrl}"/>
+                  <c:out value="${product.image}"/>
                 </div>
 
                 <c:choose>
-                  <c:when test="${fn:startsWith(product.imageUrl, '/uploads/product/')}">
+                  <c:when test="${fn:startsWith(product.image, '/uploads/product/')}">
                     <div class="admin-help">
                       Ảnh này đã đúng chuẩn upload.
                     </div>
                   </c:when>
                   <c:otherwise>
                     <div class="admin-help" style="color:#b45309;">
-                      Ảnh này có thể đang dùng đường dẫn cũ. Khi lưu lại hoặc upload ảnh mới, hệ thống nên chuyển sang /uploads/product/.
+                      Ảnh này có thể đang dùng đường dẫn cũ. Khi upload ảnh mới, hệ thống sẽ chuyển sang /uploads/product/.
                     </div>
                   </c:otherwise>
                 </c:choose>
@@ -260,12 +261,19 @@
           </c:if>
 
           <%--
-            Hiển thị gallery hiện tại nếu servlet có truyền:
-            req.setAttribute("productImages", list)
-            hoặc
-            req.setAttribute("galleryImages", list)
+            Hiển thị gallery hiện tại.
+
+            AdminProductServlet khi edit đang gọi:
+            product.setImages(productImageDAO.findByProductId(product.getId()));
+
+            Vì vậy ưu tiên đọc product.images.
+            Vẫn giữ fallback productImages/galleryImages nếu servlet khác có truyền.
           --%>
-          <c:set var="displayGallery" value="${productImages}" />
+          <c:set var="displayGallery" value="${not empty product ? product.images : null}" />
+
+          <c:if test="${empty displayGallery && not empty productImages}">
+            <c:set var="displayGallery" value="${productImages}" />
+          </c:if>
 
           <c:if test="${empty displayGallery && not empty galleryImages}">
             <c:set var="displayGallery" value="${galleryImages}" />
@@ -288,11 +296,18 @@
                       <c:out value="${img.image}"/>
                     </div>
 
-                    <c:if test="${not fn:startsWith(img.image, '/uploads/product/gallery/')}">
-                      <div class="admin-help" style="color:#b45309;">
-                        Path cũ
-                      </div>
-                    </c:if>
+                    <c:choose>
+                      <c:when test="${fn:startsWith(img.image, '/uploads/product/gallery/')}">
+                        <div class="admin-help">
+                          Ảnh gallery đã đúng chuẩn upload.
+                        </div>
+                      </c:when>
+                      <c:otherwise>
+                        <div class="admin-help" style="color:#b45309;">
+                          Path cũ
+                        </div>
+                      </c:otherwise>
+                    </c:choose>
                   </div>
                 </c:forEach>
               </div>
