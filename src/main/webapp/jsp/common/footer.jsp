@@ -194,13 +194,23 @@
                 <h4>Danh mục</h4>
 
                 <ul>
-                    <c:forEach var="c" items="${categoryList}">
-                        <li>
-                            <a href="${pageContext.request.contextPath}/category?slug=${c.slug}">
-                                    ${c.name}
-                            </a>
-                        </li>
-                    </c:forEach>
+                    <li><a href="${pageContext.request.contextPath}/home">TRANG CHỦ</a></li>
+
+                    <li><a href="${pageContext.request.contextPath}/products?category=all">SẢN PHẨM</a></li>
+
+                    <li><a href="${pageContext.request.contextPath}/products?category=skincare">CHĂM SÓC DA</a></li>
+
+                    <li><a href="${pageContext.request.contextPath}/products?category=makeup">TRANG ĐIỂM</a></li>
+
+                    <li><a href="${pageContext.request.contextPath}/products?category=brand">THƯƠNG HIỆU</a></li>
+
+                    <li><a href="${pageContext.request.contextPath}/flash-sale">FLASH SALE</a></li>
+
+                    <li><a href="${pageContext.request.contextPath}/promotions">KHUYẾN MÃI</a></li>
+
+                    <li><a href="${pageContext.request.contextPath}/blog">TIN TỨC</a></li>
+
+                    <li><a href="${pageContext.request.contextPath}/contact">LIÊN HỆ</a></li>
                 </ul>
             </div>
 
