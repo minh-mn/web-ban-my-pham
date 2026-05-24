@@ -21,19 +21,21 @@ public class ProductImageDAO {
 
         List<ProductImage> list = new ArrayList<>();
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
 
             ps.setInt(1, productId);
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    ProductImage pi = new ProductImage();
-                    pi.setId(rs.getLong("id"));
-                    pi.setImage(rs.getString("image"));
-                    pi.setOrder(rs.getInt("order"));
-                    pi.setProductId(rs.getInt("product_id"));
-                    list.add(pi);
+                    ProductImage productImage = new ProductImage();
+
+                    productImage.setId(rs.getLong("id"));
+                    productImage.setImage(rs.getString("image"));
+                    productImage.setOrder(rs.getInt("order"));
+                    productImage.setProductId(rs.getInt("product_id"));
+
+                    list.add(productImage);
                 }
             }
 
@@ -44,44 +46,27 @@ public class ProductImageDAO {
         return list;
     }
 
-    public void insert(ProductImage img) {
-        String sql =
-                "INSERT INTO store_productimage (image, `order`, product_id) " +
-                        "VALUES (?, ?, ?)";
-
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
-
-            ps.setString(1, img.getImage());
-            ps.setInt(2, img.getOrder());
-            ps.setInt(3, img.getProductId());
-
-            ps.executeUpdate();
-
+    public void insert(ProductImage image) {
+        try (Connection connection = DBConnection.getConnection()) {
+            insert(connection, image);
         } catch (SQLException e) {
             throw new RuntimeException("ProductImageDAO.insert error", e);
         }
     }
 
     public void insert(int productId, String image, int order) {
-        ProductImage img = new ProductImage();
+        ProductImage productImage = new ProductImage();
 
-        img.setProductId(productId);
-        img.setImage(image);
-        img.setOrder(order);
+        productImage.setProductId(productId);
+        productImage.setImage(image);
+        productImage.setOrder(order);
 
-        insert(img);
+        insert(productImage);
     }
 
     public void deleteByProductId(int productId) {
-        String sql = "DELETE FROM store_productimage WHERE product_id = ?";
-
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
-
-            ps.setInt(1, productId);
-            ps.executeUpdate();
-
+        try (Connection connection = DBConnection.getConnection()) {
+            deleteByProductId(connection, productId);
         } catch (SQLException e) {
             throw new RuntimeException("ProductImageDAO.deleteByProductId error", e);
         }
@@ -90,8 +75,8 @@ public class ProductImageDAO {
     public void deleteById(long id) {
         String sql = "DELETE FROM store_productimage WHERE id = ?";
 
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
 
             ps.setLong(1, id);
             ps.executeUpdate();
@@ -101,23 +86,87 @@ public class ProductImageDAO {
         }
     }
 
+    /*
+     * Thay toàn bộ ảnh gallery của sản phẩm trong transaction.
+     *
+     * Mục tiêu:
+     * - Xóa gallery cũ.
+     * - Insert gallery mới.
+     * - Nếu insert lỗi thì rollback, tránh mất dữ liệu gallery giữa chừng.
+     */
     public void replaceAll(int productId, List<String> images) {
-        deleteByProductId(productId);
+        try (Connection connection = DBConnection.getConnection()) {
+            connection.setAutoCommit(false);
 
-        int order = 0;
+            try {
+                deleteByProductId(connection, productId);
 
-        for (String imgPath : images) {
-            if (imgPath == null) {
-                continue;
+                int order = 0;
+
+                if (images != null) {
+                    for (String imagePath : images) {
+                        String normalizedImagePath = normalizeImagePath(imagePath);
+
+                        if (normalizedImagePath == null) {
+                            continue;
+                        }
+
+                        ProductImage productImage = new ProductImage();
+                        productImage.setProductId(productId);
+                        productImage.setImage(normalizedImagePath);
+                        productImage.setOrder(order++);
+
+                        insert(connection, productImage);
+                    }
+                }
+
+                connection.commit();
+            } catch (Exception e) {
+                connection.rollback();
+                throw e;
+            } finally {
+                connection.setAutoCommit(true);
             }
 
-            String trimmedPath = imgPath.trim();
-
-            if (trimmedPath.isEmpty()) {
-                continue;
-            }
-
-            insert(productId, trimmedPath, order++);
+        } catch (Exception e) {
+            throw new RuntimeException("ProductImageDAO.replaceAll error", e);
         }
+    }
+
+    private void insert(Connection connection, ProductImage image) throws SQLException {
+        String sql =
+                "INSERT INTO store_productimage (image, `order`, product_id) " +
+                        "VALUES (?, ?, ?)";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, image.getImage());
+            ps.setInt(2, image.getOrder());
+            ps.setInt(3, image.getProductId());
+
+            ps.executeUpdate();
+        }
+    }
+
+    private void deleteByProductId(Connection connection, int productId) throws SQLException {
+        String sql = "DELETE FROM store_productimage WHERE product_id = ?";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, productId);
+            ps.executeUpdate();
+        }
+    }
+
+    private String normalizeImagePath(String imagePath) {
+        if (imagePath == null) {
+            return null;
+        }
+
+        String trimmedPath = imagePath.trim();
+
+        if (trimmedPath.isEmpty()) {
+            return null;
+        }
+
+        return trimmedPath;
     }
 }
