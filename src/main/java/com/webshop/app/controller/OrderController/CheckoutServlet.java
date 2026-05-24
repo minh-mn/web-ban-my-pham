@@ -7,6 +7,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -219,6 +220,53 @@ public class CheckoutServlet extends HttpServlet {
     private void clearCheckoutCoupon(HttpSession session) {
         session.removeAttribute(SESSION_CHECKOUT_COUPON);
         session.removeAttribute(SESSION_CHECKOUT_COUPON_DISCOUNT);
+    }
+
+
+    /**
+     * Xóa đúng một sản phẩm trong trang checkout.
+     *
+     * Quan trọng:
+     * - Đây KHÔNG phải hành động đặt hàng, nên không validate họ tên, số điện thoại, địa chỉ.
+     * - Không gọi /cart/remove vì luồng đó redirect về trang giỏ hàng.
+     * - Chỉ xóa đúng cartKey đang chọn, giữ các sản phẩm còn lại ở checkout.
+     * - Khi tổng tiền thay đổi thì xóa mã giảm giá đang áp dụng để tránh sai điều kiện mã.
+     */
+    private void removeCheckoutItem(HttpServletRequest req,
+                                    HttpServletResponse resp,
+                                    HttpSession session,
+                                    String cartKey) throws IOException {
+
+        String key = trim(cartKey);
+
+        if (isBlank(key)) {
+            resp.sendRedirect(req.getContextPath() + "/checkout");
+            return;
+        }
+
+        CartUtil.removeItems(session, Set.of(key));
+
+        Set<String> selectedKeys = new LinkedHashSet<>(CartUtil.getSelectedCartKeys(session));
+        selectedKeys.remove(key);
+
+        if (selectedKeys.isEmpty()) {
+            CartUtil.clearSelectedCartKeys(session);
+        } else {
+            CartUtil.setSelectedCartKeys(session, selectedKeys);
+        }
+
+        clearCheckoutCoupon(session);
+        session.removeAttribute("coupon_success");
+        session.removeAttribute("coupon_error");
+
+        Map<String, CartItem> remainingCheckoutCart = CartUtil.getSelectedCart(session);
+
+        if (remainingCheckoutCart == null || remainingCheckoutCart.isEmpty()) {
+            resp.sendRedirect(req.getContextPath() + "/cart?selectRequired=1");
+            return;
+        }
+
+        resp.sendRedirect(req.getContextPath() + "/checkout");
     }
 
     private String normalizeCouponCode(String couponCode) {
@@ -1256,9 +1304,22 @@ public class CheckoutServlet extends HttpServlet {
             return;
         }
 
+        String action = trim(req.getParameter("action"));
+        String removeCartKey = trim(req.getParameter("removeCartKey"));
+
+        /*
+         * Xóa sản phẩm trong checkout là thao tác chỉnh danh sách hàng hóa.
+         * Không được validate họ tên, số điện thoại, địa chỉ hoặc phương thức thanh toán.
+         * Vì vậy phải xử lý remove-item ngay đầu doPost, trước mọi logic đặt hàng.
+         */
+        if ("remove-item".equalsIgnoreCase(action) || !isBlank(removeCartKey)) {
+            removeCheckoutItem(req, resp, session, removeCartKey);
+            return;
+        }
+
         /*
          * Mục 68:
-         * Khi đặt hàng, chỉ lấy các sản phẩm đã tích chọn.
+         * Khi đặt hàng hoặc áp mã giảm giá, chỉ lấy các sản phẩm đã tích chọn.
          */
         Map<String, CartItem> cart = getSelectedCheckoutCart(req, resp, session);
 
@@ -1268,10 +1329,8 @@ public class CheckoutServlet extends HttpServlet {
 
         /*
          * Mục 72:
-         * Áp dụng mã giảm giá nhập thủ công.
+         * Áp dụng mã giảm giá nhập thủ công cũng không validate thông tin giao hàng.
          */
-        String action = req.getParameter("action");
-
         if ("apply-coupon".equalsIgnoreCase(action)) {
             if (applyCoupon(req, resp, session, user, cart)) {
                 return;
@@ -1280,7 +1339,7 @@ public class CheckoutServlet extends HttpServlet {
 
         /*
          * Mục 79:
-         * Validate dữ liệu thanh toán ở backend.
+         * Chỉ validate dữ liệu thanh toán khi user thật sự bấm Đặt hàng.
          */
         Map<String, String> errors = validateCheckoutForm(req, cart);
 
