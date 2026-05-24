@@ -654,6 +654,10 @@ public class CheckoutServlet extends HttpServlet {
         req.setAttribute("formWardName", trim(req.getParameter("wardName")));
         req.setAttribute("formWardCode", trim(req.getParameter("wardCode")));
         req.setAttribute("formShippingAddress", trim(req.getParameter("shippingAddress")));
+        req.setAttribute("formLatitude", trim(req.getParameter("latitude")));
+        req.setAttribute("formLongitude", trim(req.getParameter("longitude")));
+        req.setAttribute("formDetectedProvince", trim(req.getParameter("detectedProvince")));
+        req.setAttribute("formDetectedAddress", trim(req.getParameter("detectedAddress")));
 
         req.setAttribute("formShippingMethod",
                 normalizeShippingMethod(req.getParameter("shippingMethod")));
@@ -661,6 +665,347 @@ public class CheckoutServlet extends HttpServlet {
         req.setAttribute("formShippingFee",
                 parseShippingFee(req.getParameter("shippingFee")));
     }
+
+
+    private String normalizeVietnameseText(String value) {
+        if (value == null) {
+            return "";
+        }
+
+        String normalized = java.text.Normalizer.normalize(value, java.text.Normalizer.Form.NFD);
+
+        normalized = normalized.replaceAll("\\p{M}", "");
+        normalized = normalized.replace("đ", "d").replace("Đ", "D");
+
+        return normalized
+                .toLowerCase()
+                .replaceAll("[^a-z0-9\\s./,-]", " ")
+                .replaceAll("\\s+", " ")
+                .trim();
+    }
+
+    private boolean containsAnyKeyword(String value, String... keywords) {
+        String normalizedValue = normalizeVietnameseText(value);
+
+        for (String keyword : keywords) {
+            String normalizedKeyword = normalizeVietnameseText(keyword);
+
+            if (!normalizedKeyword.isBlank() && normalizedValue.contains(normalizedKeyword)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean isValidCoordinateValue(String value) {
+        if (isBlank(value)) {
+            return false;
+        }
+
+        try {
+            double coordinate = Double.parseDouble(value.trim());
+            return coordinate >= -180 && coordinate <= 180;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    private boolean hasVerifiedCurrentLocation(String latitude,
+                                               String longitude,
+                                               String detectedProvince,
+                                               String selectedProvince) {
+        return isValidCoordinateValue(latitude)
+                && isValidCoordinateValue(longitude)
+                && !isBlank(detectedProvince)
+                && isSameProvince(selectedProvince, detectedProvince);
+    }
+
+    private boolean isClearlyInvalidAddressText(String address) {
+        String normalizedAddress = normalizeVietnameseText(address);
+        String compactAddress = normalizedAddress.replace(" ", "");
+
+        if (normalizedAddress.isBlank()) {
+            return true;
+        }
+
+        String[] invalidValues = {
+                "abc",
+                "abcd",
+                "abcde",
+                "test",
+                "testing",
+                "asdf",
+                "aaa",
+                "aaaa",
+                "dia chi",
+                "dia chi nha",
+                "khong biet",
+                "khong co",
+                "chua co",
+                "tam thoi",
+                "none",
+                "null"
+        };
+
+        for (String invalidValue : invalidValues) {
+            if (normalizedAddress.equals(invalidValue)) {
+                return true;
+            }
+        }
+
+        /*
+         * Chặn chuỗi nhập bừa kiểu aaaaaa, 111111, //////...
+         * Riêng số nhà ngắn như 7, 12, 123 vẫn có thể hợp lệ nếu có GPS xác minh,
+         * nên chỉ chặn chuỗi lặp quá dài.
+         */
+        if (compactAddress.length() >= 6 && compactAddress.matches("^(.)\\1{5,}$")) {
+            return true;
+        }
+
+        /*
+         * Chỉ toàn ký tự đặc biệt thì không phải địa chỉ.
+         */
+        return !normalizedAddress.matches(".*[a-z0-9].*");
+    }
+
+    private boolean isWeakManualAddress(String address) {
+        String normalizedAddress = normalizeVietnameseText(address);
+        String compactAddress = normalizedAddress.replace(" ", "");
+
+        if (compactAddress.length() < 3) {
+            return true;
+        }
+
+        boolean hasLetter = normalizedAddress.matches(".*[a-z].*");
+        boolean hasDigit = normalizedAddress.matches(".*[0-9].*");
+
+        /*
+         * Nếu chưa xác minh GPS, chỉ nhập "123" là quá mơ hồ.
+         */
+        if (!hasLetter) {
+            return true;
+        }
+
+        String[] usefulKeywords = {
+                "duong",
+                "hem",
+                "ngo",
+                "so",
+                "ap",
+                "khu",
+                "kp",
+                "khu pho",
+                "thon",
+                "xom",
+                "to",
+                "block",
+                "chung cu",
+                "toa",
+                "lau",
+                "can ho",
+                "tan",
+                "linh",
+                "nguyen",
+                "tran",
+                "le",
+                "pham",
+                "hoang"
+        };
+
+        boolean hasUsefulKeyword = false;
+
+        for (String keyword : usefulKeywords) {
+            if (normalizedAddress.contains(keyword)) {
+                hasUsefulKeyword = true;
+                break;
+            }
+        }
+
+        int wordCount = normalizedAddress.isBlank() ? 0 : normalizedAddress.split(" ").length;
+
+        return !(hasUsefulKeyword || (hasDigit && normalizedAddress.length() >= 4) || wordCount >= 2);
+    }
+
+    private boolean isHcmAddressKeyword(String value) {
+        return containsAnyKeyword(
+                value,
+                "tphcm",
+                "tp hcm",
+                "tp. hcm",
+                "ho chi minh",
+                "thanh pho ho chi minh",
+                "sai gon",
+                "thu duc",
+                "linh trung",
+                "linh xuan"
+        );
+    }
+
+    private boolean isHcmProvince(String province) {
+        return containsAnyKeyword(
+                province,
+                "tphcm",
+                "tp hcm",
+                "tp. hcm",
+                "ho chi minh",
+                "thanh pho ho chi minh"
+        );
+    }
+
+    private boolean isSameProvince(String selectedProvince, String detectedProvince) {
+        String selected = normalizeVietnameseText(selectedProvince);
+        String detected = normalizeVietnameseText(detectedProvince);
+
+        if (selected.isBlank() || detected.isBlank()) {
+            return false;
+        }
+
+        if (isHcmProvince(selected) && isHcmProvince(detected)) {
+            return true;
+        }
+
+        String[][] aliasGroups = {
+                {"ho chi minh", "tphcm", "tp hcm", "thanh pho ho chi minh", "sai gon", "thu duc"},
+                {"can tho", "tp can tho", "thanh pho can tho"},
+                {"ha noi", "tp ha noi", "thanh pho ha noi"},
+                {"da nang", "tp da nang", "thanh pho da nang"},
+                {"ba ria", "vung tau", "ba ria vung tau"},
+                {"binh duong", "thu dau mot", "di an", "thuan an"},
+                {"dong nai", "bien hoa"}
+        };
+
+        for (String[] group : aliasGroups) {
+            boolean selectedInGroup = false;
+            boolean detectedInGroup = false;
+
+            for (String keyword : group) {
+                String normalizedKeyword = normalizeVietnameseText(keyword);
+
+                if (selected.contains(normalizedKeyword)) {
+                    selectedInGroup = true;
+                }
+
+                if (detected.contains(normalizedKeyword)) {
+                    detectedInGroup = true;
+                }
+            }
+
+            if (selectedInGroup && detectedInGroup) {
+                return true;
+            }
+        }
+
+        return selected.contains(detected) || detected.contains(selected);
+    }
+
+    private boolean isAddressProvinceConflict(String address, String province) {
+        String normalizedAddress = normalizeVietnameseText(address);
+        String normalizedProvince = normalizeVietnameseText(province);
+
+        if (normalizedAddress.isBlank() || normalizedProvince.isBlank()) {
+            return false;
+        }
+
+        /*
+         * Trường hợp thường gặp:
+         * Người dùng gõ địa chỉ thuộc TP.HCM nhưng lại chọn tỉnh/thành khác.
+         */
+        if (isHcmAddressKeyword(address) && !isHcmProvince(province)) {
+            return true;
+        }
+
+        /*
+         * Nếu người dùng ghi rõ tên tỉnh/thành trong ô địa chỉ,
+         * tỉnh/thành đó phải khớp với tỉnh/thành đã chọn.
+         */
+        String[][] provinceGroups = {
+                {"can tho", "tp can tho", "thanh pho can tho"},
+                {"ho chi minh", "tphcm", "tp hcm", "sai gon", "thu duc"},
+                {"ha noi", "tp ha noi", "thanh pho ha noi"},
+                {"da nang", "tp da nang", "thanh pho da nang"},
+                {"dong nai", "bien hoa"},
+                {"binh duong", "thu dau mot", "di an", "thuan an"},
+                {"long an", "tan an"},
+                {"tien giang", "my tho"},
+                {"ba ria", "vung tau", "ba ria vung tau"},
+                {"tay ninh"},
+                {"dong thap", "cao lanh", "sa dec"},
+                {"vinh long"},
+                {"ben tre"},
+                {"an giang", "long xuyen", "chau doc"},
+                {"kien giang", "rach gia", "phu quoc"},
+                {"khanh hoa", "nha trang"},
+                {"lam dong", "da lat"},
+                {"binh thuan", "phan thiet"}
+        };
+
+        for (String[] group : provinceGroups) {
+            boolean addressMentionsProvince = false;
+
+            for (String keyword : group) {
+                if (normalizedAddress.contains(normalizeVietnameseText(keyword))) {
+                    addressMentionsProvince = true;
+                    break;
+                }
+            }
+
+            if (!addressMentionsProvince) {
+                continue;
+            }
+
+            boolean selectedMatchesGroup = false;
+
+            for (String keyword : group) {
+                if (normalizedProvince.contains(normalizeVietnameseText(keyword))) {
+                    selectedMatchesGroup = true;
+                    break;
+                }
+            }
+
+            if (!selectedMatchesGroup) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean isAddressWardConflict(String address, String wardName) {
+        String normalizedAddress = normalizeVietnameseText(address);
+        String normalizedWard = normalizeVietnameseText(wardName);
+
+        if (normalizedAddress.isBlank() || normalizedWard.isBlank()) {
+            return false;
+        }
+
+        /*
+         * Không bắt buộc địa chỉ phải chứa tên phường/xã,
+         * vì người dùng thường chỉ nhập số nhà + tên đường.
+         * Chỉ kiểm tra khi ô địa chỉ có ghi rõ phường/xã.
+         */
+        boolean addressMentionsWardPrefix =
+                normalizedAddress.contains("phuong ")
+                        || normalizedAddress.contains("xa ")
+                        || normalizedAddress.contains("thi tran ");
+
+        if (!addressMentionsWardPrefix) {
+            return false;
+        }
+
+        String wardShort = normalizedWard
+                .replace("phuong ", "")
+                .replace("xa ", "")
+                .replace("thi tran ", "")
+                .trim();
+
+        if (wardShort.isBlank()) {
+            return false;
+        }
+
+        return !normalizedAddress.contains(wardShort);
+    }
+
 
     private Map<String, String> validateCheckoutForm(HttpServletRequest req,
                                                      Map<String, CartItem> checkoutCart) {
@@ -674,6 +1019,9 @@ public class CheckoutServlet extends HttpServlet {
         String provinceCode = trim(req.getParameter("provinceCode"));
         String wardName = trim(req.getParameter("wardName"));
         String wardCode = trim(req.getParameter("wardCode"));
+        String latitude = trim(req.getParameter("latitude"));
+        String longitude = trim(req.getParameter("longitude"));
+        String detectedProvince = trim(req.getParameter("detectedProvince"));
 
         String paymentMethod = trim(req.getParameter("paymentMethod"));
         String shippingMethod = normalizeShippingMethod(req.getParameter("shippingMethod"));
@@ -696,16 +1044,40 @@ public class CheckoutServlet extends HttpServlet {
             errors.put("phone", "Số điện thoại không hợp lệ. Ví dụ: 0912345678.");
         }
 
+        boolean hasVerifiedCurrentLocation = hasVerifiedCurrentLocation(
+                latitude,
+                longitude,
+                detectedProvince,
+                province
+        );
+
         if (isBlank(address)) {
             errors.put("address", "Vui lòng nhập địa chỉ giao hàng.");
-        } else if (address.length() < 5 || address.length() > 160) {
-            errors.put("address", "Địa chỉ phải từ 5 đến 160 ký tự.");
+        } else if (address.length() > 160) {
+            errors.put("address", "Địa chỉ không được vượt quá 160 ký tự.");
+        } else if (isClearlyInvalidAddressText(address)) {
+            errors.put("address", "Địa chỉ không hợp lệ. Vui lòng nhập địa chỉ thật.");
+        } else if (!hasVerifiedCurrentLocation && isWeakManualAddress(address)) {
+            errors.put(
+                    "address",
+                    "Vui lòng nhập thêm tên đường, khu vực hoặc dùng vị trí hiện tại để xác minh địa chỉ."
+            );
+        } else if (isAddressProvinceConflict(address, province)) {
+            errors.put("address", "Địa chỉ cụ thể không khớp với Tỉnh/TP đã chọn.");
+        } else if (isAddressWardConflict(address, wardName)) {
+            errors.put("address", "Địa chỉ cụ thể có vẻ không khớp với Phường/Xã đã chọn.");
         }
 
         if (isBlank(province) || isBlank(provinceCode)) {
             errors.put("location", "Vui lòng chọn Tỉnh/TP.");
         } else if (isBlank(wardName) || isBlank(wardCode)) {
             errors.put("location", "Vui lòng chọn Phường/Xã sau khi chọn Tỉnh/TP.");
+        } else if (!isBlank(latitude) && !isBlank(longitude) && !isBlank(detectedProvince)
+                && !isSameProvince(province, detectedProvince)) {
+            errors.put(
+                    "location",
+                    "Vị trí hiện tại không khớp với Tỉnh/TP đã chọn. Vị trí phát hiện: " + detectedProvince
+            );
         }
 
         Set<String> validPaymentMethods = Set.of("COD", "VNPAY");
