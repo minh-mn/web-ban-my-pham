@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;600;800&display=swap');
 /* =========================================================
    DESIGN TOKENS
 ========================================================= */
@@ -23,7 +24,8 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  font-family: "Inter", sans-serif;
+  /* Font này hỗ trợ tiếng Việt cực tốt, không lỗi dấu */
+  font-family: 'Be Vietnam Pro', sans-serif;
 }
 
 body {
