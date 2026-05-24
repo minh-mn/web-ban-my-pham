@@ -767,4 +767,33 @@ public class CouponDAO {
     private boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
     }
+
+    public List<Coupon> findAllActiveCoupons() {
+        List<Coupon> coupons = new ArrayList<>();
+
+        String sql = """
+    SELECT id, code, discount_percent, max_discount_amount,
+           max_uses, used_count, is_active, start_date, end_date,
+           type, description, min_order_amount, min_rank_code
+    FROM store_coupon
+    WHERE is_active = 1
+      AND (start_date IS NULL OR start_date <= CURDATE())
+      AND (end_date IS NULL OR end_date >= CURDATE())
+    ORDER BY discount_percent DESC, id DESC
+    """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet resultSet = statement.executeQuery()) {
+
+            while (resultSet.next()) {
+                coupons.add(mapRow(resultSet));
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("CouponDAO.findAllActiveCoupons error", e);
+        }
+
+        return coupons;
+    }
 }
