@@ -7,6 +7,7 @@ import java.util.Map;
 
 import com.webshop.app.dao.CouponDAO;
 import com.webshop.app.model.CartItem;
+import com.webshop.app.model.Coupon;
 import com.webshop.app.model.User;
 import com.webshop.app.service.CheckoutService;
 import com.webshop.app.utils.CartUtil;
@@ -29,14 +30,12 @@ public class AjaxApplyCouponServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
-
         processRequest(req, resp);
     }
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
-
         processRequest(req, resp);
     }
 
@@ -51,6 +50,7 @@ public class AjaxApplyCouponServlet extends HttpServlet {
         User loggedInUser = (User) session.getAttribute("user");
 
         if (loggedInUser == null || loggedInUser.getId() <= 0) {
+            clearCheckoutCoupon(session);
             writeJson(
                     resp,
                     false,
@@ -61,7 +61,7 @@ public class AjaxApplyCouponServlet extends HttpServlet {
             return;
         }
 
-        String code = normalizeCouponCode(req.getParameter("code"));
+        String code = getCouponCodeFromRequest(req);
 
         if (code.isBlank()) {
             clearCheckoutCoupon(session);
@@ -76,86 +76,108 @@ public class AjaxApplyCouponServlet extends HttpServlet {
         }
 
         /*
-         * Lấy giỏ hàng để tính thử discount.
-         * Ưu tiên selected cart ở checkout; nếu không có thì fallback về full cart.
+         * BƯỚC 1: Phải kiểm tra mã có tồn tại trong database trước.
+         * Nếu không có bước này, mã nhập bừa vẫn có thể bị frontend hiểu nhầm là thành công.
          */
-        Map<String, CartItem> cart = getCouponCart(session);
-        BigDecimal subTotal = calculateSubtotal(cart);
+        Coupon coupon = couponDAO.findByCode(code);
 
-        /*
-         * Nếu có giỏ hàng thì đây là hành động apply coupon thật sự.
-         * Phải kiểm tra theo:
-         * - coupon active / còn hạn / còn lượt
-         * - min_order_amount
-         * - min_rank_code của user hiện tại
-         */
-        if (subTotal.compareTo(BigDecimal.ZERO) > 0) {
-            BigDecimal discount = checkoutService.calculateCouponDiscount(
-                    loggedInUser.getId(),
-                    code,
-                    subTotal
-            );
-
-            if (discount == null || discount.compareTo(BigDecimal.ZERO) <= 0) {
-                clearCheckoutCoupon(session);
-
-                writeJson(
-                        resp,
-                        false,
-                        "Mã giảm giá không hợp lệ, đã hết hạn, hết lượt dùng, đơn chưa đủ tối thiểu hoặc hạng thành viên chưa phù hợp.",
-                        BigDecimal.ZERO,
-                        code
-                );
-                return;
-            }
-
-            /*
-             * Lưu mã vào ví user.
-             * Nếu user đã lưu trước đó, INSERT IGNORE trả về false nhưng coupon vẫn hợp lệ,
-             * nên vẫn cho apply vào checkout.
-             */
-            couponDAO.saveVoucherToUserCollection(loggedInUser.getId(), code);
-
-            session.setAttribute(SESSION_CHECKOUT_COUPON, code);
-            session.setAttribute(SESSION_CHECKOUT_COUPON_DISCOUNT, discount);
-
+        if (coupon == null) {
+            clearCheckoutCoupon(session);
             writeJson(
                     resp,
-                    true,
-                    "Áp dụng mã giảm giá thành công.",
-                    discount,
+                    false,
+                    "Mã khuyến mãi không tồn tại trong hệ thống.",
+                    BigDecimal.ZERO,
                     code
             );
             return;
         }
 
         /*
-         * Nếu chưa có giỏ hàng, xem như user chỉ bấm lưu voucher vào ví.
-         * Không kiểm tra min_order_amount tại đây vì chưa có tổng đơn hàng.
+         * BƯỚC 2: Lấy giỏ hàng để kiểm tra điều kiện đơn hàng.
          */
-        boolean saved = couponDAO.saveVoucherToUserCollection(loggedInUser.getId(), code);
+        Map<String, CartItem> cart = getCouponCart(session);
+        BigDecimal subTotal = calculateSubtotal(cart);
 
-        if (saved) {
+        if (subTotal.compareTo(BigDecimal.ZERO) <= 0) {
+            clearCheckoutCoupon(session);
             writeJson(
                     resp,
-                    true,
-                    "Lưu mã giảm giá thành công.",
+                    false,
+                    "Giỏ hàng đang trống, không thể áp dụng mã giảm giá.",
                     BigDecimal.ZERO,
                     code
             );
-        } else {
-            /*
-             * INSERT IGNORE có thể trả về false khi mã đã được lưu trước đó.
-             * Vẫn trả success để frontend không báo lỗi sai cho user.
-             */
-            writeJson(
-                    resp,
-                    true,
-                    "Mã giảm giá đã có trong ví của bạn hoặc đã được lưu trước đó.",
-                    BigDecimal.ZERO,
-                    code
-            );
+            return;
         }
+
+        /*
+         * BƯỚC 3: Kiểm tra trạng thái mã:
+         * - active
+         * - còn hạn
+         * - còn lượt
+         * - đạt giá trị đơn tối thiểu
+         */
+        String invalidReason = couponDAO.getCouponInvalidReason(coupon, subTotal);
+
+        if (invalidReason != null && !invalidReason.isBlank()) {
+            clearCheckoutCoupon(session);
+            writeJson(
+                    resp,
+                    false,
+                    invalidReason,
+                    BigDecimal.ZERO,
+                    code
+            );
+            return;
+        }
+
+        /*
+         * BƯỚC 4: Tính tiền giảm.
+         */
+        BigDecimal discount = checkoutService.calculateCouponDiscount(
+                loggedInUser.getId(),
+                code,
+                subTotal
+        );
+
+        if (discount == null || discount.compareTo(BigDecimal.ZERO) <= 0) {
+            clearCheckoutCoupon(session);
+            writeJson(
+                    resp,
+                    false,
+                    "Mã khuyến mãi không thể áp dụng cho đơn hàng này.",
+                    BigDecimal.ZERO,
+                    code
+            );
+            return;
+        }
+
+        /*
+         * BƯỚC 5: Mã hợp lệ thật sự thì mới lưu session.
+         */
+        couponDAO.saveVoucherToUserCollection(loggedInUser.getId(), code);
+
+        session.setAttribute(SESSION_CHECKOUT_COUPON, code);
+        session.setAttribute(SESSION_CHECKOUT_COUPON_DISCOUNT, discount);
+
+        writeJson(
+                resp,
+                true,
+                "Áp dụng mã giảm giá thành công.",
+                discount,
+                code
+        );
+    }
+
+    private String getCouponCodeFromRequest(HttpServletRequest req) {
+        String code = req.getParameter("code");
+
+        if (code == null || code.trim().isEmpty()) {
+            code = req.getParameter("couponCode");
+        }
+
+        return normalizeCouponCode(code);
     }
 
     private Map<String, CartItem> getCouponCart(HttpSession session) {
@@ -206,7 +228,12 @@ public class AjaxApplyCouponServlet extends HttpServlet {
 
         StringBuilder json = new StringBuilder();
         json.append("{");
+
+        /*
+         * Trả cả success và ok để JSP/JS dùng key nào cũng không bị lệch.
+         */
         json.append("\"success\":").append(success).append(",");
+        json.append("\"ok\":").append(success).append(",");
         json.append("\"message\":\"").append(escapeJson(message)).append("\",");
         json.append("\"discount\":").append(safeDiscount.setScale(0, RoundingMode.HALF_UP).toPlainString());
 
