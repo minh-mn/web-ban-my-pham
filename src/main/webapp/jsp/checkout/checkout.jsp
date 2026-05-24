@@ -1090,6 +1090,12 @@
                    name="shippingFee"
                    value="0">
           </div>
+
+          <div class="field-error" id="shippingMethodError">
+            <c:if test="${not empty errors.shippingMethod}">
+              <c:out value="${errors.shippingMethod}" />
+            </c:if>
+          </div>
         </div>
 
         <!-- PAYMENT METHOD -->
@@ -2442,12 +2448,52 @@
   (function () {
     const FREE_SHIP_THRESHOLD = 500000;
 
+    const SHIPPING_RULES = {
+      HCM: {
+        ECONOMY: {
+          fee: 20000,
+          label: "20.000đ",
+          description: "Nội thành TP.HCM: 3 - 5 ngày"
+        },
+        FAST: {
+          fee: 35000,
+          label: "35.000đ",
+          description: "Nội thành TP.HCM: 1 - 3 ngày"
+        },
+        EXPRESS: {
+          fee: 50000,
+          label: "50.000đ",
+          description: "Hỏa tốc trong ngày, chỉ áp dụng TP.HCM"
+        }
+      },
+      OTHER: {
+        ECONOMY: {
+          fee: 35000,
+          label: "35.000đ",
+          description: "Ngoại tỉnh: 3 - 5 ngày"
+        },
+        FAST: {
+          fee: 50000,
+          label: "50.000đ",
+          description: "Ngoại tỉnh: 1 - 3 ngày"
+        },
+        EXPRESS: {
+          fee: 0,
+          label: "Không hỗ trợ",
+          description: "Hỏa tốc chỉ áp dụng cho khu vực TP.HCM",
+          disabled: true
+        }
+      }
+    };
+
     const provinceInput = document.getElementById("provinceInput");
     const wardInput = document.getElementById("wardInput");
 
+    const deliveryBox = document.getElementById("deliveryBox");
     const deliveryEmpty = document.getElementById("deliveryEmpty");
     const deliveryOptions = document.getElementById("deliveryOptions");
     const freeshipNote = document.getElementById("freeshipNote");
+    const shippingMethodError = document.getElementById("shippingMethodError");
 
     const shippingFeeInput = document.getElementById("shippingFeeInput");
     const summaryShippingFee = document.getElementById("summaryShippingFee");
@@ -2465,28 +2511,45 @@
       return new Intl.NumberFormat("vi-VN").format(Math.round(Number(value || 0))) + "đ";
     }
 
-    function isHcmCity(provinceName) {
-      const value = String(provinceName || "").toLowerCase();
+    function normalizeText(value) {
+      return String(value || "")
+              .trim()
+              .toLowerCase()
+              .normalize("NFD")
+              .replace(/[\u0300-\u036f]/g, "");
+    }
 
-      return value.includes("hồ chí minh")
-              || value.includes("ho chi minh")
+    function isHcmCity(provinceName) {
+      const value = normalizeText(provinceName);
+
+      return value.includes("ho chi minh")
               || value.includes("tp. hcm")
+              || value.includes("tp hcm")
               || value.includes("tphcm")
-              || value.includes("thành phố hồ chí minh");
+              || value.includes("thanh pho ho chi minh");
+    }
+
+    function getShippingArea() {
+      const province = provinceInput ? provinceInput.value.trim() : "";
+      return isHcmCity(province) ? "HCM" : "OTHER";
     }
 
     function hasValidLocation() {
       const province = provinceInput ? provinceInput.value.trim() : "";
       const ward = wardInput ? wardInput.value.trim() : "";
-
       return province !== "" && ward !== "";
     }
 
-    function getOrderValueAfterVoucher() {
-      const subtotal = parseVndText(summarySubtotal ? summarySubtotal.textContent : "0");
-      const discount = parseVndText(summaryDiscount ? summaryDiscount.textContent : "0");
+    function getSubtotal() {
+      return parseVndText(summarySubtotal ? summarySubtotal.textContent : "0");
+    }
 
-      return Math.max(subtotal - discount, 0);
+    function getDiscount() {
+      return parseVndText(summaryDiscount ? summaryDiscount.textContent : "0");
+    }
+
+    function getOrderValueAfterVoucher() {
+      return Math.max(getSubtotal() - getDiscount(), 0);
     }
 
     function isFreeShipEligible() {
@@ -2502,89 +2565,90 @@
       return selected ? selected.value : "ECONOMY";
     }
 
-    function calculateShippingFeeByMethod(method, provinceName) {
-      const hcm = isHcmCity(provinceName);
+    function getRule(method) {
+      const area = getShippingArea();
+      return (SHIPPING_RULES[area] && SHIPPING_RULES[area][method])
+              ? SHIPPING_RULES[area][method]
+              : SHIPPING_RULES.HCM.ECONOMY;
+    }
 
-      if (method === "ECONOMY") {
-        return hcm ? 20000 : 35000;
+    function clearShippingError() {
+      if (shippingMethodError) {
+        shippingMethodError.textContent = "";
       }
 
-      if (method === "FAST") {
-        return hcm ? 35000 : 50000;
+      if (deliveryBox) {
+        deliveryBox.classList.remove("is-invalid");
+      }
+    }
+
+    function setShippingError(message) {
+      if (shippingMethodError) {
+        shippingMethodError.textContent = message || "";
       }
 
-      if (method === "EXPRESS") {
-        // Hỏa tốc chỉ áp dụng nội thành / TP.HCM.
-        return hcm ? 50000 : 0;
+      if (deliveryBox) {
+        deliveryBox.classList.toggle("is-invalid", !!message);
       }
-
-      return hcm ? 20000 : 35000;
     }
 
     function updateShippingMethodLabels() {
-      const province = provinceInput ? provinceInput.value.trim() : "";
-      const hcm = isHcmCity(province);
       const validLocation = hasValidLocation();
+      const freeship = validLocation && isFreeShipEligible();
+      let checkedInput = getSelectedShippingInput();
 
       document.querySelectorAll("input[name='shippingMethod']").forEach(function (input) {
         const option = input.closest(".delivery-option");
         const feeEl = option ? option.querySelector(".delivery-fee") : null;
         const descEl = option ? option.querySelector(".delivery-info small") : null;
+        const rule = getRule(input.value);
 
         if (!option || !feeEl) {
           return;
         }
 
-        option.classList.remove("is-disabled");
         input.disabled = false;
+        option.classList.remove("is-disabled");
 
         if (!validLocation) {
+          feeEl.textContent = rule.label;
+          if (descEl) {
+            descEl.textContent = rule.description;
+          }
           return;
         }
 
-        if (input.value === "ECONOMY") {
-          feeEl.textContent = hcm ? "20.000đ" : "35.000đ";
+        if (rule.disabled) {
+          feeEl.textContent = rule.label;
           if (descEl) {
-            descEl.textContent = hcm ? "Thời gian dự kiến: 3 - 5 ngày" : "Ngoại tỉnh: 3 - 5 ngày";
+            descEl.textContent = rule.description;
           }
+          input.disabled = true;
+          option.classList.add("is-disabled");
+
+          if (input.checked) {
+            checkedInput = document.querySelector("input[name='shippingMethod'][value='ECONOMY']");
+          }
+          return;
         }
 
-        if (input.value === "FAST") {
-          feeEl.textContent = hcm ? "35.000đ" : "50.000đ";
-          if (descEl) {
-            descEl.textContent = hcm ? "Thời gian dự kiến: 1 - 3 ngày" : "Ngoại tỉnh: 1 - 3 ngày";
-          }
-        }
-
-        if (input.value === "EXPRESS") {
-          if (hcm) {
-            feeEl.textContent = "50.000đ";
-            if (descEl) {
-              descEl.textContent = "Giao trong ngày, ưu tiên nội thành";
-            }
-          } else {
-            feeEl.textContent = "Không hỗ trợ";
-            if (descEl) {
-              descEl.textContent = "Chỉ áp dụng cho khu vực TP.HCM";
-            }
-
-            input.disabled = true;
-            option.classList.add("is-disabled");
-
-            if (input.checked) {
-              const economy = document.querySelector("input[name='shippingMethod'][value='ECONOMY']");
-              if (economy) {
-                economy.checked = true;
-              }
-            }
-          }
+        feeEl.textContent = freeship ? "Miễn phí" : rule.label;
+        if (descEl) {
+          descEl.textContent = freeship
+                  ? "Đơn hàng đạt điều kiện miễn phí vận chuyển"
+                  : rule.description;
         }
       });
+
+      if (checkedInput && checkedInput.disabled) {
+        const economy = document.querySelector("input[name='shippingMethod'][value='ECONOMY']");
+        if (economy) {
+          economy.checked = true;
+        }
+      }
     }
 
     function calculateShippingFee() {
-      const province = provinceInput ? provinceInput.value.trim() : "";
-
       if (!hasValidLocation()) {
         return 0;
       }
@@ -2593,14 +2657,20 @@
         return 0;
       }
 
-      return calculateShippingFeeByMethod(getSelectedShippingMethod(), province);
+      const method = getSelectedShippingMethod();
+      const rule = getRule(method);
+
+      if (rule.disabled) {
+        return 0;
+      }
+
+      return Number(rule.fee || 0);
     }
 
     function updateCheckoutTotal() {
-      const subtotal = parseVndText(summarySubtotal ? summarySubtotal.textContent : "0");
-      const discount = parseVndText(summaryDiscount ? summaryDiscount.textContent : "0");
+      const subtotal = getSubtotal();
+      const discount = getDiscount();
       const shippingFee = Number(shippingFeeInput ? shippingFeeInput.value : 0) || 0;
-
       const total = Math.max(subtotal - discount + shippingFee, 0);
 
       if (summaryTotal) {
@@ -2609,9 +2679,11 @@
     }
 
     function updateShippingDisplay() {
+      const validLocation = hasValidLocation();
+
       updateShippingMethodLabels();
 
-      if (!hasValidLocation()) {
+      if (!validLocation) {
         if (deliveryEmpty) {
           deliveryEmpty.classList.remove("hidden");
         }
@@ -2632,6 +2704,7 @@
           shippingFeeInput.value = "0";
         }
 
+        clearShippingError();
         updateCheckoutTotal();
         return;
       }
@@ -2642,6 +2715,19 @@
 
       if (deliveryOptions) {
         deliveryOptions.classList.remove("hidden");
+      }
+
+      const method = getSelectedShippingMethod();
+      const selectedRule = getRule(method);
+
+      if (selectedRule.disabled) {
+        const economy = document.querySelector("input[name='shippingMethod'][value='ECONOMY']");
+        if (economy) {
+          economy.checked = true;
+        }
+        setShippingError("Hỏa tốc chỉ hỗ trợ khu vực TP.HCM. Hệ thống đã chuyển về Giao hàng tiết kiệm.");
+      } else {
+        clearShippingError();
       }
 
       const freeship = isFreeShipEligible();
@@ -2657,6 +2743,9 @@
 
       if (freeshipNote) {
         freeshipNote.classList.toggle("hidden", !freeship);
+        if (freeship) {
+          freeshipNote.textContent = "🎉 Đơn hàng sau voucher đạt từ " + formatVnd(FREE_SHIP_THRESHOLD) + ", phí vận chuyển = 0đ.";
+        }
       }
 
       updateCheckoutTotal();
@@ -2667,6 +2756,7 @@
     });
 
     window.updateShippingFeeByLocation = updateShippingDisplay;
+    window.updateCheckoutTotalWithShipping = updateCheckoutTotal;
 
     updateShippingDisplay();
   })();
