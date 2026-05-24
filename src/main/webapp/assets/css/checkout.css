@@ -1512,4 +1512,50 @@ body.coupon-modal-open {
 		font-size: 9.5px !important;
 	}
 }
+/* =========================================================
+   MANUAL COUPON INPUT - MỤC 72
+   Chỉ cho áp dụng mã có trong hệ thống
+========================================================= */
+
+.coupon-input-row input.is-valid {
+	border-color: #16a34a !important;
+	background: #f0fdf4 !important;
+	box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.08) !important;
+}
+
+.coupon-input-row input.is-invalid {
+	border-color: #ef4444 !important;
+	background: #fff1f2 !important;
+	box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.08) !important;
+}
+
+.coupon-input-row input.is-warning {
+	border-color: #f59e0b !important;
+	background: #fffbeb !important;
+	box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.08) !important;
+}
+
+.coupon-message.warning {
+	color: #b45309;
+}
+
+.coupon-message.success {
+	color: #15803d;
+}
+
+.coupon-message.error {
+	color: #dc2626;
+}
+
+#applyCouponBtn:disabled {
+	background: #e8a8bd !important;
+	cursor: not-allowed !important;
+	box-shadow: none !important;
+}
+
+#applyCouponBtn:not(:disabled) {
+	background: linear-gradient(180deg, #df4d96 0%, #d63384 100%) !important;
+	cursor: pointer !important;
+	box-shadow: 0 10px 24px rgba(214, 51, 132, 0.22);
+}
 
