@@ -12,15 +12,19 @@ public final class UploadConfig {
      * PHYSICAL UPLOAD DIRECTORY
      * =========================
      *
-     * File ảnh thật lưu trong:
+     * File ảnh/file upload thật lưu trong:
      * MyCosmeticShopUploads/
      *
-     * Database KHÔNG lưu đường dẫn vật lý.
-     * Database chỉ lưu URL dạng:
+     * Database KHÔNG lưu đường dẫn vật lý kiểu:
+     * D:/...
+     * C:/...
+     *
+     * Database chỉ lưu URL public dạng:
      *
      * /uploads/banner/...
      * /uploads/product/...
      * /uploads/product/gallery/...
+     * /uploads/policy/...
      */
     public static final Path BASE_DIR = Paths.get(
             System.getProperty(
