@@ -658,6 +658,7 @@ public class CheckoutServlet extends HttpServlet {
         req.setAttribute("formLongitude", trim(req.getParameter("longitude")));
         req.setAttribute("formDetectedProvince", trim(req.getParameter("detectedProvince")));
         req.setAttribute("formDetectedAddress", trim(req.getParameter("detectedAddress")));
+        req.setAttribute("formMapConfirmed", trim(req.getParameter("mapConfirmed")));
 
         req.setAttribute("formShippingMethod",
                 normalizeShippingMethod(req.getParameter("shippingMethod")));
@@ -714,8 +715,10 @@ public class CheckoutServlet extends HttpServlet {
     private boolean hasVerifiedCurrentLocation(String latitude,
                                                String longitude,
                                                String detectedProvince,
-                                               String selectedProvince) {
-        return isValidCoordinateValue(latitude)
+                                               String selectedProvince,
+                                               String mapConfirmed) {
+        return "true".equalsIgnoreCase(trim(mapConfirmed))
+                && isValidCoordinateValue(latitude)
                 && isValidCoordinateValue(longitude)
                 && !isBlank(detectedProvince)
                 && isSameProvince(selectedProvince, detectedProvince);
@@ -1026,6 +1029,7 @@ public class CheckoutServlet extends HttpServlet {
         String latitude = trim(req.getParameter("latitude"));
         String longitude = trim(req.getParameter("longitude"));
         String detectedProvince = trim(req.getParameter("detectedProvince"));
+        String mapConfirmed = trim(req.getParameter("mapConfirmed"));
 
         String paymentMethod = trim(req.getParameter("paymentMethod"));
         String shippingMethod = normalizeShippingMethod(req.getParameter("shippingMethod"));
@@ -1052,7 +1056,8 @@ public class CheckoutServlet extends HttpServlet {
                 latitude,
                 longitude,
                 detectedProvince,
-                province
+                province,
+                mapConfirmed
         );
 
         if (isBlank(address)) {
@@ -1064,7 +1069,7 @@ public class CheckoutServlet extends HttpServlet {
         } else if (!hasVerifiedCurrentLocation && isWeakManualAddress(address)) {
             errors.put(
                     "address",
-                    "Vui lòng nhập rõ số nhà, hẻm, tổ/khu phố/ấp/xã, tên đường hoặc khu vực giao hàng."
+                    "Vui lòng nhập rõ số nhà, hẻm, tổ/khu phố/ấp/xã, tên đường hoặc chọn vị trí trên bản đồ để xác minh."
             );
         } else if (isAddressProvinceConflict(address, province)) {
             errors.put("address", "Địa chỉ cụ thể không khớp với Tỉnh/TP đã chọn.");
