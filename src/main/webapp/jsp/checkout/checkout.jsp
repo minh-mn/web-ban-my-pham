@@ -3,13 +3,13 @@
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
-<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/checkout.css?v=20260523_manual_coupon_validation">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/checkout.css?v=20260524_best_coupon_actual_discount">
 
 <style>
   /* =========================================================
      CHECKOUT PAGE OVERRIDES
      Tone: hồng thương hiệu dịu, chữ xanh đen, nền sạch
-     ========================================================= */
+  ========================================================= */
 
   :root {
     --checkout-brand: #d63384;
@@ -37,7 +37,7 @@
     font-family: "Inter", "Segoe UI", Roboto, Arial, sans-serif;
   }
 
-  /* ================= BUTTON STATE: NHẠT / ĐẬM ================= */
+  /* ================= BUTTON STATE ================= */
 
   .btn-apply-coupon,
   .btn-place-order {
@@ -71,7 +71,7 @@
     transform: translateY(-1px);
   }
 
-  /* ================= DELIVERY OPTIONS + FREESHIP ================= */
+  /* ================= DELIVERY OPTIONS ================= */
 
   .delivery-empty {
     color: var(--checkout-muted);
@@ -227,7 +227,11 @@
     color: #dc2626 !important;
   }
 
-  /* ================= COUPON MODAL - 1 LIST / BEST SUGGESTION ================= */
+  .coupon-message.warning {
+    color: #b45309 !important;
+  }
+
+  /* ================= COUPON MODAL ================= */
 
   .coupon-modal {
     position: fixed;
@@ -759,7 +763,6 @@
     }
   }
 
-
   /* ================= MANUAL COUPON INPUT VALIDATION ================= */
 
   .coupon-input-row input.is-valid {
@@ -778,18 +781,6 @@
     border-color: #f59e0b !important;
     background: #fffbeb !important;
     box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.08) !important;
-  }
-
-  .coupon-message.warning {
-    color: #b45309 !important;
-  }
-
-  .coupon-message.success {
-    color: #15803d !important;
-  }
-
-  .coupon-message.error {
-    color: #dc2626 !important;
   }
 </style>
 
@@ -892,7 +883,6 @@
             <h2>Thông tin giao hàng</h2>
           </div>
 
-          <!-- FULL NAME -->
           <div class="checkout-field">
             <label for="fullName">Họ và tên</label>
 
@@ -911,7 +901,6 @@
             </div>
           </div>
 
-          <!-- PHONE -->
           <div class="checkout-field phone-field">
             <label for="phone">Số điện thoại</label>
 
@@ -935,7 +924,6 @@
             </div>
           </div>
 
-          <!-- COUNTRY -->
           <div class="checkout-field">
             <label for="country">Quốc gia</label>
 
@@ -946,7 +934,6 @@
                    readonly>
           </div>
 
-          <!-- ADDRESS -->
           <div class="checkout-field">
             <label for="address">Địa chỉ, tên đường</label>
 
@@ -1124,7 +1111,6 @@
               ${empty param.paymentMethod || param.paymentMethod == 'COD' ? 'checked' : ''}>
 
               <span class="payment-dot"></span>
-
               <span class="payment-icon">💵</span>
 
               <span class="payment-text">
@@ -1140,7 +1126,6 @@
               ${param.paymentMethod == 'VNPAY' ? 'checked' : ''}>
 
               <span class="payment-dot"></span>
-
               <span class="payment-icon">💳</span>
 
               <span class="payment-text">
@@ -1156,7 +1141,6 @@
             </c:if>
           </div>
         </div>
-
       </div>
 
       <!-- ================= RIGHT COLUMN ================= -->
@@ -1353,7 +1337,6 @@
         </div>
 
       </div>
-
     </form>
   </div>
 </section>
@@ -1392,12 +1375,18 @@
       </c:choose>
 
       <div class="coupon-list" id="checkoutCouponList">
-
         <c:choose>
           <c:when test="${not empty modalCoupons}">
             <c:forEach var="coupon" items="${modalCoupons}">
+
+              <c:set var="serverEstimatedDiscount"
+                     value="${not empty couponEstimatedDiscountMap ? couponEstimatedDiscountMap[coupon.code] : 0}" />
+
+              <c:set var="serverUsable"
+                     value="${not empty couponUsableMap ? couponUsableMap[coupon.code] : true}" />
+
               <button type="button"
-                      class="coupon-item js-select-coupon"
+                      class="coupon-item js-select-coupon ${serverUsable ? 'is-usable' : 'is-disabled'} ${coupon.code == bestCouponCode ? 'is-best' : ''}"
                       data-code="${fn:escapeXml(coupon.code)}"
                       data-percent="${coupon.discountPercent}"
                       data-max-discount="${empty coupon.maxDiscountAmount ? 0 : coupon.maxDiscountAmount}"
@@ -1405,7 +1394,9 @@
                       data-active="${coupon.active}"
                       data-used-count="${coupon.usedCount}"
                       data-max-uses="${coupon.maxUses}"
-                      data-end-date="${coupon.endDate}">
+                      data-end-date="${coupon.endDate}"
+                      data-server-estimated-discount="${empty serverEstimatedDiscount ? 0 : serverEstimatedDiscount}"
+                      data-server-usable="${serverUsable}">
 
                 <span class="coupon-best-badge">Tốt nhất</span>
 
@@ -1464,7 +1455,6 @@
             </div>
           </c:otherwise>
         </c:choose>
-
       </div>
     </div>
 
@@ -1481,7 +1471,6 @@
     </div>
   </div>
 </div>
-
 
 <!-- ================= SYSTEM COUPON CODES FOR MANUAL INPUT ================= -->
 <script>
@@ -1608,6 +1597,20 @@
     function estimateDiscount(item, subtotal) {
       const percent = parseNumber(item.dataset.percent);
       const maxDiscount = parseNumber(item.dataset.maxDiscount);
+      const minOrder = parseNumber(item.dataset.minOrder);
+
+      /*
+       * Quan trọng:
+       * Mã chưa đạt đơn tối thiểu thì không được tính là tốt nhất.
+       */
+      if (subtotal < minOrder) {
+        return 0;
+      }
+
+      if (percent <= 0) {
+        return 0;
+      }
+
       const rawDiscount = subtotal * percent / 100;
 
       if (maxDiscount > 0) {
@@ -1904,7 +1907,11 @@
 
     if (couponInput) {
       couponInput.addEventListener("input", function () {
-        /* Người dùng đang gõ mã thủ công: không cập nhật nút Chọn mã. */
+        /*
+         * Người dùng đang gõ mã thủ công:
+         * - Không cập nhật nút Chọn mã.
+         * - Không báo lỗi khi đang gõ.
+         */
         if (normalizeCode(couponInput.value) !== confirmedCouponCode) {
           hideCouponMessage();
         }
@@ -2119,7 +2126,7 @@
       }
 
       /*
-       * UX mới:
+       * UX đúng:
        * - Khi đang gõ: không hiện lỗi, không hiện xanh.
        * - Chỉ khi bấm Áp dụng mới kiểm tra và báo lỗi.
        */
@@ -2207,7 +2214,6 @@
       });
 
       couponInput.addEventListener("blur", function () {
-        /* Không báo lỗi khi người dùng chỉ mới rời ô nhập. Lỗi chỉ hiện sau khi bấm Áp dụng. */
         validateManualCouponCode(false);
       });
     }
@@ -2264,6 +2270,11 @@
       return new Intl.NumberFormat("vi-VN").format(Math.round(Number(value || 0))) + "đ";
     }
 
+    function parseVndText(text) {
+      if (!text) return 0;
+      return Number(String(text).replace(/[^\d]/g, "")) || 0;
+    }
+
     function setCouponMessage(message, isError) {
       if (!couponMessage) return;
 
@@ -2279,6 +2290,17 @@
       return String(value || "").trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "");
     }
 
+    function updateTotalByCurrentSummary() {
+      const subtotal = parseVndText(summarySubtotal ? summarySubtotal.textContent : "0");
+      const discount = parseVndText(summaryDiscount ? summaryDiscount.textContent : "0");
+      const shippingFeeInput = document.getElementById("shippingFeeInput");
+      const shippingFee = Number(shippingFeeInput ? shippingFeeInput.value : 0) || 0;
+
+      if (summaryTotal) {
+        summaryTotal.textContent = formatVnd(Math.max(subtotal - discount + shippingFee, 0));
+      }
+    }
+
     if (applyBtn && couponInput) {
       applyBtn.addEventListener("click", function () {
         const code = normalizeCode(couponInput.value);
@@ -2289,11 +2311,19 @@
           return;
         }
 
-        /* Chỉ lúc bấm Áp dụng mới báo lỗi mã không tồn tại. */
+        /*
+         * Chỉ lúc bấm Áp dụng mới báo lỗi mã không tồn tại.
+         */
         if (window.validateManualCouponCode && !window.validateManualCouponCode(true)) {
           if (window.clearAppliedCouponDisplay) {
             window.clearAppliedCouponDisplay();
           }
+
+          if (summaryDiscount) {
+            summaryDiscount.textContent = formatVnd(0);
+          }
+
+          updateTotalByCurrentSummary();
           return;
         }
 
@@ -2317,6 +2347,16 @@
                       window.clearAppliedCouponDisplay();
                     }
 
+                    if (summaryDiscount) {
+                      summaryDiscount.textContent = formatVnd(0);
+                    }
+
+                    updateTotalByCurrentSummary();
+
+                    if (window.updateShippingFeeByLocation) {
+                      window.updateShippingFeeByLocation();
+                    }
+
                     return;
                   }
 
@@ -2330,6 +2370,8 @@
 
                   if (summaryTotal && data.total !== undefined) {
                     summaryTotal.textContent = formatVnd(data.total);
+                  } else {
+                    updateTotalByCurrentSummary();
                   }
 
                   if (window.setAppliedCouponDisplay) {
@@ -2550,7 +2592,6 @@
       }
 
       if (method === "EXPRESS") {
-        // Hỏa tốc chỉ áp dụng nội thành / TP.HCM.
         return hcm ? 50000 : 0;
       }
 
