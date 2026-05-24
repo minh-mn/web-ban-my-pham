@@ -1,37 +1,34 @@
 package com.webshop.app.config;
 
 import java.io.IOException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public final class UploadConfig {
 
+    private static final String PROJECT_DIR_TOKEN = "$PROJECT_DIR$";
+    private static final String DEFAULT_UPLOAD_FOLDER = "MyCosmeticShopUploads";
+
     /*
      * =========================
      * PHYSICAL UPLOAD DIRECTORY
      * =========================
      *
-     * File ảnh/file upload thật lưu trong:
-     * MyCosmeticShopUploads/
+     * Hỗ trợ 3 cách:
      *
-     * Database KHÔNG lưu đường dẫn vật lý kiểu:
-     * D:/...
-     * C:/...
+     * 1. Dùng VM option đường dẫn tuyệt đối:
+     *    -Dmycosmetic.upload.dir=C:\...\MyCosmeticShop\MyCosmeticShopUploads
      *
-     * Database chỉ lưu URL public dạng:
+     * 2. Dùng VM option có $PROJECT_DIR$:
+     *    -Dmycosmetic.upload.dir=$PROJECT_DIR$/MyCosmeticShopUploads
      *
-     * /uploads/banner/...
-     * /uploads/product/...
-     * /uploads/product/gallery/...
-     * /uploads/policy/...
+     * 3. Không cấu hình gì:
+     *    Tự dò project root rồi dùng:
+     *    {projectRoot}/MyCosmeticShopUploads
      */
-    public static final Path BASE_DIR = Paths.get(
-            System.getProperty(
-                    "mycosmetic.upload.dir",
-                    Paths.get(System.getProperty("user.dir"), "MyCosmeticShopUploads").toString()
-            )
-    ).toAbsolutePath().normalize();
+    public static final Path BASE_DIR = resolveBaseDir();
 
     public static final Path BANNER_DIR = BASE_DIR.resolve("banner");
     public static final Path PRODUCT_DIR = BASE_DIR.resolve("product");
@@ -55,6 +52,107 @@ public final class UploadConfig {
     private UploadConfig() {
     }
 
+    private static Path resolveBaseDir() {
+        String configuredDir = System.getProperty("mycosmetic.upload.dir");
+
+        if (configuredDir != null && !configuredDir.trim().isEmpty()) {
+            String value = configuredDir.trim().replace("\"", "");
+
+            if (value.contains(PROJECT_DIR_TOKEN)) {
+                Path projectRoot = detectProjectRoot();
+
+                if (projectRoot == null) {
+                    throw new IllegalStateException(
+                            "Cannot resolve " + PROJECT_DIR_TOKEN
+                                    + " because project root was not found. "
+                                    + "Please use absolute path for -Dmycosmetic.upload.dir."
+                    );
+                }
+
+                value = value.replace(PROJECT_DIR_TOKEN, projectRoot.toString());
+            }
+
+            return Paths.get(value).toAbsolutePath().normalize();
+        }
+
+        Path projectRoot = detectProjectRoot();
+
+        if (projectRoot != null) {
+            return projectRoot.resolve(DEFAULT_UPLOAD_FOLDER).toAbsolutePath().normalize();
+        }
+
+        return Paths.get(System.getProperty("user.dir"), DEFAULT_UPLOAD_FOLDER)
+                .toAbsolutePath()
+                .normalize();
+    }
+
+    private static Path detectProjectRoot() {
+        /*
+         * Ưu tiên dò từ vị trí class đang chạy.
+         * Khi chạy bằng IntelliJ Gradle exploded artifact, class thường nằm trong:
+         * {project}/build/classes/...
+         * hoặc
+         * {project}/build/...
+         */
+        Path classLocation = getClassLocation();
+
+        Path rootFromClass = findProjectRootUpwards(classLocation);
+        if (rootFromClass != null) {
+            return rootFromClass;
+        }
+
+        /*
+         * Fallback: dò từ user.dir.
+         * Trường hợp của Tomcat thường là apache-tomcat/bin nên có thể không tìm được project.
+         */
+        Path userDir = Paths.get(System.getProperty("user.dir")).toAbsolutePath().normalize();
+
+        return findProjectRootUpwards(userDir);
+    }
+
+    private static Path getClassLocation() {
+        try {
+            URL location = UploadConfig.class
+                    .getProtectionDomain()
+                    .getCodeSource()
+                    .getLocation();
+
+            if (location == null) {
+                return null;
+            }
+
+            return Paths.get(location.toURI()).toAbsolutePath().normalize();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static Path findProjectRootUpwards(Path start) {
+        if (start == null) {
+            return null;
+        }
+
+        Path current = Files.isRegularFile(start) ? start.getParent() : start;
+
+        while (current != null) {
+            boolean hasGradleFile =
+                    Files.exists(current.resolve("build.gradle"))
+                            || Files.exists(current.resolve("build.gradle.kts"))
+                            || Files.exists(current.resolve("settings.gradle"))
+                            || Files.exists(current.resolve("settings.gradle.kts"));
+
+            boolean hasSourceFolder = Files.exists(current.resolve("src"));
+
+            if (hasGradleFile && hasSourceFolder) {
+                return current.toAbsolutePath().normalize();
+            }
+
+            current = current.getParent();
+        }
+
+        return null;
+    }
+
     /*
      * Tạo đủ thư mục upload nếu chưa tồn tại.
      */
@@ -65,6 +163,16 @@ public final class UploadConfig {
             Files.createDirectories(PRODUCT_DIR);
             Files.createDirectories(PRODUCT_GALLERY_DIR);
             Files.createDirectories(POLICY_DIR);
+
+            System.out.println("========== MyCosmetic Upload Path ==========");
+            System.out.println("user.dir = " + System.getProperty("user.dir"));
+            System.out.println("mycosmetic.upload.dir = " + System.getProperty("mycosmetic.upload.dir"));
+            System.out.println("BASE_DIR = " + BASE_DIR);
+            System.out.println("BANNER_DIR = " + BANNER_DIR);
+            System.out.println("PRODUCT_DIR = " + PRODUCT_DIR);
+            System.out.println("PRODUCT_GALLERY_DIR = " + PRODUCT_GALLERY_DIR);
+            System.out.println("POLICY_DIR = " + POLICY_DIR);
+            System.out.println("============================================");
         } catch (IOException e) {
             throw new RuntimeException("Cannot create upload directories at: " + BASE_DIR, e);
         }
@@ -118,12 +226,6 @@ public final class UploadConfig {
      * =========================
      * NORMALIZE EXISTING IMAGE URL
      * =========================
-     *
-     * Dùng khi code nhận ảnh từ form/database để tránh lưu lẫn:
-     * /assets/images/product/...
-     * /assets/images/banner/...
-     * products/...
-     * banners/...
      */
 
     public static String normalizeProductImageUrl(String image) {
@@ -145,25 +247,16 @@ public final class UploadConfig {
 
         String value = image.trim().replace("\\", "/");
 
-        /*
-         * Giữ nguyên URL ngoài hoặc data URI.
-         */
         if (value.startsWith("http://")
                 || value.startsWith("https://")
                 || value.startsWith("data:")) {
             return value;
         }
 
-        /*
-         * Nếu đã đúng chuẩn /uploads/... thì giữ nguyên.
-         */
         if (value.startsWith(UPLOAD_URL_PREFIX + "/")) {
             return value;
         }
 
-        /*
-         * Xóa các prefix cũ.
-         */
         value = value.replaceFirst("^/assets/images/products/gallery/", "");
         value = value.replaceFirst("^/assets/images/product/gallery/", "");
         value = value.replaceFirst("^assets/images/products/gallery/", "");
@@ -201,9 +294,6 @@ public final class UploadConfig {
 
         String cleaned = fileName.trim().replace("\\", "/");
 
-        /*
-         * Chỉ lấy tên file cuối cùng để tránh path traversal.
-         */
         int lastSlash = cleaned.lastIndexOf("/");
         if (lastSlash >= 0) {
             cleaned = cleaned.substring(lastSlash + 1);
