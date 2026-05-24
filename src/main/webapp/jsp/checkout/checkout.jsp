@@ -3,7 +3,7 @@
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
-<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/checkout.css?v=20260524_map_frame_fixed">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/checkout.css?v=20260524_remove_item_no_validate">
 <link rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
       integrity="sha256-p4NxAoJBhIINfQh3Hh1q8CgFyuzL4P8rNQ3Drx0Kz5E="
@@ -1282,6 +1282,16 @@
              name="csrf_token"
              value="${sessionScope.CSRF_TOKEN}">
 
+      <input type="hidden"
+             id="checkoutActionInput"
+             name="action"
+             value="">
+
+      <input type="hidden"
+             id="checkoutRemoveCartKeyInput"
+             name="removeCartKey"
+             value="">
+
       <!-- ================= LEFT COLUMN ================= -->
       <div class="checkout-left">
 
@@ -1719,12 +1729,13 @@
                         </div>
                       </div>
 
-                      <a href="${pageContext.request.contextPath}/cart/remove?productId=${item.productId}&key=${cartKey}"
-                         class="checkout-remove"
-                         title="Xóa sản phẩm"
-                         onclick="return confirm('Xóa sản phẩm này khỏi đơn thanh toán?');">
+                      <button type="button"
+                              class="checkout-remove js-checkout-remove"
+                              title="Xóa sản phẩm"
+                              data-cart-key="${fn:escapeXml(cartKey)}"
+                              data-checkout-action="remove-item">
                         🗑
-                      </a>
+                      </button>
                     </div>
 
                     <div class="checkout-product-bottom">
@@ -3048,7 +3059,50 @@
     });
 
     if (form) {
+      const checkoutActionInput = document.getElementById("checkoutActionInput");
+      const checkoutRemoveCartKeyInput = document.getElementById("checkoutRemoveCartKeyInput");
+
+      document.querySelectorAll(".js-checkout-remove").forEach(function (button) {
+        button.addEventListener("click", function () {
+          const ok = confirm("Xóa sản phẩm này khỏi đơn thanh toán?");
+
+          if (!ok) {
+            return;
+          }
+
+          if (checkoutActionInput) {
+            checkoutActionInput.value = "remove-item";
+          }
+
+          if (checkoutRemoveCartKeyInput) {
+            checkoutRemoveCartKeyInput.value = button.dataset.cartKey || "";
+          }
+
+          /*
+           * Dùng submit() native để bỏ qua toàn bộ validate frontend.
+           * Xóa hàng hóa chỉ là chỉnh danh sách sản phẩm, không phải đặt hàng.
+           * Backend vẫn nhận action=remove-item và xử lý trước validate đơn hàng.
+           */
+          form.noValidate = true;
+          HTMLFormElement.prototype.submit.call(form);
+        });
+      });
+
       form.addEventListener("submit", function (event) {
+        const currentAction = checkoutActionInput ? checkoutActionInput.value : "";
+
+        if (currentAction === "remove-item") {
+          return;
+        }
+
+        if (checkoutActionInput) {
+          checkoutActionInput.value = "";
+        }
+
+        if (checkoutRemoveCartKeyInput) {
+          checkoutRemoveCartKeyInput.value = "";
+        }
+
         const validFullName = validateFullName();
         const validPhone = validatePhone();
         const validAddress = validateAddress();
