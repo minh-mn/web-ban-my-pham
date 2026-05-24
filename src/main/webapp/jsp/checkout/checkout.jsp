@@ -3,7 +3,11 @@
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
-<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/checkout.css?v=20260523_manual_coupon_validation">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/checkout.css?v=20260524_map_frame_fixed">
+<link rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIINfQh3Hh1q8CgFyuzL4P8rNQ3Drx0Kz5E="
+      crossorigin="">
 
 <style>
   /* =========================================================
@@ -780,6 +784,28 @@
     font-weight: 600;
   }
 
+  .location-detected-hint {
+    display: none;
+    margin-top: 8px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #166534;
+    font-size: 13px;
+    line-height: 1.45;
+    font-weight: 700;
+  }
+
+  .location-detected-hint.show {
+    display: block;
+  }
+
+  .location-detected-hint strong {
+    color: #14532d;
+    font-weight: 900;
+  }
+
 
   /* ================= MANUAL COUPON INPUT VALIDATION ================= */
 
@@ -812,6 +838,416 @@
   .coupon-message.error {
     color: #dc2626 !important;
   }
+
+  /* ================= ADDRESS MAP PICKER ================= */
+
+  .address-map-modal,
+  .address-map-modal *,
+  .leaflet-container,
+  .leaflet-container * {
+    font-family: "Inter", "Segoe UI", Roboto, Arial, sans-serif !important;
+    box-sizing: border-box;
+  }
+
+  .address-map-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 10020;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .address-map-modal.show {
+    display: flex;
+  }
+
+  .address-map-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.58);
+    backdrop-filter: blur(4px);
+  }
+
+  .address-map-dialog {
+    position: relative;
+    z-index: 1;
+    width: min(1080px, calc(100vw - 28px));
+    max-height: min(92vh, 880px);
+    border-radius: 26px;
+    background: #ffffff;
+    overflow: hidden;
+    box-shadow: 0 30px 90px rgba(15, 23, 42, 0.30);
+    border: 1px solid rgba(243, 184, 210, 0.85);
+  }
+
+  .address-map-header {
+    position: relative;
+    min-height: 88px;
+    padding: 22px 78px 18px 28px;
+    border-bottom: 1px solid #f1f5f9;
+    background: linear-gradient(180deg, #ffffff 0%, #fff7fb 100%);
+  }
+
+  .address-map-header h3 {
+    margin: 0;
+    color: var(--checkout-text);
+    font-size: 25px;
+    line-height: 1.25;
+    font-weight: 950;
+    letter-spacing: 0.015em;
+  }
+
+  .address-map-header p {
+    margin: 8px 0 0;
+    color: var(--checkout-text-2);
+    font-size: 15.5px;
+    line-height: 1.55;
+    font-weight: 700;
+  }
+
+  .address-map-close {
+    position: absolute;
+    top: 18px;
+    right: 20px;
+    width: 46px;
+    height: 46px;
+    border: none;
+    border-radius: 50%;
+    background: #fff1f7;
+    color: #b1125b;
+    cursor: pointer;
+    font-size: 25px;
+    line-height: 1;
+    font-weight: 800;
+    transition: 0.18s ease;
+  }
+
+  .address-map-close:hover {
+    background: #ffdce9;
+    transform: rotate(6deg);
+  }
+
+  .address-map-body {
+    padding: 20px 22px 0;
+    background: #ffffff;
+  }
+
+  .address-map-status {
+    min-height: 46px;
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    margin-bottom: 14px;
+    border-radius: 16px;
+    background: #f8fafc;
+    color: var(--checkout-text-2);
+    font-size: 15px;
+    line-height: 1.45;
+    font-weight: 800;
+  }
+
+  .address-map-status.is-error {
+    background: #fff1f2;
+    color: #dc2626;
+  }
+
+  .address-map-status.is-success {
+    background: #ecfdf5;
+    color: #166534;
+  }
+
+  .address-map-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 16px;
+    align-items: stretch;
+  }
+
+  .address-map-left,
+  .address-map-side {
+    min-width: 0;
+  }
+
+  .address-map-canvas {
+    width: 100%;
+    height: min(58vh, 520px);
+    min-height: 410px;
+    border-radius: 20px;
+    overflow: hidden;
+    border: 1px solid #dce3ee;
+    background: #f8fafc;
+  }
+
+  .address-map-side {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .address-map-detected {
+    padding: 16px 16px 14px;
+    border-radius: 18px;
+    border: 1px solid #bbf7d0;
+    background: #f0fdf4;
+    color: #166534;
+    font-size: 15px;
+    line-height: 1.55;
+    font-weight: 760;
+  }
+
+  .address-map-detected-title {
+    margin-bottom: 8px;
+    color: #14532d;
+    font-size: 16px;
+    font-weight: 950;
+  }
+
+  .address-map-detected strong {
+    color: #14532d;
+    font-weight: 950;
+  }
+
+  .address-map-detected small {
+    display: block;
+    margin-top: 8px;
+    color: #3f7f54;
+    font-size: 13.5px;
+    line-height: 1.45;
+    font-weight: 700;
+  }
+
+  .address-map-suggestion-actions {
+    margin-top: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+  }
+
+  .address-map-note {
+    padding: 14px 15px;
+    border-radius: 18px;
+    background: #fff7fb;
+    border: 1px solid #f7c8dd;
+    color: var(--checkout-text-2);
+    font-size: 14.5px;
+    line-height: 1.55;
+    font-weight: 730;
+  }
+
+  .address-map-note strong {
+    color: var(--checkout-brand);
+  }
+
+  .address-map-footer {
+    margin-top: 20px;
+    padding: 17px 22px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 14px;
+    border-top: 1px solid #f1f5f9;
+    background: #ffffff;
+  }
+
+  .address-map-footer-left {
+    display: none !important;
+  }
+
+  .address-map-footer-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .address-map-btn {
+    min-width: 142px;
+    height: 48px;
+    padding: 0 19px;
+    border-radius: 14px;
+    font-size: 15px;
+    font-weight: 900;
+    cursor: pointer;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    color: var(--checkout-text-2);
+    transition: 0.18s ease;
+  }
+
+  .address-map-btn:hover {
+    background: #f8fafc;
+    transform: translateY(-1px);
+  }
+
+  .address-map-btn.suggestion {
+    width: 100%;
+    min-width: 0;
+    border-color: #f2a7cb;
+    background: #fff2f8;
+    color: #b1125b;
+    box-shadow: 0 8px 18px rgba(214, 51, 132, 0.10);
+  }
+
+  .address-map-btn.suggestion:hover {
+    background: #ffe5f0;
+    border-color: var(--checkout-brand);
+  }
+
+  .address-map-btn.primary {
+    border: none;
+    background: linear-gradient(180deg, #df4b93 0%, var(--checkout-brand) 100%);
+    color: #ffffff;
+    box-shadow: 0 12px 24px rgba(214, 51, 132, 0.24);
+  }
+
+  .address-map-btn.primary:hover {
+    background: linear-gradient(180deg, #cf3d84 0%, #bd256f 100%);
+    transform: translateY(-1px);
+  }
+
+  .address-map-btn:disabled {
+    opacity: 0.52;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
+  .custom-red-map-marker {
+    background: transparent;
+    border: none;
+  }
+
+  .custom-red-map-pin {
+    position: relative;
+    width: 44px;
+    height: 54px;
+    filter: drop-shadow(0 12px 12px rgba(220, 38, 38, 0.28));
+    transform: translateY(-3px);
+  }
+
+  .custom-red-map-pin::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 1px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50% 50% 50% 0;
+    background: linear-gradient(135deg, #ff4d6d 0%, #dc2626 58%, #991b1b 100%);
+    border: 3px solid #ffffff;
+    transform: translateX(-50%) rotate(-45deg);
+    box-shadow: 0 6px 16px rgba(220, 38, 38, 0.35);
+  }
+
+  .custom-red-map-pin::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 13px;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: #ffffff;
+    transform: translateX(-50%);
+    box-shadow: inset 0 0 0 2px rgba(220, 38, 38, 0.22);
+  }
+
+  .custom-red-map-pin .pin-pulse {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: 28px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(220, 38, 38, 0.20);
+    transform: translateX(-50%);
+    animation: mapPinPulse 1.8s infinite ease-in-out;
+  }
+
+  .shipping-selected-dot {
+    filter: drop-shadow(0 0 10px rgba(220, 38, 38, 0.45));
+  }
+
+  .leaflet-marker-icon.custom-red-map-marker {
+    z-index: 1000 !important;
+  }
+
+  @keyframes mapPinPulse {
+    0%, 100% {
+      transform: translateX(-50%) scale(0.9);
+      opacity: 0.55;
+    }
+    50% {
+      transform: translateX(-50%) scale(1.25);
+      opacity: 0.22;
+    }
+  }
+
+  body.address-map-open {
+    overflow: hidden;
+  }
+
+  @media (max-width: 900px) {
+    .address-map-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .address-map-canvas {
+      min-height: 340px;
+      height: 48vh;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .address-map-modal {
+      padding: 10px;
+    }
+
+    .address-map-dialog {
+      border-radius: 18px;
+      max-height: 94vh;
+    }
+
+    .address-map-header {
+      padding: 17px 60px 15px 18px;
+    }
+
+    .address-map-header h3 {
+      font-size: 21px;
+    }
+
+    .address-map-header p {
+      font-size: 14px;
+    }
+
+    .address-map-body {
+      padding: 14px 14px 0;
+    }
+
+    .address-map-canvas {
+      min-height: 300px;
+      height: 44vh;
+    }
+
+    .address-map-footer {
+      padding: 14px;
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .address-map-footer-actions {
+      flex-direction: column-reverse;
+      align-items: stretch;
+    }
+
+    .address-map-btn {
+      width: 100%;
+    }
+  }
+
 </style>
 
 
@@ -989,6 +1425,8 @@
               Nhập rõ số nhà, hẻm, tổ/khu phố/ấp/xã, tên đường hoặc khu vực giao hàng.
             </div>
 
+            <div class="location-detected-hint" id="detectedAddressHint"></div>
+
             <input type="hidden"
                    id="latitudeInput"
                    name="latitude"
@@ -1008,6 +1446,11 @@
                    id="detectedAddressInput"
                    name="detectedAddress"
                    value="${not empty requestScope.formDetectedAddress ? requestScope.formDetectedAddress : param.detectedAddress}">
+
+            <input type="hidden"
+                   id="mapConfirmedInput"
+                   name="mapConfirmed"
+                   value="${not empty requestScope.formMapConfirmed ? requestScope.formMapConfirmed : param.mapConfirmed}">
 
             <div class="field-error" id="addressError">
               <c:if test="${not empty errors.address}">
@@ -2009,6 +2452,7 @@
     const longitudeInput = document.getElementById("longitudeInput");
     const detectedProvinceInput = document.getElementById("detectedProvinceInput");
     const detectedAddressInput = document.getElementById("detectedAddressInput");
+    const detectedAddressHint = document.getElementById("detectedAddressHint");
 
     const paymentList = document.getElementById("paymentList");
     const placeOrderBtn = document.getElementById("placeOrderBtn");
@@ -3172,6 +3616,64 @@
   })();
 </script>
 
+
+<!-- ================= ADDRESS MAP PICKER MODAL ================= -->
+<div class="address-map-modal" id="addressMapModal" aria-hidden="true">
+  <div class="address-map-backdrop" data-close-address-map></div>
+
+  <div class="address-map-dialog" role="dialog" aria-modal="true" aria-labelledby="addressMapTitle">
+    <div class="address-map-header">
+      <h3 id="addressMapTitle">Xác nhận vị trí giao hàng</h3>
+      <p>Kéo ghim màu đỏ đến đúng vị trí giao hàng. Kiểm tra địa chỉ gợi ý, chọn dùng địa chỉ gợi ý nếu phù hợp, rồi bấm xác nhận vị trí.</p>
+      <button type="button" class="address-map-close" data-close-address-map aria-label="Đóng">×</button>
+    </div>
+
+    <div class="address-map-body">
+      <div class="address-map-status" id="addressMapStatus">
+        Đang chuẩn bị bản đồ...
+      </div>
+
+      <div class="address-map-layout">
+        <div class="address-map-left">
+          <div class="address-map-canvas" id="addressMap"></div>
+        </div>
+
+        <div class="address-map-side">
+          <div class="address-map-detected" id="addressMapDetected">
+            <div class="address-map-detected-title">Địa chỉ gợi ý từ ghim</div>
+            <div id="addressMapDetectedText">Chưa có địa chỉ phát hiện.</div>
+            <div class="address-map-suggestion-actions">
+              <button type="button"
+                      class="address-map-btn suggestion"
+                      id="useSuggestedAddressBtn"
+                      disabled>
+                Dùng địa chỉ gợi ý
+              </button>
+            </div>
+          </div>
+
+          <div class="address-map-note">
+            <strong>Lưu ý:</strong> địa chỉ từ bản đồ chỉ là gợi ý gần đúng. Bạn nên kiểm tra lại số nhà, hẻm, tổ/khu phố/ấp trước khi đặt hàng.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="address-map-footer">
+      <div class="address-map-footer-actions">
+        <button type="button" class="address-map-btn" data-close-address-map>Hủy</button>
+        <button type="button" class="address-map-btn primary" id="confirmMapLocationBtn" disabled>
+          Xác nhận vị trí
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""></script>
+
 <!-- ================= PROVINCE / WARD SELECTOR ================= -->
 <script>
   (function () {
@@ -3671,7 +4173,7 @@
 
       setSelectedProvince(province);
       setActiveTab("ward");
-      setLoading(wardList, "Đang tự điền Phường/Xã theo vị trí hiện tại...");
+      setLoading(wardList, "Đang xác minh Phường/Xã theo vị trí hiện tại...");
 
       let wards = [];
 
@@ -3692,18 +4194,15 @@
         wardInput.value = "";
         wardCodeInput.value = "";
         locationInput.value = province.name;
-        setEmpty(wardList, "Đã tự điền Tỉnh/TP. Vui lòng kiểm tra và chọn Phường/Xã thủ công.");
+        setEmpty(wardList, "Đã xác minh Tỉnh/TP. Vui lòng kiểm tra và chọn Phường/Xã thủ công.");
       }
 
-      if (streetAddress && addressInput) {
-        addressInput.value = streetAddress;
-        addressInput.classList.remove("is-invalid");
-
-        const addressError = document.getElementById("addressError");
-        if (addressError) {
-          addressError.textContent = "";
-        }
-      }
+      /*
+       * Không tự ghi đè ô Địa chỉ cụ thể bằng kết quả reverse geocoding.
+       * API bản đồ chỉ trả về địa chỉ gần đúng, có thể sai số nhà/đường/khu phố.
+       * Vì vậy hệ thống chỉ tự điền Tỉnh/TP, Phường/Xã và lưu tọa độ;
+       * địa chỉ giao hàng chính vẫn do người dùng nhập hoặc chỉnh lại.
+       */
 
       updateShippingAddress();
       updateDeliveryText();
@@ -3791,7 +4290,7 @@
   })();
 </script>
 
-<!-- ================= CURRENT LOCATION AUTOFILL ================= -->
+<!-- ================= CURRENT LOCATION MAP PICKER ================= -->
 <script>
   (function () {
     const useCurrentLocationBtn = document.getElementById("useCurrentLocationBtn");
@@ -3802,10 +4301,30 @@
     const longitudeInput = document.getElementById("longitudeInput");
     const detectedProvinceInput = document.getElementById("detectedProvinceInput");
     const detectedAddressInput = document.getElementById("detectedAddressInput");
+    const mapConfirmedInput = document.getElementById("mapConfirmedInput");
+    const detectedAddressHint = document.getElementById("detectedAddressHint");
+
+    const modal = document.getElementById("addressMapModal");
+    const mapEl = document.getElementById("addressMap");
+    const mapStatus = document.getElementById("addressMapStatus");
+    const mapDetected = document.getElementById("addressMapDetected");
+    const mapDetectedText = document.getElementById("addressMapDetectedText");
+    const confirmBtn = document.getElementById("confirmMapLocationBtn");
+    const useSuggestedAddressBtn = document.getElementById("useSuggestedAddressBtn");
 
     if (!useCurrentLocationBtn) {
       return;
     }
+
+    let map = null;
+    let marker = null;
+    let selectedDot = null;
+    let currentLat = null;
+    let currentLon = null;
+    let currentGeoData = null;
+    let currentStreetAddress = "";
+    let currentDetectedAddress = "";
+    let currentDetectedProvince = "";
 
     function normalizeText(value) {
       return String(value || "")
@@ -3843,16 +4362,103 @@
       }
     }
 
-    async function reverseGeocode(lat, lon) {
+    function escapeHtml(value) {
+      return String(value || "")
+              .replace(/&/g, "&amp;")
+              .replace(/</g, "&lt;")
+              .replace(/>/g, "&gt;")
+              .replace(/"/g, "&quot;")
+              .replace(/'/g, "&#039;");
+    }
+
+    function setMapStatus(message, type) {
+      if (!mapStatus) return;
+
+      mapStatus.textContent = message || "";
+      mapStatus.classList.remove("is-error", "is-success");
+
+      if (type === "error") {
+        mapStatus.classList.add("is-error");
+      }
+
+      if (type === "success") {
+        mapStatus.classList.add("is-success");
+      }
+    }
+
+    function showDetectedAddressHint(detectedAddress) {
       /*
-       * API miễn phí để demo học tập. Khi deploy thật nên thay bằng Google Maps,
-       * Mapbox, Goong, GHN/GHTK hoặc gọi qua backend để ổn định hơn.
+       * Không hiển thị thêm dòng gợi ý ở ngoài form checkout.
+       * Địa chỉ gợi ý chỉ nằm trong modal bản đồ để tránh rối giao diện.
        */
+      if (!detectedAddressHint) {
+        return;
+      }
+
+      detectedAddressHint.classList.remove("show");
+      detectedAddressHint.textContent = "";
+      detectedAddressHint.innerHTML = "";
+    }
+
+    function showMapDetected(streetAddress, detectedAddress) {
+      const target = mapDetectedText || mapDetected;
+
+      if (!target) return;
+
+      const street = String(streetAddress || "").trim();
+      const full = String(detectedAddress || "").trim();
+
+      if (!street && !full) {
+        target.innerHTML = "Chưa xác định được địa chỉ từ vị trí ghim.";
+
+        if (useSuggestedAddressBtn) {
+          useSuggestedAddressBtn.disabled = true;
+        }
+
+        return;
+      }
+
+      target.innerHTML =
+              "<strong>" + escapeHtml(street || full) + "</strong>"
+              + (street && full && street !== full ? "<small>Đầy đủ: " + escapeHtml(full) + "</small>" : "");
+
+      if (useSuggestedAddressBtn) {
+        useSuggestedAddressBtn.disabled = !(street || full);
+      }
+    }
+
+    function applySuggestedAddressToInput() {
+      const suggestion = String(currentStreetAddress || currentDetectedAddress || "").trim();
+
+      if (!suggestion) {
+        setMapStatus("Chưa có địa chỉ gợi ý để điền vào ô Địa chỉ cụ thể.", "error");
+        return;
+      }
+
+      if (addressInput) {
+        addressInput.value = suggestion;
+        addressInput.classList.remove("is-invalid");
+      }
+
+      setAddressError("");
+      showDetectedAddressHint(suggestion);
+      setMapStatus("Đã điền địa chỉ gợi ý vào ô Địa chỉ cụ thể. Bạn vẫn có thể sửa lại nếu cần.", "success");
+
+      if (window.checkoutLocationSelector && window.checkoutLocationSelector.updateShippingAddress) {
+        window.checkoutLocationSelector.updateShippingAddress();
+      }
+
+      if (window.updateCheckoutButtonsState) {
+        window.updateCheckoutButtonsState();
+      }
+    }
+
+    async function reverseGeocode(lat, lon) {
       const url = "https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat="
               + encodeURIComponent(lat)
               + "&lon="
               + encodeURIComponent(lon)
-              + "&accept-language=vi";
+              + "&accept-language=vi&addressdetails=1&zoom=18";
 
       const response = await fetch(url, {
         method: "GET",
@@ -3981,26 +4587,262 @@
       ]);
     }
 
+    function openMapModal() {
+      if (!modal) return;
+
+      modal.classList.add("show");
+      modal.setAttribute("aria-hidden", "false");
+      document.body.classList.add("address-map-open");
+
+      setTimeout(function () {
+        if (map) {
+          map.invalidateSize();
+        }
+      }, 180);
+    }
+
+    function closeMapModal() {
+      if (!modal) return;
+
+      modal.classList.remove("show");
+      modal.setAttribute("aria-hidden", "true");
+      document.body.classList.remove("address-map-open");
+    }
+
     function resetDetectedLocation() {
       if (latitudeInput) latitudeInput.value = "";
       if (longitudeInput) longitudeInput.value = "";
       if (detectedProvinceInput) detectedProvinceInput.value = "";
       if (detectedAddressInput) detectedAddressInput.value = "";
+      if (mapConfirmedInput) mapConfirmedInput.value = "";
+
+      showDetectedAddressHint("");
       useCurrentLocationBtn.textContent = "📍 Dùng vị trí hiện tại";
+    }
+
+    function updateSelectedDot(lat, lon) {
+      if (!map || !window.L) {
+        return;
+      }
+
+      if (!selectedDot) {
+        selectedDot = L.circleMarker([lat, lon], {
+          radius: 9,
+          color: "#ffffff",
+          weight: 4,
+          fillColor: "#dc2626",
+          fillOpacity: 1,
+          opacity: 1,
+          interactive: false,
+          className: "shipping-selected-dot"
+        }).addTo(map);
+      } else {
+        selectedDot.setLatLng([lat, lon]);
+      }
+    }
+
+    async function updateSelectedPin(lat, lon) {
+      currentLat = lat;
+      currentLon = lon;
+      updateSelectedDot(lat, lon);
+
+      if (confirmBtn) {
+        confirmBtn.disabled = true;
+      }
+
+      setMapStatus("Đang xác định địa chỉ tại vị trí ghim...", "");
+
+      try {
+        const geoData = await reverseGeocode(lat, lon);
+        const address = extractAddressObject(geoData);
+        const streetAddress = buildStreetAddress(address, geoData);
+        const detectedAddress = geoData && geoData.display_name ? geoData.display_name : "";
+        const provinceCandidates = getProvinceCandidates(address);
+        const detectedProvince = provinceCandidates[0] || "";
+
+        currentGeoData = geoData;
+        currentStreetAddress = streetAddress;
+        currentDetectedAddress = detectedAddress;
+        currentDetectedProvince = detectedProvince;
+
+        showMapDetected(streetAddress, detectedAddress);
+
+        if (!detectedProvince) {
+          setMapStatus("Không xác định được Tỉnh/TP từ ghim này. Hãy kéo ghim sang vị trí rõ hơn.", "error");
+          return;
+        }
+
+        setMapStatus("Đã xác định được vị trí. Hãy kiểm tra ghim và bấm xác nhận.", "success");
+
+        if (confirmBtn) {
+          confirmBtn.disabled = false;
+        }
+      } catch (error) {
+        console.error(error);
+        currentGeoData = null;
+        currentStreetAddress = "";
+        currentDetectedAddress = "";
+        currentDetectedProvince = "";
+        showMapDetected("", "");
+        setMapStatus("Không thể lấy địa chỉ từ ghim hiện tại. Vui lòng thử kéo ghim hoặc thử lại sau.", "error");
+      }
+    }
+
+    function ensureMap(lat, lon) {
+      if (!window.L || !mapEl) {
+        throw new Error("Leaflet library is not available");
+      }
+
+      if (!map) {
+        map = L.map(mapEl).setView([lat, lon], 17);
+
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          maxZoom: 19,
+          attribution: "&copy; OpenStreetMap contributors"
+        }).addTo(map);
+
+        const redPinIcon = L.divIcon({
+          className: "custom-red-map-marker",
+          html: '<div class="custom-red-map-pin"><span class="pin-pulse"></span></div>',
+          iconSize: [44, 54],
+          iconAnchor: [22, 53],
+          popupAnchor: [0, -48]
+        });
+
+        marker = L.marker([lat, lon], {
+          icon: redPinIcon,
+          draggable: true,
+          autoPan: true,
+          riseOnHover: true,
+          riseOffset: 700
+        }).addTo(map);
+
+        updateSelectedDot(lat, lon);
+
+        marker.on("dragend", function () {
+          const pos = marker.getLatLng();
+          updateSelectedPin(pos.lat, pos.lng);
+        });
+
+        map.on("click", function (event) {
+          marker.setLatLng(event.latlng);
+          updateSelectedPin(event.latlng.lat, event.latlng.lng);
+        });
+      } else {
+        map.setView([lat, lon], 17);
+        marker.setLatLng([lat, lon]);
+        updateSelectedDot(lat, lon);
+      }
+    }
+
+    async function confirmMapLocation() {
+      if (!currentGeoData || currentLat == null || currentLon == null) {
+        setMapStatus("Chưa có vị trí hợp lệ để xác nhận.", "error");
+        return;
+      }
+
+      if (confirmBtn) {
+        confirmBtn.disabled = true;
+      }
+
+      setMapStatus("Đang điền địa chỉ theo vị trí đã xác nhận...", "");
+
+      const address = extractAddressObject(currentGeoData);
+      const provinceCandidates = getProvinceCandidates(address);
+      const wardCandidates = getWardCandidates(address);
+      const detectedAddress = currentDetectedAddress || "";
+      const streetAddress = currentStreetAddress || "";
+      const detectedProvince = currentDetectedProvince || provinceCandidates[0] || "";
+
+      if (latitudeInput) latitudeInput.value = String(currentLat);
+      if (longitudeInput) longitudeInput.value = String(currentLon);
+      if (detectedProvinceInput) detectedProvinceInput.value = detectedProvince;
+      if (detectedAddressInput) detectedAddressInput.value = detectedAddress;
+      if (mapConfirmedInput) mapConfirmedInput.value = "true";
+
+      showDetectedAddressHint(streetAddress || detectedAddress);
+
+      /*
+       * Không tự ghi đè ô Địa chỉ cụ thể khi xác nhận vị trí.
+       * Nếu người dùng muốn dùng địa chỉ gợi ý, họ bấm nút "Dùng địa chỉ gợi ý" riêng.
+       */
+
+      if (!window.checkoutLocationSelector || !window.checkoutLocationSelector.autoFillFromCurrentLocation) {
+        setMapStatus("Không tìm thấy bộ tự điền địa chỉ. Vui lòng tải lại trang và thử lại.", "error");
+        if (confirmBtn) confirmBtn.disabled = false;
+        return;
+      }
+
+      const result = await window.checkoutLocationSelector.autoFillFromCurrentLocation({
+        provinceCandidates: provinceCandidates,
+        wardCandidates: wardCandidates,
+        streetAddress: streetAddress,
+        detectedAddress: detectedAddress,
+        latitude: currentLat,
+        longitude: currentLon
+      });
+
+      if (!result || !result.ok) {
+        setLocationError(result && result.reason ? result.reason : "Không thể khớp Tỉnh/TP từ vị trí đã chọn.");
+        setMapStatus(result && result.reason ? result.reason : "Không thể khớp địa chỉ từ vị trí đã chọn.", "error");
+        if (confirmBtn) confirmBtn.disabled = false;
+        return;
+      }
+
+      setAddressError("");
+
+      if (result.partial) {
+        setLocationError("Đã xác minh Tỉnh/TP theo vị trí trên bản đồ. Vui lòng chọn lại Phường/Xã nếu hệ thống chưa nhận diện đúng.");
+        useCurrentLocationBtn.textContent = "✅ Đã xác minh Tỉnh/TP";
+      } else {
+        setLocationError("");
+        useCurrentLocationBtn.textContent = "✅ Đã xác minh vị trí";
+      }
+
+      if (window.checkoutLocationSelector.updateShippingAddress) {
+        window.checkoutLocationSelector.updateShippingAddress();
+      }
+
+      if (window.updateShippingFeeByLocation) {
+        window.updateShippingFeeByLocation();
+      }
+
+      if (window.updateCheckoutButtonsState) {
+        window.updateCheckoutButtonsState();
+      }
+
+      closeMapModal();
+
+      if (confirmBtn) {
+        confirmBtn.disabled = false;
+      }
     }
 
     if (addressInput) {
       addressInput.addEventListener("input", function () {
-        /*
-         * Cho phép user bổ sung số nhà sau khi hệ thống đã xác minh GPS.
-         * Không xóa latitude/longitude, vì user có thể bổ sung số nhà/tổ/khu phố
-         * sau khi tọa độ hiện tại đã khớp Tỉnh/TP đã chọn.
-         */
-        if (useCurrentLocationBtn.textContent.includes("Đã điền")
+        if (useCurrentLocationBtn.textContent.includes("Đã xác minh")
                 || useCurrentLocationBtn.textContent.includes("Vị trí khớp")) {
           useCurrentLocationBtn.textContent = "✅ Vị trí đã xác minh";
         }
       });
+    }
+
+    document.querySelectorAll("[data-close-address-map]").forEach(function (el) {
+      el.addEventListener("click", closeMapModal);
+    });
+
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape" && modal && modal.classList.contains("show")) {
+        closeMapModal();
+      }
+    });
+
+    if (useSuggestedAddressBtn) {
+      useSuggestedAddressBtn.addEventListener("click", applySuggestedAddressToInput);
+    }
+
+    if (confirmBtn) {
+      confirmBtn.addEventListener("click", confirmMapLocation);
     }
 
     useCurrentLocationBtn.addEventListener("click", function () {
@@ -4011,6 +4853,8 @@
 
       useCurrentLocationBtn.disabled = true;
       useCurrentLocationBtn.textContent = "Đang lấy vị trí...";
+      setAddressError("");
+      setLocationError("");
 
       navigator.geolocation.getCurrentPosition(
               async function (position) {
@@ -4018,74 +4862,15 @@
                   const lat = position.coords.latitude;
                   const lon = position.coords.longitude;
 
-                  if (latitudeInput) latitudeInput.value = String(lat);
-                  if (longitudeInput) longitudeInput.value = String(lon);
+                  ensureMap(lat, lon);
+                  openMapModal();
+                  await updateSelectedPin(lat, lon);
 
-                  useCurrentLocationBtn.textContent = "Đang xác định địa chỉ...";
-
-                  const geoData = await reverseGeocode(lat, lon);
-                  const address = extractAddressObject(geoData);
-                  const provinceCandidates = getProvinceCandidates(address);
-                  const wardCandidates = getWardCandidates(address);
-                  const streetAddress = buildStreetAddress(address, geoData);
-                  const detectedProvince = provinceCandidates[0] || "";
-                  const detectedAddress = geoData && geoData.display_name ? geoData.display_name : "";
-
-                  if (detectedProvinceInput) detectedProvinceInput.value = detectedProvince;
-                  if (detectedAddressInput) detectedAddressInput.value = detectedAddress;
-
-                  if (!provinceCandidates.length) {
-                    setAddressError("Đã lấy vị trí nhưng chưa xác định được Tỉnh/TP. Vui lòng chọn địa chỉ thủ công.");
-                    useCurrentLocationBtn.textContent = "📍 Dùng vị trí hiện tại";
-                    useCurrentLocationBtn.disabled = false;
-                    return;
-                  }
-
-                  if (!window.checkoutLocationSelector || !window.checkoutLocationSelector.autoFillFromCurrentLocation) {
-                    setAddressError("Không tìm thấy bộ tự điền địa chỉ. Vui lòng tải lại trang và thử lại.");
-                    useCurrentLocationBtn.textContent = "📍 Dùng vị trí hiện tại";
-                    useCurrentLocationBtn.disabled = false;
-                    return;
-                  }
-
-                  const result = await window.checkoutLocationSelector.autoFillFromCurrentLocation({
-                    provinceCandidates: provinceCandidates,
-                    wardCandidates: wardCandidates,
-                    streetAddress: streetAddress,
-                    detectedAddress: detectedAddress,
-                    latitude: lat,
-                    longitude: lon
-                  });
-
-                  if (!result || !result.ok) {
-                    setLocationError(result && result.reason ? result.reason : "Không thể tự điền địa chỉ từ vị trí hiện tại.");
-                    useCurrentLocationBtn.textContent = "📍 Dùng vị trí hiện tại";
-                    useCurrentLocationBtn.disabled = false;
-                    return;
-                  }
-
-                  setAddressError("");
-
-                  if (result.partial) {
-                    setLocationError("Đã tự điền Tỉnh/TP theo vị trí hiện tại. Vui lòng chọn lại Phường/Xã nếu hệ thống chưa nhận diện đúng.");
-                    useCurrentLocationBtn.textContent = "✅ Đã điền Tỉnh/TP";
-                  } else {
-                    setLocationError("");
-                    useCurrentLocationBtn.textContent = "✅ Đã điền theo vị trí hiện tại";
-                  }
-
+                  useCurrentLocationBtn.textContent = "📍 Chọn lại vị trí";
                   useCurrentLocationBtn.disabled = false;
-
-                  if (window.updateShippingFeeByLocation) {
-                    window.updateShippingFeeByLocation();
-                  }
-
-                  if (window.updateCheckoutButtonsState) {
-                    window.updateCheckoutButtonsState();
-                  }
                 } catch (error) {
                   console.error(error);
-                  setAddressError("Không thể tự điền địa chỉ từ vị trí hiện tại. Vui lòng thử lại hoặc chọn địa chỉ thủ công.");
+                  setAddressError("Không thể mở bản đồ xác nhận vị trí. Vui lòng kiểm tra kết nối mạng hoặc thử lại sau.");
                   useCurrentLocationBtn.textContent = "📍 Dùng vị trí hiện tại";
                   useCurrentLocationBtn.disabled = false;
                 }
@@ -4097,7 +4882,7 @@
               },
               {
                 enableHighAccuracy: true,
-                timeout: 12000,
+                timeout: 15000,
                 maximumAge: 0
               }
       );
