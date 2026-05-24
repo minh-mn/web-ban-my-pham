@@ -3,13 +3,13 @@
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
-<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/checkout.css?v=20260524_best_coupon_actual_discount">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/checkout.css?v=20260523_manual_coupon_validation">
 
 <style>
   /* =========================================================
      CHECKOUT PAGE OVERRIDES
      Tone: hồng thương hiệu dịu, chữ xanh đen, nền sạch
-  ========================================================= */
+     ========================================================= */
 
   :root {
     --checkout-brand: #d63384;
@@ -37,7 +37,7 @@
     font-family: "Inter", "Segoe UI", Roboto, Arial, sans-serif;
   }
 
-  /* ================= BUTTON STATE ================= */
+  /* ================= BUTTON STATE: NHẠT / ĐẬM ================= */
 
   .btn-apply-coupon,
   .btn-place-order {
@@ -71,7 +71,7 @@
     transform: translateY(-1px);
   }
 
-  /* ================= DELIVERY OPTIONS ================= */
+  /* ================= DELIVERY OPTIONS + FREESHIP ================= */
 
   .delivery-empty {
     color: var(--checkout-muted);
@@ -227,11 +227,7 @@
     color: #dc2626 !important;
   }
 
-  .coupon-message.warning {
-    color: #b45309 !important;
-  }
-
-  /* ================= COUPON MODAL ================= */
+  /* ================= COUPON MODAL - 1 LIST / BEST SUGGESTION ================= */
 
   .coupon-modal {
     position: fixed;
@@ -440,40 +436,26 @@
 
   .coupon-best-badge {
     position: absolute;
-    top: 10px;
-    right: 66px;
+    top: 12px;
+    right: 68px;
     left: auto;
     transform: none;
     display: none;
     align-items: center;
     justify-content: center;
-    gap: 5px;
-    min-width: 78px;
-    height: 26px;
-    padding: 0 12px;
+    min-width: 62px;
+    height: 20px;
+    padding: 0 9px;
     border-radius: 999px;
-    background: linear-gradient(135deg, #ff4f9a 0%, #d63384 54%, #b1125b 100%);
+    background: linear-gradient(135deg, #f4a9c8 0%, #d7659a 100%);
     color: #ffffff;
-    font-size: 12px;
-    line-height: 1;
-    font-weight: 950;
-    letter-spacing: 0.02em;
-    box-shadow: 0 8px 18px rgba(214, 51, 132, 0.34);
-    border: 1px solid rgba(255, 255, 255, 0.65);
-    z-index: 4;
-    pointer-events: none;
-  }
-
-  .coupon-best-badge::before {
-    content: "★";
-    color: #fff3b0;
     font-size: 11px;
     line-height: 1;
-  }
-
-  .coupon-item.is-best {
-    border-color: #d63384;
-    box-shadow: 0 14px 30px rgba(214, 51, 132, 0.16);
+    font-weight: 850;
+    letter-spacing: 0.01em;
+    box-shadow: 0 6px 14px rgba(215, 101, 154, 0.24);
+    z-index: 4;
+    pointer-events: none;
   }
 
   .coupon-item.is-best .coupon-best-badge {
@@ -688,8 +670,6 @@
 
   body.coupon-modal-open {
     overflow: hidden;
-    position: fixed;
-    width: 100%;
   }
 
   @media (max-width: 768px) {
@@ -729,13 +709,13 @@
     }
 
     .coupon-best-badge {
-      top: 8px;
-      right: 52px;
+      top: 10px;
+      right: 56px;
       left: auto;
-      min-width: 70px;
-      height: 24px;
-      font-size: 11px;
-      padding: 0 10px;
+      min-width: 56px;
+      height: 19px;
+      font-size: 10.5px;
+      padding: 0 8px;
     }
 
     .coupon-voucher-icon {
@@ -763,6 +743,7 @@
     }
   }
 
+
   /* ================= MANUAL COUPON INPUT VALIDATION ================= */
 
   .coupon-input-row input.is-valid {
@@ -781,6 +762,18 @@
     border-color: #f59e0b !important;
     background: #fffbeb !important;
     box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.08) !important;
+  }
+
+  .coupon-message.warning {
+    color: #b45309 !important;
+  }
+
+  .coupon-message.success {
+    color: #15803d !important;
+  }
+
+  .coupon-message.error {
+    color: #dc2626 !important;
   }
 </style>
 
@@ -883,6 +876,7 @@
             <h2>Thông tin giao hàng</h2>
           </div>
 
+          <!-- FULL NAME -->
           <div class="checkout-field">
             <label for="fullName">Họ và tên</label>
 
@@ -901,6 +895,7 @@
             </div>
           </div>
 
+          <!-- PHONE -->
           <div class="checkout-field phone-field">
             <label for="phone">Số điện thoại</label>
 
@@ -924,6 +919,7 @@
             </div>
           </div>
 
+          <!-- COUNTRY -->
           <div class="checkout-field">
             <label for="country">Quốc gia</label>
 
@@ -934,6 +930,7 @@
                    readonly>
           </div>
 
+          <!-- ADDRESS -->
           <div class="checkout-field">
             <label for="address">Địa chỉ, tên đường</label>
 
@@ -1111,6 +1108,7 @@
               ${empty param.paymentMethod || param.paymentMethod == 'COD' ? 'checked' : ''}>
 
               <span class="payment-dot"></span>
+
               <span class="payment-icon">💵</span>
 
               <span class="payment-text">
@@ -1126,6 +1124,7 @@
               ${param.paymentMethod == 'VNPAY' ? 'checked' : ''}>
 
               <span class="payment-dot"></span>
+
               <span class="payment-icon">💳</span>
 
               <span class="payment-text">
@@ -1141,6 +1140,7 @@
             </c:if>
           </div>
         </div>
+
       </div>
 
       <!-- ================= RIGHT COLUMN ================= -->
@@ -1337,6 +1337,7 @@
         </div>
 
       </div>
+
     </form>
   </div>
 </section>
@@ -1375,6 +1376,7 @@
       </c:choose>
 
       <div class="coupon-list" id="checkoutCouponList">
+
         <c:choose>
           <c:when test="${not empty modalCoupons}">
             <c:forEach var="coupon" items="${modalCoupons}">
@@ -1385,18 +1387,27 @@
               <c:set var="serverUsable"
                      value="${not empty couponUsableMap ? couponUsableMap[coupon.code] : true}" />
 
+              <c:set var="serverRankEligible"
+                     value="${not empty couponRankEligibleMap ? couponRankEligibleMap[coupon.code] : true}" />
+
+              <c:set var="serverDisabledReason"
+                     value="${not empty couponDisabledReasonMap ? couponDisabledReasonMap[coupon.code] : ''}" />
+
               <button type="button"
                       class="coupon-item js-select-coupon ${serverUsable ? 'is-usable' : 'is-disabled'} ${coupon.code == bestCouponCode ? 'is-best' : ''}"
                       data-code="${fn:escapeXml(coupon.code)}"
                       data-percent="${coupon.discountPercent}"
                       data-max-discount="${empty coupon.maxDiscountAmount ? 0 : coupon.maxDiscountAmount}"
                       data-min-order="${empty coupon.minOrderAmount ? 0 : coupon.minOrderAmount}"
+                      data-min-rank="${fn:escapeXml(coupon.minRankCode)}"
                       data-active="${coupon.active}"
                       data-used-count="${coupon.usedCount}"
                       data-max-uses="${coupon.maxUses}"
                       data-end-date="${coupon.endDate}"
                       data-server-estimated-discount="${empty serverEstimatedDiscount ? 0 : serverEstimatedDiscount}"
-                      data-server-usable="${serverUsable}">
+                      data-server-usable="${serverUsable}"
+                      data-rank-eligible="${serverRankEligible}"
+                      data-disabled-reason="${fn:escapeXml(serverDisabledReason)}">
 
                 <span class="coupon-best-badge">Tốt nhất</span>
 
@@ -1455,6 +1466,7 @@
             </div>
           </c:otherwise>
         </c:choose>
+
       </div>
     </div>
 
@@ -1471,6 +1483,7 @@
     </div>
   </div>
 </div>
+
 
 <!-- ================= SYSTEM COUPON CODES FOR MANUAL INPUT ================= -->
 <script>
@@ -1516,22 +1529,9 @@
     const confirmBtn = document.getElementById("confirmCouponSelection");
     const selectedCountEl = document.getElementById("couponSelectedCount");
     const couponList = document.getElementById("checkoutCouponList");
-    const couponMessage = document.getElementById("couponMessage");
 
-    let confirmedCouponCode = couponInput && couponInput.value ? normalizeCode(couponInput.value) : "";
-    let selectedCode = confirmedCouponCode;
+    let selectedCode = couponInput && couponInput.value ? normalizeCode(couponInput.value) : "";
     let couponItems = [];
-    let lastScrollY = 0;
-
-    window.setAppliedCouponDisplay = function (code) {
-      confirmedCouponCode = normalizeCode(code);
-      updateOpenButtonText();
-    };
-
-    window.clearAppliedCouponDisplay = function () {
-      confirmedCouponCode = "";
-      updateOpenButtonText();
-    };
 
     function normalizeCode(code) {
       return String(code || "").trim().toUpperCase();
@@ -1599,15 +1599,7 @@
       const maxDiscount = parseNumber(item.dataset.maxDiscount);
       const minOrder = parseNumber(item.dataset.minOrder);
 
-      /*
-       * Quan trọng:
-       * Mã chưa đạt đơn tối thiểu thì không được tính là tốt nhất.
-       */
-      if (subtotal < minOrder) {
-        return 0;
-      }
-
-      if (percent <= 0) {
+      if (subtotal < minOrder || percent <= 0) {
         return 0;
       }
 
@@ -1621,20 +1613,41 @@
     }
 
     function getDisabledReason(item, subtotal) {
+      const rankEligible = String(item.dataset.rankEligible || "true").toLowerCase() === "true";
+      const serverReason = String(item.dataset.disabledReason || "").trim();
+      const serverUsable = String(item.dataset.serverUsable || "true").toLowerCase() === "true";
+
+      /*
+       * Backend biết chính xác user hiện tại có đủ hạng hay không.
+       * Nếu backend báo không đủ hạng thì frontend phải khóa mã luôn,
+       * không được cho chọn và không được xét là "Tốt nhất".
+       */
+      if (!rankEligible) {
+        return serverReason || "Hạng thành viên hiện tại chưa phù hợp với mã này.";
+      }
+
       const minOrder = parseNumber(item.dataset.minOrder);
       const usedCount = parseNumber(item.dataset.usedCount);
       const maxUses = parseNumber(item.dataset.maxUses);
 
       if (!isActiveValue(item.dataset.active)) {
-        return "Mã hiện không còn hoạt động";
+        return serverReason || "Mã hiện không còn hoạt động";
       }
 
       if (isExpired(item.dataset.endDate)) {
-        return "Mã đã hết hạn sử dụng";
+        return serverReason || "Mã đã hết hạn sử dụng";
       }
 
       if (maxUses > 0 && usedCount >= maxUses) {
-        return "Mã đã hết lượt sử dụng";
+        return serverReason || "Mã đã hết lượt sử dụng";
+      }
+
+      /*
+       * Trường hợp serverUsable=false vì subtotal lúc render chưa đủ,
+       * frontend vẫn được tính lại theo subtotal hiện tại khi user đổi số lượng.
+       */
+      if (!serverUsable && serverReason && !serverReason.toLowerCase().includes("tối thiểu")) {
+        return serverReason;
       }
 
       if (subtotal < minOrder) {
@@ -1642,6 +1655,10 @@
       }
 
       return "";
+    }
+
+    function isUsable(item, subtotal) {
+      return getDisabledReason(item, subtotal) === "";
     }
 
     function removeDuplicateCoupons() {
@@ -1652,7 +1669,12 @@
       Array.from(couponList.querySelectorAll(".js-select-coupon")).forEach(function (item) {
         const code = normalizeCode(item.dataset.code);
 
-        if (!code || seen.has(code)) {
+        if (!code) {
+          item.remove();
+          return;
+        }
+
+        if (seen.has(code)) {
           item.remove();
           return;
         }
@@ -1668,41 +1690,6 @@
     function clearBestBadges() {
       couponItems.forEach(function (item) {
         item.classList.remove("is-best");
-      });
-    }
-
-    function sortCouponItems(subtotal) {
-      if (!couponList) return;
-
-      couponItems.sort(function (a, b) {
-        const reasonA = getDisabledReason(a, subtotal);
-        const reasonB = getDisabledReason(b, subtotal);
-        const usableA = reasonA === "";
-        const usableB = reasonB === "";
-
-        if (usableA !== usableB) {
-          return usableA ? -1 : 1;
-        }
-
-        const discountA = estimateDiscount(a, subtotal);
-        const discountB = estimateDiscount(b, subtotal);
-
-        if (discountA !== discountB) {
-          return discountB - discountA;
-        }
-
-        const minA = parseNumber(a.dataset.minOrder);
-        const minB = parseNumber(b.dataset.minOrder);
-
-        if (minA !== minB) {
-          return minA - minB;
-        }
-
-        return normalizeCode(a.dataset.code).localeCompare(normalizeCode(b.dataset.code), "vi");
-      });
-
-      couponItems.forEach(function (item) {
-        couponList.appendChild(item);
       });
     }
 
@@ -1768,7 +1755,6 @@
         selectedCode = "";
       }
 
-      sortCouponItems(subtotal);
       markBestCoupon(usableItems, subtotal);
       updateSelectedState();
     }
@@ -1796,11 +1782,26 @@
       }
     }
 
+    let confirmedPickerCode = "";
+    let settingCouponFromPicker = false;
+
+    function findCouponItemByCode(code) {
+      const normalizedCode = normalizeCode(code);
+
+      if (!normalizedCode) {
+        return null;
+      }
+
+      return couponItems.find(function (item) {
+        return normalizeCode(item.dataset.code) === normalizedCode;
+      }) || null;
+    }
+
     function updateOpenButtonText() {
       if (!openBtn) return;
 
       const textEl = openBtn.querySelector(".coupon-open-text");
-      const code = normalizeCode(confirmedCouponCode);
+      const code = normalizeCode(confirmedPickerCode);
 
       openBtn.classList.toggle("has-selected", !!code);
 
@@ -1809,46 +1810,33 @@
       }
     }
 
-    function hideCouponMessage() {
-      if (!couponMessage) return;
-      couponMessage.textContent = "";
-      couponMessage.classList.remove("success", "error", "warning");
+    function setPickerAppliedCode(code) {
+      confirmedPickerCode = normalizeCode(code);
+      updateOpenButtonText();
     }
 
-    function closeModal(event) {
-      if (event) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
+    window.setAppliedCouponCodeForPicker = setPickerAppliedCode;
 
+    window.clearAppliedCouponPicker = function () {
+      confirmedPickerCode = "";
+      updateOpenButtonText();
+    };
+
+    function closeModal() {
       if (!modal) return;
 
       modal.classList.remove("show");
       document.body.classList.remove("coupon-modal-open");
-      document.body.style.top = "";
-      document.body.style.left = "";
-      document.body.style.right = "";
-      document.body.style.width = "";
-      window.scrollTo(0, lastScrollY);
     }
 
-    function openModal(event) {
-      if (event) {
-        event.preventDefault();
-      }
-
+    function openModal() {
       if (!modal) return;
 
-      lastScrollY = window.scrollY || document.documentElement.scrollTop || 0;
-      selectedCode = confirmedCouponCode;
+      selectedCode = confirmedPickerCode ? normalizeCode(confirmedPickerCode) : "";
       refreshCouponStates();
 
       modal.classList.add("show");
       document.body.classList.add("coupon-modal-open");
-      document.body.style.top = "-" + lastScrollY + "px";
-      document.body.style.left = "0";
-      document.body.style.right = "0";
-      document.body.style.width = "100%";
     }
 
     function bindCouponEvents() {
@@ -1874,10 +1862,11 @@
     function confirmSelection() {
       if (!couponInput) return;
 
-      confirmedCouponCode = selectedCode || "";
-      couponInput.value = confirmedCouponCode;
-
-      hideCouponMessage();
+      confirmedPickerCode = selectedCode || "";
+      settingCouponFromPicker = true;
+      couponInput.value = confirmedPickerCode;
+      couponInput.dispatchEvent(new Event("input", { bubbles: true }));
+      settingCouponFromPicker = false;
 
       if (window.updateCheckoutButtonsState) {
         window.updateCheckoutButtonsState();
@@ -1896,8 +1885,8 @@
     });
 
     document.addEventListener("keydown", function (event) {
-      if (event.key === "Escape" && modal && modal.classList.contains("show")) {
-        closeModal(event);
+      if (event.key === "Escape") {
+        closeModal();
       }
     });
 
@@ -1907,14 +1896,11 @@
 
     if (couponInput) {
       couponInput.addEventListener("input", function () {
-        /*
-         * Người dùng đang gõ mã thủ công:
-         * - Không cập nhật nút Chọn mã.
-         * - Không báo lỗi khi đang gõ.
-         */
-        if (normalizeCode(couponInput.value) !== confirmedCouponCode) {
-          hideCouponMessage();
+        if (!settingCouponFromPicker) {
+          confirmedPickerCode = "";
         }
+
+        updateOpenButtonText();
       });
     }
 
@@ -1922,6 +1908,14 @@
     couponItems = getCouponItems();
     bindCouponEvents();
     refreshCouponStates();
+
+    const initialInputCode = couponInput ? normalizeCode(couponInput.value) : "";
+    const initialItem = findCouponItemByCode(initialInputCode);
+
+    if (initialInputCode && initialItem) {
+      confirmedPickerCode = initialInputCode;
+    }
+
     updateOpenButtonText();
   })();
 </script>
@@ -2126,28 +2120,14 @@
       }
 
       /*
-       * UX đúng:
-       * - Khi đang gõ: không hiện lỗi, không hiện xanh.
-       * - Chỉ khi bấm Áp dụng mới kiểm tra và báo lỗi.
+       * Không báo lỗi khi người dùng đang gõ.
+       * Khi bấm Áp dụng, backend/AJAX sẽ kiểm tra đầy đủ:
+       * tồn tại, active, hạn dùng, lượt dùng, min_order_amount và min_rank_code.
        */
       applyCouponBtn.disabled = false;
 
-      const systemCodes = window.SYSTEM_COUPON_CODES || new Set();
-
-      if (systemCodes.size > 0 && !systemCodes.has(normalizedValue)) {
-        if (showMessage) {
-          couponInput.classList.add("is-invalid");
-          showManualCouponMessage("error", "Mã khuyến mãi không tồn tại trong hệ thống.");
-        } else {
-          showManualCouponMessage("", "");
-        }
-
-        return false;
-      }
-
-      if (systemCodes.size === 0 && showMessage) {
-        couponInput.classList.add("is-warning");
-        showManualCouponMessage("warning", "Hệ thống sẽ kiểm tra mã khi bạn bấm Áp dụng.");
+      if (showMessage) {
+        showManualCouponMessage("", "");
       }
 
       return true;
@@ -2214,7 +2194,7 @@
       });
 
       couponInput.addEventListener("blur", function () {
-        validateManualCouponCode(false);
+        validateManualCouponCode(true);
       });
     }
 
@@ -2270,119 +2250,61 @@
       return new Intl.NumberFormat("vi-VN").format(Math.round(Number(value || 0))) + "đ";
     }
 
-    function parseVndText(text) {
-      if (!text) return 0;
-      return Number(String(text).replace(/[^\d]/g, "")) || 0;
-    }
-
     function setCouponMessage(message, isError) {
       if (!couponMessage) return;
 
       couponMessage.textContent = message || "";
-      couponMessage.classList.remove("success", "error", "warning");
-
-      if (message) {
-        couponMessage.classList.add(isError ? "error" : "success");
-      }
-    }
-
-    function normalizeCode(value) {
-      return String(value || "").trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "");
-    }
-
-    function updateTotalByCurrentSummary() {
-      const subtotal = parseVndText(summarySubtotal ? summarySubtotal.textContent : "0");
-      const discount = parseVndText(summaryDiscount ? summaryDiscount.textContent : "0");
-      const shippingFeeInput = document.getElementById("shippingFeeInput");
-      const shippingFee = Number(shippingFeeInput ? shippingFeeInput.value : 0) || 0;
-
-      if (summaryTotal) {
-        summaryTotal.textContent = formatVnd(Math.max(subtotal - discount + shippingFee, 0));
-      }
+      couponMessage.classList.toggle("error", !!isError);
+      couponMessage.classList.toggle("success", !isError && !!message);
     }
 
     if (applyBtn && couponInput) {
       applyBtn.addEventListener("click", function () {
-        const code = normalizeCode(couponInput.value);
-        couponInput.value = code;
+        const code = couponInput.value.trim().toUpperCase();
 
         if (!code) {
           setCouponMessage("Vui lòng nhập mã khuyến mãi.", true);
           return;
         }
 
-        /*
-         * Chỉ lúc bấm Áp dụng mới báo lỗi mã không tồn tại.
-         */
         if (window.validateManualCouponCode && !window.validateManualCouponCode(true)) {
-          if (window.clearAppliedCouponDisplay) {
-            window.clearAppliedCouponDisplay();
-          }
-
-          if (summaryDiscount) {
-            summaryDiscount.textContent = formatVnd(0);
-          }
-
-          updateTotalByCurrentSummary();
           return;
         }
 
-        fetch("${pageContext.request.contextPath}/ajax/apply-coupon?code=" + encodeURIComponent(code), {
-          method: "GET",
-          headers: {
-            "Accept": "application/json"
-          }
-        })
+        fetch("${pageContext.request.contextPath}/ajax/apply-coupon?code=" + encodeURIComponent(code))
                 .then(function (res) {
                   return res.json();
                 })
                 .then(function (data) {
-                  const ok = data.ok === true || data.success === true;
-                  const message = data.message || data.error || "Mã khuyến mãi không thể áp dụng.";
+                  const discountValue = Number(data && data.discount ? data.discount : 0);
 
-                  if (!ok) {
+                  if (!data || data.ok === false || data.error || discountValue <= 0) {
+                    const message = data && data.error
+                            ? data.error
+                            : "Mã khuyến mãi không tồn tại hoặc không đủ điều kiện áp dụng.";
+
                     setCouponMessage(message, true);
 
-                    if (window.clearAppliedCouponDisplay) {
-                      window.clearAppliedCouponDisplay();
-                    }
-
-                    if (summaryDiscount) {
-                      summaryDiscount.textContent = formatVnd(0);
-                    }
-
-                    updateTotalByCurrentSummary();
-
-                    if (window.updateShippingFeeByLocation) {
-                      window.updateShippingFeeByLocation();
+                    if (window.clearAppliedCouponPicker) {
+                      window.clearAppliedCouponPicker();
                     }
 
                     return;
                   }
 
-                  if (summarySubtotal && data.subtotal !== undefined) {
-                    summarySubtotal.textContent = formatVnd(data.subtotal);
-                  }
-
-                  if (summaryDiscount && data.discount !== undefined) {
-                    summaryDiscount.textContent = formatVnd(data.discount);
-                  }
-
-                  if (summaryTotal && data.total !== undefined) {
-                    summaryTotal.textContent = formatVnd(data.total);
-                  } else {
-                    updateTotalByCurrentSummary();
-                  }
-
-                  if (window.setAppliedCouponDisplay) {
-                    window.setAppliedCouponDisplay(data.code || code);
-                  }
+                  if (summarySubtotal) summarySubtotal.textContent = formatVnd(data.subtotal);
+                  if (summaryDiscount) summaryDiscount.textContent = formatVnd(data.discount);
+                  if (summaryTotal) summaryTotal.textContent = formatVnd(data.total);
 
                   if (window.updateShippingFeeByLocation) {
                     window.updateShippingFeeByLocation();
                   }
 
-                  setCouponMessage(message || "Áp dụng mã giảm giá thành công.", false);
+                  if (window.setAppliedCouponCodeForPicker) {
+                    window.setAppliedCouponCodeForPicker(data.code || code);
+                  }
+
+                  setCouponMessage("Áp dụng mã giảm giá thành công.", false);
                 })
                 .catch(function () {
                   setCouponMessage("Không thể áp dụng mã giảm giá lúc này.", true);
@@ -2592,6 +2514,7 @@
       }
 
       if (method === "EXPRESS") {
+        // Hỏa tốc chỉ áp dụng nội thành / TP.HCM.
         return hcm ? 50000 : 0;
       }
 
