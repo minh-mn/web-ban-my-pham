@@ -3,7 +3,7 @@
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
-<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/checkout.css?v=20260523_coupon_modal">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/checkout.css?v=20260523_manual_coupon_validation">
 
 <style>
   /* =========================================================
@@ -742,6 +742,39 @@
       min-width: 128px;
     }
   }
+
+
+  /* ================= MANUAL COUPON INPUT VALIDATION ================= */
+
+  .coupon-input-row input.is-valid {
+    border-color: #16a34a !important;
+    background: #f0fdf4 !important;
+    box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.08) !important;
+  }
+
+  .coupon-input-row input.is-invalid {
+    border-color: #ef4444 !important;
+    background: #fff1f2 !important;
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.08) !important;
+  }
+
+  .coupon-input-row input.is-warning {
+    border-color: #f59e0b !important;
+    background: #fffbeb !important;
+    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.08) !important;
+  }
+
+  .coupon-message.warning {
+    color: #b45309 !important;
+  }
+
+  .coupon-message.success {
+    color: #15803d !important;
+  }
+
+  .coupon-message.error {
+    color: #dc2626 !important;
+  }
 </style>
 
 
@@ -1249,6 +1282,18 @@
           </c:if>
 
           <div id="couponMessage" class="coupon-message"></div>
+
+          <c:if test="${not empty coupon_success}">
+            <div class="coupon-message success">
+              <c:out value="${coupon_success}" />
+            </div>
+          </c:if>
+
+          <c:if test="${not empty coupon_error}">
+            <div class="coupon-message error">
+              <c:out value="${coupon_error}" />
+            </div>
+          </c:if>
         </div>
 
         <!-- SUMMARY -->
@@ -1315,140 +1360,94 @@
     <div class="coupon-modal-body">
       <div class="coupon-list-title">Mã giảm giá có thể áp dụng cho đơn hàng</div>
 
+      <c:choose>
+        <c:when test="${not empty couponOptions}">
+          <c:set var="modalCoupons" value="${couponOptions}" />
+        </c:when>
+        <c:when test="${not empty checkoutCoupons}">
+          <c:set var="modalCoupons" value="${checkoutCoupons}" />
+        </c:when>
+        <c:when test="${not empty allCoupons}">
+          <c:set var="modalCoupons" value="${allCoupons}" />
+        </c:when>
+        <c:otherwise>
+          <c:set var="modalCoupons" value="${availableCoupons}" />
+        </c:otherwise>
+      </c:choose>
+
       <div class="coupon-list" id="checkoutCouponList">
 
-        <c:if test="${not empty savedCoupons}">
-          <c:forEach var="coupon" items="${savedCoupons}">
-            <button type="button"
-                    class="coupon-item js-select-coupon"
-                    data-code="${fn:escapeXml(coupon.code)}"
-                    data-percent="${coupon.discountPercent}"
-                    data-max-discount="${empty coupon.maxDiscountAmount ? 0 : coupon.maxDiscountAmount}"
-                    data-min-order="${empty coupon.minOrderAmount ? 0 : coupon.minOrderAmount}"
-                    data-active="${coupon.active}"
-                    data-used-count="${coupon.usedCount}"
-                    data-max-uses="${coupon.maxUses}"
-                    data-end-date="${coupon.endDate}">
+        <c:choose>
+          <c:when test="${not empty modalCoupons}">
+            <c:forEach var="coupon" items="${modalCoupons}">
+              <button type="button"
+                      class="coupon-item js-select-coupon"
+                      data-code="${fn:escapeXml(coupon.code)}"
+                      data-percent="${coupon.discountPercent}"
+                      data-max-discount="${empty coupon.maxDiscountAmount ? 0 : coupon.maxDiscountAmount}"
+                      data-min-order="${empty coupon.minOrderAmount ? 0 : coupon.minOrderAmount}"
+                      data-active="${coupon.active}"
+                      data-used-count="${coupon.usedCount}"
+                      data-max-uses="${coupon.maxUses}"
+                      data-end-date="${coupon.endDate}">
 
-              <span class="coupon-best-badge">Tốt nhất</span>
+                <span class="coupon-best-badge">Tốt nhất</span>
 
-              <div class="coupon-voucher-icon" aria-hidden="true">★</div>
+                <div class="coupon-voucher-icon" aria-hidden="true">★</div>
 
-              <div class="coupon-voucher-content">
-                <div class="coupon-discount-label">Giảm ${coupon.discountPercent}%</div>
+                <div class="coupon-voucher-content">
+                  <div class="coupon-discount-label">Giảm ${coupon.discountPercent}%</div>
 
-                <div class="coupon-title-line">
-                  <c:choose>
-                    <c:when test="${not empty coupon.maxDiscountAmount and coupon.maxDiscountAmount > 0}">
-                      Giảm tối đa
-                      <fmt:formatNumber value="${coupon.maxDiscountAmount}"
-                                        type="number"
-                                        groupingUsed="true" />đ
-                    </c:when>
-                    <c:otherwise>
-                      Giảm ${coupon.discountPercent}% cho đơn hàng
-                    </c:otherwise>
-                  </c:choose>
+                  <div class="coupon-title-line">
+                    <c:choose>
+                      <c:when test="${not empty coupon.maxDiscountAmount and coupon.maxDiscountAmount > 0}">
+                        Giảm tối đa
+                        <fmt:formatNumber value="${coupon.maxDiscountAmount}"
+                                          type="number"
+                                          groupingUsed="true" />đ
+                      </c:when>
+                      <c:otherwise>
+                        Giảm ${coupon.discountPercent}% cho đơn hàng
+                      </c:otherwise>
+                    </c:choose>
+                  </div>
+
+                  <div class="coupon-condition">
+                    <c:choose>
+                      <c:when test="${not empty coupon.minOrderAmount and coupon.minOrderAmount > 0}">
+                        Đơn tối thiểu
+                        <fmt:formatNumber value="${coupon.minOrderAmount}"
+                                          type="number"
+                                          groupingUsed="true" />đ
+                      </c:when>
+                      <c:otherwise>
+                        Áp dụng cho mọi đơn hàng đủ điều kiện
+                      </c:otherwise>
+                    </c:choose>
+                  </div>
+
+                  <div class="coupon-meta-line">
+                    <span>Mã:</span>
+                    <span class="coupon-meta-code"><c:out value="${coupon.code}" /></span>
+                    <span>•</span>
+                    <span class="coupon-detail-link">Điều kiện</span>
+                  </div>
+
+                  <div class="coupon-disabled-reason"></div>
                 </div>
 
-                <div class="coupon-condition">
-                  <c:choose>
-                    <c:when test="${not empty coupon.minOrderAmount and coupon.minOrderAmount > 0}">
-                      Đơn tối thiểu
-                      <fmt:formatNumber value="${coupon.minOrderAmount}"
-                                        type="number"
-                                        groupingUsed="true" />đ
-                    </c:when>
-                    <c:otherwise>
-                      Áp dụng cho mọi đơn hàng đủ điều kiện
-                    </c:otherwise>
-                  </c:choose>
-                </div>
+                <div class="coupon-ticket-right" aria-hidden="true"></div>
+              </button>
+            </c:forEach>
+          </c:when>
 
-                <div class="coupon-meta-line">
-                  <span>Mã:</span>
-                  <span class="coupon-meta-code"><c:out value="${coupon.code}" /></span>
-                  <span>•</span>
-                  <span class="coupon-detail-link">Điều kiện</span>
-                </div>
-
-                <div class="coupon-disabled-reason"></div>
-              </div>
-
-              <div class="coupon-ticket-right" aria-hidden="true"></div>
-            </button>
-          </c:forEach>
-        </c:if>
-
-        <c:if test="${not empty availableCoupons}">
-          <c:forEach var="coupon" items="${availableCoupons}">
-            <button type="button"
-                    class="coupon-item js-select-coupon"
-                    data-code="${fn:escapeXml(coupon.code)}"
-                    data-percent="${coupon.discountPercent}"
-                    data-max-discount="${empty coupon.maxDiscountAmount ? 0 : coupon.maxDiscountAmount}"
-                    data-min-order="${empty coupon.minOrderAmount ? 0 : coupon.minOrderAmount}"
-                    data-active="${coupon.active}"
-                    data-used-count="${coupon.usedCount}"
-                    data-max-uses="${coupon.maxUses}"
-                    data-end-date="${coupon.endDate}">
-
-              <span class="coupon-best-badge">Tốt nhất</span>
-
-              <div class="coupon-voucher-icon" aria-hidden="true">★</div>
-
-              <div class="coupon-voucher-content">
-                <div class="coupon-discount-label">Giảm ${coupon.discountPercent}%</div>
-
-                <div class="coupon-title-line">
-                  <c:choose>
-                    <c:when test="${not empty coupon.maxDiscountAmount and coupon.maxDiscountAmount > 0}">
-                      Giảm tối đa
-                      <fmt:formatNumber value="${coupon.maxDiscountAmount}"
-                                        type="number"
-                                        groupingUsed="true" />đ
-                    </c:when>
-                    <c:otherwise>
-                      Giảm ${coupon.discountPercent}% cho đơn hàng
-                    </c:otherwise>
-                  </c:choose>
-                </div>
-
-                <div class="coupon-condition">
-                  <c:choose>
-                    <c:when test="${not empty coupon.minOrderAmount and coupon.minOrderAmount > 0}">
-                      Đơn tối thiểu
-                      <fmt:formatNumber value="${coupon.minOrderAmount}"
-                                        type="number"
-                                        groupingUsed="true" />đ
-                    </c:when>
-                    <c:otherwise>
-                      Áp dụng cho mọi đơn hàng đủ điều kiện
-                    </c:otherwise>
-                  </c:choose>
-                </div>
-
-                <div class="coupon-meta-line">
-                  <span>Mã:</span>
-                  <span class="coupon-meta-code"><c:out value="${coupon.code}" /></span>
-                  <span>•</span>
-                  <span class="coupon-detail-link">Điều kiện</span>
-                </div>
-
-                <div class="coupon-disabled-reason"></div>
-              </div>
-
-              <div class="coupon-ticket-right" aria-hidden="true"></div>
-            </button>
-          </c:forEach>
-        </c:if>
-
-        <c:if test="${empty savedCoupons and empty availableCoupons}">
-          <div class="coupon-empty">
-            <div class="coupon-empty-icon">🏷️</div>
-            <p>Không có mã khuyến mãi phù hợp</p>
-          </div>
-        </c:if>
+          <c:otherwise>
+            <div class="coupon-empty">
+              <div class="coupon-empty-icon">🏷️</div>
+              <p>Không có mã khuyến mãi phù hợp</p>
+            </div>
+          </c:otherwise>
+        </c:choose>
 
       </div>
     </div>
@@ -1466,6 +1465,42 @@
     </div>
   </div>
 </div>
+
+
+<!-- ================= SYSTEM COUPON CODES FOR MANUAL INPUT ================= -->
+<script>
+  window.SYSTEM_COUPON_CODES = new Set();
+
+  (function () {
+    function addCouponCode(code) {
+      const normalized = String(code || "").trim().toUpperCase();
+
+      if (normalized) {
+        window.SYSTEM_COUPON_CODES.add(normalized);
+      }
+    }
+
+    <c:forEach var="coupon" items="${allCoupons}">
+    addCouponCode("${fn:escapeXml(coupon.code)}");
+    </c:forEach>
+
+    <c:forEach var="coupon" items="${checkoutCoupons}">
+    addCouponCode("${fn:escapeXml(coupon.code)}");
+    </c:forEach>
+
+    <c:forEach var="coupon" items="${couponOptions}">
+    addCouponCode("${fn:escapeXml(coupon.code)}");
+    </c:forEach>
+
+    <c:forEach var="coupon" items="${savedCoupons}">
+    addCouponCode("${fn:escapeXml(coupon.code)}");
+    </c:forEach>
+
+    <c:forEach var="coupon" items="${availableCoupons}">
+    addCouponCode("${fn:escapeXml(coupon.code)}");
+    </c:forEach>
+  })();
+</script>
 
 <!-- ================= COUPON MODAL SCRIPT ================= -->
 <script>
@@ -1814,6 +1849,7 @@
 
     const couponInput = document.getElementById("couponCode");
     const applyCouponBtn = document.getElementById("applyCouponBtn");
+    const couponMessage = document.getElementById("couponMessage");
 
     function setFieldError(input, errorId, message) {
       const errorEl = document.getElementById(errorId);
@@ -1947,12 +1983,83 @@
       return input && input.value && input.value.trim() !== "";
     }
 
-    function updateApplyCouponButton() {
-      if (!applyCouponBtn || !couponInput) {
+    function normalizeManualCouponCode(value) {
+      return String(value || "")
+              .trim()
+              .toUpperCase()
+              .replace(/[^A-Z0-9_-]/g, "");
+    }
+
+    function showManualCouponMessage(type, message) {
+      if (!couponMessage) {
         return;
       }
 
-      applyCouponBtn.disabled = !hasValue(couponInput);
+      couponMessage.classList.remove("success", "error", "warning");
+
+      if (type) {
+        couponMessage.classList.add(type);
+      }
+
+      couponMessage.textContent = message || "";
+    }
+
+    function validateManualCouponCode(showMessage) {
+      if (!applyCouponBtn || !couponInput) {
+        return false;
+      }
+
+      const rawValue = couponInput.value;
+      const normalizedValue = normalizeManualCouponCode(rawValue);
+
+      if (rawValue !== normalizedValue) {
+        couponInput.value = normalizedValue;
+      }
+
+      couponInput.classList.remove("is-valid", "is-invalid", "is-warning");
+
+      if (!normalizedValue) {
+        applyCouponBtn.disabled = true;
+        showManualCouponMessage("", "");
+        return false;
+      }
+
+      const systemCodes = window.SYSTEM_COUPON_CODES || new Set();
+
+      if (systemCodes.size > 0 && !systemCodes.has(normalizedValue)) {
+        applyCouponBtn.disabled = true;
+        couponInput.classList.add("is-invalid");
+        showManualCouponMessage("error", "Mã khuyến mãi không tồn tại trong hệ thống.");
+        return false;
+      }
+
+      if (systemCodes.size === 0) {
+        applyCouponBtn.disabled = false;
+        couponInput.classList.add("is-warning");
+
+        if (showMessage) {
+          showManualCouponMessage("warning", "Hệ thống sẽ kiểm tra mã khi bạn bấm Áp dụng.");
+        }
+
+        return true;
+      }
+
+      applyCouponBtn.disabled = false;
+      couponInput.classList.add("is-valid");
+
+      if (showMessage) {
+        showManualCouponMessage("success", "Mã khuyến mãi tồn tại. Bấm Áp dụng để kiểm tra điều kiện.");
+      } else if (couponMessage && couponMessage.classList.contains("error")) {
+        showManualCouponMessage("", "");
+      }
+
+      return true;
+    }
+
+    window.validateManualCouponCode = validateManualCouponCode;
+
+    function updateApplyCouponButton() {
+      validateManualCouponCode(false);
     }
 
     function isCheckoutFilled() {
@@ -2005,8 +2112,13 @@
     }
 
     if (couponInput) {
-      couponInput.addEventListener("input", updateApplyCouponButton);
-      couponInput.addEventListener("blur", updateApplyCouponButton);
+      couponInput.addEventListener("input", function () {
+        validateManualCouponCode(false);
+      });
+
+      couponInput.addEventListener("blur", function () {
+        validateManualCouponCode(true);
+      });
     }
 
     document.querySelectorAll("input[name='paymentMethod']").forEach(function (radio) {
@@ -2071,10 +2183,14 @@
 
     if (applyBtn && couponInput) {
       applyBtn.addEventListener("click", function () {
-        const code = couponInput.value.trim();
+        const code = couponInput.value.trim().toUpperCase();
 
         if (!code) {
           setCouponMessage("Vui lòng nhập mã khuyến mãi.", true);
+          return;
+        }
+
+        if (window.validateManualCouponCode && !window.validateManualCouponCode(true)) {
           return;
         }
 
