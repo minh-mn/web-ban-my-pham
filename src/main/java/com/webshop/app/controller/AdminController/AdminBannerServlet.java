@@ -1,5 +1,9 @@
 package com.webshop.app.controller.AdminController;
 
+import com.webshop.app.config.UploadConfig;
+import com.webshop.app.dao.BannerDAO;
+import com.webshop.app.model.Banner;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -8,10 +12,6 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Objects;
 import java.util.Set;
-
-import com.webshop.app.config.UploadConfig;
-import com.webshop.app.dao.BannerDAO;
-import com.webshop.app.model.Banner;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.MultipartConfig;
@@ -29,41 +29,61 @@ import jakarta.servlet.http.Part;
 )
 public class AdminBannerServlet extends HttpServlet {
 
+    private static final long serialVersionUID = 1L;
+
     private final BannerDAO bannerDAO = new BannerDAO();
 
     private static final Set<String> ALLOWED_EXT = Set.of("png", "jpg", "jpeg", "webp", "gif");
 
     @Override
+    public void init() throws ServletException {
+        super.init();
+        UploadConfig.ensureUploadDirectories();
+    }
+
+    @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
+        req.setCharacterEncoding("UTF-8");
+        resp.setCharacterEncoding("UTF-8");
+
         String action = req.getParameter("action");
-        if (action == null) action = "list";
+
+        if (action == null || action.isBlank()) {
+            action = "list";
+        }
 
         switch (action) {
-            case "new":
+            case "new": {
                 req.getRequestDispatcher("/jsp/admin/banner/banner_form.jsp").forward(req, resp);
                 return;
+            }
 
             case "edit": {
                 int id = safeParseInt(req.getParameter("id"), -1);
+
                 if (id <= 0) {
                     resp.sendRedirect(req.getContextPath() + "/admin/banners");
                     return;
                 }
+
                 Banner banner = bannerDAO.findById(id);
+
                 if (banner == null) {
                     resp.sendRedirect(req.getContextPath() + "/admin/banners");
                     return;
                 }
+
                 req.setAttribute("banner", banner);
                 req.getRequestDispatcher("/jsp/admin/banner/banner_form.jsp").forward(req, resp);
                 return;
             }
 
-            default:
+            default: {
                 req.setAttribute("banners", bannerDAO.findAll());
                 req.getRequestDispatcher("/jsp/admin/banner/banner_list.jsp").forward(req, resp);
+            }
         }
     }
 
@@ -71,133 +91,151 @@ public class AdminBannerServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
-        // Nếu bạn đã có SetCharacterEncodingFilter trong web.xml thì dòng này có thể bỏ
         req.setCharacterEncoding("UTF-8");
+        resp.setCharacterEncoding("UTF-8");
 
         String action = req.getParameter("action");
-        if (action == null) action = "create";
 
-        switch (action) {
-            case "create": {
-                Banner b = new Banner();
-                bind(req, b, true);
-                bannerDAO.create(b);
-                break;
-            }
-
-            case "update": {
-                int id = safeParseInt(req.getParameter("id"), -1);
-                if (id <= 0) break;
-
-                Banner b = bannerDAO.findById(id);
-                if (b != null) {
-                    bind(req, b, false);
-                    b.setId(id);
-                    bannerDAO.update(b);
-                }
-                break;
-            }
-
-            case "delete": {
-                int id = safeParseInt(req.getParameter("id"), -1);
-                if (id > 0) {
-                    // Tuỳ nghiệp vụ: bạn có thể lấy banner để xoá file vật lý trước khi delete DB
-                    // Banner b = bannerDAO.findById(id);
-                    bannerDAO.delete(id);
-                    // if (b != null) tryDeletePhysicalFile(b.getImageUrl());
-                }
-                break;
-            }
-
-            case "toggle": {
-                int id = safeParseInt(req.getParameter("id"), -1);
-                if (id > 0) bannerDAO.toggleActive(id);
-                break;
-            }
-
-            default:
-                // ignore
-                break;
+        if (action == null || action.isBlank()) {
+            action = "create";
         }
 
-        resp.sendRedirect(req.getContextPath() + "/admin/banners");
+        try {
+            switch (action) {
+                case "create": {
+                    Banner banner = new Banner();
+                    bind(req, banner, true);
+                    bannerDAO.create(banner);
+                    break;
+                }
+
+                case "update": {
+                    int id = safeParseInt(req.getParameter("id"), -1);
+
+                    if (id <= 0) {
+                        break;
+                    }
+
+                    Banner banner = bannerDAO.findById(id);
+
+                    if (banner != null) {
+                        bind(req, banner, false);
+                        banner.setId(id);
+                        bannerDAO.update(banner);
+                    }
+
+                    break;
+                }
+
+                case "delete": {
+                    int id = safeParseInt(req.getParameter("id"), -1);
+
+                    if (id > 0) {
+                        bannerDAO.delete(id);
+                    }
+
+                    break;
+                }
+
+                case "toggle": {
+                    int id = safeParseInt(req.getParameter("id"), -1);
+
+                    if (id > 0) {
+                        bannerDAO.toggleActive(id);
+                    }
+
+                    break;
+                }
+
+                default: {
+                    break;
+                }
+            }
+
+            resp.sendRedirect(req.getContextPath() + "/admin/banners");
+        } catch (IllegalArgumentException ex) {
+            throw new ServletException(ex.getMessage(), ex);
+        }
     }
 
-    private void bind(HttpServletRequest req, Banner b, boolean isCreate)
+    private void bind(HttpServletRequest req, Banner banner, boolean isCreate)
             throws IOException, ServletException {
 
-        b.setTitle(trim(req.getParameter("title")));
-        b.setLink(trim(req.getParameter("link")));
-        b.setActive(Objects.equals(req.getParameter("active"), "1"));
+        banner.setTitle(trim(req.getParameter("title")));
+        banner.setLink(trim(req.getParameter("link")));
+        banner.setActive(Objects.equals(req.getParameter("active"), "1"));
 
-        // Update: giữ ảnh cũ nếu không upload ảnh mới
+        /*
+         * Khi update mà không upload ảnh mới thì giữ ảnh cũ.
+         */
         String imageUrl = isCreate ? "" : trim(req.getParameter("existingImage"));
 
         Part imagePart = req.getPart("imageFile");
+
         if (imagePart != null && imagePart.getSize() > 0) {
-
-            // Validate MIME (nhẹ)
             String contentType = imagePart.getContentType();
+
             if (contentType == null || !contentType.toLowerCase().startsWith("image/")) {
-                throw new ServletException("File upload không hợp lệ (chỉ chấp nhận ảnh).");
+                throw new IllegalArgumentException("File upload không hợp lệ. Chỉ chấp nhận ảnh.");
             }
 
-            // Validate extension
-            String original = Paths.get(imagePart.getSubmittedFileName()).getFileName().toString();
+            String original = Paths.get(imagePart.getSubmittedFileName())
+                    .getFileName()
+                    .toString();
+
             String ext = getExtensionLower(original);
+
             if (ext.isEmpty() || !ALLOWED_EXT.contains(ext)) {
-                throw new ServletException("Định dạng ảnh không hỗ trợ. Chỉ chấp nhận: " + ALLOWED_EXT);
+                throw new IllegalArgumentException("Định dạng ảnh không hỗ trợ. Chỉ chấp nhận: png, jpg, jpeg, webp, gif.");
             }
 
-            // đảm bảo folder tồn tại
             Files.createDirectories(UploadConfig.BANNER_DIR);
 
             String baseName = original.replaceAll("[^a-zA-Z0-9._-]", "_");
             String safeName = System.currentTimeMillis() + "_" + baseName;
 
-            Path dest = UploadConfig.BANNER_DIR.resolve(safeName);
+            Path destination = UploadConfig.resolveBannerFile(safeName);
 
-            // Ghi file ổn định
-            try (InputStream in = imagePart.getInputStream()) {
-                Files.copy(in, dest, StandardCopyOption.REPLACE_EXISTING);
+            try (InputStream inputStream = imagePart.getInputStream()) {
+                Files.copy(inputStream, destination, StandardCopyOption.REPLACE_EXISTING);
             }
 
-            // URL public
-            imageUrl = "/uploads/banner/" + safeName;
+            /*
+             * File thật:
+             * MyCosmeticShopUploads/banner/{safeName}
+             *
+             * Database chỉ lưu:
+             * /uploads/banner/{safeName}
+             */
+            imageUrl = UploadConfig.toBannerUrl(safeName);
         }
 
-        // Create bắt buộc ảnh? tuỳ nghiệp vụ
         if (isCreate && (imageUrl == null || imageUrl.isBlank())) {
             imageUrl = "";
-            // hoặc throw new ServletException("Vui lòng chọn ảnh banner.");
         }
 
-        b.setImageUrl(imageUrl);
+        banner.setImageUrl(imageUrl);
     }
 
-    private static int safeParseInt(String s, int fallback) {
-        try { return Integer.parseInt(s); } catch (Exception e) { return fallback; }
+    private static int safeParseInt(String value, int fallback) {
+        try {
+            return Integer.parseInt(value);
+        } catch (Exception e) {
+            return fallback;
+        }
     }
 
-    private static String trim(String s) {
-        return s == null ? "" : s.trim();
+    private static String trim(String value) {
+        return value == null ? "" : value.trim();
     }
 
     private static String getExtensionLower(String filename) {
         int dot = filename.lastIndexOf('.');
-        if (dot < 0 || dot == filename.length() - 1) return "";
+
+        if (dot < 0 || dot == filename.length() - 1) {
+            return "";
+        }
+
         return filename.substring(dot + 1).toLowerCase();
     }
-
-    // Optional: xoá file vật lý (nếu bạn muốn khi delete)
-    // private void tryDeletePhysicalFile(String imageUrl) {
-    //     if (imageUrl == null || imageUrl.isBlank()) return;
-    //     // imageUrl dạng "/uploads/banner/xxx.jpg" -> map về UploadConfig.BANNER_DIR/xxx.jpg
-    //     String prefix = "/uploads/banner/";
-    //     if (!imageUrl.startsWith(prefix)) return;
-    //     String fileName = imageUrl.substring(prefix.length());
-    //     try {
-    //         Files.deleteIfExists(UploadConfig.BANNER_DIR.resolve(fileName));
-    //     } catch (Exception ignored) {}
-    // }
 }
