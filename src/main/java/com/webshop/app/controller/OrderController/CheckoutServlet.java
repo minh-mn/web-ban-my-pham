@@ -130,10 +130,13 @@ public class CheckoutServlet extends HttpServlet {
     /**
      * Tính phí ship ở backend, không tin hoàn toàn vào input hidden từ trình duyệt.
      *
-     * Quy tắc:
-     * - Freeship nếu tổng sau voucher >= 500.000đ.
-     * - TP.HCM: ECONOMY 20k, FAST 35k, EXPRESS 50k.
-     * - Ngoại tỉnh: ECONOMY 35k, FAST 50k, EXPRESS không hỗ trợ.
+     * Quy tắc cuối cùng:
+     * - Freeship áp dụng toàn quốc nếu tổng sau voucher >= 500.000đ.
+     * - Nếu chưa đạt freeship:
+     *   + TP.HCM: ECONOMY 20k, FAST 35k, EXPRESS 50k.
+     *   + Ngoại tỉnh: ECONOMY 35k, FAST 50k, EXPRESS không hỗ trợ.
+     * - Nếu client cố gửi EXPRESS cho ngoại tỉnh, backend không cho phí = 0 sai;
+     *   hệ thống fallback về phí ECONOMY ngoại tỉnh để tránh gian lận hidden input.
      */
     private BigDecimal calculateServerShippingFee(String shippingMethod,
                                                   String province,
@@ -142,16 +145,16 @@ public class CheckoutServlet extends HttpServlet {
                 ? amountAfterCoupon.setScale(0, RoundingMode.HALF_UP)
                 : BigDecimal.ZERO;
 
+        /*
+         * Freeship áp dụng toàn quốc, không phân biệt TP.HCM hay tỉnh khác.
+         * Điều kiện duy nhất: tổng tiền hàng sau voucher đạt ngưỡng quy định.
+         */
         if (safeAmountAfterCoupon.compareTo(FREE_SHIP_THRESHOLD) >= 0) {
             return BigDecimal.ZERO;
         }
 
         String method = normalizeShippingMethod(shippingMethod);
         boolean hcm = isHcmCity(province);
-
-        if (SHIPPING_EXPRESS.equals(method) && !hcm) {
-            return BigDecimal.ZERO;
-        }
 
         if (hcm) {
             return switch (method) {
@@ -162,9 +165,13 @@ public class CheckoutServlet extends HttpServlet {
             };
         }
 
+        /*
+         * Ngoại tỉnh không hỗ trợ hỏa tốc.
+         * Nếu request vẫn gửi EXPRESS, tính như ECONOMY ngoại tỉnh thay vì 0đ.
+         */
         return switch (method) {
             case SHIPPING_FAST -> OTHER_FAST_FEE;
-            case SHIPPING_ECONOMY -> OTHER_ECONOMY_FEE;
+            case SHIPPING_EXPRESS, SHIPPING_ECONOMY -> OTHER_ECONOMY_FEE;
             default -> OTHER_ECONOMY_FEE;
         };
     }
