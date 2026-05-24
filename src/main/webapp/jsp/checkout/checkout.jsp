@@ -744,6 +744,43 @@
   }
 
 
+  /* ================= ADDRESS VALIDATION / CURRENT LOCATION ================= */
+
+  .btn-use-location {
+    margin-top: 10px;
+    min-height: 42px;
+    padding: 0 16px;
+    border: 1px solid var(--checkout-brand-border);
+    border-radius: 12px;
+    background: var(--checkout-brand-soft);
+    color: var(--checkout-brand-strong);
+    font-size: 14px;
+    font-weight: 850;
+    cursor: pointer;
+    transition: 0.2s ease;
+  }
+
+  .btn-use-location:hover:not(:disabled) {
+    background: #ffe6f1;
+    border-color: var(--checkout-brand);
+    transform: translateY(-1px);
+  }
+
+  .btn-use-location:disabled {
+    opacity: 0.68;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .field-hint {
+    margin-top: 8px;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.45;
+    font-weight: 600;
+  }
+
+
   /* ================= MANUAL COUPON INPUT VALIDATION ================= */
 
   .coupon-input-row input.is-valid {
@@ -938,9 +975,39 @@
                    id="address"
                    name="address"
                    value="${not empty requestScope.formAddress ? requestScope.formAddress : param.address}"
-                   placeholder="Ví dụ: 123 Nguyễn Văn A"
+                   placeholder="Ví dụ: 123 Nguyễn Văn A, đường Linh Trung"
                    class="${not empty errors.address ? 'is-invalid' : ''}"
                    autocomplete="street-address">
+
+            <button type="button"
+                    id="useCurrentLocationBtn"
+                    class="btn-use-location">
+              📍 Dùng vị trí hiện tại
+            </button>
+
+            <div class="field-hint" id="addressHint">
+              Nhập số nhà, tên đường. Nếu địa chỉ ngắn như “123”, hãy dùng vị trí hiện tại để xác minh.
+            </div>
+
+            <input type="hidden"
+                   id="latitudeInput"
+                   name="latitude"
+                   value="${not empty requestScope.formLatitude ? requestScope.formLatitude : param.latitude}">
+
+            <input type="hidden"
+                   id="longitudeInput"
+                   name="longitude"
+                   value="${not empty requestScope.formLongitude ? requestScope.formLongitude : param.longitude}">
+
+            <input type="hidden"
+                   id="detectedProvinceInput"
+                   name="detectedProvince"
+                   value="${not empty requestScope.formDetectedProvince ? requestScope.formDetectedProvince : param.detectedProvince}">
+
+            <input type="hidden"
+                   id="detectedAddressInput"
+                   name="detectedAddress"
+                   value="${not empty requestScope.formDetectedAddress ? requestScope.formDetectedAddress : param.detectedAddress}">
 
             <div class="field-error" id="addressError">
               <c:if test="${not empty errors.address}">
@@ -1938,6 +2005,10 @@
 
     const provinceInput = document.getElementById("provinceInput");
     const wardInput = document.getElementById("wardInput");
+    const latitudeInput = document.getElementById("latitudeInput");
+    const longitudeInput = document.getElementById("longitudeInput");
+    const detectedProvinceInput = document.getElementById("detectedProvinceInput");
+    const detectedAddressInput = document.getElementById("detectedAddressInput");
 
     const paymentList = document.getElementById("paymentList");
     const placeOrderBtn = document.getElementById("placeOrderBtn");
@@ -2000,16 +2071,319 @@
       return true;
     }
 
+    function normalizeVietnameseText(value) {
+      return String(value || "")
+              .toLowerCase()
+              .normalize("NFD")
+              .replace(/[\u0300-\u036f]/g, "")
+              .replace(/đ/g, "d")
+              .replace(/[^a-z0-9\s./,-]/g, " ")
+              .replace(/\s+/g, " ")
+              .trim();
+    }
+
+    function containsAnyKeyword(value, keywords) {
+      const normalizedValue = normalizeVietnameseText(value);
+
+      return keywords.some(function (keyword) {
+        const normalizedKeyword = normalizeVietnameseText(keyword);
+        return normalizedKeyword && normalizedValue.includes(normalizedKeyword);
+      });
+    }
+
+    function isHcmAddressKeyword(value) {
+      return containsAnyKeyword(value, [
+        "tphcm",
+        "tp hcm",
+        "tp. hcm",
+        "ho chi minh",
+        "thanh pho ho chi minh",
+        "sai gon",
+        "thu duc",
+        "linh trung",
+        "linh xuan"
+      ]);
+    }
+
+    function isHcmProvince(value) {
+      return containsAnyKeyword(value, [
+        "tphcm",
+        "tp hcm",
+        "tp. hcm",
+        "ho chi minh",
+        "thanh pho ho chi minh"
+      ]);
+    }
+
+    function isSameProvinceByName(selectedProvince, detectedProvince) {
+      const selected = normalizeVietnameseText(selectedProvince);
+      const detected = normalizeVietnameseText(detectedProvince);
+
+      if (!selected || !detected) {
+        return false;
+      }
+
+      if (isHcmProvince(selected) && isHcmProvince(detected)) {
+        return true;
+      }
+
+      const aliasGroups = [
+        ["ho chi minh", "tphcm", "tp hcm", "thanh pho ho chi minh", "sai gon", "thu duc"],
+        ["can tho", "tp can tho", "thanh pho can tho"],
+        ["ha noi", "tp ha noi", "thanh pho ha noi"],
+        ["da nang", "tp da nang", "thanh pho da nang"],
+        ["ba ria", "vung tau", "ba ria vung tau"],
+        ["binh duong", "thu dau mot", "di an", "thuan an"],
+        ["dong nai", "bien hoa"]
+      ];
+
+      for (const group of aliasGroups) {
+        const selectedInGroup = group.some(function (keyword) {
+          return selected.includes(normalizeVietnameseText(keyword));
+        });
+
+        const detectedInGroup = group.some(function (keyword) {
+          return detected.includes(normalizeVietnameseText(keyword));
+        });
+
+        if (selectedInGroup && detectedInGroup) {
+          return true;
+        }
+      }
+
+      return selected.includes(detected) || detected.includes(selected);
+    }
+
+    function isValidCoordinateValue(value) {
+      if (!value) {
+        return false;
+      }
+
+      const number = Number(String(value).trim());
+      return Number.isFinite(number) && number >= -180 && number <= 180;
+    }
+
+    function hasVerifiedCurrentLocation() {
+      const latitude = latitudeInput ? latitudeInput.value.trim() : "";
+      const longitude = longitudeInput ? longitudeInput.value.trim() : "";
+      const detectedProvince = detectedProvinceInput ? detectedProvinceInput.value.trim() : "";
+      const selectedProvince = provinceInput ? provinceInput.value.trim() : "";
+
+      return isValidCoordinateValue(latitude)
+              && isValidCoordinateValue(longitude)
+              && detectedProvince
+              && selectedProvince
+              && isSameProvinceByName(selectedProvince, detectedProvince);
+    }
+
+    function isClearlyInvalidAddressText(value) {
+      const normalized = normalizeVietnameseText(value);
+      const compact = normalized.replace(/\s+/g, "");
+
+      if (!normalized) {
+        return true;
+      }
+
+      const invalidExactValues = [
+        "abc",
+        "abcd",
+        "abcde",
+        "test",
+        "testing",
+        "asdf",
+        "aaa",
+        "aaaa",
+        "dia chi",
+        "dia chi nha",
+        "khong biet",
+        "khong co",
+        "chua co",
+        "tam thoi",
+        "none",
+        "null"
+      ];
+
+      if (invalidExactValues.includes(normalized)) {
+        return true;
+      }
+
+      /*
+       * Chặn chuỗi nhập bừa kiểu aaaaaa, 111111, //////...
+       * Số nhà ngắn như 7, 12, 123 vẫn có thể hợp lệ nếu đã có GPS xác minh,
+       * nên không chặn mọi chuỗi toàn số.
+       */
+      if (compact.length >= 6 && /^(.)\1{5,}$/.test(compact)) {
+        return true;
+      }
+
+      return !/[a-z0-9]/.test(normalized);
+    }
+
+    function isWeakManualAddress(value) {
+      const normalized = normalizeVietnameseText(value);
+      const compact = normalized.replace(/\s+/g, "");
+
+      if (compact.length < 3) {
+        return true;
+      }
+
+      const hasLetter = /[a-z]/.test(normalized);
+      const hasDigit = /[0-9]/.test(normalized);
+
+      /*
+       * Nếu chưa xác minh GPS, chỉ nhập "123" là quá mơ hồ.
+       */
+      if (!hasLetter) {
+        return true;
+      }
+
+      const usefulKeywords = [
+        "duong",
+        "hem",
+        "ngo",
+        "so",
+        "ap",
+        "khu",
+        "kp",
+        "khu pho",
+        "thon",
+        "xom",
+        "to",
+        "block",
+        "chung cu",
+        "toa",
+        "lau",
+        "can ho",
+        "tan",
+        "linh",
+        "nguyen",
+        "tran",
+        "le",
+        "pham",
+        "hoang"
+      ];
+
+      const hasUsefulKeyword = usefulKeywords.some(function (keyword) {
+        return normalized.includes(keyword);
+      });
+
+      const wordCount = normalized ? normalized.split(" ").length : 0;
+
+      return !(hasUsefulKeyword || (hasDigit && normalized.length >= 4) || wordCount >= 2);
+    }
+
+    function isAddressProvinceConflict(address, province) {
+      const normalizedAddress = normalizeVietnameseText(address);
+      const normalizedProvince = normalizeVietnameseText(province);
+
+      if (!normalizedAddress || !normalizedProvince) {
+        return false;
+      }
+
+      if (isHcmAddressKeyword(address) && !isHcmProvince(province)) {
+        return true;
+      }
+
+      const provinceGroups = [
+        ["can tho", "tp can tho", "thanh pho can tho"],
+        ["ho chi minh", "tphcm", "tp hcm", "sai gon", "thu duc"],
+        ["ha noi", "tp ha noi", "thanh pho ha noi"],
+        ["da nang", "tp da nang", "thanh pho da nang"],
+        ["dong nai", "bien hoa"],
+        ["binh duong", "thu dau mot", "di an", "thuan an"],
+        ["long an", "tan an"],
+        ["tien giang", "my tho"],
+        ["ba ria", "vung tau", "ba ria vung tau"],
+        ["tay ninh"],
+        ["dong thap", "cao lanh", "sa dec"],
+        ["vinh long"],
+        ["ben tre"],
+        ["an giang", "long xuyen", "chau doc"],
+        ["kien giang", "rach gia", "phu quoc"],
+        ["khanh hoa", "nha trang"],
+        ["lam dong", "da lat"],
+        ["binh thuan", "phan thiet"]
+      ];
+
+      return provinceGroups.some(function (group) {
+        const addressMentionsProvince = group.some(function (keyword) {
+          return normalizedAddress.includes(normalizeVietnameseText(keyword));
+        });
+
+        if (!addressMentionsProvince) {
+          return false;
+        }
+
+        const selectedMatchesGroup = group.some(function (keyword) {
+          return normalizedProvince.includes(normalizeVietnameseText(keyword));
+        });
+
+        return !selectedMatchesGroup;
+      });
+    }
+
+    function isAddressWardConflict(address, wardName) {
+      const normalizedAddress = normalizeVietnameseText(address);
+      const normalizedWard = normalizeVietnameseText(wardName);
+
+      if (!normalizedAddress || !normalizedWard) {
+        return false;
+      }
+
+      const mentionsWardPrefix = normalizedAddress.includes("phuong ")
+              || normalizedAddress.includes("xa ")
+              || normalizedAddress.includes("thi tran ");
+
+      if (!mentionsWardPrefix) {
+        return false;
+      }
+
+      const wardShort = normalizedWard
+              .replace("phuong ", "")
+              .replace("xa ", "")
+              .replace("thi tran ", "")
+              .trim();
+
+      return wardShort && !normalizedAddress.includes(wardShort);
+    }
+
     function validateAddress() {
       const value = addressInput ? addressInput.value.trim() : "";
+      const province = provinceInput ? provinceInput.value.trim() : "";
+      const ward = wardInput ? wardInput.value.trim() : "";
+      const verifiedLocation = hasVerifiedCurrentLocation();
 
       if (!value) {
         setFieldError(addressInput, "addressError", "Vui lòng nhập địa chỉ giao hàng.");
         return false;
       }
 
-      if (value.length < 5 || value.length > 160) {
-        setFieldError(addressInput, "addressError", "Địa chỉ phải từ 5 đến 160 ký tự.");
+      if (value.length > 160) {
+        setFieldError(addressInput, "addressError", "Địa chỉ không được vượt quá 160 ký tự.");
+        return false;
+      }
+
+      if (isClearlyInvalidAddressText(value)) {
+        setFieldError(addressInput, "addressError", "Địa chỉ không hợp lệ. Vui lòng nhập địa chỉ thật.");
+        return false;
+      }
+
+      if (!verifiedLocation && isWeakManualAddress(value)) {
+        setFieldError(
+                addressInput,
+                "addressError",
+                "Vui lòng nhập thêm tên đường, khu vực hoặc dùng vị trí hiện tại để xác minh địa chỉ."
+        );
+        return false;
+      }
+
+      if (isAddressProvinceConflict(value, province)) {
+        setFieldError(addressInput, "addressError", "Địa chỉ cụ thể không khớp với Tỉnh/TP đã chọn.");
+        return false;
+      }
+
+      if (isAddressWardConflict(value, ward)) {
+        setFieldError(addressInput, "addressError", "Địa chỉ cụ thể có vẻ không khớp với Phường/Xã đã chọn.");
         return false;
       }
 
@@ -2020,6 +2394,7 @@
     function validateLocation() {
       const province = provinceInput ? provinceInput.value.trim() : "";
       const ward = wardInput ? wardInput.value.trim() : "";
+      const detectedProvince = detectedProvinceInput ? detectedProvinceInput.value.trim() : "";
 
       if (!province) {
         setFieldError(locationInput, "locationError", "Vui lòng chọn Tỉnh/TP.");
@@ -2028,6 +2403,19 @@
 
       if (!ward) {
         setFieldError(locationInput, "locationError", "Vui lòng chọn Phường/Xã sau khi chọn Tỉnh/TP.");
+        return false;
+      }
+
+      /*
+       * Nếu user đã bấm Dùng vị trí hiện tại và hệ thống phát hiện được Tỉnh/TP,
+       * Tỉnh/TP phát hiện phải khớp với Tỉnh/TP đang chọn.
+       */
+      if (detectedProvince && !isSameProvinceByName(province, detectedProvince)) {
+        setFieldError(
+                locationInput,
+                "locationError",
+                "Vị trí hiện tại không khớp với Tỉnh/TP đã chọn. Vị trí phát hiện: " + detectedProvince
+        );
         return false;
       }
 
@@ -2812,6 +3200,88 @@
     let selectedWard = null;
     let provinceLoaded = false;
 
+    function normalizeText(value) {
+      return String(value || "")
+              .trim()
+              .toLowerCase()
+              .normalize("NFD")
+              .replace(/[\u0300-\u036f]/g, "")
+              .replace(/đ/g, "d")
+              .replace(/[^a-z0-9\s./,-]/g, " ")
+              .replace(/\s+/g, " ")
+              .trim();
+    }
+
+    function removeAdministrativePrefix(value) {
+      return normalizeText(value)
+              .replace(/^thanh pho\s+/, "")
+              .replace(/^tp\.?\s+/, "")
+              .replace(/^tinh\s+/, "")
+              .replace(/^quan\s+/, "")
+              .replace(/^huyen\s+/, "")
+              .replace(/^thi xa\s+/, "")
+              .replace(/^phuong\s+/, "")
+              .replace(/^xa\s+/, "")
+              .replace(/^thi tran\s+/, "")
+              .trim();
+    }
+
+    function isHcmName(value) {
+      const normalized = normalizeText(value);
+      return normalized.includes("ho chi minh")
+              || normalized.includes("thanh pho ho chi minh")
+              || normalized.includes("tp hcm")
+              || normalized.includes("tp. hcm")
+              || normalized.includes("tphcm")
+              || normalized.includes("sai gon")
+              || normalized.includes("thu duc");
+    }
+
+    function isSameName(a, b) {
+      const left = normalizeText(a);
+      const right = normalizeText(b);
+
+      if (!left || !right) {
+        return false;
+      }
+
+      if (isHcmName(left) && isHcmName(right)) {
+        return true;
+      }
+
+      const aliasGroups = [
+        ["ho chi minh", "tphcm", "tp hcm", "thanh pho ho chi minh", "sai gon", "thu duc"],
+        ["can tho", "tp can tho", "thanh pho can tho"],
+        ["ha noi", "tp ha noi", "thanh pho ha noi"],
+        ["da nang", "tp da nang", "thanh pho da nang"],
+        ["ba ria", "vung tau", "ba ria vung tau"],
+        ["binh duong", "thu dau mot", "di an", "thuan an"],
+        ["dong nai", "bien hoa"]
+      ];
+
+      for (const group of aliasGroups) {
+        const leftInGroup = group.some(function (keyword) {
+          return left.includes(normalizeText(keyword));
+        });
+
+        const rightInGroup = group.some(function (keyword) {
+          return right.includes(normalizeText(keyword));
+        });
+
+        if (leftInGroup && rightInGroup) {
+          return true;
+        }
+      }
+
+      const leftShort = removeAdministrativePrefix(left);
+      const rightShort = removeAdministrativePrefix(right);
+
+      return left.includes(right)
+              || right.includes(left)
+              || leftShort.includes(rightShort)
+              || rightShort.includes(leftShort);
+    }
+
     function notifyButtonState() {
       if (window.updateCheckoutButtonsState) {
         window.updateCheckoutButtonsState();
@@ -2932,7 +3402,7 @@
     async function loadProvinces() {
       if (provinceLoaded) {
         renderProvinces();
-        return;
+        return provinces;
       }
 
       setLoading(provinceList, "Đang tải danh sách Tỉnh/TP...");
@@ -2954,54 +3424,103 @@
 
         provinceLoaded = true;
         renderProvinces();
+        return provinces;
       } catch (error) {
         console.error("Load provinces failed:", error);
         setEmpty(provinceList, "Không tải được danh sách Tỉnh/TP. Vui lòng thử lại.");
+        return [];
       }
     }
 
-    async function loadWardsByProvince(province) {
+    async function fetchWardsByProvince(province) {
+      if (!province || !province.code) {
+        return [];
+      }
+
+      let data;
+      let wards = [];
+
+      try {
+        data = await fetchJson(
+                API_BASE_URL + "/p/" + encodeURIComponent(province.code) + "?depth=2"
+        );
+        wards = normalizeWardList(data);
+      } catch (firstError) {
+        data = await fetchJson(
+                API_BASE_URL + "/w/?province_code=" + encodeURIComponent(province.code)
+        );
+        wards = normalizeWardList(data);
+      }
+
+      wards.sort(function (a, b) {
+        return String(a.name || "").localeCompare(String(b.name || ""), "vi");
+      });
+
+      return wards;
+    }
+
+    function setSelectedProvince(province) {
       selectedProvince = province;
       selectedWard = null;
 
-      provinceInput.value = province.name || "";
-      provinceCodeInput.value = province.code || "";
+      provinceInput.value = province && province.name ? province.name : "";
+      provinceCodeInput.value = province && province.code ? province.code : "";
 
       wardInput.value = "";
       wardCodeInput.value = "";
 
-      locationInput.value = province.name || "";
+      locationInput.value = province && province.name ? province.name : "";
 
+      wardTab.classList.toggle("disabled", !province);
+    }
+
+    async function loadWardsByProvince(province) {
+      setSelectedProvince(province);
       notifyButtonState();
 
-      wardTab.classList.remove("disabled");
       setActiveTab("ward");
       setLoading(wardList, "Đang tải danh sách Phường/Xã...");
 
       try {
-        let data;
-        let wards = [];
-
-        try {
-          data = await fetchJson(
-                  API_BASE_URL + "/p/" + encodeURIComponent(province.code) + "?depth=2"
-          );
-          wards = normalizeWardList(data);
-        } catch (firstError) {
-          data = await fetchJson(
-                  API_BASE_URL + "/w/?province_code=" + encodeURIComponent(province.code)
-          );
-          wards = normalizeWardList(data);
-        }
-
-        wards.sort(function (a, b) {
-          return String(a.name || "").localeCompare(String(b.name || ""), "vi");
-        });
-
+        const wards = await fetchWardsByProvince(province);
         renderWards(wards);
+        return wards;
       } catch (error) {
         console.error("Load wards failed:", error);
         setEmpty(wardList, "Không tải được danh sách Phường/Xã của tỉnh này.");
+        return [];
+      }
+    }
+
+    function selectWard(ward, shouldHideDropdown) {
+      selectedWard = ward;
+
+      wardInput.value = ward && ward.name ? ward.name : "";
+      wardCodeInput.value = ward && ward.code ? ward.code : "";
+
+      if (selectedProvince && selectedWard) {
+        locationInput.value = selectedWard.name + ", " + selectedProvince.name;
+      } else if (selectedProvince) {
+        locationInput.value = selectedProvince.name;
+      }
+
+      const locationError = document.getElementById("locationError");
+      locationInput.classList.remove("is-invalid");
+
+      if (locationError) {
+        locationError.textContent = "";
+      }
+
+      updateShippingAddress();
+      updateDeliveryText();
+      notifyButtonState();
+
+      if (window.updateShippingFeeByLocation) {
+        window.updateShippingFeeByLocation();
+      }
+
+      if (shouldHideDropdown) {
+        hideDropdown();
       }
     }
 
@@ -3036,29 +3555,7 @@
 
       wards.forEach(function (ward) {
         const item = createOption(ward.name, function () {
-          selectedWard = ward;
-
-          wardInput.value = ward.name || "";
-          wardCodeInput.value = ward.code || "";
-
-          locationInput.value = ward.name + ", " + selectedProvince.name;
-
-          const locationError = document.getElementById("locationError");
-          locationInput.classList.remove("is-invalid");
-
-          if (locationError) {
-            locationError.textContent = "";
-          }
-
-          updateShippingAddress();
-          updateDeliveryText();
-          notifyButtonState();
-
-          if (window.updateShippingFeeByLocation) {
-            window.updateShippingFeeByLocation();
-          }
-
-          hideDropdown();
+          selectWard(ward, true);
         });
 
         if (selectedWard && selectedWard.code === ward.code) {
@@ -3098,6 +3595,131 @@
         window.updateShippingFeeByLocation();
       }
     }
+
+    function findBestProvince(candidates) {
+      const candidateList = (candidates || [])
+              .map(function (value) { return String(value || "").trim(); })
+              .filter(Boolean);
+
+      if (!candidateList.length || !provinces.length) {
+        return null;
+      }
+
+      for (const candidate of candidateList) {
+        const matched = provinces.find(function (province) {
+          return isSameName(province.name, candidate);
+        });
+
+        if (matched) {
+          return matched;
+        }
+      }
+
+      return null;
+    }
+
+    function findBestWard(wards, candidates) {
+      const candidateList = (candidates || [])
+              .map(function (value) { return String(value || "").trim(); })
+              .filter(Boolean);
+
+      if (!candidateList.length || !wards.length) {
+        return null;
+      }
+
+      for (const candidate of candidateList) {
+        const matched = wards.find(function (ward) {
+          return isSameName(ward.name, candidate);
+        });
+
+        if (matched) {
+          return matched;
+        }
+      }
+
+      return null;
+    }
+
+    async function autoFillFromCurrentLocation(payload) {
+      const data = payload || {};
+      const provinceCandidates = data.provinceCandidates || [];
+      const wardCandidates = data.wardCandidates || [];
+      const streetAddress = String(data.streetAddress || "").trim();
+
+      const loadedProvinces = await loadProvinces();
+
+      if (!loadedProvinces.length) {
+        return {
+          ok: false,
+          reason: "Không tải được danh sách Tỉnh/TP để tự điền địa chỉ."
+        };
+      }
+
+      const province = findBestProvince(provinceCandidates);
+
+      if (!province) {
+        return {
+          ok: false,
+          reason: "Đã lấy vị trí nhưng chưa ghép được Tỉnh/TP vào danh sách hệ thống. Vui lòng chọn thủ công.",
+          detectedProvince: provinceCandidates.find(Boolean) || ""
+        };
+      }
+
+      setSelectedProvince(province);
+      setActiveTab("ward");
+      setLoading(wardList, "Đang tự điền Phường/Xã theo vị trí hiện tại...");
+
+      let wards = [];
+
+      try {
+        wards = await fetchWardsByProvince(province);
+      } catch (error) {
+        console.error("Auto-fill wards failed:", error);
+      }
+
+      renderWards(wards);
+
+      const ward = findBestWard(wards, wardCandidates);
+
+      if (ward) {
+        selectWard(ward, true);
+      } else {
+        selectedWard = null;
+        wardInput.value = "";
+        wardCodeInput.value = "";
+        locationInput.value = province.name;
+        setEmpty(wardList, "Đã tự điền Tỉnh/TP. Vui lòng kiểm tra và chọn Phường/Xã thủ công.");
+      }
+
+      if (streetAddress && addressInput) {
+        addressInput.value = streetAddress;
+        addressInput.classList.remove("is-invalid");
+
+        const addressError = document.getElementById("addressError");
+        if (addressError) {
+          addressError.textContent = "";
+        }
+      }
+
+      updateShippingAddress();
+      updateDeliveryText();
+      notifyButtonState();
+
+      return {
+        ok: true,
+        province: province.name,
+        provinceCode: province.code,
+        ward: ward ? ward.name : "",
+        wardCode: ward ? ward.code : "",
+        partial: !ward
+      };
+    }
+
+    window.checkoutLocationSelector = {
+      autoFillFromCurrentLocation: autoFillFromCurrentLocation,
+      updateShippingAddress: updateShippingAddress,
+      loadProvinces: loadProvinces
+    };
 
     locationInput.addEventListener("click", function () {
       showDropdown();
@@ -3164,3 +3786,273 @@
     notifyButtonState();
   })();
 </script>
+
+<!-- ================= CURRENT LOCATION AUTOFILL ================= -->
+<script>
+  (function () {
+    const useCurrentLocationBtn = document.getElementById("useCurrentLocationBtn");
+    const addressInput = document.getElementById("address");
+    const locationInput = document.getElementById("locationInput");
+
+    const latitudeInput = document.getElementById("latitudeInput");
+    const longitudeInput = document.getElementById("longitudeInput");
+    const detectedProvinceInput = document.getElementById("detectedProvinceInput");
+    const detectedAddressInput = document.getElementById("detectedAddressInput");
+
+    if (!useCurrentLocationBtn) {
+      return;
+    }
+
+    function normalizeText(value) {
+      return String(value || "")
+              .trim()
+              .toLowerCase()
+              .normalize("NFD")
+              .replace(/[\u0300-\u036f]/g, "")
+              .replace(/đ/g, "d")
+              .replace(/[^a-z0-9\s./,-]/g, " ")
+              .replace(/\s+/g, " ")
+              .trim();
+    }
+
+    function setAddressError(message) {
+      const errorEl = document.getElementById("addressError");
+
+      if (addressInput) {
+        addressInput.classList.toggle("is-invalid", !!message);
+      }
+
+      if (errorEl) {
+        errorEl.textContent = message || "";
+      }
+    }
+
+    function setLocationError(message) {
+      const errorEl = document.getElementById("locationError");
+
+      if (locationInput) {
+        locationInput.classList.toggle("is-invalid", !!message);
+      }
+
+      if (errorEl) {
+        errorEl.textContent = message || "";
+      }
+    }
+
+    async function reverseGeocode(lat, lon) {
+      /*
+       * API miễn phí để demo học tập. Khi deploy thật nên thay bằng Google Maps,
+       * Mapbox, Goong, GHN/GHTK hoặc gọi qua backend để ổn định hơn.
+       */
+      const url = "https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat="
+              + encodeURIComponent(lat)
+              + "&lon="
+              + encodeURIComponent(lon)
+              + "&accept-language=vi";
+
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Accept": "application/json"
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error("Reverse geocoding failed: HTTP " + response.status);
+      }
+
+      return response.json();
+    }
+
+    function extractAddressObject(data) {
+      return data && data.address ? data.address : {};
+    }
+
+    function compactParts(parts) {
+      const seen = new Set();
+
+      return (parts || [])
+              .map(function (part) { return String(part || "").trim(); })
+              .filter(Boolean)
+              .filter(function (part) {
+                const key = normalizeText(part);
+                if (seen.has(key)) {
+                  return false;
+                }
+                seen.add(key);
+                return true;
+              });
+    }
+
+    function buildStreetAddress(address, data) {
+      const houseNumber = address.house_number || "";
+      const road = address.road || address.pedestrian || address.footway || address.path || "";
+      const neighbourhood = address.neighbourhood || address.quarter || address.suburb || "";
+
+      const roadLine = compactParts([houseNumber, road]).join(" ").trim();
+
+      if (roadLine) {
+        return roadLine;
+      }
+
+      const displayName = data && data.display_name ? String(data.display_name) : "";
+
+      if (displayName) {
+        const firstPart = displayName.split(",")[0].trim();
+        if (firstPart && normalizeText(firstPart) !== normalizeText(neighbourhood)) {
+          return firstPart;
+        }
+      }
+
+      return neighbourhood || "";
+    }
+
+    function getProvinceCandidates(address) {
+      return compactParts([
+        address.state,
+        address.province,
+        address.city,
+        address.town,
+        address.county,
+        address.municipality
+      ]);
+    }
+
+    function getWardCandidates(address) {
+      return compactParts([
+        address.suburb,
+        address.neighbourhood,
+        address.quarter,
+        address.city_district,
+        address.district,
+        address.village,
+        address.hamlet,
+        address.residential,
+        address.municipality
+      ]);
+    }
+
+    function resetDetectedLocation() {
+      if (latitudeInput) latitudeInput.value = "";
+      if (longitudeInput) longitudeInput.value = "";
+      if (detectedProvinceInput) detectedProvinceInput.value = "";
+      if (detectedAddressInput) detectedAddressInput.value = "";
+      useCurrentLocationBtn.textContent = "📍 Dùng vị trí hiện tại";
+    }
+
+    if (addressInput) {
+      addressInput.addEventListener("input", function () {
+        /*
+         * Cho phép user bổ sung số nhà sau khi hệ thống đã xác minh GPS.
+         * Không xóa latitude/longitude, vì địa chỉ ngắn như "123" vẫn hợp lý
+         * nếu tọa độ hiện tại đã khớp Tỉnh/TP đã chọn.
+         */
+        if (useCurrentLocationBtn.textContent.includes("Đã điền")
+                || useCurrentLocationBtn.textContent.includes("Vị trí khớp")) {
+          useCurrentLocationBtn.textContent = "✅ Vị trí đã xác minh";
+        }
+      });
+    }
+
+    useCurrentLocationBtn.addEventListener("click", function () {
+      if (!navigator.geolocation) {
+        setAddressError("Trình duyệt không hỗ trợ lấy vị trí hiện tại.");
+        return;
+      }
+
+      useCurrentLocationBtn.disabled = true;
+      useCurrentLocationBtn.textContent = "Đang lấy vị trí...";
+
+      navigator.geolocation.getCurrentPosition(
+              async function (position) {
+                try {
+                  const lat = position.coords.latitude;
+                  const lon = position.coords.longitude;
+
+                  if (latitudeInput) latitudeInput.value = String(lat);
+                  if (longitudeInput) longitudeInput.value = String(lon);
+
+                  useCurrentLocationBtn.textContent = "Đang xác định địa chỉ...";
+
+                  const geoData = await reverseGeocode(lat, lon);
+                  const address = extractAddressObject(geoData);
+                  const provinceCandidates = getProvinceCandidates(address);
+                  const wardCandidates = getWardCandidates(address);
+                  const streetAddress = buildStreetAddress(address, geoData);
+                  const detectedProvince = provinceCandidates[0] || "";
+                  const detectedAddress = geoData && geoData.display_name ? geoData.display_name : "";
+
+                  if (detectedProvinceInput) detectedProvinceInput.value = detectedProvince;
+                  if (detectedAddressInput) detectedAddressInput.value = detectedAddress;
+
+                  if (!provinceCandidates.length) {
+                    setAddressError("Đã lấy vị trí nhưng chưa xác định được Tỉnh/TP. Vui lòng chọn địa chỉ thủ công.");
+                    useCurrentLocationBtn.textContent = "📍 Dùng vị trí hiện tại";
+                    useCurrentLocationBtn.disabled = false;
+                    return;
+                  }
+
+                  if (!window.checkoutLocationSelector || !window.checkoutLocationSelector.autoFillFromCurrentLocation) {
+                    setAddressError("Không tìm thấy bộ tự điền địa chỉ. Vui lòng tải lại trang và thử lại.");
+                    useCurrentLocationBtn.textContent = "📍 Dùng vị trí hiện tại";
+                    useCurrentLocationBtn.disabled = false;
+                    return;
+                  }
+
+                  const result = await window.checkoutLocationSelector.autoFillFromCurrentLocation({
+                    provinceCandidates: provinceCandidates,
+                    wardCandidates: wardCandidates,
+                    streetAddress: streetAddress,
+                    detectedAddress: detectedAddress,
+                    latitude: lat,
+                    longitude: lon
+                  });
+
+                  if (!result || !result.ok) {
+                    setLocationError(result && result.reason ? result.reason : "Không thể tự điền địa chỉ từ vị trí hiện tại.");
+                    useCurrentLocationBtn.textContent = "📍 Dùng vị trí hiện tại";
+                    useCurrentLocationBtn.disabled = false;
+                    return;
+                  }
+
+                  setAddressError("");
+
+                  if (result.partial) {
+                    setLocationError("Đã tự điền Tỉnh/TP theo vị trí hiện tại. Vui lòng chọn lại Phường/Xã nếu hệ thống chưa nhận diện đúng.");
+                    useCurrentLocationBtn.textContent = "✅ Đã điền Tỉnh/TP";
+                  } else {
+                    setLocationError("");
+                    useCurrentLocationBtn.textContent = "✅ Đã điền theo vị trí hiện tại";
+                  }
+
+                  useCurrentLocationBtn.disabled = false;
+
+                  if (window.updateShippingFeeByLocation) {
+                    window.updateShippingFeeByLocation();
+                  }
+
+                  if (window.updateCheckoutButtonsState) {
+                    window.updateCheckoutButtonsState();
+                  }
+                } catch (error) {
+                  console.error(error);
+                  setAddressError("Không thể tự điền địa chỉ từ vị trí hiện tại. Vui lòng thử lại hoặc chọn địa chỉ thủ công.");
+                  useCurrentLocationBtn.textContent = "📍 Dùng vị trí hiện tại";
+                  useCurrentLocationBtn.disabled = false;
+                }
+              },
+              function () {
+                setAddressError("Không thể lấy vị trí hiện tại. Vui lòng cấp quyền vị trí cho trình duyệt.");
+                useCurrentLocationBtn.textContent = "📍 Dùng vị trí hiện tại";
+                useCurrentLocationBtn.disabled = false;
+              },
+              {
+                enableHighAccuracy: true,
+                timeout: 12000,
+                maximumAge: 0
+              }
+      );
+    });
+  })();
+</script>
+
