@@ -1,5 +1,14 @@
 package com.webshop.app.controller.AdminController;
 
+import com.webshop.app.config.UploadConfig;
+import com.webshop.app.dao.BrandDAO;
+import com.webshop.app.dao.CategoryDAO;
+import com.webshop.app.dao.ProductDAO;
+import com.webshop.app.dao.ProductImageDAO;
+import com.webshop.app.model.Brand;
+import com.webshop.app.model.Category;
+import com.webshop.app.model.Product;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
@@ -11,16 +20,8 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
-
-import com.webshop.app.config.UploadConfig;
-import com.webshop.app.dao.BrandDAO;
-import com.webshop.app.dao.CategoryDAO;
-import com.webshop.app.dao.ProductDAO;
-import com.webshop.app.dao.ProductImageDAO;
-import com.webshop.app.model.Brand;
-import com.webshop.app.model.Category;
-import com.webshop.app.model.Product;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.MultipartConfig;
@@ -46,17 +47,20 @@ public class AdminProductServlet extends HttpServlet {
 	private final CategoryDAO categoryDAO = new CategoryDAO();
 	private final BrandDAO brandDAO = new BrandDAO();
 
-	/*
-	 * Public URL lưu trong database.
-	 * File vật lý sẽ lưu trong:
-	 * - MyCosmeticShopUploads/product
-	 * - MyCosmeticShopUploads/product/gallery
-	 */
-	private static final String PRODUCT_PUBLIC_PREFIX = "/uploads/product";
-	private static final String PRODUCT_GALLERY_PUBLIC_PREFIX = "/uploads/product/gallery";
-
 	private static final String JSP_FORM = "/jsp/admin/products/product_form.jsp";
 	private static final String JSP_LIST = "/jsp/admin/products/product_list.jsp";
+
+	@Override
+	public void init() throws ServletException {
+		super.init();
+
+		/*
+		 * Đảm bảo các thư mục upload tồn tại:
+		 * - MyCosmeticShopUploads/product
+		 * - MyCosmeticShopUploads/product/gallery
+		 */
+		UploadConfig.ensureUploadDirectories();
+	}
 
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp)
@@ -67,7 +71,7 @@ public class AdminProductServlet extends HttpServlet {
 
 		String action = req.getParameter("action");
 
-		if (action == null) {
+		if (action == null || action.isBlank()) {
 			action = "list";
 		}
 
@@ -125,7 +129,7 @@ public class AdminProductServlet extends HttpServlet {
 
 		String action = req.getParameter("action");
 
-		if (action == null) {
+		if (action == null || action.isBlank()) {
 			action = "create";
 		}
 
@@ -134,12 +138,7 @@ public class AdminProductServlet extends HttpServlet {
 				case "create": {
 					Product product = buildFromRequest(req);
 
-					String mainImage = saveIfPresent(
-							req,
-							"imageMain",
-							UploadConfig.PRODUCT_DIR,
-							PRODUCT_PUBLIC_PREFIX
-					);
+					String mainImage = saveIfPresent(req, "imageMain", false);
 
 					if (mainImage != null) {
 						product.setImage(mainImage);
@@ -147,12 +146,7 @@ public class AdminProductServlet extends HttpServlet {
 
 					int newId = productDAO.create(product);
 
-					List<String> gallery = saveMultiIfPresent(
-							req,
-							"imageGallery",
-							UploadConfig.PRODUCT_GALLERY_DIR,
-							PRODUCT_GALLERY_PUBLIC_PREFIX
-					);
+					List<String> gallery = saveMultiIfPresent(req, "imageGallery", true);
 
 					if (!gallery.isEmpty()) {
 						int order = 0;
@@ -177,14 +171,13 @@ public class AdminProductServlet extends HttpServlet {
 					Product product = buildFromRequest(req);
 					product.setId(id);
 
+					/*
+					 * Nếu không upload ảnh đại diện mới thì giữ nguyên ảnh cũ.
+					 * Không tự normalize ảnh cũ để tránh đổi DB sang /uploads/ khi file thật chưa được copy.
+					 */
 					String existingMain = req.getParameter("existingImage");
 
-					String mainImage = saveIfPresent(
-							req,
-							"imageMain",
-							UploadConfig.PRODUCT_DIR,
-							PRODUCT_PUBLIC_PREFIX
-					);
+					String mainImage = saveIfPresent(req, "imageMain", false);
 
 					if (mainImage != null) {
 						product.setImage(mainImage);
@@ -194,12 +187,7 @@ public class AdminProductServlet extends HttpServlet {
 
 					productDAO.update(product);
 
-					List<String> gallery = saveMultiIfPresent(
-							req,
-							"imageGallery",
-							UploadConfig.PRODUCT_GALLERY_DIR,
-							PRODUCT_GALLERY_PUBLIC_PREFIX
-					);
+					List<String> gallery = saveMultiIfPresent(req, "imageGallery", true);
 
 					if (!gallery.isEmpty()) {
 						productImageDAO.deleteByProductId(id);
@@ -379,7 +367,7 @@ public class AdminProductServlet extends HttpServlet {
 
 	/* ===================== UPLOAD HELPERS ===================== */
 
-	private String saveIfPresent(HttpServletRequest req, String partName, Path uploadDir, String publicPrefix)
+	private String saveIfPresent(HttpServletRequest req, String partName, boolean gallery)
 			throws Exception {
 
 		Part part;
@@ -400,10 +388,10 @@ public class AdminProductServlet extends HttpServlet {
 			return null;
 		}
 
-		return savePartToUploadFolder(part, uploadDir, publicPrefix);
+		return savePartToUploadFolder(part, gallery);
 	}
 
-	private List<String> saveMultiIfPresent(HttpServletRequest req, String partName, Path uploadDir, String publicPrefix)
+	private List<String> saveMultiIfPresent(HttpServletRequest req, String partName, boolean gallery)
 			throws Exception {
 
 		Collection<Part> parts;
@@ -431,13 +419,13 @@ public class AdminProductServlet extends HttpServlet {
 				continue;
 			}
 
-			result.add(savePartToUploadFolder(part, uploadDir, publicPrefix));
+			result.add(savePartToUploadFolder(part, gallery));
 		}
 
 		return result;
 	}
 
-	private String savePartToUploadFolder(Part part, Path uploadDir, String publicPrefix)
+	private String savePartToUploadFolder(Part part, boolean gallery)
 			throws Exception {
 
 		String submitted = getSubmittedFileName(part);
@@ -448,7 +436,7 @@ public class AdminProductServlet extends HttpServlet {
 
 		String contentType = part.getContentType();
 
-		if (contentType == null || !contentType.toLowerCase().startsWith("image/")) {
+		if (contentType == null || !contentType.toLowerCase(Locale.ROOT).startsWith("image/")) {
 			throw new IllegalArgumentException("File upload không hợp lệ. Chỉ chấp nhận file ảnh.");
 		}
 
@@ -458,13 +446,19 @@ public class AdminProductServlet extends HttpServlet {
 			throw new IllegalArgumentException("Định dạng ảnh không hỗ trợ. Chỉ chấp nhận: png, jpg, jpeg, webp, gif.");
 		}
 
-		Path safeUploadDir = uploadDir.toAbsolutePath().normalize();
-		Files.createDirectories(safeUploadDir);
+		Path uploadDir = gallery
+				? UploadConfig.PRODUCT_GALLERY_DIR.toAbsolutePath().normalize()
+				: UploadConfig.PRODUCT_DIR.toAbsolutePath().normalize();
+
+		Files.createDirectories(uploadDir);
 
 		String newName = UUID.randomUUID().toString().replace("-", "") + "." + ext;
-		Path destination = safeUploadDir.resolve(newName).normalize();
 
-		if (!destination.startsWith(safeUploadDir)) {
+		Path destination = gallery
+				? UploadConfig.resolveProductGalleryFile(newName).toAbsolutePath().normalize()
+				: UploadConfig.resolveProductFile(newName).toAbsolutePath().normalize();
+
+		if (!destination.startsWith(uploadDir)) {
 			throw new IllegalArgumentException("Đường dẫn upload không hợp lệ.");
 		}
 
@@ -472,36 +466,46 @@ public class AdminProductServlet extends HttpServlet {
 			Files.copy(inputStream, destination, StandardCopyOption.REPLACE_EXISTING);
 		}
 
-		return publicPrefix + "/" + newName;
+		/*
+		 * Database chỉ lưu URL public:
+		 * - /uploads/product/{fileName}
+		 * - /uploads/product/gallery/{fileName}
+		 */
+		if (gallery) {
+			return UploadConfig.toProductGalleryUrl(newName);
+		}
+
+		return UploadConfig.toProductUrl(newName);
 	}
 
 	private String getSubmittedFileName(Part part) {
-		String contentDisposition = part.getHeader("content-disposition");
-
-		if (contentDisposition == null) {
+		if (part == null) {
 			return null;
 		}
 
-		for (String token : contentDisposition.split(";")) {
-			token = token.trim();
+		String submitted = part.getSubmittedFileName();
 
-			if (token.startsWith("filename=")) {
-				String fileName = token.substring("filename=".length()).trim().replace("\"", "");
-				return Paths.get(fileName).getFileName().toString();
-			}
+		if (submitted == null || submitted.isBlank()) {
+			return null;
 		}
 
-		return null;
+		return Paths.get(submitted)
+				.getFileName()
+				.toString();
 	}
 
 	private String getExtensionLower(String filename) {
+		if (filename == null || filename.isBlank()) {
+			return "";
+		}
+
 		int dot = filename.lastIndexOf('.');
 
 		if (dot < 0 || dot == filename.length() - 1) {
 			return "";
 		}
 
-		return filename.substring(dot + 1).toLowerCase();
+		return filename.substring(dot + 1).toLowerCase(Locale.ROOT);
 	}
 
 	private boolean isAllowedImageExtension(String ext) {
