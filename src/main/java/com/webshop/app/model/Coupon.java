@@ -34,6 +34,8 @@ public class Coupon {
     private LocalDate startDate;
     private LocalDate endDate;
 
+    private String applicableProducts;
+
     /* GET / SET */
 
     public int getId() {
@@ -175,5 +177,13 @@ public class Coupon {
 
     public void setType(String type) {
         this.type = type == null ? null : type.trim().toUpperCase();
+    }
+
+    public String getApplicableProducts() {
+        return applicableProducts;
+    }
+
+    public void setApplicableProducts(String applicableProducts) {
+        this.applicableProducts = applicableProducts;
     }
 }
