@@ -196,7 +196,7 @@
 
     .shipping-summary-grid {
         display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-columns: repeat(5, minmax(0, 1fr));
         gap: 14px;
         margin-bottom: 20px;
     }
@@ -479,13 +479,18 @@
         font-size: 22px;
     }
 
+    @media (max-width: 1100px) {
+        .shipping-summary-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
     @media (max-width: 900px) {
         .order-detail-header {
             flex-direction: column;
         }
 
         .order-info-grid,
-        .shipping-summary-grid,
         .tracking-steps,
         .tracking-history-item {
             grid-template-columns: 1fr;
@@ -498,6 +503,12 @@
         .payment-summary {
             max-width: none;
             margin-left: 0;
+        }
+    }
+
+    @media (max-width: 640px) {
+        .shipping-summary-grid {
+            grid-template-columns: 1fr;
         }
     }
 </style>
@@ -549,8 +560,7 @@
                 </div>
             </div>
 
-            <a href="${pageContext.request.contextPath}/account"
-               class="order-back-btn">
+            <a href="${pageContext.request.contextPath}/account" class="order-back-btn">
                 Quay lại tài khoản
             </a>
         </div>
@@ -561,23 +571,17 @@
             <div class="order-info-grid">
                 <div class="order-info-item">
                     <div class="order-info-label">Người nhận</div>
-                    <div class="order-info-value">
-                        <c:out value="${order.fullName}" />
-                    </div>
+                    <div class="order-info-value"><c:out value="${order.fullName}" /></div>
                 </div>
 
                 <div class="order-info-item">
                     <div class="order-info-label">Số điện thoại</div>
-                    <div class="order-info-value">
-                        <c:out value="${order.phone}" />
-                    </div>
+                    <div class="order-info-value"><c:out value="${order.phone}" /></div>
                 </div>
 
                 <div class="order-info-item full">
                     <div class="order-info-label">Địa chỉ giao hàng</div>
-                    <div class="order-info-value">
-                        <c:out value="${order.address}" />
-                    </div>
+                    <div class="order-info-value"><c:out value="${order.address}" /></div>
                 </div>
 
                 <div class="order-info-item">
@@ -590,19 +594,35 @@
                 <div class="order-info-item">
                     <div class="order-info-label">Thanh toán</div>
                     <div class="order-info-value">
-                        <c:out value="${order.paymentMethod}" />
-                        -
                         <c:choose>
-                            <c:when test="${order.paymentStatus == 'PAID'}">
-                                <span class="order-pill ok">Đã thanh toán</span>
+                            <c:when test="${order.paymentMethod == 'COD'}">
+                                COD -
+                                <c:choose>
+                                    <c:when test="${order.paymentStatus == 'PAID'}">
+                                        <span class="order-pill ok">Đã thanh toán</span>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <span class="order-pill info">Thanh toán khi nhận hàng</span>
+                                    </c:otherwise>
+                                </c:choose>
                             </c:when>
-                            <c:when test="${order.paymentStatus == 'CANCELED' || order.paymentStatus == 'FAILED'}">
-                <span class="order-pill danger">
-                  <c:out value="${order.paymentStatus}" />
-                </span>
-                            </c:when>
+
                             <c:otherwise>
-                                <span class="order-pill warning">Chờ thanh toán</span>
+                                <c:out value="${order.paymentMethod}" />
+                                -
+                                <c:choose>
+                                    <c:when test="${order.paymentStatus == 'PAID'}">
+                                        <span class="order-pill ok">Đã thanh toán</span>
+                                    </c:when>
+                                    <c:when test="${order.paymentStatus == 'CANCELED' || order.paymentStatus == 'FAILED'}">
+                    <span class="order-pill danger">
+                      <c:out value="${order.paymentStatus}" />
+                    </span>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <span class="order-pill warning">Chờ thanh toán</span>
+                                    </c:otherwise>
+                                </c:choose>
                             </c:otherwise>
                         </c:choose>
                     </div>
@@ -611,9 +631,7 @@
                 <c:if test="${not empty order.vnpTxnRef}">
                     <div class="order-info-item full">
                         <div class="order-info-label">Mã giao dịch VNPAY</div>
-                        <div class="order-info-value">
-                            <c:out value="${order.vnpTxnRef}" />
-                        </div>
+                        <div class="order-info-value"><c:out value="${order.vnpTxnRef}" /></div>
                     </div>
                 </c:if>
             </div>
@@ -625,16 +643,12 @@
             <div class="shipping-summary-grid">
                 <div class="shipping-summary-box">
                     <span>Phương thức</span>
-                    <strong>
-                        <c:out value="${order.shippingMethodLabel}" />
-                    </strong>
+                    <strong><c:out value="${order.shippingMethodLabel}" /></strong>
                 </div>
 
                 <div class="shipping-summary-box">
                     <span>Đơn vị giao</span>
-                    <strong>
-                        <c:out value="${order.shippingProviderLabel}" />
-                    </strong>
+                    <strong><c:out value="${order.shippingProviderLabel}" /></strong>
                 </div>
 
                 <div class="shipping-summary-box">
@@ -657,6 +671,18 @@
                                           groupingUsed="true"
                                           minFractionDigits="0"
                                           maxFractionDigits="0" /> ₫
+                    </strong>
+                </div>
+
+                <div class="shipping-summary-box">
+                    <span>Dự kiến nhận hàng</span>
+                    <strong>
+                        <c:choose>
+                            <c:when test="${not empty estimatedDeliveryDate}">
+                                <c:out value="${estimatedDeliveryDate}" />
+                            </c:when>
+                            <c:otherwise>3 - 5 ngày làm việc</c:otherwise>
+                        </c:choose>
                     </strong>
                 </div>
             </div>
@@ -749,13 +775,8 @@
                                 </div>
 
                                 <div class="tracking-history-content">
-                                    <strong>
-                                        <c:out value="${tracking.shippingStatusLabel}" />
-                                    </strong>
-
-                                    <p>
-                                        <c:out value="${tracking.note}" />
-                                    </p>
+                                    <strong><c:out value="${tracking.shippingStatusLabel}" /></strong>
+                                    <p><c:out value="${tracking.note}" /></p>
                                 </div>
                             </div>
                         </c:forEach>
@@ -768,7 +789,6 @@
             <h2 class="order-card-title">Sản phẩm đã mua</h2>
 
             <c:set var="displayItems" value="${orderItems}" />
-
             <c:if test="${empty displayItems && not empty items}">
                 <c:set var="displayItems" value="${items}" />
             </c:if>
@@ -787,7 +807,7 @@
                             <tr>
                                 <th style="width: 78px;">Ảnh</th>
                                 <th>Sản phẩm</th>
-                                <th style="width: 210px;">Biến thể</th>
+                                <th style="width: 210px;">Phân loại</th>
                                 <th style="width: 130px; text-align: right;">Đơn giá</th>
                                 <th style="width: 80px; text-align: center;">SL</th>
                                 <th style="width: 150px; text-align: right;">Thành tiền</th>
@@ -804,7 +824,6 @@
                                                      alt="${item.productName}"
                                                      class="order-product-img" />
                                             </c:when>
-
                                             <c:otherwise>
                                                 <div class="order-product-placeholder">—</div>
                                             </c:otherwise>
@@ -828,7 +847,7 @@
                                   || not empty item.variantName
                                   || not empty item.variantSize
                                   || not empty item.variantType}">
-                                                <div class="variant-badge">Có biến thể</div>
+                                                <div class="variant-badge">Phân loại sản phẩm</div>
 
                                                 <div style="font-size: 13px; color: #444; line-height: 1.7;">
                                                     <c:if test="${not empty item.variantName}">
@@ -840,7 +859,7 @@
 
                                                     <c:if test="${not empty item.variantSize}">
                                                         <div>
-                                                            <strong>Size:</strong>
+                                                            <strong>Dung tích / kích thước:</strong>
                                                             <c:out value="${item.variantSize}" />
                                                         </div>
                                                     </c:if>
@@ -854,7 +873,7 @@
 
                                                     <c:if test="${not empty item.variantId}">
                                                         <div class="order-muted">
-                                                            Variant ID:
+                                                            Mã phân loại:
                                                             <c:out value="${item.variantId}" />
                                                         </div>
                                                     </c:if>
@@ -862,7 +881,7 @@
                                             </c:when>
 
                                             <c:otherwise>
-                                                <span class="order-muted">Không có biến thể</span>
+                                                <span class="order-muted">Không có phân loại</span>
                                             </c:otherwise>
                                         </c:choose>
                                     </td>
@@ -902,7 +921,7 @@
 
             <div class="payment-summary">
                 <div class="summary-line">
-                    <span>Giảm giá coupon</span>
+                    <span>Giảm giá</span>
                     <strong>
                         -
                         <fmt:formatNumber value="${empty order.couponDiscount ? 0 : order.couponDiscount}"
