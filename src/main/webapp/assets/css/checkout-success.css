@@ -1,8 +1,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap");
 
 /* =========================================================
-   ORDER SUCCESS PAGE - MYCOSMETIC
-   Dùng cho trang /checkout/success
+   CHECKOUT SUCCESS PAGE - MYCOSMETIC
 ========================================================= */
 
 :root {
@@ -10,23 +9,18 @@
 
   --success-brand: #d63384;
   --success-brand-dark: #b1125b;
-  --success-brand-hover: #c22573;
   --success-brand-soft: #fff4f9;
-  --success-brand-softer: #fff8fb;
   --success-brand-border: #f2bfd7;
 
   --success-text: #1f2a44;
-  --success-text-strong: #111827;
   --success-text-normal: #334155;
   --success-text-muted: #64748b;
-  --success-text-light: #94a3b8;
 
   --success-green: #16a34a;
   --success-green-dark: #15803d;
   --success-green-soft: #ecfdf5;
   --success-green-border: #bbf7d0;
 
-  --success-warning: #f59e0b;
   --success-warning-soft: #fffbeb;
   --success-warning-border: #fde68a;
 
@@ -48,8 +42,6 @@
   --success-radius-sm: 16px;
 }
 
-/* ================= BASE ================= */
-
 .success-section,
 .success-section * {
   box-sizing: border-box;
@@ -58,7 +50,7 @@
 
 .success-section {
   min-height: calc(100vh - 140px);
-  padding: 72px 18px 84px;
+  padding: 52px 18px 76px;
   background:
           radial-gradient(circle at top left, rgba(214, 51, 132, 0.08), transparent 360px),
           radial-gradient(circle at bottom right, rgba(214, 51, 132, 0.05), transparent 420px),
@@ -67,51 +59,84 @@
 }
 
 .success-container {
-  width: min(1120px, 100%);
+  width: min(1180px, 100%);
   margin: 0 auto;
 }
 
 /* ================= HERO ================= */
 
 .success-hero {
-  max-width: 760px;
-  margin: 0 auto 34px;
-  text-align: center;
   animation: successFadeUp 0.55s ease both;
 }
 
+.success-hero-center {
+  max-width: 860px;
+  margin: 0 auto 34px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--success-brand-border);
+  border-radius: 30px;
+  padding: 34px 26px;
+  box-shadow: 0 20px 48px rgba(214, 51, 132, 0.08);
+}
+
 .success-icon {
-  width: 78px;
-  height: 78px;
+  width: 82px;
+  height: 82px;
   margin: 0 auto 18px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  background:
-          linear-gradient(180deg, #ffffff 0%, #fff0f6 100%);
+  background: #ffffff;
   border: 1px solid var(--success-brand-border);
   color: var(--success-brand);
-  font-size: 38px;
-  box-shadow: 0 14px 32px rgba(214, 51, 132, 0.16);
+  box-shadow: 0 16px 36px rgba(214, 51, 132, 0.16);
+}
+
+.success-icon-check svg {
+  width: 58px;
+  height: 58px;
+}
+
+.check-circle {
+  fill: #fff4f9;
+  stroke: #f2bfd7;
+  stroke-width: 2;
+}
+
+.check-mark {
+  fill: none;
+  stroke: #d63384;
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.success-icon-failed {
+  color: var(--success-danger);
+  background: var(--success-danger-soft);
+  border-color: var(--success-danger-border);
+  font-size: 42px;
+  font-weight: 900;
 }
 
 .success-title {
   margin: 0;
   color: var(--success-brand);
-  font-size: clamp(30px, 4vw, 42px);
-  line-height: 1.18;
-  font-weight: 900;
-  letter-spacing: 0.04em;
+  font-size: clamp(34px, 4vw, 48px);
+  line-height: 1.15;
+  font-weight: 950;
+  letter-spacing: 0.02em;
 }
 
 .success-desc {
   margin: 14px auto 0;
-  max-width: 680px;
+  max-width: 760px;
   color: var(--success-text-muted);
   font-size: 16px;
-  line-height: 1.7;
-  font-weight: 600;
+  line-height: 1.8;
+  font-weight: 650;
 }
 
 .success-desc strong {
@@ -122,28 +147,32 @@
 /* ================= MAIN LAYOUT ================= */
 
 .success-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(340px, 0.8fr);
-  gap: 24px;
-  align-items: start;
   animation: successFadeUp 0.65s ease both;
+}
+
+.success-layout-balanced {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(340px, 0.75fr);
+  gap: 26px;
+  align-items: start;
 }
 
 .success-left,
 .success-right {
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 24px;
 }
 
 /* ================= CARD ================= */
 
 .success-card,
-.success-panel {
+.success-panel,
+.success-summary {
   background: var(--success-surface);
   border: 1px solid var(--success-border-soft);
   border-radius: var(--success-radius-lg);
-  padding: 26px 28px;
+  padding: 28px 30px;
   box-shadow: var(--success-shadow);
 }
 
@@ -160,9 +189,9 @@
 .success-panel-header h2 {
   margin: 0;
   color: var(--success-text);
-  font-size: 22px;
+  font-size: 24px;
   line-height: 1.35;
-  font-weight: 900;
+  font-weight: 950;
   letter-spacing: -0.03em;
 }
 
@@ -171,55 +200,11 @@
   margin: 6px 0 0;
   color: var(--success-text-muted);
   font-size: 14px;
-  line-height: 1.5;
-  font-weight: 600;
-}
-
-/* ================= OLD CSS COMPATIBILITY ================= */
-
-.success-box {
-  width: min(760px, 100%);
-  margin: 0 auto;
-  text-align: center;
-  animation: successFadeUp 0.6s ease both;
-}
-
-.success-box .success-card {
-  max-width: 560px;
-  margin: 26px auto 34px;
-  padding: 26px 30px;
-}
-
-.success-card p {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 14px;
-  margin: 0 0 13px;
-  color: var(--success-text-normal);
-  font-size: 15px;
-  line-height: 1.5;
+  line-height: 1.55;
   font-weight: 650;
 }
 
-.success-card p:last-child {
-  margin-bottom: 0;
-}
-
-.success-card p strong,
-.success-card p span:last-child {
-  color: var(--success-text);
-  font-weight: 850;
-  text-align: right;
-}
-
-.success-card .success-price {
-  color: var(--success-brand);
-  font-size: 20px;
-  font-weight: 900;
-}
-
-/* ================= ORDER META ================= */
+/* ================= INFO GRID ================= */
 
 .success-info-grid {
   display: grid;
@@ -227,50 +212,60 @@
   gap: 14px;
 }
 
+.receiver-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .success-info-item {
   min-height: 84px;
-  padding: 15px 16px;
+  padding: 16px 17px;
   border: 1px solid var(--success-border-soft);
   border-radius: var(--success-radius-sm);
   background: linear-gradient(180deg, #ffffff 0%, #fbfcfe 100%);
 }
 
+.success-info-item-full {
+  grid-column: 1 / -1;
+}
+
 .success-info-label {
   display: block;
-  margin-bottom: 7px;
+  margin-bottom: 8px;
   color: var(--success-text-muted);
-  font-size: 13px;
+  font-size: 12.5px;
   line-height: 1.35;
-  font-weight: 700;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .success-info-value {
   display: block;
   color: var(--success-text);
   font-size: 15.5px;
-  line-height: 1.45;
+  line-height: 1.5;
   font-weight: 850;
   word-break: break-word;
 }
 
 .success-info-value.highlight {
   color: var(--success-brand);
-  font-size: 18px;
-  font-weight: 900;
+  font-size: 20px;
+  font-weight: 950;
 }
 
-/* ================= STATUS BADGES ================= */
+/* ================= BADGES ================= */
 
 .success-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 32px;
-  padding: 0 13px;
+  min-height: 34px;
+  padding: 0 14px;
   border-radius: 999px;
   font-size: 13px;
   line-height: 1;
-  font-weight: 850;
+  font-weight: 900;
   white-space: nowrap;
 }
 
@@ -298,55 +293,41 @@
 }
 
 .success-badge.cod,
-.success-badge.vnpay {
+.success-badge.vnpay,
+.success-badge.unknown {
   background: var(--success-brand-soft);
   color: var(--success-brand-dark);
   border: 1px solid var(--success-brand-border);
 }
 
-/* ================= SHIPPING / RECEIVER ================= */
+/* ================= PRODUCTS ================= */
 
-.success-address-box {
-  padding: 18px 20px;
-  border-radius: var(--success-radius-md);
-  background: linear-gradient(180deg, #fff8fb 0%, #ffffff 100%);
-  border: 1px solid var(--success-brand-border);
+.success-products-block {
+  margin-top: 26px;
+  padding-top: 22px;
+  border-top: 1px solid var(--success-border-soft);
 }
 
-.success-address-name {
+.success-subhead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.success-subhead h3 {
+  margin: 0;
   color: var(--success-text);
-  font-size: 17px;
-  line-height: 1.45;
-  font-weight: 900;
-  margin-bottom: 6px;
+  font-size: 21px;
+  font-weight: 950;
 }
 
-.success-address-phone,
-.success-address-detail {
+.success-subhead span {
   color: var(--success-text-muted);
-  font-size: 14.5px;
-  line-height: 1.65;
-  font-weight: 600;
-}
-
-.success-shipping-code {
-  margin-top: 14px;
-  padding: 12px 14px;
-  border-radius: 14px;
-  background: var(--success-surface-soft);
-  border: 1px dashed #cbd5e1;
-  color: var(--success-text-normal);
   font-size: 14px;
-  line-height: 1.5;
-  font-weight: 750;
+  font-weight: 800;
 }
-
-.success-shipping-code strong {
-  color: var(--success-brand);
-  font-weight: 900;
-}
-
-/* ================= PRODUCT LIST ================= */
 
 .success-products {
   display: flex;
@@ -368,7 +349,7 @@
 .success-product-img {
   width: 76px;
   height: 76px;
-  border-radius: 15px;
+  border-radius: 16px;
   border: 1px solid var(--success-border);
   background: #f8fafc;
   overflow: hidden;
@@ -384,7 +365,7 @@
   color: var(--success-text);
   font-size: 15.5px;
   line-height: 1.45;
-  font-weight: 850;
+  font-weight: 900;
 }
 
 .success-product-variant,
@@ -393,38 +374,46 @@
   color: var(--success-text-muted);
   font-size: 13px;
   line-height: 1.5;
-  font-weight: 600;
+  font-weight: 650;
+}
+
+.success-product-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.success-product-meta strong {
+  color: var(--success-text);
+  font-weight: 900;
 }
 
 .success-product-price {
-  color: var(--success-text);
-  font-size: 15px;
+  color: var(--success-brand);
+  font-size: 15.5px;
   line-height: 1.45;
-  font-weight: 900;
+  font-weight: 950;
   white-space: nowrap;
   text-align: right;
 }
 
 .success-empty {
-  padding: 22px 18px;
+  padding: 20px 18px;
   border-radius: 18px;
   background: var(--success-surface-soft);
   border: 1px dashed #cbd5e1;
   color: var(--success-text-muted);
   font-size: 14.5px;
-  line-height: 1.5;
-  font-weight: 650;
+  line-height: 1.6;
+  font-weight: 700;
   text-align: center;
 }
 
 /* ================= SUMMARY ================= */
 
 .success-summary {
-  background: var(--success-surface);
-  border: 1px solid var(--success-border-soft);
-  border-radius: var(--success-radius-lg);
-  padding: 26px 28px;
-  box-shadow: var(--success-shadow);
+  position: sticky;
+  top: 24px;
 }
 
 .success-summary-line {
@@ -432,57 +421,62 @@
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  padding: 9px 0;
+  padding: 13px 0;
   color: var(--success-text-normal);
-  font-size: 15px;
+  font-size: 15.5px;
   line-height: 1.5;
-  font-weight: 650;
+  font-weight: 750;
 }
 
 .success-summary-line strong {
   color: var(--success-text);
-  font-weight: 850;
+  font-weight: 900;
   text-align: right;
 }
 
 .success-summary-line.total {
   margin-top: 10px;
-  padding-top: 17px;
+  padding-top: 20px;
   border-top: 1px solid var(--success-border-soft);
 }
 
 .success-summary-line.total span {
   color: var(--success-text);
   font-size: 17px;
-  font-weight: 900;
+  font-weight: 950;
 }
 
 .success-summary-line.total strong {
   color: var(--success-brand);
-  font-size: 26px;
+  font-size: 30px;
   font-weight: 950;
   letter-spacing: 0.01em;
 }
 
-/* ================= EMAIL NOTICE ================= */
+/* ================= EMAIL ================= */
 
 .success-email-notice {
   display: flex;
   gap: 13px;
-  padding: 15px 16px;
-  border-radius: 18px;
+  padding: 16px 18px;
+  border-radius: 20px;
   background: var(--success-green-soft);
   border: 1px solid var(--success-green-border);
   color: #166534;
   font-size: 14px;
-  line-height: 1.6;
-  font-weight: 700;
+  line-height: 1.65;
+  font-weight: 750;
+}
+
+.success-email-notice-bottom {
+  max-width: 1180px;
+  margin: 26px auto 0;
 }
 
 .success-email-notice-icon {
-  width: 32px;
-  height: 32px;
-  flex: 0 0 32px;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
   border-radius: 50%;
   background: #ffffff;
   color: var(--success-green-dark);
@@ -490,24 +484,27 @@
   align-items: center;
   justify-content: center;
   font-size: 17px;
-  font-weight: 900;
+  font-weight: 950;
 }
 
-/* ================= ACTION BUTTONS ================= */
+/* ================= ACTIONS ================= */
 
 .success-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 13px;
+  margin-top: 24px;
+}
+
+.success-actions-center {
   justify-content: center;
-  margin-top: 30px;
 }
 
 .success-btn,
 .success-btn-secondary {
-  min-width: 190px;
+  min-width: 210px;
   height: 54px;
-  padding: 0 26px;
+  padding: 0 28px;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
@@ -516,7 +513,7 @@
   text-decoration: none;
   font-size: 15.5px;
   line-height: 1;
-  font-weight: 900;
+  font-weight: 950;
   letter-spacing: 0.01em;
   transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease;
 }
@@ -547,30 +544,10 @@
   transform: translateY(-2px);
 }
 
-/* ================= FAILED STATE ================= */
-
-.success-section.is-failed .success-icon {
-  color: var(--success-danger);
-  border-color: var(--success-danger-border);
-  background: var(--success-danger-soft);
-}
+/* ================= FAILED ================= */
 
 .success-section.is-failed .success-title {
   color: var(--success-danger);
-}
-
-.success-failed-message {
-  max-width: 640px;
-  margin: 24px auto 0;
-  padding: 18px 20px;
-  border-radius: 20px;
-  background: var(--success-danger-soft);
-  border: 1px solid var(--success-danger-border);
-  color: var(--success-danger);
-  font-size: 15px;
-  line-height: 1.6;
-  font-weight: 750;
-  text-align: center;
 }
 
 /* ================= ANIMATION ================= */
@@ -589,19 +566,31 @@
 
 /* ================= RESPONSIVE ================= */
 
-@media (max-width: 1024px) {
-  .success-layout {
+@media (max-width: 1080px) {
+  .success-layout-balanced {
     grid-template-columns: 1fr;
   }
 
-  .success-right {
-    order: -1;
+  .success-summary {
+    position: static;
   }
 }
 
 @media (max-width: 768px) {
   .success-section {
-    padding: 48px 14px 64px;
+    padding: 36px 14px 60px;
+  }
+
+  .success-hero-center {
+    padding: 28px 20px;
+  }
+
+  .success-title {
+    font-size: 30px;
+  }
+
+  .success-desc {
+    font-size: 14.5px;
   }
 
   .success-card,
@@ -611,12 +600,18 @@
     border-radius: 22px;
   }
 
-  .success-info-grid {
+  .success-card-header {
+    flex-direction: column;
+  }
+
+  .success-info-grid,
+  .receiver-grid {
     grid-template-columns: 1fr;
   }
 
   .success-product-item {
     grid-template-columns: 66px 1fr;
+    align-items: start;
   }
 
   .success-product-price {
@@ -638,29 +633,24 @@
     width: 100%;
     min-width: 0;
   }
+
+  .success-email-notice {
+    align-items: flex-start;
+  }
 }
 
 @media (max-width: 576px) {
-  .success-title {
-    font-size: 27px;
+  .success-icon {
+    width: 72px;
+    height: 72px;
   }
 
-  .success-desc {
-    font-size: 14.5px;
-  }
-
-  .success-card p {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .success-card p strong,
-  .success-card p span:last-child {
-    text-align: left;
+  .success-icon-check svg {
+    width: 52px;
+    height: 52px;
   }
 
   .success-summary-line.total strong {
-    font-size: 22px;
+    font-size: 24px;
   }
 }
