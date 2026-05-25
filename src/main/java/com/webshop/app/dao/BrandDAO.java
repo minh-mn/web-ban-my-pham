@@ -14,16 +14,16 @@ public class BrandDAO {
 
     private static final int MYSQL_FOREIGN_KEY_CONSTRAINT_ERROR = 1451;
 
-    /* ===================== FRONTEND / ADMIN ===================== */
+    /* FRONTEND / ADMIN */
 
     public List<Brand> findAllWithProductCount() {
         List<Brand> brands = new ArrayList<>();
 
         String sql = """
-                SELECT b.id, b.name, COUNT(p.id) AS product_count
+                SELECT b.id, b.name, b.image, COUNT(p.id) AS product_count
                 FROM store_brand b
                 LEFT JOIN store_product p ON p.brand_id = b.id
-                GROUP BY b.id, b.name
+                GROUP BY b.id, b.name, b.image
                 ORDER BY b.name
                 """;
 
@@ -50,7 +50,7 @@ public class BrandDAO {
         return findAllWithProductCount();
     }
 
-    /* ===================== ADMIN BASIC CRUD ===================== */
+    /*  ADMIN BASIC CRUD */
 
     public List<Brand> findAll() {
         List<Brand> brands = new ArrayList<>();
@@ -77,61 +77,48 @@ public class BrandDAO {
     }
 
     public Brand findById(int id) {
-        String sql = """
-                SELECT id, name
-                FROM store_brand
-                WHERE id = ?
-                """;
-
+        String sql = "SELECT id, name, image FROM store_brand WHERE id = ?";
         try (Connection connection = DBConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
-
             statement.setInt(1, id);
-
             try (ResultSet resultSet = statement.executeQuery()) {
                 if (resultSet.next()) {
                     return mapRow(resultSet);
                 }
             }
-
         } catch (SQLException e) {
             throw new RuntimeException("BrandDAO.findById error", e);
         }
-
         return null;
     }
 
-    public void create(String name) {
+    public void create(String name, String image) {
         String sql = """
-                INSERT INTO store_brand (name)
-                VALUES (?)
-                """;
-
+            INSERT INTO store_brand (name, image)
+            VALUES (?, ?)
+            """;
         try (Connection connection = DBConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
-
             statement.setString(1, name);
+            statement.setString(2, image);
             statement.executeUpdate();
-
         } catch (SQLException e) {
             throw new RuntimeException("BrandDAO.create error", e);
         }
     }
 
-    public void update(int id, String name) {
+    public void update(int id, String name, String image) {
         String sql = """
-                UPDATE store_brand
-                SET name = ?
-                WHERE id = ?
-                """;
-
+            UPDATE store_brand
+            SET name = ?, image = ?
+            WHERE id = ?
+            """;
         try (Connection connection = DBConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
-
             statement.setString(1, name);
-            statement.setInt(2, id);
+            statement.setString(2, image);
+            statement.setInt(3, id);
             statement.executeUpdate();
-
         } catch (SQLException e) {
             throw new RuntimeException("BrandDAO.update error", e);
         }
@@ -162,10 +149,15 @@ public class BrandDAO {
 
     private Brand mapRow(ResultSet resultSet) throws SQLException {
         Brand brand = new Brand();
-
         brand.setId(resultSet.getInt("id"));
         brand.setName(resultSet.getString("name"));
 
+        // Thêm khối try-catch để tránh lỗi nếu câu lệnh SQL nào đó không chọn cột image
+        try {
+            brand.setImage(resultSet.getString("image"));
+        } catch (SQLException e) {
+            // Bỏ qua nếu cột không tồn tại trong ResultSet
+        }
         return brand;
     }
 
