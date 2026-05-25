@@ -198,10 +198,6 @@
 
                     <li><a href="${pageContext.request.contextPath}/products?category=all">SẢN PHẨM</a></li>
 
-                    <li><a href="${pageContext.request.contextPath}/products?category=skincare">CHĂM SÓC DA</a></li>
-
-                    <li><a href="${pageContext.request.contextPath}/products?category=makeup">TRANG ĐIỂM</a></li>
-
                     <li><a href="${pageContext.request.contextPath}/products?category=brand">THƯƠNG HIỆU</a></li>
 
                     <li><a href="${pageContext.request.contextPath}/flash-sale">FLASH SALE</a></li>
