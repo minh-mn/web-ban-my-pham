@@ -84,7 +84,9 @@
 </section>
 <jsp:include page="/jsp/product/hot-categories.jsp" />
 
-<jsp:include page="/jsp/product/flash-sale.jsp" />
+<jsp:include page="/jsp/product/flash-sale.jsp">
+	<jsp:param name="limit" value="4" />
+</jsp:include>
 
 <jsp:include page="/jsp/common/store-events.jsp" />
 
