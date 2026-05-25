@@ -30,6 +30,9 @@ public class Product {
 	private Category category;
 	private Brand brand;
 
+	private long categoryId;
+	private long brandId;
+
 	// ================= GETTER / SETTER =================
 
 	public int getId() {
@@ -105,12 +108,12 @@ public class Product {
 		this.image = image;
 	}
 
-	/** ✅ JSP: ${product.imageUrl} */
+	/** JSP: ${product.imageUrl} */
 	public String getImageUrl() {
 		return image;
 	}
 
-	/** ✅ Gallery ảnh con (JSP: ${product.images}) */
+	/**  Gallery ảnh con (JSP: ${product.images}) */
 	public List<ProductImage> getImages() {
 		return images;
 	}
@@ -127,7 +130,7 @@ public class Product {
 		this.active = active;
 	}
 
-	// ===== ⭐ RATING =====
+	// =====  RATING =====
 	public Double getAvgRating() {
 		return avgRating != null ? avgRating : 0.0;
 	}
@@ -159,6 +162,12 @@ public class Product {
 	public void setBrand(Brand brand) {
 		this.brand = brand;
 	}
+
+	public long getCategoryId() { return categoryId; }
+	public void setCategoryId(long categoryId) { this.categoryId = categoryId; }
+
+	public long getBrandId() { return brandId; }
+	public void setBrandId(long brandId) { this.brandId = brandId; }
 
 	// ===== HELPER FOR JSP =====
 
