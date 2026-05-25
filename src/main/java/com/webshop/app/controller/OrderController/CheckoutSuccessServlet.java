@@ -3,14 +3,19 @@ package com.webshop.app.controller.OrderController;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 import com.webshop.app.dao.OrderDAO;
+import com.webshop.app.dao.OrderItemDAO;
 import com.webshop.app.model.Order;
 import com.webshop.app.model.User;
 
@@ -26,11 +31,14 @@ public class CheckoutSuccessServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
 
-    private final OrderDAO orderDAO = new OrderDAO();
-
     private static final Locale VI_LOCALE = new Locale("vi", "VN");
     private static final DateTimeFormatter DATE_TIME_FORMATTER =
             DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy");
+    private static final DateTimeFormatter DATE_FORMATTER =
+            DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+    private final OrderDAO orderDAO = new OrderDAO();
+    private final OrderItemDAO orderItemDAO = new OrderItemDAO();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
@@ -49,9 +57,7 @@ public class CheckoutSuccessServlet extends HttpServlet {
 
         boolean success = "true".equalsIgnoreCase(trim(req.getParameter("success")));
         String messageKey = trim(req.getParameter("message"));
-        String orderIdRaw = trim(req.getParameter("orderId"));
-
-        Integer orderId = parseInteger(orderIdRaw);
+        Integer orderId = parseInteger(trim(req.getParameter("orderId")));
 
         if (orderId == null || orderId <= 0) {
             forwardResultPage(
@@ -60,17 +66,17 @@ public class CheckoutSuccessServlet extends HttpServlet {
                     false,
                     "Không tìm thấy mã đơn hàng. Vui lòng kiểm tra lại.",
                     null,
-                    currentUser
+                    currentUser,
+                    session
             );
             return;
         }
 
-        Order order = null;
-
+        Order order;
         try {
             order = orderDAO.findById(orderId);
-        } catch (Exception ex) {
-            throw new ServletException("CheckoutSuccessServlet cannot load order #" + orderId, ex);
+        } catch (Exception e) {
+            throw new ServletException("CheckoutSuccessServlet.findById error: orderId=" + orderId, e);
         }
 
         if (order == null) {
@@ -80,32 +86,31 @@ public class CheckoutSuccessServlet extends HttpServlet {
                     false,
                     "Không tìm thấy đơn hàng. Vui lòng kiểm tra lại.",
                     null,
-                    currentUser
+                    currentUser,
+                    session
             );
             return;
         }
 
-        /*
-         * Bảo mật:
-         * User thường chỉ được xem đơn của chính mình.
-         * Admin được phép xem tất cả.
-         */
         if (!currentUser.isAdmin() && order.getUserId() != currentUser.getId()) {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN, "Bạn không có quyền xem đơn hàng này.");
             return;
         }
 
-        /*
-         * Nếu URL success=true nhưng đơn không tồn tại thì fail.
-         * Nếu đơn tồn tại, ưu tiên dữ liệu thật từ database thay vì tin param URL.
-         */
         if (!success) {
-            String failMessage = buildFailMessage(messageKey);
-            forwardResultPage(req, resp, false, failMessage, order, currentUser);
+            forwardResultPage(
+                    req,
+                    resp,
+                    false,
+                    buildFailMessage(messageKey),
+                    order,
+                    currentUser,
+                    session
+            );
             return;
         }
 
-        forwardResultPage(req, resp, true, null, order, currentUser);
+        forwardResultPage(req, resp, true, null, order, currentUser, session);
     }
 
     private void forwardResultPage(HttpServletRequest req,
@@ -113,10 +118,11 @@ public class CheckoutSuccessServlet extends HttpServlet {
                                    boolean success,
                                    String message,
                                    Order order,
-                                   User currentUser)
+                                   User currentUser,
+                                   HttpSession session)
             throws ServletException, IOException {
 
-        prepareOrderSuccessData(req, success, message, order, currentUser);
+        prepareViewData(req, success, message, order, currentUser, session);
 
         req.setAttribute("pageTitle", "MyCosmetic | Kết quả thanh toán");
         req.setAttribute("pageCss", "/checkout-success.css");
@@ -125,111 +131,257 @@ public class CheckoutSuccessServlet extends HttpServlet {
         req.getRequestDispatcher("/jsp/common/base.jsp").forward(req, resp);
     }
 
-    private void prepareOrderSuccessData(HttpServletRequest req,
-                                         boolean success,
-                                         String message,
-                                         Order order,
-                                         User currentUser) {
+    private void prepareViewData(HttpServletRequest req,
+                                 boolean success,
+                                 String message,
+                                 Order order,
+                                 User currentUser,
+                                 HttpSession session) {
 
         req.setAttribute("success", success);
         req.setAttribute("message", message);
         req.setAttribute("order", order);
 
         if (order == null) {
-            req.setAttribute("paymentMethod", "UNKNOWN");
-            req.setAttribute("paymentMethodLabel", "Không xác định");
+            req.setAttribute("orderItems", List.of());
+            req.setAttribute("orderItemsCount", 0);
+            req.setAttribute("emailSent", false);
+            req.setAttribute("emailText", safeString(getUserEmail(currentUser), "Đang cập nhật"));
             return;
         }
 
         int orderId = extractOrderId(order);
 
-        String paymentMethod = safeString(order.getPaymentMethod(), "UNKNOWN");
-        String paymentMethodLabel = formatPaymentMethod(paymentMethod);
-
-        String orderStatus = safeString(
-                firstString(order, "getStatus", "getOrderStatus"),
-                "processing"
+        String receiverName = firstNonBlank(
+                firstString(order, "getFullName", "getReceiverName", "getCustomerName", "getName"),
+                safeString(currentUser.getFullName(), currentUser.getUsername()),
+                "Khách hàng"
         );
 
-        String orderStatusLabel = formatOrderStatus(orderStatus);
-
-        Object totalValue = order.getTotal();
-        String totalVnd = formatMoney(totalValue);
-
-        Object subtotalValue = firstValue(order, "getSubtotal", "getSubTotal", "getTotalBeforeDiscount");
-        Object discountValue = firstValue(order, "getDiscount", "getDiscountAmount");
-        Object shippingFeeValue = firstValue(order, "getShippingFee", "getShipFee", "getDeliveryFee");
-
-        String subtotalVnd = formatMoneyOrDash(subtotalValue);
-        String discountVnd = formatMoneyOrZero(discountValue);
-        String shippingFeeVnd = formatMoneyOrZero(shippingFeeValue);
-
-        String shippingProvider = safeString(
-                firstString(order, "getShippingProvider", "getDeliveryProvider"),
-                "MyCosmetic Delivery"
-        );
-
-        String trackingCode = safeString(
-                firstString(order, "getTrackingCode", "getTrackingNumber", "getShippingCode"),
-                generateTrackingCode(orderId)
-        );
-
-        String shippingMethod = safeString(
-                firstString(order, "getShippingMethod", "getDeliveryMethod"),
-                "STANDARD"
-        );
-
-        String shippingMethodLabel = formatShippingMethod(shippingMethod);
-
-        String receiverName = safeString(
-                firstString(order, "getReceiverName", "getFullName", "getCustomerName", "getName"),
-                safeString(currentUser.getFullName(), currentUser.getUsername())
-        );
-
-        String receiverPhone = safeString(
-                firstString(order, "getReceiverPhone", "getPhone", "getCustomerPhone"),
-                safeString(currentUser.getPhone(), "")
-        );
-
-        String shippingAddress = safeString(
-                firstString(order, "getShippingAddress", "getAddress", "getReceiverAddress"),
+        String receiverPhone = firstNonBlank(
+                firstString(order, "getPhone", "getReceiverPhone", "getCustomerPhone", "getPhoneNumber"),
+                safeString(currentUser.getPhone(), ""),
                 "Đang cập nhật"
         );
 
-        Object createdAt = firstValue(order, "getCreatedAt", "getCreatedDate", "getOrderDate", "getCreatedTime");
-        String createdAtText = formatDateTime(createdAt);
+        String receiverAddress = firstNonBlank(
+                firstString(order, "getAddress", "getShippingAddress", "getReceiverAddress"),
+                "Đang cập nhật"
+        );
+
+        String paymentMethod = safeString(firstString(order, "getPaymentMethod"), "UNKNOWN");
+        String paymentMethodText = formatPaymentMethod(paymentMethod);
+
+        String orderStatus = safeString(firstString(order, "getStatus", "getOrderStatus"), "processing");
+        String orderStatusLabel = formatOrderStatus(orderStatus);
+
+        String shippingMethod = safeString(firstString(order, "getShippingMethod", "getDeliveryMethod"), "ECONOMY");
+        String shippingMethodLabel = formatShippingMethod(shippingMethod);
+
+        Object createdAtRaw = firstValue(order, "getCreatedAt", "getCreatedDate", "getOrderDate", "getCreatedTime");
+        Object deliveredAtRaw = firstValue(order, "getDeliveredAt", "getReceivedAt", "getCompletedAt");
+
+        LocalDateTime createdAt = toLocalDateTime(createdAtRaw);
+        LocalDateTime deliveredAt = toLocalDateTime(deliveredAtRaw);
+
+        String orderDateText = formatDateTime(createdAtRaw);
+        String receivedDateText = formatReceivedDate(createdAt, deliveredAt, shippingMethod);
+
+        List<OrderLineView> orderItems = loadOrderItems(orderId);
+
+        BigDecimal total = toBigDecimal(firstValue(order, "getTotal"));
+        BigDecimal discount = toBigDecimal(firstValue(order, "getCouponDiscount", "getDiscountAmount", "getDiscount"));
+        BigDecimal shippingFee = toBigDecimal(firstValue(order, "getShippingFee", "getShipFee", "getDeliveryFee"));
+
+        if (total == null) {
+            total = BigDecimal.ZERO;
+        }
+
+        if (discount == null) {
+            discount = BigDecimal.ZERO;
+        }
+
+        if (shippingFee == null) {
+            shippingFee = BigDecimal.ZERO;
+        }
+
+        BigDecimal subtotal = BigDecimal.ZERO;
+        for (OrderLineView item : orderItems) {
+            subtotal = subtotal.add(item.getLineTotal());
+        }
+
+        /*
+         * Nếu order item chưa tải được, vẫn hiển thị tạm tính hợp lý thay vì dấu "-".
+         * subtotal ≈ total + discount - shippingFee
+         */
+        if (subtotal.compareTo(BigDecimal.ZERO) <= 0) {
+            subtotal = total.add(discount).subtract(shippingFee);
+            if (subtotal.compareTo(BigDecimal.ZERO) < 0) {
+                subtotal = BigDecimal.ZERO;
+            }
+        }
+
+        String emailText = safeString(getUserEmail(currentUser), "Đang cập nhật");
+        boolean emailSent = getEmailSentFlag(session, orderId);
 
         req.setAttribute("orderId", orderId);
         req.setAttribute("orderCode", "#" + orderId);
-        req.setAttribute("trackingCode", trackingCode);
-        req.setAttribute("shippingProvider", shippingProvider);
-        req.setAttribute("shippingMethod", shippingMethod);
-        req.setAttribute("shippingMethodLabel", shippingMethodLabel);
+
+        req.setAttribute("receiverNameText", receiverName);
+        req.setAttribute("receiverPhoneText", receiverPhone);
+        req.setAttribute("receiverAddressText", receiverAddress);
+
+        /*
+         * Giữ thêm các tên attribute cũ để JSP cũ hoặc fragment khác vẫn đọc được.
+         */
+        req.setAttribute("receiverName", receiverName);
+        req.setAttribute("receiverPhone", receiverPhone);
+        req.setAttribute("shippingAddress", receiverAddress);
+
+        req.setAttribute("orderDateText", orderDateText);
+        req.setAttribute("createdAtText", orderDateText);
+        req.setAttribute("receivedDateText", receivedDateText);
+        req.setAttribute("deliveredDateText", receivedDateText);
 
         req.setAttribute("paymentMethod", paymentMethod);
-        req.setAttribute("paymentMethodLabel", paymentMethodLabel);
+        req.setAttribute("paymentMethodText", paymentMethodText);
+        req.setAttribute("paymentMethodLabel", paymentMethodText);
 
         req.setAttribute("orderStatus", orderStatus);
         req.setAttribute("orderStatusLabel", orderStatusLabel);
 
-        req.setAttribute("totalVnd", totalVnd);
-        req.setAttribute("subtotalVnd", subtotalVnd);
-        req.setAttribute("discountVnd", discountVnd);
-        req.setAttribute("shippingFeeVnd", shippingFeeVnd);
+        req.setAttribute("shippingMethod", shippingMethod);
+        req.setAttribute("shippingMethodLabel", shippingMethodLabel);
 
-        req.setAttribute("receiverName", receiverName);
-        req.setAttribute("receiverPhone", receiverPhone);
-        req.setAttribute("shippingAddress", shippingAddress);
-        req.setAttribute("createdAtText", createdAtText);
+        req.setAttribute("orderItems", orderItems);
+        req.setAttribute("orderItemsCount", orderItems.size());
 
-        /*
-         * Mục 91:
-         * Servlet này chỉ hiển thị kết quả.
-         * Gửi email nên xử lý ngay sau khi tạo đơn trong CheckoutServlet
-         * hoặc sau khi VNPAY callback thành công.
-         */
-        req.setAttribute("emailNotice",
-                "Thông tin đơn hàng sẽ được gửi về email nếu hệ thống email đã được cấu hình.");
+        req.setAttribute("subtotalVnd", formatMoney(subtotal));
+        req.setAttribute("discountVnd", formatMoney(discount));
+        req.setAttribute("shippingFeeVnd", formatMoney(shippingFee));
+        req.setAttribute("totalVnd", formatMoney(total));
+
+        req.setAttribute("emailText", emailText);
+        req.setAttribute("emailSent", emailSent);
+        req.setAttribute(
+                "emailNotice",
+                emailSent
+                        ? "Thông tin đơn hàng và hóa đơn đã được gửi về email của bạn."
+                        : "Hệ thống sẽ gửi thông tin đơn hàng và hóa đơn về email của bạn sau khi xử lý xong."
+        );
+    }
+
+    private List<OrderLineView> loadOrderItems(int orderId) {
+        List<OrderLineView> result = new ArrayList<>();
+
+        if (orderId <= 0) {
+            return result;
+        }
+
+        try {
+            List<?> rawItems = orderItemDAO.findByOrderId(orderId);
+
+            if (rawItems == null) {
+                return result;
+            }
+
+            for (Object raw : rawItems) {
+                if (raw == null) {
+                    continue;
+                }
+
+                String productName = firstNonBlank(
+                        firstString(raw, "getProductName", "getTitle", "getName"),
+                        "Sản phẩm"
+                );
+
+                String variantName = buildVariantText(raw);
+
+                int quantity = toInt(firstValue(raw, "getQuantity"), 1);
+                BigDecimal price = toBigDecimal(firstValue(raw, "getPrice", "getUnitPrice"));
+
+                if (price == null) {
+                    price = BigDecimal.ZERO;
+                }
+
+                BigDecimal lineTotal = toBigDecimal(firstValue(raw, "getSubtotal", "getTotalPrice", "getLineTotal"));
+
+                if (lineTotal == null || lineTotal.compareTo(BigDecimal.ZERO) <= 0) {
+                    lineTotal = price.multiply(BigDecimal.valueOf(quantity));
+                }
+
+                String imageUrl = safeString(firstString(raw, "getImageUrl", "getImage", "getProductImage"), "");
+
+                result.add(new OrderLineView(
+                        productName,
+                        variantName,
+                        quantity,
+                        price.setScale(0, RoundingMode.HALF_UP),
+                        lineTotal.setScale(0, RoundingMode.HALF_UP),
+                        imageUrl,
+                        formatMoney(price),
+                        formatMoney(lineTotal)
+                ));
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return result;
+    }
+
+    private String buildVariantText(Object raw) {
+        String variantName = firstString(raw, "getVariantDisplayName", "getVariantName");
+        String variantSize = firstString(raw, "getVariantSize");
+        String variantType = firstString(raw, "getVariantType");
+
+        List<String> parts = new ArrayList<>();
+
+        if (!isBlank(variantName)) {
+            parts.add(variantName);
+        }
+
+        if (!isBlank(variantSize)) {
+            parts.add(variantSize);
+        }
+
+        if (!isBlank(variantType)) {
+            parts.add(variantType);
+        }
+
+        if (parts.isEmpty()) {
+            return "Mặc định";
+        }
+
+        return String.join(" - ", parts);
+    }
+
+    private boolean getEmailSentFlag(HttpSession session, int orderId) {
+        if (session == null || orderId <= 0) {
+            return false;
+        }
+
+        Object flag = session.getAttribute("ORDER_SUCCESS_EMAIL_SENT_" + orderId);
+
+        if (flag instanceof Boolean) {
+            return (Boolean) flag;
+        }
+
+        return false;
+    }
+
+    private String getUserEmail(User user) {
+        if (user == null) {
+            return "";
+        }
+
+        try {
+            Object value = user.getClass().getMethod("getEmail").invoke(user);
+            return value == null ? "" : String.valueOf(value).trim();
+        } catch (Exception ignored) {
+            return "";
+        }
     }
 
     private String buildFailMessage(String messageKey) {
@@ -237,18 +389,18 @@ public class CheckoutSuccessServlet extends HttpServlet {
             return "Giao dịch chưa hoàn tất.";
         }
 
-        switch (messageKey.toLowerCase(Locale.ROOT)) {
-            case "checkout_failed":
-                return "Không thể hoàn tất thanh toán. Vui lòng thử lại.";
-            case "order_not_found":
-                return "Không tìm thấy đơn hàng. Vui lòng kiểm tra lại.";
-            case "payment_cancelled":
-                return "Bạn đã hủy thanh toán.";
-            case "payment_failed":
-                return "Thanh toán thất bại. Vui lòng thử lại.";
-            default:
-                return messageKey;
-        }
+        return switch (messageKey.toLowerCase(Locale.ROOT)) {
+            case "checkout_failed" -> "Không thể hoàn tất thanh toán. Vui lòng thử lại.";
+            case "order_not_found" -> "Không tìm thấy đơn hàng. Vui lòng kiểm tra lại.";
+            case "order_create_failed" -> "Không thể tạo đơn hàng. Vui lòng thử lại.";
+            case "payment_cancelled" -> "Bạn đã hủy thanh toán.";
+            case "payment_failed" -> "Thanh toán thất bại. Vui lòng thử lại.";
+            case "invalid_signature" -> "Chữ ký thanh toán không hợp lệ.";
+            case "invalid_amount" -> "Số tiền thanh toán không hợp lệ.";
+            case "amount_mismatch" -> "Số tiền thanh toán không khớp với đơn hàng.";
+            case "finalize_failed" -> "Không thể hoàn tất xác nhận thanh toán.";
+            default -> messageKey;
+        };
     }
 
     private int extractOrderId(Order order) {
@@ -259,67 +411,126 @@ public class CheckoutSuccessServlet extends HttpServlet {
         }
 
         Integer parsed = parseInteger(String.valueOf(idValue));
-
         return parsed != null ? parsed : 0;
-    }
-
-    private String generateTrackingCode(int orderId) {
-        if (orderId <= 0) {
-            return "Đang cập nhật";
-        }
-
-        return "MC-" + String.format("%06d", orderId);
     }
 
     private String formatPaymentMethod(String paymentMethod) {
         String value = safeString(paymentMethod, "UNKNOWN").toUpperCase(Locale.ROOT);
 
-        switch (value) {
-            case "COD":
-                return "Thanh toán khi nhận hàng (COD)";
-            case "VNPAY":
-                return "Thanh toán qua VNPAY";
-            default:
-                return "Không xác định";
-        }
+        return switch (value) {
+            case "COD" -> "Thanh toán khi nhận hàng";
+            case "VNPAY" -> "Thanh toán qua VNPAY";
+            default -> "Không xác định";
+        };
     }
 
     private String formatShippingMethod(String shippingMethod) {
-        String value = safeString(shippingMethod, "STANDARD").toUpperCase(Locale.ROOT);
+        String value = safeString(shippingMethod, "ECONOMY").toUpperCase(Locale.ROOT);
 
-        switch (value) {
-            case "ECONOMY":
-                return "Giao hàng tiết kiệm";
-            case "FAST":
-                return "Giao hàng nhanh";
-            case "EXPRESS":
-                return "Hỏa tốc";
-            case "STANDARD":
-                return "Giao hàng tiêu chuẩn";
-            default:
-                return shippingMethod;
-        }
+        return switch (value) {
+            case "FAST" -> "Giao hàng nhanh";
+            case "EXPRESS" -> "Hỏa tốc";
+            case "ECONOMY" -> "Giao hàng tiết kiệm";
+            case "STANDARD" -> "Giao hàng tiêu chuẩn";
+            default -> shippingMethod;
+        };
     }
 
     private String formatOrderStatus(String status) {
         String value = safeString(status, "processing").toLowerCase(Locale.ROOT);
 
-        switch (value) {
-            case "processing":
-                return "Đang xử lý";
-            case "confirmed":
-                return "Đã xác nhận";
-            case "shipping":
-                return "Đang giao hàng";
-            case "completed":
-                return "Hoàn thành";
-            case "cancelled":
-            case "canceled":
-                return "Đã hủy";
-            case "pending":
-                return "Chờ xử lý";
-            default:
-                return status;
+        return switch (value) {
+            case "processing" -> "Đang xử lý";
+            case "confirmed" -> "Đã xác nhận";
+            case "shipping", "delivering" -> "Đang giao hàng";
+            case "completed", "delivered" -> "Hoàn thành";
+            case "cancelled", "canceled" -> "Đã hủy";
+            case "pending" -> "Chờ xử lý";
+            default -> status;
+        };
+    }
+
+    private String formatReceivedDate(LocalDateTime createdAt,
+                                      LocalDateTime deliveredAt,
+                                      String shippingMethod) {
+
+        if (deliveredAt != null) {
+            return deliveredAt.format(DATE_FORMATTER);
+        }
+
+        if (createdAt == null) {
+            return "Đang cập nhật";
+        }
+
+        String method = safeString(shippingMethod, "ECONOMY").toUpperCase(Locale.ROOT);
+
+        if ("EXPRESS".equals(method)) {
+            return createdAt.toLocalDate().format(DATE_FORMATTER);
+        }
+
+        if ("FAST".equals(method)) {
+            LocalDate start = createdAt.toLocalDate().plusDays(1);
+            LocalDate end = createdAt.toLocalDate().plusDays(3);
+            return "Dự kiến " + start.format(DATE_FORMATTER) + " - " + end.format(DATE_FORMATTER);
+        }
+
+        LocalDate start = createdAt.toLocalDate().plusDays(3);
+        LocalDate end = createdAt.toLocalDate().plusDays(5);
+        return "Dự kiến " + start.format(DATE_FORMATTER) + " - " + end.format(DATE_FORMATTER);
+    }
+
+    private String formatDateTime(Object value) {
+        LocalDateTime time = toLocalDateTime(value);
+
+        if (time == null) {
+            return "Đang cập nhật";
+        }
+
+        return time.format(DATE_TIME_FORMATTER);
+    }
+
+    private LocalDateTime toLocalDateTime(Object value) {
+        if (value == null) {
+            return null;
+        }
+
+        try {
+            if (value instanceof LocalDateTime) {
+                return (LocalDateTime) value;
+            }
+
+            if (value instanceof LocalDate) {
+                return ((LocalDate) value).atStartOfDay();
+            }
+
+            if (value instanceof java.sql.Timestamp) {
+                return ((java.sql.Timestamp) value).toLocalDateTime();
+            }
+
+            if (value instanceof java.sql.Date) {
+                return ((java.sql.Date) value).toLocalDate().atStartOfDay();
+            }
+
+            if (value instanceof Date) {
+                return ((Date) value).toInstant()
+                        .atZone(ZoneId.systemDefault())
+                        .toLocalDateTime();
+            }
+
+            String raw = String.valueOf(value).trim();
+
+            if (raw.isBlank()) {
+                return null;
+            }
+
+            try {
+                return LocalDateTime.parse(raw);
+            } catch (Exception ignored) {
+                return null;
+            }
+
+        } catch (Exception ignored) {
+            return null;
         }
     }
 
@@ -327,33 +538,13 @@ public class CheckoutSuccessServlet extends HttpServlet {
         BigDecimal amount = toBigDecimal(value);
 
         if (amount == null) {
-            return "0 ₫";
+            amount = BigDecimal.ZERO;
         }
 
         NumberFormat nf = NumberFormat.getInstance(VI_LOCALE);
         nf.setGroupingUsed(true);
 
-        return nf.format(amount) + " ₫";
-    }
-
-    private String formatMoneyOrDash(Object value) {
-        BigDecimal amount = toBigDecimal(value);
-
-        if (amount == null) {
-            return "-";
-        }
-
-        return formatMoney(amount);
-    }
-
-    private String formatMoneyOrZero(Object value) {
-        BigDecimal amount = toBigDecimal(value);
-
-        if (amount == null) {
-            return "0 ₫";
-        }
-
-        return formatMoney(amount);
+        return nf.format(amount.setScale(0, RoundingMode.HALF_UP)) + " ₫";
     }
 
     private BigDecimal toBigDecimal(Object value) {
@@ -362,11 +553,12 @@ public class CheckoutSuccessServlet extends HttpServlet {
         }
 
         if (value instanceof BigDecimal) {
-            return (BigDecimal) value;
+            return ((BigDecimal) value).setScale(0, RoundingMode.HALF_UP);
         }
 
         if (value instanceof Number) {
-            return BigDecimal.valueOf(((Number) value).doubleValue());
+            return BigDecimal.valueOf(((Number) value).doubleValue())
+                    .setScale(0, RoundingMode.HALF_UP);
         }
 
         try {
@@ -379,44 +571,25 @@ public class CheckoutSuccessServlet extends HttpServlet {
                 return null;
             }
 
-            return new BigDecimal(raw);
+            return new BigDecimal(raw).setScale(0, RoundingMode.HALF_UP);
         } catch (Exception ignored) {
             return null;
         }
     }
 
-    private String formatDateTime(Object value) {
+    private int toInt(Object value, int fallback) {
         if (value == null) {
-            return "Đang cập nhật";
+            return fallback;
+        }
+
+        if (value instanceof Number) {
+            return ((Number) value).intValue();
         }
 
         try {
-            if (value instanceof LocalDateTime) {
-                return ((LocalDateTime) value).format(DATE_TIME_FORMATTER);
-            }
-
-            if (value instanceof LocalDate) {
-                return ((LocalDate) value).format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-            }
-
-            if (value instanceof java.sql.Timestamp) {
-                LocalDateTime time = ((java.sql.Timestamp) value).toLocalDateTime();
-                return time.format(DATE_TIME_FORMATTER);
-            }
-
-            if (value instanceof java.sql.Date) {
-                LocalDate date = ((java.sql.Date) value).toLocalDate();
-                return date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-            }
-
-            if (value instanceof Date) {
-                java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("HH:mm dd/MM/yyyy");
-                return sdf.format((Date) value);
-            }
-
-            return String.valueOf(value);
+            return Integer.parseInt(String.valueOf(value));
         } catch (Exception ignored) {
-            return String.valueOf(value);
+            return fallback;
         }
     }
 
@@ -459,6 +632,20 @@ public class CheckoutSuccessServlet extends HttpServlet {
         }
     }
 
+    private String firstNonBlank(String... values) {
+        if (values == null) {
+            return "";
+        }
+
+        for (String value : values) {
+            if (!isBlank(value)) {
+                return value.trim();
+            }
+        }
+
+        return "";
+    }
+
     private Integer parseInteger(String value) {
         if (isBlank(value)) {
             return null;
@@ -466,7 +653,7 @@ public class CheckoutSuccessServlet extends HttpServlet {
 
         try {
             return Integer.parseInt(value.trim());
-        } catch (NumberFormatException ex) {
+        } catch (NumberFormatException ignored) {
             return null;
         }
     }
@@ -481,5 +668,67 @@ public class CheckoutSuccessServlet extends HttpServlet {
 
     private String safeString(String value, String fallback) {
         return isBlank(value) ? fallback : value.trim();
+    }
+
+    public static class OrderLineView {
+
+        private final String productName;
+        private final String variantName;
+        private final int quantity;
+        private final BigDecimal unitPrice;
+        private final BigDecimal lineTotal;
+        private final String imageUrl;
+        private final String unitPriceVnd;
+        private final String lineTotalVnd;
+
+        public OrderLineView(String productName,
+                             String variantName,
+                             int quantity,
+                             BigDecimal unitPrice,
+                             BigDecimal lineTotal,
+                             String imageUrl,
+                             String unitPriceVnd,
+                             String lineTotalVnd) {
+            this.productName = productName;
+            this.variantName = variantName;
+            this.quantity = quantity;
+            this.unitPrice = unitPrice;
+            this.lineTotal = lineTotal;
+            this.imageUrl = imageUrl;
+            this.unitPriceVnd = unitPriceVnd;
+            this.lineTotalVnd = lineTotalVnd;
+        }
+
+        public String getProductName() {
+            return productName;
+        }
+
+        public String getVariantName() {
+            return variantName;
+        }
+
+        public int getQuantity() {
+            return quantity;
+        }
+
+        public BigDecimal getUnitPrice() {
+            return unitPrice;
+        }
+
+        public BigDecimal getLineTotal() {
+            return lineTotal;
+        }
+
+        public String getImageUrl() {
+            return imageUrl;
+        }
+
+        public String getUnitPriceVnd() {
+            return unitPriceVnd;
+        }
+
+        public String getLineTotalVnd() {
+            return lineTotalVnd;
+        }
     }
 }
