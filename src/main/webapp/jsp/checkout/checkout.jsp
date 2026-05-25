@@ -427,9 +427,20 @@
     border-color: #e9edf3;
     background: #fcfcfd;
     color: #8a94a6;
-    opacity: 0.58;
-    cursor: not-allowed;
+    opacity: 0.48;
+    cursor: not-allowed !important;
+    pointer-events: none;
     box-shadow: none;
+    filter: grayscale(0.18);
+  }
+
+  .coupon-item.is-disabled .coupon-voucher-content,
+  .coupon-item.is-disabled .coupon-discount-label,
+  .coupon-item.is-disabled .coupon-title-line,
+  .coupon-item.is-disabled .coupon-condition,
+  .coupon-item.is-disabled .coupon-meta-line,
+  .coupon-item.is-disabled .coupon-meta-code {
+    color: #a4adbb !important;
   }
 
   .coupon-item.is-disabled:hover {
@@ -2389,6 +2400,44 @@
       }
     }
 
+    function sortCouponItemsByState(subtotal) {
+      if (!couponList || !couponItems.length) {
+        return;
+      }
+
+      couponItems.sort(function (a, b) {
+        const usableA = isUsable(a, subtotal);
+        const usableB = isUsable(b, subtotal);
+
+        if (usableA !== usableB) {
+          return usableA ? -1 : 1;
+        }
+
+        const discountA = usableA ? estimateDiscount(a, subtotal) : 0;
+        const discountB = usableB ? estimateDiscount(b, subtotal) : 0;
+
+        if (discountA !== discountB) {
+          return discountB - discountA;
+        }
+
+        const minOrderA = parseNumber(a.dataset.minOrder);
+        const minOrderB = parseNumber(b.dataset.minOrder);
+
+        if (minOrderA !== minOrderB) {
+          return minOrderA - minOrderB;
+        }
+
+        const codeA = normalizeCode(a.dataset.code);
+        const codeB = normalizeCode(b.dataset.code);
+
+        return codeA.localeCompare(codeB, "vi");
+      });
+
+      couponItems.forEach(function (item) {
+        couponList.appendChild(item);
+      });
+    }
+
     function refreshCouponStates() {
       const subtotal = getCurrentSubtotal();
       const usableItems = [];
@@ -2424,6 +2473,7 @@
         selectedCode = "";
       }
 
+      sortCouponItemsByState(subtotal);
       markBestCoupon(usableItems, subtotal);
       updateSelectedState();
     }
@@ -2489,6 +2539,10 @@
     window.clearAppliedCouponPicker = function () {
       confirmedPickerCode = "";
       updateOpenButtonText();
+    };
+
+    window.refreshCheckoutCouponStates = function () {
+      refreshCouponStates();
     };
 
     function closeModal() {
@@ -3283,6 +3337,14 @@
     const summarySubtotal = document.getElementById("summarySubtotal");
     const summaryDiscount = document.getElementById("summaryDiscount");
     const summaryTotal = document.getElementById("summaryTotal");
+    const csrfTokenInput = document.querySelector("input[name='csrf_token']");
+
+    function normalizeCode(value) {
+      return String(value || "")
+              .trim()
+              .toUpperCase()
+              .replace(/[^A-Z0-9_-]/g, "");
+    }
 
     function formatVnd(value) {
       return new Intl.NumberFormat("vi-VN").format(Math.round(Number(value || 0))) + "đ";
@@ -3292,62 +3354,136 @@
       if (!couponMessage) return;
 
       couponMessage.textContent = message || "";
+      couponMessage.classList.remove("warning");
       couponMessage.classList.toggle("error", !!isError);
       couponMessage.classList.toggle("success", !isError && !!message);
     }
 
-    if (applyBtn && couponInput) {
-      applyBtn.addEventListener("click", function () {
-        const code = couponInput.value.trim().toUpperCase();
+    function updateSummary(data) {
+      if (!data) return;
 
-        if (!code) {
-          setCouponMessage("Vui lòng nhập mã khuyến mãi.", true);
-          return;
-        }
+      if (summarySubtotal && data.subtotal !== undefined) {
+        summarySubtotal.textContent = formatVnd(data.subtotal);
+      }
 
-        if (window.validateManualCouponCode && !window.validateManualCouponCode(true)) {
-          return;
-        }
+      if (summaryDiscount && data.discount !== undefined) {
+        summaryDiscount.textContent = formatVnd(data.discount);
+      }
 
-        fetch("${pageContext.request.contextPath}/ajax/apply-coupon?code=" + encodeURIComponent(code))
-                .then(function (res) {
-                  return res.json();
-                })
-                .then(function (data) {
-                  const discountValue = Number(data && data.discount ? data.discount : 0);
+      if (summaryTotal && data.total !== undefined) {
+        summaryTotal.textContent = formatVnd(data.total);
+      }
+    }
 
-                  if (!data || data.ok === false || data.error || discountValue <= 0) {
-                    const message = data && data.error
-                            ? data.error
-                            : "Mã khuyến mãi không tồn tại hoặc không đủ điều kiện áp dụng.";
+    function setLoadingState(loading) {
+      if (!applyBtn) return;
 
-                    setCouponMessage(message, true);
+      applyBtn.disabled = !!loading;
+      applyBtn.textContent = loading ? "Đang áp dụng..." : "Áp dụng";
+    }
 
-                    if (window.clearAppliedCouponPicker) {
-                      window.clearAppliedCouponPicker();
-                    }
+    function applyCouponByAjax() {
+      const code = normalizeCode(couponInput ? couponInput.value : "");
 
-                    return;
+      if (!code) {
+        setCouponMessage("Vui lòng nhập mã khuyến mãi.", true);
+        return;
+      }
+
+      if (couponInput) {
+        couponInput.value = code;
+      }
+
+      if (window.validateManualCouponCode && !window.validateManualCouponCode(true)) {
+        return;
+      }
+
+      const params = new URLSearchParams();
+      params.append("action", "apply");
+      params.append("code", code);
+      params.append("couponCode", code);
+
+      if (csrfTokenInput && csrfTokenInput.value) {
+        params.append("csrf_token", csrfTokenInput.value);
+      }
+
+      setLoadingState(true);
+      setCouponMessage("", false);
+
+      fetch("${pageContext.request.contextPath}/ajax/apply-coupon", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+          "Accept": "application/json"
+        },
+        body: params.toString()
+      })
+              .then(function (res) {
+                return res.json();
+              })
+              .then(function (data) {
+                const discountValue = Number(data && data.discount ? data.discount : 0);
+
+                if (!data || data.ok !== true || discountValue <= 0) {
+                  const message = data && (data.error || data.message)
+                          ? (data.error || data.message)
+                          : "Mã khuyến mãi không tồn tại hoặc không đủ điều kiện áp dụng.";
+
+                  setCouponMessage(message, true);
+
+                  if (summaryDiscount) {
+                    summaryDiscount.textContent = formatVnd(0);
                   }
 
-                  if (summarySubtotal) summarySubtotal.textContent = formatVnd(data.subtotal);
-                  if (summaryDiscount) summaryDiscount.textContent = formatVnd(data.discount);
-                  if (summaryTotal) summaryTotal.textContent = formatVnd(data.total);
+                  if (window.clearAppliedCouponPicker) {
+                    window.clearAppliedCouponPicker();
+                  }
 
                   if (window.updateShippingFeeByLocation) {
                     window.updateShippingFeeByLocation();
                   }
 
-                  if (window.setAppliedCouponCodeForPicker) {
-                    window.setAppliedCouponCodeForPicker(data.code || code);
+                  if (window.refreshCheckoutCouponStates) {
+                    window.refreshCheckoutCouponStates();
                   }
 
-                  setCouponMessage("Áp dụng mã giảm giá thành công.", false);
-                })
-                .catch(function () {
-                  setCouponMessage("Không thể áp dụng mã giảm giá lúc này.", true);
-                });
-      });
+                  return;
+                }
+
+                updateSummary(data);
+
+                if (window.updateShippingFeeByLocation) {
+                  window.updateShippingFeeByLocation();
+                }
+
+                if (window.setAppliedCouponCodeForPicker) {
+                  window.setAppliedCouponCodeForPicker(data.code || code);
+                }
+
+                if (window.refreshCheckoutCouponStates) {
+                  window.refreshCheckoutCouponStates();
+                }
+
+                if (window.updateCheckoutButtonsState) {
+                  window.updateCheckoutButtonsState();
+                }
+
+                setCouponMessage(data.message || "Áp dụng mã giảm giá thành công.", false);
+              })
+              .catch(function () {
+                setCouponMessage("Không thể áp dụng mã giảm giá lúc này.", true);
+              })
+              .finally(function () {
+                setLoadingState(false);
+
+                if (window.validateManualCouponCode) {
+                  window.validateManualCouponCode(false);
+                }
+              });
+    }
+
+    if (applyBtn && couponInput) {
+      applyBtn.addEventListener("click", applyCouponByAjax);
     }
   })();
 </script>
@@ -3402,6 +3538,10 @@
 
     function recalculateSummary() {
       updateSummaryWithoutCoupon();
+
+      if (window.refreshCheckoutCouponStates) {
+        window.refreshCheckoutCouponStates();
+      }
 
       if (couponInput && couponInput.value.trim() && applyCouponBtn) {
         applyCouponBtn.click();
