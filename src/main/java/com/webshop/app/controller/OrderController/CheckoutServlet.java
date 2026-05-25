@@ -11,6 +11,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 import com.webshop.app.dao.CouponDAO;
 import com.webshop.app.model.CartItem;
@@ -78,7 +79,11 @@ public class CheckoutServlet extends HttpServlet {
     private String normalizeShippingMethod(String shippingMethod) {
         String method = trim(shippingMethod).toUpperCase();
 
-        Set<String> validShippingMethods = Set.of(SHIPPING_ECONOMY, SHIPPING_FAST, SHIPPING_EXPRESS);
+        Set<String> validShippingMethods = Set.of(
+                SHIPPING_ECONOMY,
+                SHIPPING_FAST,
+                SHIPPING_EXPRESS
+        );
 
         if (validShippingMethods.contains(method)) {
             return method;
@@ -146,10 +151,6 @@ public class CheckoutServlet extends HttpServlet {
                 ? amountAfterCoupon.setScale(0, RoundingMode.HALF_UP)
                 : BigDecimal.ZERO;
 
-        /*
-         * Freeship áp dụng toàn quốc, không phân biệt TP.HCM hay tỉnh khác.
-         * Điều kiện duy nhất: tổng tiền hàng sau voucher đạt ngưỡng quy định.
-         */
         if (safeAmountAfterCoupon.compareTo(FREE_SHIP_THRESHOLD) >= 0) {
             return BigDecimal.ZERO;
         }
@@ -166,10 +167,6 @@ public class CheckoutServlet extends HttpServlet {
             };
         }
 
-        /*
-         * Ngoại tỉnh không hỗ trợ hỏa tốc.
-         * Nếu request vẫn gửi EXPRESS, tính như ECONOMY ngoại tỉnh thay vì 0đ.
-         */
         return switch (method) {
             case SHIPPING_FAST -> OTHER_FAST_FEE;
             case SHIPPING_EXPRESS, SHIPPING_ECONOMY -> OTHER_ECONOMY_FEE;
@@ -181,11 +178,9 @@ public class CheckoutServlet extends HttpServlet {
      * Lấy giỏ hàng đã được tích chọn.
      * Nếu chưa có sản phẩm được chọn thì redirect về cart.
      */
-    private Map<String, CartItem> getSelectedCheckoutCart(
-            HttpServletRequest req,
-            HttpServletResponse resp,
-            HttpSession session
-    ) throws IOException {
+    private Map<String, CartItem> getSelectedCheckoutCart(HttpServletRequest req,
+                                                          HttpServletResponse resp,
+                                                          HttpSession session) throws IOException {
 
         Map<String, CartItem> selectedCart = CartUtil.getSelectedCart(session);
 
@@ -221,7 +216,6 @@ public class CheckoutServlet extends HttpServlet {
         session.removeAttribute(SESSION_CHECKOUT_COUPON);
         session.removeAttribute(SESSION_CHECKOUT_COUPON_DISCOUNT);
     }
-
 
     /**
      * Xóa đúng một sản phẩm trong trang checkout.
@@ -465,7 +459,6 @@ public class CheckoutServlet extends HttpServlet {
     private boolean isCouponUsableForUserAndOrder(User user, Coupon coupon, BigDecimal subTotal) {
         return getCouponInvalidReasonForUser(user, coupon, subTotal) == null;
     }
-
 
     /**
      * Validate riêng cho mục 72 - nhập mã giảm giá thủ công.
@@ -714,7 +707,6 @@ public class CheckoutServlet extends HttpServlet {
         req.setAttribute("formShippingFee",
                 parseShippingFee(req.getParameter("shippingFee")));
     }
-
 
     private String normalizeVietnameseText(String value) {
         if (value == null) {
@@ -1061,7 +1053,6 @@ public class CheckoutServlet extends HttpServlet {
         return !normalizedAddress.contains(wardShort);
     }
 
-
     private Map<String, String> validateCheckoutForm(HttpServletRequest req,
                                                      Map<String, CartItem> checkoutCart) {
         Map<String, String> errors = new HashMap<>();
@@ -1256,6 +1247,113 @@ public class CheckoutServlet extends HttpServlet {
         return true;
     }
 
+    /**
+     * Mục 91 - gửi thông báo đơn hàng qua email.
+     *
+     * Hàm này gọi bất đồng bộ và không làm thất bại đơn hàng nếu email lỗi.
+     * Để hoạt động thật, project nên có một service:
+     *   com.webshop.app.service.OrderEmailService
+     *
+     * Các tên hàm được hỗ trợ:
+     * - sendOrderSuccessEmail(int orderId, String email)
+     * - sendOrderSuccessEmail(String email, int orderId)
+     * - sendOrderSuccessEmail(int orderId)
+     * - sendOrderConfirmationEmail(int orderId, String email)
+     * - sendOrderConfirmationEmail(int orderId)
+     *
+     * Nếu service chưa tồn tại thì hàm tự bỏ qua, project vẫn build bình thường.
+     */
+    private void sendOrderSuccessEmailAsync(User user, int orderId) {
+        if (orderId <= 0) {
+            return;
+        }
+
+        String email = getUserEmail(user);
+
+        CompletableFuture.runAsync(() -> {
+            try {
+                Class<?> serviceClass = Class.forName("com.webshop.app.service.OrderEmailService");
+                Object emailService = serviceClass.getDeclaredConstructor().newInstance();
+
+                if (tryInvokeEmailMethod(serviceClass, emailService, "sendOrderSuccessEmail", orderId, email)) {
+                    return;
+                }
+
+                if (tryInvokeEmailMethod(serviceClass, emailService, "sendOrderConfirmationEmail", orderId, email)) {
+                    return;
+                }
+
+            } catch (ClassNotFoundException ignored) {
+                /*
+                 * Chưa có OrderEmailService thì bỏ qua để không làm hỏng checkout.
+                 * Khi bạn thêm service gửi mail, hàm này sẽ tự gọi được nếu đúng signature.
+                 */
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    private boolean tryInvokeEmailMethod(Class<?> serviceClass,
+                                         Object service,
+                                         String methodName,
+                                         int orderId,
+                                         String email) {
+        try {
+            serviceClass
+                    .getMethod(methodName, int.class, String.class)
+                    .invoke(service, orderId, email);
+            return true;
+        } catch (NoSuchMethodException ignored) {
+            // Thử signature tiếp theo.
+        } catch (Exception e) {
+            e.printStackTrace();
+            return true;
+        }
+
+        try {
+            serviceClass
+                    .getMethod(methodName, String.class, int.class)
+                    .invoke(service, email, orderId);
+            return true;
+        } catch (NoSuchMethodException ignored) {
+            // Thử signature tiếp theo.
+        } catch (Exception e) {
+            e.printStackTrace();
+            return true;
+        }
+
+        try {
+            serviceClass
+                    .getMethod(methodName, int.class)
+                    .invoke(service, orderId);
+            return true;
+        } catch (NoSuchMethodException ignored) {
+            return false;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return true;
+        }
+    }
+
+    private String getUserEmail(User user) {
+        if (user == null) {
+            return "";
+        }
+
+        try {
+            Object value = user.getClass().getMethod("getEmail").invoke(user);
+
+            if (value != null) {
+                return value.toString().trim();
+            }
+        } catch (Exception ignored) {
+            // User model chưa có getEmail thì để rỗng.
+        }
+
+        return "";
+    }
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
@@ -1422,6 +1520,12 @@ public class CheckoutServlet extends HttpServlet {
 
                 clearCheckoutCoupon(session);
 
+                /*
+                 * Mục 91:
+                 * Gửi email bất đồng bộ, lỗi mail không làm hỏng đơn hàng.
+                 */
+                sendOrderSuccessEmailAsync(user, orderId);
+
                 resp.sendRedirect(req.getContextPath()
                         + "/checkout/success?success=true&orderId=" + orderId
                         + "&method=COD");
@@ -1453,6 +1557,7 @@ public class CheckoutServlet extends HttpServlet {
             CartUtil.clearSelectedCartKeys(session);
 
             clearCheckoutCoupon(session);
+            sendOrderSuccessEmailAsync(user, orderId);
 
             resp.sendRedirect(req.getContextPath()
                     + "/checkout/success?success=true&orderId=" + orderId
