@@ -5,40 +5,514 @@
 <c:set var="pageTitle" value="MyCosmetic | Chi tiết đơn hàng" scope="request" />
 <c:set var="pageCss" value="/order.css" scope="request" />
 
-<section class="order-detail-page" style="padding: 32px 0;">
-    <div class="container" style="max-width: 1180px; margin: 0 auto; padding: 0 16px;">
+<style>
+    .order-detail-page {
+        padding: 32px 0;
+        background: #fff7fb;
+        min-height: 70vh;
+    }
+
+    .order-detail-container {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 0 16px;
+    }
+
+    .order-detail-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: flex-start;
+        margin-bottom: 22px;
+    }
+
+    .order-detail-title {
+        margin: 0 0 8px;
+        color: #1f2a44;
+        font-size: 28px;
+        line-height: 1.25;
+        font-weight: 850;
+    }
+
+    .order-detail-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 12px;
+        align-items: center;
+        color: #667085;
+        font-size: 14px;
+    }
+
+    .order-back-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 42px;
+        padding: 0 16px;
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+        color: #334155;
+        text-decoration: none;
+        background: #ffffff;
+        font-weight: 750;
+        transition: 0.18s ease;
+        white-space: nowrap;
+    }
+
+    .order-back-btn:hover {
+        border-color: #f3b8d2;
+        color: #d63384;
+        background: #fff3f8;
+        transform: translateY(-1px);
+    }
+
+    .order-card {
+        background: #ffffff;
+        border: 1px solid #f0e8ee;
+        border-radius: 20px;
+        padding: 22px;
+        margin-bottom: 22px;
+        box-shadow: 0 10px 30px rgba(31, 42, 68, 0.06);
+    }
+
+    .order-card-title {
+        margin: 0 0 16px;
+        color: #1f2a44;
+        font-size: 20px;
+        line-height: 1.3;
+        font-weight: 850;
+    }
+
+    .order-info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+    }
+
+    .order-info-item.full {
+        grid-column: 1 / -1;
+    }
+
+    .order-info-label {
+        margin-bottom: 5px;
+        color: #7b8794;
+        font-size: 13px;
+        font-weight: 750;
+    }
+
+    .order-info-value {
+        color: #1f2a44;
+        font-size: 15px;
+        font-weight: 750;
+        line-height: 1.45;
+    }
+
+    .order-muted {
+        color: #7b8794;
+    }
+
+    .order-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 28px;
+        padding: 5px 12px;
+        border-radius: 999px;
+        font-size: 13px;
+        line-height: 1;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
+    .order-pill.ok {
+        background: #e8f7ef;
+        color: #12804a;
+        border: 1px solid #bdebd1;
+    }
+
+    .order-pill.danger {
+        background: #fdecec;
+        color: #c62828;
+        border: 1px solid #facaca;
+    }
+
+    .order-pill.info {
+        background: #eaf3ff;
+        color: #1769aa;
+        border: 1px solid #c7ddff;
+    }
+
+    .order-pill.warning {
+        background: #fff6e5;
+        color: #9a5b00;
+        border: 1px solid #ffe4ad;
+    }
+
+    .order-pill.muted {
+        background: #f8fafc;
+        color: #475569;
+        border: 1px solid #e2e8f0;
+    }
+
+    .shipping-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 18px;
+    }
+
+    .shipping-summary-box {
+        padding: 14px;
+        border: 1px solid #eef2f7;
+        border-radius: 15px;
+        background: #f8fafc;
+    }
+
+    .shipping-summary-box span {
+        display: block;
+        margin-bottom: 6px;
+        color: #7b8794;
+        font-size: 12px;
+        font-weight: 850;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .shipping-summary-box strong {
+        color: #1f2a44;
+        font-size: 14px;
+        font-weight: 900;
+        line-height: 1.4;
+    }
+
+    .tracking-steps {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 18px;
+    }
+
+    .tracking-step {
+        position: relative;
+        min-height: 112px;
+        padding: 16px;
+        border: 1px solid #e5e7eb;
+        border-radius: 18px;
+        background: #f8fafc;
+        color: #64748b;
+    }
+
+    .tracking-step::before {
+        content: "";
+        width: 30px;
+        height: 30px;
+        display: block;
+        margin-bottom: 9px;
+        border-radius: 50%;
+        background: #e5e7eb;
+    }
+
+    .tracking-step::after {
+        content: "";
+        position: absolute;
+        top: 30px;
+        left: 46px;
+        right: -18px;
+        height: 3px;
+        background: #e5e7eb;
+        z-index: 0;
+    }
+
+    .tracking-step:last-child::after {
+        display: none;
+    }
+
+    .tracking-step strong {
+        display: block;
+        position: relative;
+        z-index: 1;
+        color: inherit;
+        font-size: 15px;
+        font-weight: 900;
+        line-height: 1.35;
+    }
+
+    .tracking-step small {
+        display: block;
+        position: relative;
+        z-index: 1;
+        margin-top: 5px;
+        color: inherit;
+        font-size: 13px;
+        line-height: 1.45;
+        font-weight: 650;
+    }
+
+    .tracking-step.done {
+        border-color: #bdebd1;
+        background: #f0fdf4;
+        color: #166534;
+    }
+
+    .tracking-step.done::before,
+    .tracking-step.done::after {
+        background: #22c55e;
+    }
+
+    .tracking-step.active {
+        border-color: #c7ddff;
+        background: #eff6ff;
+        color: #1d4ed8;
+    }
+
+    .tracking-step.active::before {
+        background: #3b82f6;
+        box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.13);
+    }
+
+    .tracking-step.failed {
+        border-color: #facaca;
+        background: #fff1f2;
+        color: #b91c1c;
+    }
+
+    .tracking-step.failed::before {
+        background: #ef4444;
+        box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.12);
+    }
+
+    .tracking-history {
+        margin-top: 20px;
+        padding-top: 18px;
+        border-top: 1px solid #eef2f7;
+    }
+
+    .tracking-history-title {
+        margin: 0 0 12px;
+        color: #1f2a44;
+        font-size: 16px;
+        font-weight: 850;
+    }
+
+    .tracking-history-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .tracking-history-item {
+        display: grid;
+        grid-template-columns: 170px 1fr;
+        gap: 14px;
+        padding: 12px 14px;
+        border: 1px solid #eef2f7;
+        border-radius: 14px;
+        background: #ffffff;
+    }
+
+    .tracking-history-time {
+        color: #7b8794;
+        font-size: 13px;
+        font-weight: 800;
+    }
+
+    .tracking-history-content strong {
+        display: block;
+        margin-bottom: 4px;
+        color: #1f2a44;
+        font-size: 14px;
+        font-weight: 850;
+    }
+
+    .tracking-history-content p {
+        margin: 0;
+        color: #475569;
+        font-size: 13.5px;
+        line-height: 1.45;
+    }
+
+    .order-empty-box {
+        padding: 18px;
+        border-radius: 14px;
+        background: #f8fafc;
+        color: #7b8794;
+        font-weight: 650;
+    }
+
+    .order-items-table-wrap {
+        overflow-x: auto;
+    }
+
+    .order-items-table {
+        width: 100%;
+        min-width: 760px;
+        border-collapse: collapse;
+    }
+
+    .order-items-table th {
+        padding: 12px 8px;
+        border-bottom: 1px solid #eee;
+        color: #475569;
+        font-size: 13px;
+        text-align: left;
+        font-weight: 850;
+    }
+
+    .order-items-table td {
+        padding: 14px 8px;
+        border-bottom: 1px solid #f1f1f1;
+        color: #334155;
+        vertical-align: top;
+    }
+
+    .order-product-img {
+        width: 58px;
+        height: 58px;
+        object-fit: cover;
+        border-radius: 12px;
+        border: 1px solid #eee;
+        background: #f8fafc;
+    }
+
+    .order-product-placeholder {
+        width: 58px;
+        height: 58px;
+        border-radius: 12px;
+        background: #f1f5f9;
+        color: #94a3b8;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .variant-badge {
+        display: inline-block;
+        margin-bottom: 8px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: #f4edf7;
+        color: #8b4aa8;
+        font-size: 12px;
+        font-weight: 800;
+    }
+
+    .payment-summary {
+        max-width: 480px;
+        margin-left: auto;
+    }
+
+    .summary-line {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 9px 0;
+        color: #555;
+        font-size: 15px;
+    }
+
+    .summary-line strong {
+        color: #1f2a44;
+    }
+
+    .summary-total {
+        margin-top: 6px;
+        padding-top: 15px;
+        border-top: 1px solid #eee;
+        font-size: 20px;
+        font-weight: 850;
+    }
+
+    .summary-total strong {
+        color: #d63384;
+        font-size: 22px;
+    }
+
+    @media (max-width: 900px) {
+        .order-detail-header {
+            flex-direction: column;
+        }
+
+        .order-info-grid,
+        .shipping-summary-grid,
+        .tracking-steps,
+        .tracking-history-item {
+            grid-template-columns: 1fr;
+        }
+
+        .tracking-step::after {
+            display: none;
+        }
+
+        .payment-summary {
+            max-width: none;
+            margin-left: 0;
+        }
+    }
+</style>
+
+<section class="order-detail-page">
+    <div class="order-detail-container">
 
         <!-- HEADER -->
-        <div style="display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; margin-bottom: 22px;">
+        <div class="order-detail-header">
             <div>
-                <h1 style="margin: 0 0 8px; font-size: 28px; font-weight: 700;">
+                <h1 class="order-detail-title">
                     Chi tiết đơn hàng #${order.id}
                 </h1>
 
-                <div style="color: #666;">
-                    Trạng thái:
+                <div class="order-detail-meta">
+                    <span>Trạng thái đơn:</span>
+
                     <c:choose>
                         <c:when test="${order.status == 'completed'}">
-              <span style="display: inline-block; padding: 5px 12px; border-radius: 999px; background: #e8f7ef; color: #12804a; font-weight: 600;">
+              <span class="order-pill ok">
                 <c:out value="${order.statusLabel}" />
               </span>
                         </c:when>
 
                         <c:when test="${order.status == 'cancelled' || order.status == 'canceled'}">
-              <span style="display: inline-block; padding: 5px 12px; border-radius: 999px; background: #fdecec; color: #c62828; font-weight: 600;">
+              <span class="order-pill danger">
                 <c:out value="${order.statusLabel}" />
               </span>
                         </c:when>
 
                         <c:when test="${order.status == 'shipping'}">
-              <span style="display: inline-block; padding: 5px 12px; border-radius: 999px; background: #eaf3ff; color: #1769aa; font-weight: 600;">
+              <span class="order-pill info">
                 <c:out value="${order.statusLabel}" />
               </span>
                         </c:when>
 
                         <c:otherwise>
-              <span style="display: inline-block; padding: 5px 12px; border-radius: 999px; background: #fff6e5; color: #9a5b00; font-weight: 600;">
+              <span class="order-pill warning">
                 <c:out value="${order.statusLabel}" />
+              </span>
+                        </c:otherwise>
+                    </c:choose>
+
+                    <span>Vận chuyển:</span>
+
+                    <c:choose>
+                        <c:when test="${order.delivered}">
+              <span class="order-pill ok">
+                <c:out value="${order.shippingStatusLabel}" />
+              </span>
+                        </c:when>
+
+                        <c:when test="${order.deliveryFailed || order.shippingCanceled}">
+              <span class="order-pill danger">
+                <c:out value="${order.shippingStatusLabel}" />
+              </span>
+                        </c:when>
+
+                        <c:when test="${order.delivering}">
+              <span class="order-pill info">
+                <c:out value="${order.shippingStatusLabel}" />
+              </span>
+                        </c:when>
+
+                        <c:otherwise>
+              <span class="order-pill warning">
+                <c:out value="${order.shippingStatusLabel}" />
               </span>
                         </c:otherwise>
                     </c:choose>
@@ -46,57 +520,73 @@
             </div>
 
             <a href="${pageContext.request.contextPath}/account"
-               style="display: inline-flex; align-items: center; justify-content: center; padding: 10px 16px; border-radius: 10px; border: 1px solid #ddd; color: #333; text-decoration: none; background: #fff;">
+               class="order-back-btn">
                 Quay lại tài khoản
             </a>
         </div>
 
         <!-- ORDER INFO -->
-        <div style="background: #fff; border: 1px solid #eee; border-radius: 18px; padding: 22px; margin-bottom: 22px; box-shadow: 0 8px 24px rgba(0,0,0,0.04);">
-            <h2 style="margin: 0 0 16px; font-size: 20px;">Thông tin nhận hàng</h2>
+        <div class="order-card">
+            <h2 class="order-card-title">Thông tin nhận hàng</h2>
 
-            <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;">
-                <div>
-                    <div style="font-size: 13px; color: #777; margin-bottom: 4px;">Người nhận</div>
-                    <div style="font-weight: 600;">
+            <div class="order-info-grid">
+                <div class="order-info-item">
+                    <div class="order-info-label">Người nhận</div>
+                    <div class="order-info-value">
                         <c:out value="${order.fullName}" />
                     </div>
                 </div>
 
-                <div>
-                    <div style="font-size: 13px; color: #777; margin-bottom: 4px;">Số điện thoại</div>
-                    <div style="font-weight: 600;">
+                <div class="order-info-item">
+                    <div class="order-info-label">Số điện thoại</div>
+                    <div class="order-info-value">
                         <c:out value="${order.phone}" />
                     </div>
                 </div>
 
-                <div style="grid-column: 1 / -1;">
-                    <div style="font-size: 13px; color: #777; margin-bottom: 4px;">Địa chỉ giao hàng</div>
-                    <div style="font-weight: 600;">
+                <div class="order-info-item full">
+                    <div class="order-info-label">Địa chỉ giao hàng</div>
+                    <div class="order-info-value">
                         <c:out value="${order.address}" />
                     </div>
                 </div>
 
-                <div>
-                    <div style="font-size: 13px; color: #777; margin-bottom: 4px;">Ngày đặt</div>
-                    <div style="font-weight: 600;">
+                <div class="order-info-item">
+                    <div class="order-info-label">Ngày đặt</div>
+                    <div class="order-info-value">
                         <fmt:formatDate value="${order.createdAtDate}" pattern="dd/MM/yyyy HH:mm" />
                     </div>
                 </div>
 
-                <div>
-                    <div style="font-size: 13px; color: #777; margin-bottom: 4px;">Thanh toán</div>
-                    <div style="font-weight: 600;">
+                <div class="order-info-item">
+                    <div class="order-info-label">Thanh toán</div>
+                    <div class="order-info-value">
                         <c:out value="${order.paymentMethod}" />
                         -
-                        <c:out value="${order.paymentStatus}" />
+                        <c:choose>
+                            <c:when test="${order.paymentStatus == 'PAID'}">
+                                <span class="order-pill ok">PAID</span>
+                            </c:when>
+
+                            <c:when test="${order.paymentStatus == 'CANCELED' || order.paymentStatus == 'FAILED'}">
+                <span class="order-pill danger">
+                  <c:out value="${order.paymentStatus}" />
+                </span>
+                            </c:when>
+
+                            <c:otherwise>
+                <span class="order-pill warning">
+                  <c:out value="${order.paymentStatus}" />
+                </span>
+                            </c:otherwise>
+                        </c:choose>
                     </div>
                 </div>
 
                 <c:if test="${not empty order.vnpTxnRef}">
-                    <div style="grid-column: 1 / -1;">
-                        <div style="font-size: 13px; color: #777; margin-bottom: 4px;">Mã giao dịch VNPAY</div>
-                        <div style="font-weight: 600;">
+                    <div class="order-info-item full">
+                        <div class="order-info-label">Mã giao dịch VNPAY</div>
+                        <div class="order-info-value">
                             <c:out value="${order.vnpTxnRef}" />
                         </div>
                     </div>
@@ -104,15 +594,136 @@
             </div>
         </div>
 
-        <!-- ORDER ITEMS -->
-        <div style="background: #fff; border: 1px solid #eee; border-radius: 18px; padding: 22px; margin-bottom: 22px; box-shadow: 0 8px 24px rgba(0,0,0,0.04);">
-            <h2 style="margin: 0 0 16px; font-size: 20px;">Sản phẩm đã mua</h2>
+        <!-- SHIPPING TRACKING -->
+        <div class="order-card">
+            <h2 class="order-card-title">Theo dõi vận chuyển</h2>
 
-            <%--
-              Hỗ trợ cả hai tên attribute:
-              - orderItems
-              - items
-            --%>
+            <div class="shipping-summary-grid">
+                <div class="shipping-summary-box">
+                    <span>Phương thức</span>
+                    <strong>
+                        <c:out value="${order.shippingMethodLabel}" />
+                    </strong>
+                </div>
+
+                <div class="shipping-summary-box">
+                    <span>Đơn vị giao</span>
+                    <strong>
+                        <c:out value="${order.shippingProviderLabel}" />
+                    </strong>
+                </div>
+
+                <div class="shipping-summary-box">
+                    <span>Mã vận đơn</span>
+                    <strong>
+                        <c:choose>
+                            <c:when test="${not empty order.shippingCode}">
+                                <c:out value="${order.shippingCode}" />
+                            </c:when>
+                            <c:otherwise>Chưa có</c:otherwise>
+                        </c:choose>
+                    </strong>
+                </div>
+
+                <div class="shipping-summary-box">
+                    <span>Phí vận chuyển</span>
+                    <strong>
+                        <fmt:formatNumber value="${empty order.shippingFee ? 0 : order.shippingFee}"
+                                          type="number"
+                                          groupingUsed="true"
+                                          minFractionDigits="0"
+                                          maxFractionDigits="0" /> ₫
+                    </strong>
+                </div>
+            </div>
+
+            <div class="tracking-steps">
+                <div class="tracking-step ${order.pendingPickup ? 'active' : (order.delivering || order.delivered || order.deliveryFailed ? 'done' : '')}">
+                    <strong>Chờ lấy hàng</strong>
+                    <small>Shop đang chuẩn bị và chờ bàn giao đơn hàng.</small>
+                </div>
+
+                <div class="tracking-step ${order.delivering ? 'active' : (order.delivered || order.deliveryFailed ? 'done' : '')}">
+                    <strong>Đang giao</strong>
+                    <small>
+                        <c:choose>
+                            <c:when test="${not empty order.shippedAtDate}">
+                                Bắt đầu giao:
+                                <fmt:formatDate value="${order.shippedAtDate}" pattern="dd/MM/yyyy HH:mm" />
+                            </c:when>
+                            <c:otherwise>Đơn hàng sẽ được cập nhật khi bắt đầu giao.</c:otherwise>
+                        </c:choose>
+                    </small>
+                </div>
+
+                <c:choose>
+                    <c:when test="${order.deliveryFailed}">
+                        <div class="tracking-step failed">
+                            <strong>Giao thất bại</strong>
+                            <small>Shop sẽ liên hệ lại để hỗ trợ giao lại hoặc xử lý đơn hàng.</small>
+                        </div>
+                    </c:when>
+
+                    <c:when test="${order.shippingCanceled}">
+                        <div class="tracking-step failed">
+                            <strong>Đã hủy vận chuyển</strong>
+                            <small>Đơn vận chuyển đã bị hủy. Vui lòng liên hệ shop nếu cần hỗ trợ.</small>
+                        </div>
+                    </c:when>
+
+                    <c:otherwise>
+                        <div class="tracking-step ${order.delivered ? 'done' : ''}">
+                            <strong>Giao thành công</strong>
+                            <small>
+                                <c:choose>
+                                    <c:when test="${not empty order.deliveredAtDate}">
+                                        Hoàn tất:
+                                        <fmt:formatDate value="${order.deliveredAtDate}" pattern="dd/MM/yyyy HH:mm" />
+                                    </c:when>
+                                    <c:otherwise>Chờ đơn hàng được giao thành công.</c:otherwise>
+                                </c:choose>
+                            </small>
+                        </div>
+                    </c:otherwise>
+                </c:choose>
+            </div>
+
+            <c:if test="${not empty trackingList}">
+                <div class="tracking-history">
+                    <h3 class="tracking-history-title">Lịch sử vận chuyển</h3>
+
+                    <div class="tracking-history-list">
+                        <c:forEach var="tracking" items="${trackingList}">
+                            <div class="tracking-history-item">
+                                <div class="tracking-history-time">
+                                    <c:choose>
+                                        <c:when test="${not empty tracking.createdAt}">
+                                            <c:out value="${tracking.createdAt}" />
+                                        </c:when>
+                                        <c:otherwise>Không rõ thời gian</c:otherwise>
+                                    </c:choose>
+                                </div>
+
+                                <div class="tracking-history-content">
+                                    <strong>
+                                        <c:out value="${tracking.shippingStatusLabel}" />
+                                    </strong>
+
+                                    <p>
+                                        <c:out value="${tracking.note}" />
+                                    </p>
+                                </div>
+                            </div>
+                        </c:forEach>
+                    </div>
+                </div>
+            </c:if>
+        </div>
+
+        <!-- ORDER ITEMS -->
+        <div class="order-card">
+            <h2 class="order-card-title">Sản phẩm đã mua</h2>
+
             <c:set var="displayItems" value="${orderItems}" />
 
             <c:if test="${empty displayItems && not empty items}">
@@ -121,64 +732,60 @@
 
             <c:choose>
                 <c:when test="${empty displayItems}">
-                    <div style="padding: 18px; border-radius: 12px; background: #f8f8f8; color: #777;">
+                    <div class="order-empty-box">
                         Đơn hàng chưa có sản phẩm hoặc chưa load được chi tiết sản phẩm.
                     </div>
                 </c:when>
 
                 <c:otherwise>
-                    <div style="overflow-x: auto;">
-                        <table style="width: 100%; border-collapse: collapse; min-width: 760px;">
+                    <div class="order-items-table-wrap">
+                        <table class="order-items-table">
                             <thead>
-                            <tr style="border-bottom: 1px solid #eee;">
-                                <th style="text-align: left; padding: 12px 8px; width: 78px;">Ảnh</th>
-                                <th style="text-align: left; padding: 12px 8px;">Sản phẩm</th>
-                                <th style="text-align: left; padding: 12px 8px; width: 210px;">Biến thể</th>
-                                <th style="text-align: right; padding: 12px 8px; width: 130px;">Đơn giá</th>
-                                <th style="text-align: center; padding: 12px 8px; width: 80px;">SL</th>
-                                <th style="text-align: right; padding: 12px 8px; width: 150px;">Thành tiền</th>
+                            <tr>
+                                <th style="width: 78px;">Ảnh</th>
+                                <th>Sản phẩm</th>
+                                <th style="width: 210px;">Biến thể</th>
+                                <th style="width: 130px; text-align: right;">Đơn giá</th>
+                                <th style="width: 80px; text-align: center;">SL</th>
+                                <th style="width: 150px; text-align: right;">Thành tiền</th>
                             </tr>
                             </thead>
 
                             <tbody>
                             <c:forEach var="item" items="${displayItems}">
-                                <tr style="border-bottom: 1px solid #f1f1f1;">
-                                    <td style="padding: 14px 8px;">
+                                <tr>
+                                    <td>
                                         <c:choose>
                                             <c:when test="${not empty item.imageUrl}">
                                                 <img src="${pageContext.request.contextPath}${item.imageUrl}"
                                                      alt="${item.productName}"
-                                                     style="width: 58px; height: 58px; object-fit: cover; border-radius: 12px; border: 1px solid #eee;" />
+                                                     class="order-product-img" />
                                             </c:when>
 
                                             <c:otherwise>
-                                                <div style="width: 58px; height: 58px; border-radius: 12px; background: #f1f1f1; display: flex; align-items: center; justify-content: center; color: #999;">
-                                                    —
-                                                </div>
+                                                <div class="order-product-placeholder">—</div>
                                             </c:otherwise>
                                         </c:choose>
                                     </td>
 
-                                    <td style="padding: 14px 8px;">
-                                        <div style="font-weight: 700; color: #222;">
+                                    <td>
+                                        <div style="font-weight: 850; color: #1f2a44;">
                                             <c:out value="${item.productName}" />
                                         </div>
 
-                                        <div style="font-size: 13px; color: #888; margin-top: 4px;">
+                                        <div class="order-muted" style="font-size: 13px; margin-top: 4px;">
                                             Mã sản phẩm:
                                             <c:out value="${item.productId}" />
                                         </div>
                                     </td>
 
-                                    <td style="padding: 14px 8px;">
+                                    <td>
                                         <c:choose>
                                             <c:when test="${not empty item.variantId
-                                        || not empty item.variantName
-                                        || not empty item.variantSize
-                                        || not empty item.variantType}">
-                                                <div style="display: inline-block; padding: 4px 10px; border-radius: 999px; background: #f4edf7; color: #8b4aa8; font-size: 12px; font-weight: 700; margin-bottom: 8px;">
-                                                    Có biến thể
-                                                </div>
+                                  || not empty item.variantName
+                                  || not empty item.variantSize
+                                  || not empty item.variantType}">
+                                                <div class="variant-badge">Có biến thể</div>
 
                                                 <div style="font-size: 13px; color: #444; line-height: 1.7;">
                                                     <c:if test="${not empty item.variantName}">
@@ -203,7 +810,7 @@
                                                     </c:if>
 
                                                     <c:if test="${not empty item.variantId}">
-                                                        <div style="color: #888;">
+                                                        <div class="order-muted">
                                                             Variant ID:
                                                             <c:out value="${item.variantId}" />
                                                         </div>
@@ -212,12 +819,12 @@
                                             </c:when>
 
                                             <c:otherwise>
-                                                <span style="color: #888;">Không có biến thể</span>
+                                                <span class="order-muted">Không có biến thể</span>
                                             </c:otherwise>
                                         </c:choose>
                                     </td>
 
-                                    <td style="padding: 14px 8px; text-align: right;">
+                                    <td style="text-align: right;">
                                         <fmt:formatNumber value="${item.price}"
                                                           type="number"
                                                           groupingUsed="true"
@@ -226,11 +833,11 @@
                                         ₫
                                     </td>
 
-                                    <td style="padding: 14px 8px; text-align: center;">
+                                    <td style="text-align: center;">
                                         <c:out value="${item.quantity}" />
                                     </td>
 
-                                    <td style="padding: 14px 8px; text-align: right; font-weight: 700;">
+                                    <td style="text-align: right; font-weight: 850;">
                                         <fmt:formatNumber value="${item.subtotal}"
                                                           type="number"
                                                           groupingUsed="true"
@@ -248,11 +855,11 @@
         </div>
 
         <!-- PAYMENT SUMMARY -->
-        <div style="background: #fff; border: 1px solid #eee; border-radius: 18px; padding: 22px; box-shadow: 0 8px 24px rgba(0,0,0,0.04);">
-            <h2 style="margin: 0 0 16px; font-size: 20px;">Tổng kết thanh toán</h2>
+        <div class="order-card">
+            <h2 class="order-card-title">Tổng kết thanh toán</h2>
 
-            <div style="max-width: 460px; margin-left: auto;">
-                <div style="display: flex; justify-content: space-between; gap: 16px; padding: 8px 0; color: #555;">
+            <div class="payment-summary">
+                <div class="summary-line">
                     <span>Giảm giá coupon</span>
                     <strong>
                         -
@@ -265,39 +872,26 @@
                     </strong>
                 </div>
 
-                <c:if test="${not empty order.shippingFee}">
-                    <div style="display: flex; justify-content: space-between; gap: 16px; padding: 8px 0; color: #555;">
-                        <span>Phí vận chuyển</span>
-                        <strong>
-                            <fmt:formatNumber value="${order.shippingFee}"
-                                              type="number"
-                                              groupingUsed="true"
-                                              minFractionDigits="0"
-                                              maxFractionDigits="0" />
-                            ₫
-                        </strong>
-                    </div>
-                </c:if>
+                <div class="summary-line">
+                    <span>Phí vận chuyển</span>
+                    <strong>
+                        <fmt:formatNumber value="${empty order.shippingFee ? 0 : order.shippingFee}"
+                                          type="number"
+                                          groupingUsed="true"
+                                          minFractionDigits="0"
+                                          maxFractionDigits="0" />
+                        ₫
+                    </strong>
+                </div>
 
-                <div style="display: flex; justify-content: space-between; gap: 16px; padding: 14px 0 0; border-top: 1px solid #eee; font-size: 20px;">
-                    <span style="font-weight: 700;">Tổng tiền</span>
-                    <strong style="color: #b56a7a;">
-                        <c:choose>
-                            <c:when test="${not empty order.totalVnd}">
-                                <fmt:formatNumber value="${order.totalVnd * 1000}"
-                                                  type="number"
-                                                  groupingUsed="true"
-                                                  minFractionDigits="0"
-                                                  maxFractionDigits="0" />
-                            </c:when>
-                            <c:otherwise>
-                                <fmt:formatNumber value="${order.total}"
-                                                  type="number"
-                                                  groupingUsed="true"
-                                                  minFractionDigits="0"
-                                                  maxFractionDigits="0" />
-                            </c:otherwise>
-                        </c:choose>
+                <div class="summary-line summary-total">
+                    <span>Tổng tiền</span>
+                    <strong>
+                        <fmt:formatNumber value="${empty order.total ? 0 : order.total}"
+                                          type="number"
+                                          groupingUsed="true"
+                                          minFractionDigits="0"
+                                          maxFractionDigits="0" />
                         ₫
                     </strong>
                 </div>
