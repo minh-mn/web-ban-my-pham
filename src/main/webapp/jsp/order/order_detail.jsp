@@ -27,20 +27,58 @@
     }
 
     .order-detail-title {
-        margin: 0 0 8px;
+        margin: 0 0 10px;
         color: #1f2a44;
         font-size: 28px;
         line-height: 1.25;
-        font-weight: 850;
+        font-weight: 900;
     }
 
     .order-detail-meta {
         display: flex;
         flex-wrap: wrap;
-        gap: 8px 12px;
+        gap: 10px;
+        align-items: stretch;
+    }
+
+    .status-summary-card {
+        display: flex;
         align-items: center;
-        color: #667085;
+        gap: 10px;
+        min-width: 230px;
+        padding: 10px 12px;
+        border: 1px solid #eef2f7;
+        border-radius: 15px;
+        background: #ffffff;
+    }
+
+    .status-summary-icon {
+        width: 34px;
+        height: 34px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        background: #fff3f8;
+        color: #d63384;
+        font-weight: 950;
+    }
+
+    .status-summary-content span {
+        display: block;
+        color: #7b8794;
+        font-size: 12px;
+        font-weight: 850;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .status-summary-content strong {
+        display: block;
+        margin-top: 3px;
+        color: #1f2a44;
         font-size: 14px;
+        font-weight: 950;
     }
 
     .order-back-btn {
@@ -54,7 +92,7 @@
         color: #334155;
         text-decoration: none;
         background: #ffffff;
-        font-weight: 750;
+        font-weight: 800;
         transition: 0.18s ease;
         white-space: nowrap;
     }
@@ -69,7 +107,7 @@
     .order-card {
         background: #ffffff;
         border: 1px solid #f0e8ee;
-        border-radius: 20px;
+        border-radius: 22px;
         padding: 22px;
         margin-bottom: 22px;
         box-shadow: 0 10px 30px rgba(31, 42, 68, 0.06);
@@ -80,7 +118,7 @@
         color: #1f2a44;
         font-size: 20px;
         line-height: 1.3;
-        font-weight: 850;
+        font-weight: 900;
     }
 
     .order-info-grid {
@@ -97,13 +135,13 @@
         margin-bottom: 5px;
         color: #7b8794;
         font-size: 13px;
-        font-weight: 750;
+        font-weight: 800;
     }
 
     .order-info-value {
         color: #1f2a44;
         font-size: 15px;
-        font-weight: 750;
+        font-weight: 800;
         line-height: 1.45;
     }
 
@@ -115,12 +153,14 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        min-height: 28px;
-        padding: 5px 12px;
+        min-height: 30px;
+        min-width: 128px;
+        padding: 5px 13px;
         border-radius: 999px;
         font-size: 13px;
         line-height: 1;
-        font-weight: 800;
+        font-weight: 900;
+        text-align: center;
         white-space: nowrap;
     }
 
@@ -158,7 +198,7 @@
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 14px;
-        margin-bottom: 18px;
+        margin-bottom: 20px;
     }
 
     .shipping-summary-box {
@@ -173,7 +213,7 @@
         margin-bottom: 6px;
         color: #7b8794;
         font-size: 12px;
-        font-weight: 850;
+        font-weight: 900;
         text-transform: uppercase;
         letter-spacing: 0.04em;
     }
@@ -181,33 +221,44 @@
     .shipping-summary-box strong {
         color: #1f2a44;
         font-size: 14px;
-        font-weight: 900;
+        font-weight: 950;
         line-height: 1.4;
+    }
+
+    .tracking-current-note {
+        margin: 0 0 16px;
+        padding: 12px 14px;
+        border-radius: 15px;
+        background: #fff8fb;
+        color: #7b3a56;
+        font-size: 14px;
+        font-weight: 750;
+        line-height: 1.45;
     }
 
     .tracking-steps {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 12px;
+        gap: 14px;
         margin-top: 18px;
     }
 
     .tracking-step {
         position: relative;
-        min-height: 112px;
-        padding: 16px;
+        min-height: 122px;
+        padding: 17px;
         border: 1px solid #e5e7eb;
-        border-radius: 18px;
+        border-radius: 20px;
         background: #f8fafc;
         color: #64748b;
     }
 
     .tracking-step::before {
         content: "";
-        width: 30px;
-        height: 30px;
+        width: 34px;
+        height: 34px;
         display: block;
-        margin-bottom: 9px;
+        margin-bottom: 10px;
         border-radius: 50%;
         background: #e5e7eb;
     }
@@ -215,10 +266,11 @@
     .tracking-step::after {
         content: "";
         position: absolute;
-        top: 30px;
-        left: 46px;
-        right: -18px;
-        height: 3px;
+        top: 33px;
+        left: 54px;
+        right: -21px;
+        height: 4px;
+        border-radius: 999px;
         background: #e5e7eb;
         z-index: 0;
     }
@@ -232,8 +284,8 @@
         position: relative;
         z-index: 1;
         color: inherit;
-        font-size: 15px;
-        font-weight: 900;
+        font-size: 15.5px;
+        font-weight: 950;
         line-height: 1.35;
     }
 
@@ -245,7 +297,7 @@
         color: inherit;
         font-size: 13px;
         line-height: 1.45;
-        font-weight: 650;
+        font-weight: 700;
     }
 
     .tracking-step.done {
@@ -282,7 +334,7 @@
     }
 
     .tracking-history {
-        margin-top: 20px;
+        margin-top: 22px;
         padding-top: 18px;
         border-top: 1px solid #eef2f7;
     }
@@ -291,7 +343,7 @@
         margin: 0 0 12px;
         color: #1f2a44;
         font-size: 16px;
-        font-weight: 850;
+        font-weight: 900;
     }
 
     .tracking-history-list {
@@ -304,16 +356,16 @@
         display: grid;
         grid-template-columns: 170px 1fr;
         gap: 14px;
-        padding: 12px 14px;
+        padding: 13px 14px;
         border: 1px solid #eef2f7;
-        border-radius: 14px;
+        border-radius: 15px;
         background: #ffffff;
     }
 
     .tracking-history-time {
         color: #7b8794;
         font-size: 13px;
-        font-weight: 800;
+        font-weight: 850;
     }
 
     .tracking-history-content strong {
@@ -321,7 +373,7 @@
         margin-bottom: 4px;
         color: #1f2a44;
         font-size: 14px;
-        font-weight: 850;
+        font-weight: 900;
     }
 
     .tracking-history-content p {
@@ -336,7 +388,7 @@
         border-radius: 14px;
         background: #f8fafc;
         color: #7b8794;
-        font-weight: 650;
+        font-weight: 700;
     }
 
     .order-items-table-wrap {
@@ -355,7 +407,7 @@
         color: #475569;
         font-size: 13px;
         text-align: left;
-        font-weight: 850;
+        font-weight: 900;
     }
 
     .order-items-table td {
@@ -393,7 +445,7 @@
         background: #f4edf7;
         color: #8b4aa8;
         font-size: 12px;
-        font-weight: 800;
+        font-weight: 850;
     }
 
     .payment-summary {
@@ -419,7 +471,7 @@
         padding-top: 15px;
         border-top: 1px solid #eee;
         font-size: 20px;
-        font-weight: 850;
+        font-weight: 900;
     }
 
     .summary-total strong {
@@ -453,7 +505,6 @@
 <section class="order-detail-page">
     <div class="order-detail-container">
 
-        <!-- HEADER -->
         <div class="order-detail-header">
             <div>
                 <h1 class="order-detail-title">
@@ -461,61 +512,40 @@
                 </h1>
 
                 <div class="order-detail-meta">
-                    <span>Trạng thái đơn:</span>
+                    <div class="status-summary-card">
+                        <span class="status-summary-icon">📦</span>
+                        <div class="status-summary-content">
+                            <span>Trạng thái đơn</span>
+                            <strong>
+                                <c:choose>
+                                    <c:when test="${order.status == 'processing'}">Chờ xác nhận</c:when>
+                                    <c:when test="${order.status == 'confirmed'}">Đã xác nhận</c:when>
+                                    <c:when test="${order.status == 'shipping'}">Đang giao</c:when>
+                                    <c:when test="${order.status == 'completed'}">Hoàn thành</c:when>
+                                    <c:when test="${order.status == 'cancelled' || order.status == 'canceled'}">Đã hủy</c:when>
+                                    <c:otherwise>
+                                        <c:out value="${empty order.statusLabel ? order.status : order.statusLabel}" />
+                                    </c:otherwise>
+                                </c:choose>
+                            </strong>
+                        </div>
+                    </div>
 
-                    <c:choose>
-                        <c:when test="${order.status == 'completed'}">
-              <span class="order-pill ok">
-                <c:out value="${order.statusLabel}" />
-              </span>
-                        </c:when>
-
-                        <c:when test="${order.status == 'cancelled' || order.status == 'canceled'}">
-              <span class="order-pill danger">
-                <c:out value="${order.statusLabel}" />
-              </span>
-                        </c:when>
-
-                        <c:when test="${order.status == 'shipping'}">
-              <span class="order-pill info">
-                <c:out value="${order.statusLabel}" />
-              </span>
-                        </c:when>
-
-                        <c:otherwise>
-              <span class="order-pill warning">
-                <c:out value="${order.statusLabel}" />
-              </span>
-                        </c:otherwise>
-                    </c:choose>
-
-                    <span>Vận chuyển:</span>
-
-                    <c:choose>
-                        <c:when test="${order.delivered}">
-              <span class="order-pill ok">
-                <c:out value="${order.shippingStatusLabel}" />
-              </span>
-                        </c:when>
-
-                        <c:when test="${order.deliveryFailed || order.shippingCanceled}">
-              <span class="order-pill danger">
-                <c:out value="${order.shippingStatusLabel}" />
-              </span>
-                        </c:when>
-
-                        <c:when test="${order.delivering}">
-              <span class="order-pill info">
-                <c:out value="${order.shippingStatusLabel}" />
-              </span>
-                        </c:when>
-
-                        <c:otherwise>
-              <span class="order-pill warning">
-                <c:out value="${order.shippingStatusLabel}" />
-              </span>
-                        </c:otherwise>
-                    </c:choose>
+                    <div class="status-summary-card">
+                        <span class="status-summary-icon">🚚</span>
+                        <div class="status-summary-content">
+                            <span>Vận chuyển</span>
+                            <strong>
+                                <c:choose>
+                                    <c:when test="${order.delivered}">Giao thành công</c:when>
+                                    <c:when test="${order.deliveryFailed}">Giao thất bại</c:when>
+                                    <c:when test="${order.shippingCanceled}">Đã hủy vận chuyển</c:when>
+                                    <c:when test="${order.delivering}">Đang giao</c:when>
+                                    <c:otherwise>Chờ lấy hàng</c:otherwise>
+                                </c:choose>
+                            </strong>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -525,7 +555,6 @@
             </a>
         </div>
 
-        <!-- ORDER INFO -->
         <div class="order-card">
             <h2 class="order-card-title">Thông tin nhận hàng</h2>
 
@@ -565,19 +594,15 @@
                         -
                         <c:choose>
                             <c:when test="${order.paymentStatus == 'PAID'}">
-                                <span class="order-pill ok">PAID</span>
+                                <span class="order-pill ok">Đã thanh toán</span>
                             </c:when>
-
                             <c:when test="${order.paymentStatus == 'CANCELED' || order.paymentStatus == 'FAILED'}">
                 <span class="order-pill danger">
                   <c:out value="${order.paymentStatus}" />
                 </span>
                             </c:when>
-
                             <c:otherwise>
-                <span class="order-pill warning">
-                  <c:out value="${order.paymentStatus}" />
-                </span>
+                                <span class="order-pill warning">Chờ thanh toán</span>
                             </c:otherwise>
                         </c:choose>
                     </div>
@@ -594,8 +619,7 @@
             </div>
         </div>
 
-        <!-- SHIPPING TRACKING -->
-        <div class="order-card">
+        <div class="order-card" id="shipping-tracking">
             <h2 class="order-card-title">Theo dõi vận chuyển</h2>
 
             <div class="shipping-summary-grid">
@@ -620,7 +644,7 @@
                             <c:when test="${not empty order.shippingCode}">
                                 <c:out value="${order.shippingCode}" />
                             </c:when>
-                            <c:otherwise>Chưa có</c:otherwise>
+                            <c:otherwise>Đang cập nhật</c:otherwise>
                         </c:choose>
                     </strong>
                 </div>
@@ -637,10 +661,30 @@
                 </div>
             </div>
 
+            <p class="tracking-current-note">
+                <c:choose>
+                    <c:when test="${order.delivered}">
+                        Đơn hàng đã được giao thành công. Cảm ơn bạn đã mua hàng tại MyCosmetic.
+                    </c:when>
+                    <c:when test="${order.deliveryFailed}">
+                        Giao hàng thất bại. Shop sẽ liên hệ lại để hỗ trợ giao lại hoặc xử lý đơn hàng.
+                    </c:when>
+                    <c:when test="${order.shippingCanceled}">
+                        Vận chuyển của đơn hàng đã bị hủy. Vui lòng liên hệ shop nếu cần hỗ trợ.
+                    </c:when>
+                    <c:when test="${order.delivering}">
+                        Đơn hàng đang được vận chuyển đến bạn.
+                    </c:when>
+                    <c:otherwise>
+                        Đơn hàng đang chờ shop chuẩn bị và bàn giao cho đơn vị vận chuyển.
+                    </c:otherwise>
+                </c:choose>
+            </p>
+
             <div class="tracking-steps">
                 <div class="tracking-step ${order.pendingPickup ? 'active' : (order.delivering || order.delivered || order.deliveryFailed ? 'done' : '')}">
                     <strong>Chờ lấy hàng</strong>
-                    <small>Shop đang chuẩn bị và chờ bàn giao đơn hàng.</small>
+                    <small>Shop chuẩn bị và chờ bàn giao đơn hàng.</small>
                 </div>
 
                 <div class="tracking-step ${order.delivering ? 'active' : (order.delivered || order.deliveryFailed ? 'done' : '')}">
@@ -660,14 +704,14 @@
                     <c:when test="${order.deliveryFailed}">
                         <div class="tracking-step failed">
                             <strong>Giao thất bại</strong>
-                            <small>Shop sẽ liên hệ lại để hỗ trợ giao lại hoặc xử lý đơn hàng.</small>
+                            <small>Shop sẽ liên hệ lại để hỗ trợ giao lại.</small>
                         </div>
                     </c:when>
 
                     <c:when test="${order.shippingCanceled}">
                         <div class="tracking-step failed">
                             <strong>Đã hủy vận chuyển</strong>
-                            <small>Đơn vận chuyển đã bị hủy. Vui lòng liên hệ shop nếu cần hỗ trợ.</small>
+                            <small>Đơn vận chuyển đã bị hủy.</small>
                         </div>
                     </c:when>
 
@@ -720,7 +764,6 @@
             </c:if>
         </div>
 
-        <!-- ORDER ITEMS -->
         <div class="order-card">
             <h2 class="order-card-title">Sản phẩm đã mua</h2>
 
@@ -769,7 +812,7 @@
                                     </td>
 
                                     <td>
-                                        <div style="font-weight: 850; color: #1f2a44;">
+                                        <div style="font-weight: 900; color: #1f2a44;">
                                             <c:out value="${item.productName}" />
                                         </div>
 
@@ -837,7 +880,7 @@
                                         <c:out value="${item.quantity}" />
                                     </td>
 
-                                    <td style="text-align: right; font-weight: 850;">
+                                    <td style="text-align: right; font-weight: 900;">
                                         <fmt:formatNumber value="${item.subtotal}"
                                                           type="number"
                                                           groupingUsed="true"
@@ -854,7 +897,6 @@
             </c:choose>
         </div>
 
-        <!-- PAYMENT SUMMARY -->
         <div class="order-card">
             <h2 class="order-card-title">Tổng kết thanh toán</h2>
 
