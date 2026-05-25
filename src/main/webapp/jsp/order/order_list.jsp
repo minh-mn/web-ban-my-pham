@@ -5,6 +5,9 @@
 <style>
   .order-page {
     color: #1f2a44;
+    width: min(1380px, calc(100vw - 32px));
+    max-width: none !important;
+    margin: 0 auto;
   }
 
   .order-orders {
@@ -47,8 +50,9 @@
 
   .order-table {
     width: 100%;
-    min-width: 1040px;
+    min-width: 0;
     border-collapse: collapse;
+    table-layout: fixed;
   }
 
   .order-table th {
@@ -78,10 +82,15 @@
     background: #fff8fb;
   }
 
+  .text-center {
+    text-align: center !important;
+  }
+
   .order-id {
     color: #d63384;
     font-weight: 950;
     white-space: nowrap;
+    font-size: 15px;
   }
 
   .order-price {
@@ -101,8 +110,8 @@
     align-items: center;
     justify-content: center;
     gap: 7px;
-    min-height: 70px;
-    width: 190px;
+    min-height: 74px;
+    width: 100%;
     margin: 0 auto;
   }
 
@@ -110,7 +119,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 170px;
+    width: 152px;
     min-height: 34px;
     padding: 0 14px;
     border-radius: 999px;
@@ -123,7 +132,7 @@
 
   .status-subtext {
     display: block;
-    width: 190px;
+    width: 100%;
     color: #64748b;
     font-size: 12.5px;
     font-weight: 750;
@@ -131,6 +140,10 @@
     text-align: center;
     white-space: normal;
     overflow-wrap: anywhere;
+  }
+
+  .shipping-code-line {
+    margin-top: 1px;
   }
 
   .status-badge.status-warning {
@@ -165,7 +178,7 @@
 
   .tracking-link {
     display: block;
-    min-width: 250px;
+    width: 100%;
     padding: 12px 12px 11px;
     border: 1px solid #edf0f5;
     border-radius: 16px;
@@ -184,12 +197,12 @@
   .tracking-progress {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 9px;
+    gap: 7px;
     margin-bottom: 8px;
   }
 
   .tracking-bar {
-    height: 9px;
+    height: 8px;
     border-radius: 999px;
     background: #e5e7eb;
   }
@@ -211,7 +224,7 @@
   .tracking-labels {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 9px;
+    gap: 7px;
     color: #64748b;
     font-size: 11.5px;
     font-weight: 800;
@@ -251,6 +264,35 @@
     transform: translateY(-1px);
   }
 
+  .btn-detail {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 132px;
+    min-height: 44px;
+    padding: 0 18px;
+    border: none;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #f45ea7 0%, #d63384 100%);
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 900;
+    box-shadow: 0 12px 24px rgba(214, 51, 132, 0.22);
+    transition: 0.18s ease;
+    white-space: nowrap;
+  }
+
+  .btn-detail:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 28px rgba(214, 51, 132, 0.28);
+    color: #ffffff;
+  }
+
+  .detail-cell {
+    text-align: center;
+  }
+
   .admin-status-form {
     display: flex;
     align-items: center;
@@ -288,7 +330,27 @@
     text-align: center;
   }
 
+  @media (max-width: 1200px) {
+    .order-page {
+      width: min(1280px, calc(100vw - 24px));
+    }
+  }
+
+  @media (max-width: 992px) {
+    .order-table {
+      min-width: 980px;
+    }
+
+    .order-table-wrap {
+      overflow-x: auto;
+    }
+  }
+
   @media (max-width: 768px) {
+    .order-page {
+      width: calc(100vw - 16px);
+    }
+
     .order-orders {
       padding: 16px;
     }
@@ -299,6 +361,10 @@
 
     .order-section-title {
       font-size: 19px;
+    }
+
+    .order-table {
+      min-width: 940px;
     }
   }
 </style>
@@ -323,13 +389,13 @@
             <table class="order-table">
               <thead>
               <tr>
-                <th style="width: 90px;">Mã đơn</th>
-                <th style="width: 145px;">Ngày đặt</th>
+                <th style="width: 84px;">Mã đơn</th>
+                <th style="width: 138px;">Ngày đặt</th>
                 <th style="width: 150px;">Tổng thanh toán</th>
-                <th style="width: 210px; text-align: center;">Trạng thái đơn</th>
-                <th style="width: 230px; text-align: center;">Vận chuyển</th>
-                <th style="width: 280px;">Tracking</th>
-                <th style="width: 92px;">Chi tiết</th>
+                <th class="text-center" style="width: 170px;">Trạng thái đơn</th>
+                <th class="text-center" style="width: 182px;">Vận chuyển</th>
+                <th style="width: 230px;">Tracking</th>
+                <th class="text-center" style="width: 144px;">Chi tiết</th>
               </tr>
               </thead>
 
@@ -360,7 +426,7 @@
                     ₫
                   </td>
 
-                  <td>
+                  <td class="text-center">
                     <c:choose>
                       <c:when test="${not empty sessionScope.user and sessionScope.user.admin}">
                         <form method="post"
@@ -440,7 +506,7 @@
                     </c:choose>
                   </td>
 
-                  <td>
+                  <td class="text-center">
                     <div class="status-cell">
                       <c:choose>
                         <c:when test="${order.delivered}">
@@ -460,7 +526,7 @@
                         </c:otherwise>
                       </c:choose>
 
-                      <span class="status-subtext">
+                      <span class="status-subtext shipping-code-line">
                         Mã vận đơn:
                         <c:choose>
                           <c:when test="${not empty order.shippingCode}">
@@ -511,10 +577,10 @@
                     </a>
                   </td>
 
-                  <td>
+                  <td class="detail-cell">
                     <a href="${pageContext.request.contextPath}/orders/detail?id=${order.id}"
-                       class="btn-outline small">
-                      Xem
+                       class="btn-detail">
+                      Xem chi tiết
                     </a>
                   </td>
                 </tr>
