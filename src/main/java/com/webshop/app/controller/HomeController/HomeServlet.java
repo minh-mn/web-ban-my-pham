@@ -3,11 +3,10 @@ package com.webshop.app.controller.HomeController;
 import java.io.IOException;
 import java.util.List;
 
-import com.webshop.app.dao.BannerDAO;
-import com.webshop.app.dao.CouponDAO;
-import com.webshop.app.dao.ProductDAO;
+import com.webshop.app.dao.*;
 import com.webshop.app.model.Banner;
 import com.webshop.app.model.Coupon;
+import com.webshop.app.model.FlashSale;
 import com.webshop.app.model.Product;
 
 import jakarta.servlet.ServletException;
@@ -22,13 +21,15 @@ public class HomeServlet extends HttpServlet {
 
     private final BannerDAO bannerDAO = new BannerDAO();
     private final ProductDAO productDAO = new ProductDAO();
-    private final CouponDAO couponDAO = new CouponDAO(); // Khởi tạo CouponDAO
+    private final CouponDAO couponDAO = new CouponDAO();
+    private final FlashSaleDAO flashSaleDAO = new FlashSaleDAO();
+    private final FlashSaleItemDAO flashSaleItemDAO = new FlashSaleItemDAO();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
-        // ================= DATA =================
+        // DATA 
 
         // 1. Lấy Banner
         List<Banner> banners = bannerDAO.findActiveBanners();
@@ -51,16 +52,22 @@ public class HomeServlet extends HttpServlet {
 
         req.setAttribute("products", featuredProducts);
 
-        // ================= META =================
+        FlashSale activeFS = flashSaleDAO.findActiveFlashSale();
+        if (activeFS != null) {
+            req.setAttribute("activeFlashSale", activeFS);
+            req.setAttribute("fsItems", flashSaleItemDAO.findByFlashSale(activeFS.getId()));
+        }
+
+        //  META 
         req.setAttribute("pageTitle", "MyCosmetic | Trang chủ");
 
         // JSP include CSS
         req.setAttribute("pageCss", "home.css");
 
-        // ================= CONTENT =================
+        //  CONTENT 
         req.setAttribute("pageContent", "/jsp/home/home.jsp");
 
-        // ================= LAYOUT =================
+        //  LAYOUT 
         req.getRequestDispatcher("/jsp/common/base.jsp").forward(req, resp);
     }
 }
