@@ -3,6 +3,11 @@ package com.webshop.app.controller.OrderController;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -19,6 +24,7 @@ import com.webshop.app.model.Coupon;
 import com.webshop.app.model.User;
 import com.webshop.app.service.CheckoutService;
 import com.webshop.app.utils.CartUtil;
+import com.webshop.app.utils.DBConnection;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -48,6 +54,43 @@ public class CheckoutServlet extends HttpServlet {
 
     private static final String SESSION_CHECKOUT_COUPON = "CHECKOUT_COUPON";
     private static final String SESSION_CHECKOUT_COUPON_DISCOUNT = "CHECKOUT_COUPON_DISCOUNT";
+
+    private static final String INVOICE_TYPE_PERSONAL = "PERSONAL";
+    private static final String INVOICE_TYPE_COMPANY = "COMPANY";
+    private static final String E_INVOICE_STATUS_REQUESTED = "REQUESTED";
+
+    /*
+     * Mục 90 - dữ liệu yêu cầu xuất hóa đơn điện tử.
+     * Class nội bộ này giúp CheckoutServlet đọc, validate và lưu dữ liệu hóa đơn
+     * mà không phụ thuộc thêm vào model mới. Nếu sau này tách riêng entity
+     * EInvoiceRequest thì có thể chuyển các field này sang model.
+     */
+    private static class ElectronicInvoiceRequest {
+        private boolean requested;
+        private String invoiceType;
+        private String invoiceName;
+        private String taxCode;
+        private String buyerName;
+        private String citizenId;
+        private String passport;
+        private String email;
+        private String address;
+        private String budgetCode;
+        private boolean saveDefault;
+
+        private boolean isRequested() {
+            return requested;
+        }
+
+        private boolean isCompany() {
+            return INVOICE_TYPE_COMPANY.equals(invoiceType);
+        }
+
+        private boolean isPersonal() {
+            return INVOICE_TYPE_PERSONAL.equals(invoiceType);
+        }
+    }
+
 
     private final CheckoutService checkoutService = new CheckoutService();
     private final CouponDAO couponDAO = new CouponDAO();
@@ -216,6 +259,330 @@ public class CheckoutServlet extends HttpServlet {
         session.removeAttribute(SESSION_CHECKOUT_COUPON);
         session.removeAttribute(SESSION_CHECKOUT_COUPON_DISCOUNT);
     }
+
+
+    /* =========================================================
+       ELECTRONIC INVOICE REQUEST - Mục 90
+    ========================================================= */
+
+    private String normalizeInvoiceType(String invoiceType) {
+        String type = trim(invoiceType).toUpperCase();
+
+        if (INVOICE_TYPE_COMPANY.equals(type)) {
+            return INVOICE_TYPE_COMPANY;
+        }
+
+        return INVOICE_TYPE_PERSONAL;
+    }
+
+    private boolean isElectronicInvoiceRequested(HttpServletRequest req) {
+        return "true".equalsIgnoreCase(trim(req.getParameter("needInvoice")));
+    }
+
+    private ElectronicInvoiceRequest buildElectronicInvoiceRequest(HttpServletRequest req) {
+        ElectronicInvoiceRequest invoice = new ElectronicInvoiceRequest();
+
+        invoice.requested = isElectronicInvoiceRequested(req);
+
+        if (!invoice.requested) {
+            invoice.invoiceType = INVOICE_TYPE_PERSONAL;
+            return invoice;
+        }
+
+        invoice.invoiceType = normalizeInvoiceType(req.getParameter("invoiceType"));
+        invoice.invoiceName = trim(req.getParameter("invoiceName"));
+        invoice.taxCode = trim(req.getParameter("invoiceTaxCode"));
+        invoice.buyerName = trim(req.getParameter("invoiceBuyerName"));
+        invoice.citizenId = trim(req.getParameter("invoiceCitizenId"));
+        invoice.passport = trim(req.getParameter("invoicePassport"));
+        invoice.email = trim(req.getParameter("invoiceEmail"));
+        invoice.address = trim(req.getParameter("invoiceAddress"));
+        invoice.budgetCode = trim(req.getParameter("invoiceBudgetCode"));
+        invoice.saveDefault = "true".equalsIgnoreCase(trim(req.getParameter("saveInvoiceInfo")));
+
+        return invoice;
+    }
+
+    private boolean isValidEmail(String email) {
+        if (isBlank(email)) {
+            return false;
+        }
+
+        return email.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
+    }
+
+    private boolean isValidPersonalCitizenId(String citizenId) {
+        if (isBlank(citizenId)) {
+            return true;
+        }
+
+        return citizenId.matches("^\\d{10,12}$");
+    }
+
+    private boolean isValidTaxOrCitizenCode(String code) {
+        if (isBlank(code)) {
+            return false;
+        }
+
+        String normalized = code.replaceAll("\\s+", "");
+
+        /*
+         * Chấp nhận các dạng thường gặp:
+         * - MST doanh nghiệp 10 số
+         * - CCCD 12 số
+         * - MST chi nhánh 13 số hoặc dạng 10 số-3 số
+         */
+        return normalized.matches("^\\d{10}$")
+                || normalized.matches("^\\d{12}$")
+                || normalized.matches("^\\d{13}$")
+                || normalized.matches("^\\d{10}-\\d{3}$");
+    }
+
+    private void validateElectronicInvoiceRequest(ElectronicInvoiceRequest invoice,
+                                                  Map<String, String> errors) {
+        if (invoice == null || !invoice.isRequested()) {
+            return;
+        }
+
+        List<String> invoiceErrors = new ArrayList<>();
+
+        if (!invoice.isPersonal() && !invoice.isCompany()) {
+            invoiceErrors.add("Loại hóa đơn không hợp lệ.");
+        }
+
+        if (isBlank(invoice.invoiceName)) {
+            invoiceErrors.add(invoice.isCompany()
+                    ? "Vui lòng nhập tên công ty."
+                    : "Vui lòng nhập họ và tên người xuất hóa đơn.");
+        } else if (invoice.invoiceName.length() > 255) {
+            invoiceErrors.add("Tên xuất hóa đơn không được vượt quá 255 ký tự.");
+        }
+
+        if (invoice.isCompany()) {
+            if (isBlank(invoice.taxCode)) {
+                invoiceErrors.add("Vui lòng nhập MST/CCCD của công ty.");
+            } else if (!isValidTaxOrCitizenCode(invoice.taxCode)) {
+                invoiceErrors.add("MST/CCCD công ty phải gồm 10 hoặc 12 số, hoặc MST chi nhánh dạng 10 số-3 số.");
+            }
+
+            if (!isBlank(invoice.buyerName) && invoice.buyerName.length() > 255) {
+                invoiceErrors.add("Tên người mua không được vượt quá 255 ký tự.");
+            }
+
+            if (!isBlank(invoice.budgetCode) && invoice.budgetCode.length() > 50) {
+                invoiceErrors.add("Mã ĐVQHNS không được vượt quá 50 ký tự.");
+            }
+        }
+
+        if (invoice.isPersonal()) {
+            if (!isValidPersonalCitizenId(invoice.citizenId)) {
+                invoiceErrors.add("CCCD cá nhân nếu nhập phải gồm 10 đến 12 chữ số.");
+            }
+
+            if (!isBlank(invoice.passport) && invoice.passport.length() > 50) {
+                invoiceErrors.add("Hộ chiếu không được vượt quá 50 ký tự.");
+            }
+        }
+
+        if (isBlank(invoice.email)) {
+            invoiceErrors.add("Vui lòng nhập email nhận hóa đơn.");
+        } else if (!isValidEmail(invoice.email)) {
+            invoiceErrors.add("Email nhận hóa đơn không hợp lệ.");
+        } else if (invoice.email.length() > 255) {
+            invoiceErrors.add("Email nhận hóa đơn không được vượt quá 255 ký tự.");
+        }
+
+        if (isBlank(invoice.address)) {
+            invoiceErrors.add("Vui lòng nhập địa chỉ xuất hóa đơn.");
+        } else if (invoice.address.length() < 6) {
+            invoiceErrors.add("Địa chỉ xuất hóa đơn quá ngắn.");
+        } else if (invoice.address.length() > 500) {
+            invoiceErrors.add("Địa chỉ xuất hóa đơn không được vượt quá 500 ký tự.");
+        }
+
+        if (!invoiceErrors.isEmpty()) {
+            errors.put(
+                    "general",
+                    "Thông tin xuất hóa đơn điện tử chưa hợp lệ: "
+                            + String.join(" ", invoiceErrors)
+            );
+        }
+    }
+
+    private void keepElectronicInvoiceFormValues(HttpServletRequest req) {
+        req.setAttribute("formNeedInvoice", trim(req.getParameter("needInvoice")));
+        req.setAttribute("formInvoiceType", normalizeInvoiceType(req.getParameter("invoiceType")));
+        req.setAttribute("formInvoiceName", trim(req.getParameter("invoiceName")));
+        req.setAttribute("formInvoiceTaxCode", trim(req.getParameter("invoiceTaxCode")));
+        req.setAttribute("formInvoiceBuyerName", trim(req.getParameter("invoiceBuyerName")));
+        req.setAttribute("formInvoiceCitizenId", trim(req.getParameter("invoiceCitizenId")));
+        req.setAttribute("formInvoicePassport", trim(req.getParameter("invoicePassport")));
+        req.setAttribute("formInvoiceEmail", trim(req.getParameter("invoiceEmail")));
+        req.setAttribute("formInvoiceAddress", trim(req.getParameter("invoiceAddress")));
+        req.setAttribute("formInvoiceBudgetCode", trim(req.getParameter("invoiceBudgetCode")));
+        req.setAttribute("formSaveInvoiceInfo", trim(req.getParameter("saveInvoiceInfo")));
+    }
+
+    private void setNullableString(PreparedStatement statement,
+                                   int parameterIndex,
+                                   String value) throws SQLException {
+        if (isBlank(value)) {
+            statement.setString(parameterIndex, null);
+            return;
+        }
+
+        statement.setString(parameterIndex, value.trim());
+    }
+
+    private boolean columnExists(Connection connection,
+                                 String tableName,
+                                 String columnName) throws SQLException {
+        String catalog = connection.getCatalog();
+
+        try (ResultSet resultSet = connection
+                .getMetaData()
+                .getColumns(catalog, null, tableName, columnName)) {
+
+            if (resultSet.next()) {
+                return true;
+            }
+        }
+
+        try (ResultSet resultSet = connection
+                .getMetaData()
+                .getColumns(catalog, null, tableName.toUpperCase(), columnName.toUpperCase())) {
+
+            return resultSet.next();
+        }
+    }
+
+    private void ensureColumn(Connection connection,
+                              String tableName,
+                              String columnName,
+                              String definition) throws SQLException {
+        if (columnExists(connection, tableName, columnName)) {
+            return;
+        }
+
+        try (Statement statement = connection.createStatement()) {
+            statement.executeUpdate(
+                    "ALTER TABLE " + tableName + " ADD COLUMN " + columnName + " " + definition
+            );
+        }
+    }
+
+    private void ensureElectronicInvoiceTable(Connection connection) throws SQLException {
+        String createTableSql = """
+                CREATE TABLE IF NOT EXISTS store_e_invoice (
+                    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                    order_id INT NOT NULL,
+                    invoice_type VARCHAR(20) NOT NULL,
+                    invoice_name VARCHAR(255) NOT NULL,
+                    tax_code VARCHAR(50) NULL,
+                    buyer_name VARCHAR(255) NULL,
+                    citizen_id VARCHAR(50) NULL,
+                    passport VARCHAR(50) NULL,
+                    email VARCHAR(255) NOT NULL,
+                    address VARCHAR(500) NOT NULL,
+                    invoice_budget_code VARCHAR(50) NULL,
+                    save_default TINYINT(1) NOT NULL DEFAULT 0,
+                    pdf_path VARCHAR(500) NULL,
+                    status VARCHAR(30) NOT NULL DEFAULT 'REQUESTED',
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    sent_at DATETIME NULL,
+                    CONSTRAINT fk_e_invoice_order
+                        FOREIGN KEY (order_id)
+                        REFERENCES store_order(id)
+                        ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                """;
+
+        try (Statement statement = connection.createStatement()) {
+            statement.executeUpdate(createTableSql);
+        }
+
+        /*
+         * Nếu trước đó bạn đã tạo bảng bằng bản SQL cũ,
+         * các cột mới sẽ được bổ sung tự động để tránh lỗi insert.
+         */
+        ensureColumn(connection, "store_e_invoice", "invoice_budget_code", "VARCHAR(50) NULL");
+        ensureColumn(connection, "store_e_invoice", "save_default", "TINYINT(1) NOT NULL DEFAULT 0");
+    }
+
+    private void saveElectronicInvoiceRequestSafely(HttpSession session,
+                                                    int orderId,
+                                                    ElectronicInvoiceRequest invoice) {
+        if (invoice == null || !invoice.isRequested() || orderId <= 0) {
+            return;
+        }
+
+        String requestedKey = "E_INVOICE_REQUESTED_" + orderId;
+        String failedKey = "E_INVOICE_SAVE_FAILED_" + orderId;
+
+        String insertSql = """
+                INSERT INTO store_e_invoice
+                (
+                    order_id,
+                    invoice_type,
+                    invoice_name,
+                    tax_code,
+                    buyer_name,
+                    citizen_id,
+                    passport,
+                    email,
+                    address,
+                    invoice_budget_code,
+                    save_default,
+                    pdf_path,
+                    status,
+                    created_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, NOW())
+                """;
+
+        try (Connection connection = DBConnection.getConnection()) {
+            ensureElectronicInvoiceTable(connection);
+
+            try (PreparedStatement statement = connection.prepareStatement(insertSql)) {
+                int index = 1;
+
+                statement.setInt(index++, orderId);
+                statement.setString(index++, invoice.invoiceType);
+                statement.setString(index++, invoice.invoiceName);
+
+                setNullableString(statement, index++, invoice.taxCode);
+                setNullableString(statement, index++, invoice.buyerName);
+                setNullableString(statement, index++, invoice.citizenId);
+                setNullableString(statement, index++, invoice.passport);
+
+                statement.setString(index++, invoice.email);
+                statement.setString(index++, invoice.address);
+
+                setNullableString(statement, index++, invoice.budgetCode);
+                statement.setInt(index++, invoice.saveDefault ? 1 : 0);
+                statement.setString(index++, E_INVOICE_STATUS_REQUESTED);
+
+                statement.executeUpdate();
+            }
+
+            if (session != null) {
+                session.setAttribute(requestedKey, true);
+                session.removeAttribute(failedKey);
+            }
+
+        } catch (Exception e) {
+            /*
+             * Không làm hỏng đơn hàng nếu lưu yêu cầu hóa đơn lỗi.
+             * Đơn hàng vẫn được tạo, còn lỗi hóa đơn được lưu vào session để debug/thông báo.
+             */
+            e.printStackTrace();
+
+            if (session != null) {
+                session.setAttribute(failedKey, true);
+            }
+        }
+    }
+
 
     /**
      * Xóa đúng một sản phẩm trong trang checkout.
@@ -706,6 +1073,8 @@ public class CheckoutServlet extends HttpServlet {
 
         req.setAttribute("formShippingFee",
                 parseShippingFee(req.getParameter("shippingFee")));
+
+        keepElectronicInvoiceFormValues(req);
     }
 
     private String normalizeVietnameseText(String value) {
@@ -1146,6 +1515,8 @@ public class CheckoutServlet extends HttpServlet {
             errors.put("shippingMethod", "Hỏa tốc chỉ hỗ trợ khu vực TP.HCM. Vui lòng chọn Giao hàng tiết kiệm hoặc Giao hàng nhanh.");
         }
 
+        validateElectronicInvoiceRequest(buildElectronicInvoiceRequest(req), errors);
+
         return errors;
     }
 
@@ -1510,6 +1881,8 @@ public class CheckoutServlet extends HttpServlet {
                 amountAfterCoupon
         );
 
+        ElectronicInvoiceRequest electronicInvoiceRequest = buildElectronicInvoiceRequest(req);
+
         try {
             int orderId = checkoutService.checkout(
                     user.getId(),
@@ -1529,6 +1902,13 @@ public class CheckoutServlet extends HttpServlet {
                         + "/checkout/success?success=false&message=order_create_failed");
                 return;
             }
+
+            /*
+             * Mục 90:
+             * Lưu yêu cầu xuất hóa đơn điện tử ngay sau khi đơn hàng được tạo.
+             * Việc lưu hóa đơn chạy an toàn: nếu lỗi hóa đơn, đơn hàng vẫn thành công.
+             */
+            saveElectronicInvoiceRequestSafely(session, orderId, electronicInvoiceRequest);
 
             if ("COD".equalsIgnoreCase(paymentMethod)) {
                 /*
