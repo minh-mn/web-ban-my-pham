@@ -33,7 +33,7 @@ public class ProductListServlet extends HttpServlet {
 		req.setCharacterEncoding("UTF-8");
 		resp.setCharacterEncoding("UTF-8");
 
-		// ===== READ PARAMS =====
+		// READ PARAMS
 		String keyword = req.getParameter("q");
 		String sort = req.getParameter("sort");
 		String priceRange = req.getParameter("priceRange");
@@ -42,7 +42,7 @@ public class ProductListServlet extends HttpServlet {
 		Integer brandId = parseInt(req.getParameter("brand"));
 		Integer minRating = parseInt(req.getParameter("rating"));
 
-		// ===== PAGINATION =====
+		// PAGINATION 
 		int pageSize = 18;
 		int page = parseIntOrDefault(req.getParameter("page"), 1);
 		if (page < 1)
@@ -55,7 +55,7 @@ public class ProductListServlet extends HttpServlet {
 		if (page > totalPages)
 			page = totalPages;
 
-		// ===== LOAD PRODUCTS (PAGED) =====
+		// LOAD PRODUCTS (PAGED) 
 		List<Product> products = productDAO.findProductsPaged(keyword, categoryId, brandId, sort, priceRange, minRating,
 				page, pageSize);
 
@@ -82,7 +82,7 @@ public class ProductListServlet extends HttpServlet {
 
 		req.setAttribute("pageContent", "/jsp/product/list.jsp");
 
-		// ===== RENDER =====
+		//RENDER 
 		req.getRequestDispatcher("/jsp/common/base.jsp").forward(req, resp);
 	}
 
