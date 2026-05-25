@@ -9,6 +9,8 @@ import java.util.Locale;
 
 public class Order {
 
+	private static final Locale VIETNAM_LOCALE = new Locale("vi", "VN");
+
 	private int id;
 	private int userId;
 	private String fullName;
@@ -20,22 +22,40 @@ public class Order {
 
 	private String paymentMethod; // COD | VNPAY
 	private String paymentStatus; // PENDING | PAID | CANCELED
-	private String status; // processing | confirmed | shipping | completed | cancelled
+	private String status;        // processing | confirmed | shipping | completed | cancelled
 
-	private String statusLabel; // HIỂN THỊ (VIEW)
+	/**
+	 * Nhãn trạng thái đơn hàng dùng riêng cho view.
+	 * Nếu không set từ DAO thì getter sẽ tự map bằng OrderStatus.labelOf(status).
+	 */
+	private String statusLabel;
+
 	private String vnpTxnRef;
 	private LocalDateTime createdAt;
 
-	// ================= SHIPPING =================
+	// ================= SHIPPING / TRACKING =================
 	private String shippingMethod;   // ECONOMY | FAST | EXPRESS
 	private String shippingProvider; // GHTK | GHN | INTERNAL
 	private BigDecimal shippingFee;  // phí vận chuyển thực tế
 	private String shippingCode;     // mã vận đơn
-	private String shippingStatus;   // PENDING | CREATED | PICKING | DELIVERING | DELIVERED
+
+	/**
+	 * Trạng thái vận chuyển chuẩn:
+	 * - PENDING_PICKUP: Chờ lấy hàng
+	 * - DELIVERING: Đang giao
+	 * - DELIVERED: Giao thành công
+	 * - FAILED: Giao thất bại
+	 * - CANCELED: Đã hủy vận chuyển
+	 *
+	 * Vẫn hỗ trợ các giá trị cũ trong DB như PENDING, CREATED, PICKING,
+	 * DELIVERY_FAILED để tránh lỗi dữ liệu cũ.
+	 */
+	private String shippingStatus;
+
 	private LocalDateTime shippedAt;
 	private LocalDateTime deliveredAt;
 
-	// ================= GET / SET =================
+	// ================= BASIC GET / SET =================
 
 	public int getId() {
 		return id;
@@ -82,7 +102,7 @@ public class Order {
 	}
 
 	public void setTotal(BigDecimal total) {
-		this.total = total;
+		this.total = safeMoney(total);
 	}
 
 	public BigDecimal getCouponDiscount() {
@@ -90,7 +110,7 @@ public class Order {
 	}
 
 	public void setCouponDiscount(BigDecimal couponDiscount) {
-		this.couponDiscount = couponDiscount;
+		this.couponDiscount = safeMoney(couponDiscount);
 	}
 
 	public String getPaymentMethod() {
@@ -98,7 +118,7 @@ public class Order {
 	}
 
 	public void setPaymentMethod(String paymentMethod) {
-		this.paymentMethod = paymentMethod;
+		this.paymentMethod = normalizeUpper(paymentMethod);
 	}
 
 	public String getPaymentStatus() {
@@ -106,7 +126,7 @@ public class Order {
 	}
 
 	public void setPaymentStatus(String paymentStatus) {
-		this.paymentStatus = paymentStatus;
+		this.paymentStatus = normalizeUpper(paymentStatus);
 	}
 
 	public String getStatus() {
@@ -114,17 +134,15 @@ public class Order {
 	}
 
 	public void setStatus(String status) {
-		this.status = status;
+		this.status = normalizeLower(status);
 	}
-
-	/* ===== STATUS LABEL (VIEW ONLY) ===== */
 
 	public String getStatusLabel() {
 		if (statusLabel != null && !statusLabel.isBlank()) {
 			return statusLabel;
 		}
 
-		return com.webshop.app.model.OrderStatus.labelOf(this.status);
+		return OrderStatus.labelOf(this.status);
 	}
 
 	public void setStatusLabel(String statusLabel) {
@@ -136,7 +154,7 @@ public class Order {
 	}
 
 	public void setVnpTxnRef(String vnpTxnRef) {
-		this.vnpTxnRef = vnpTxnRef;
+		this.vnpTxnRef = normalizeNullable(vnpTxnRef);
 	}
 
 	public LocalDateTime getCreatedAt() {
@@ -154,7 +172,23 @@ public class Order {
 	}
 
 	public void setShippingMethod(String shippingMethod) {
-		this.shippingMethod = shippingMethod;
+		String value = normalizeUpper(shippingMethod);
+
+		if (value == null) {
+			this.shippingMethod = "ECONOMY";
+			return;
+		}
+
+		switch (value) {
+			case "FAST":
+			case "EXPRESS":
+			case "ECONOMY":
+				this.shippingMethod = value;
+				break;
+			default:
+				this.shippingMethod = "ECONOMY";
+				break;
+		}
 	}
 
 	public String getShippingProvider() {
@@ -162,7 +196,8 @@ public class Order {
 	}
 
 	public void setShippingProvider(String shippingProvider) {
-		this.shippingProvider = shippingProvider;
+		String value = normalizeUpper(shippingProvider);
+		this.shippingProvider = value == null ? "INTERNAL" : value;
 	}
 
 	public BigDecimal getShippingFee() {
@@ -170,7 +205,7 @@ public class Order {
 	}
 
 	public void setShippingFee(BigDecimal shippingFee) {
-		this.shippingFee = shippingFee;
+		this.shippingFee = safeMoney(shippingFee);
 	}
 
 	public String getShippingCode() {
@@ -178,15 +213,18 @@ public class Order {
 	}
 
 	public void setShippingCode(String shippingCode) {
-		this.shippingCode = shippingCode;
+		this.shippingCode = normalizeNullable(shippingCode);
 	}
 
+	/**
+	 * Trả về mã tracking đã chuẩn hóa để JSP/DAO dùng thống nhất.
+	 */
 	public String getShippingStatus() {
-		return shippingStatus;
+		return ShippingStatus.normalizeCode(shippingStatus);
 	}
 
 	public void setShippingStatus(String shippingStatus) {
-		this.shippingStatus = shippingStatus;
+		this.shippingStatus = ShippingStatus.normalizeCode(shippingStatus);
 	}
 
 	public LocalDateTime getShippedAt() {
@@ -209,123 +247,155 @@ public class Order {
 	// VIEW PROPERTIES FOR JSP
 	// =========================================================
 
-	/**
-	 * JSP gọi: ${order.totalVnd}
-	 */
+	/** JSP gọi: ${order.totalVnd} */
 	public String getTotalVnd() {
 		return formatVnd(total);
 	}
 
-	/**
-	 * JSP gọi: ${order.couponDiscountVnd}
-	 */
+	/** JSP gọi: ${order.couponDiscountVnd} */
 	public String getCouponDiscountVnd() {
 		return formatVnd(couponDiscount);
 	}
 
-	/**
-	 * JSP gọi: ${order.shippingFeeVnd}
-	 */
+	/** JSP gọi: ${order.shippingFeeVnd} */
 	public String getShippingFeeVnd() {
 		return formatVnd(shippingFee);
 	}
 
-	/**
-	 * JSP gọi: ${order.shippingMethodLabel}
-	 */
+	/** JSP gọi: ${order.paymentMethodLabel} */
+	public String getPaymentMethodLabel() {
+		if (paymentMethod == null || paymentMethod.isBlank()) {
+			return "Chưa xác định";
+		}
+
+		return switch (paymentMethod.toUpperCase()) {
+			case "COD" -> "Thanh toán khi nhận hàng";
+			case "VNPAY" -> "Thanh toán qua VNPAY";
+			default -> paymentMethod;
+		};
+	}
+
+	/** JSP gọi: ${order.paymentStatusLabel} */
+	public String getPaymentStatusLabel() {
+		if (paymentStatus == null || paymentStatus.isBlank()) {
+			return "Chờ thanh toán";
+		}
+
+		return switch (paymentStatus.toUpperCase()) {
+			case "PAID" -> "Đã thanh toán";
+			case "CANCELED", "CANCELLED" -> "Đã hủy thanh toán";
+			case "FAILED" -> "Thanh toán thất bại";
+			case "PENDING" -> "Chờ thanh toán";
+			default -> paymentStatus;
+		};
+	}
+
+	/** JSP gọi: ${order.shippingMethodLabel} */
 	public String getShippingMethodLabel() {
 		if (shippingMethod == null || shippingMethod.isBlank()) {
 			return "Giao hàng tiết kiệm";
 		}
 
-		switch (shippingMethod.toUpperCase()) {
-			case "FAST":
-				return "Giao hàng nhanh";
-			case "EXPRESS":
-				return "Hỏa tốc";
-			case "ECONOMY":
-			default:
-				return "Giao hàng tiết kiệm";
-		}
+		return switch (shippingMethod.toUpperCase()) {
+			case "FAST" -> "Giao hàng nhanh";
+			case "EXPRESS" -> "Hỏa tốc";
+			case "ECONOMY" -> "Giao hàng tiết kiệm";
+			default -> shippingMethod;
+		};
 	}
 
-	/**
-	 * JSP gọi: ${order.shippingProviderLabel}
-	 */
+	/** JSP gọi: ${order.shippingProviderLabel} */
 	public String getShippingProviderLabel() {
 		if (shippingProvider == null || shippingProvider.isBlank()) {
-			return "Nội bộ";
+			return "Vận chuyển nội bộ";
 		}
 
-		switch (shippingProvider.toUpperCase()) {
-			case "GHTK":
-				return "Giao hàng tiết kiệm";
-			case "GHN":
-				return "Giao hàng nhanh";
-			case "INTERNAL":
-				return "Vận chuyển nội bộ";
-			default:
-				return shippingProvider;
-		}
+		return switch (shippingProvider.toUpperCase()) {
+			case "GHTK" -> "Giao hàng tiết kiệm";
+			case "GHN" -> "Giao hàng nhanh";
+			case "INTERNAL" -> "Vận chuyển nội bộ";
+			default -> shippingProvider;
+		};
 	}
 
-	/**
-	 * JSP gọi: ${order.shippingStatusLabel}
-	 */
+	/** JSP gọi: ${order.shippingStatusLabel} */
 	public String getShippingStatusLabel() {
-		if (shippingStatus == null || shippingStatus.isBlank()) {
-			return "Chờ tạo vận đơn";
-		}
-
-		switch (shippingStatus.toUpperCase()) {
-			case "CREATED":
-				return "Đã tạo vận đơn";
-			case "PICKING":
-				return "Đang lấy hàng";
-			case "DELIVERING":
-				return "Đang giao hàng";
-			case "DELIVERED":
-				return "Đã giao hàng";
-			case "CANCELED":
-				return "Đã hủy vận chuyển";
-			case "PENDING":
-			default:
-				return "Chờ tạo vận đơn";
-		}
+		return ShippingStatus.labelOf(shippingStatus);
 	}
 
-	/**
-	 * JSP/JSTL fmt:formatDate dùng Date tốt hơn LocalDateTime.
-	 * JSP gọi: ${order.createdAtDate}
-	 */
+	/** JSP gọi: ${order.shippingStatusCssClass} */
+	public String getShippingStatusCssClass() {
+		return ShippingStatus.cssClassOf(shippingStatus);
+	}
+
+	/** JSP gọi: ${order.shippingStatusStep} để vẽ timeline. */
+	public int getShippingStatusStep() {
+		return ShippingStatus.stepOf(shippingStatus);
+	}
+
+	/** JSP gọi: ${order.pendingPickup} */
+	public boolean isPendingPickup() {
+		return ShippingStatus.PENDING_PICKUP.matches(shippingStatus);
+	}
+
+	/** JSP gọi: ${order.delivering} */
+	public boolean isDelivering() {
+		return ShippingStatus.DELIVERING.matches(shippingStatus);
+	}
+
+	/** JSP gọi: ${order.delivered} */
+	public boolean isDelivered() {
+		return ShippingStatus.DELIVERED.matches(shippingStatus);
+	}
+
+	/** JSP gọi: ${order.deliveryFailed} */
+	public boolean isDeliveryFailed() {
+		return ShippingStatus.FAILED.matches(shippingStatus);
+	}
+
+	/** JSP gọi: ${order.shippingCanceled} */
+	public boolean isShippingCanceled() {
+		return ShippingStatus.CANCELED.matches(shippingStatus);
+	}
+
+	/** JSP gọi: ${order.shippingFinished} */
+	public boolean isShippingFinished() {
+		return ShippingStatus.fromCode(shippingStatus).isTerminal();
+	}
+
+	/** JSP/JSTL fmt:formatDate dùng Date tốt hơn LocalDateTime. */
 	public Date getCreatedAtDate() {
 		return toDate(createdAt);
 	}
 
-	/**
-	 * JSP gọi: ${order.shippedAtDate}
-	 */
 	public Date getShippedAtDate() {
 		return toDate(shippedAt);
 	}
 
-	/**
-	 * JSP gọi: ${order.deliveredAtDate}
-	 */
 	public Date getDeliveredAtDate() {
 		return toDate(deliveredAt);
 	}
 
-	private String formatVnd(BigDecimal value) {
-		if (value == null) {
-			return null;
+	// =========================================================
+	// HELPER METHODS
+	// =========================================================
+
+	private BigDecimal safeMoney(BigDecimal value) {
+		if (value == null || value.compareTo(BigDecimal.ZERO) < 0) {
+			return BigDecimal.ZERO;
 		}
 
-		NumberFormat nf = NumberFormat.getInstance(new Locale("vi", "VN"));
-		nf.setGroupingUsed(true);
-		nf.setMaximumFractionDigits(0);
+		return value;
+	}
 
-		return nf.format(value);
+	private String formatVnd(BigDecimal value) {
+		BigDecimal safeValue = value == null ? BigDecimal.ZERO : value;
+
+		NumberFormat formatter = NumberFormat.getInstance(VIETNAM_LOCALE);
+		formatter.setGroupingUsed(true);
+		formatter.setMaximumFractionDigits(0);
+
+		return formatter.format(safeValue);
 	}
 
 	private Date toDate(LocalDateTime dateTime) {
@@ -334,5 +404,29 @@ public class Order {
 		}
 
 		return Date.from(dateTime.atZone(ZoneId.systemDefault()).toInstant());
+	}
+
+	private String normalizeUpper(String value) {
+		if (value == null || value.trim().isEmpty()) {
+			return null;
+		}
+
+		return value.trim().toUpperCase(Locale.ROOT);
+	}
+
+	private String normalizeLower(String value) {
+		if (value == null || value.trim().isEmpty()) {
+			return null;
+		}
+
+		return value.trim().toLowerCase(Locale.ROOT);
+	}
+
+	private String normalizeNullable(String value) {
+		if (value == null || value.trim().isEmpty()) {
+			return null;
+		}
+
+		return value.trim();
 	}
 }
