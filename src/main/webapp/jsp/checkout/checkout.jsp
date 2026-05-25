@@ -3,7 +3,7 @@
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
-<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/checkout.css?v=20260524_remove_item_no_validate">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/checkout.css?v=20260524_map_frame_fixed_full">
 <link rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
       integrity="sha256-p4NxAoJBhIINfQh3Hh1q8CgFyuzL4P8rNQ3Drx0Kz5E="
@@ -974,10 +974,57 @@
     width: 100%;
     height: min(58vh, 520px);
     min-height: 410px;
+    position: relative;
+    display: block;
     border-radius: 20px;
-    overflow: hidden;
+    overflow: hidden !important;
     border: 1px solid #dce3ee;
-    background: #f8fafc;
+    background: #eef2f7;
+    isolation: isolate;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.75);
+  }
+
+  .address-map-leaflet,
+  #addressMap {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: inherit !important;
+    display: block !important;
+    border-radius: 20px;
+    overflow: hidden !important;
+    background: #eef2f7;
+  }
+
+  #addressMap.leaflet-container,
+  .address-map-canvas .leaflet-container {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: inherit !important;
+    border-radius: 20px;
+    overflow: hidden !important;
+    background: #eef2f7 !important;
+  }
+
+  /*
+   * Fix quan trọng cho Leaflet:
+   * CSS global của web thường set img { max-width: 100%; }
+   * làm tile bản đồ bị co lại, vỡ hoặc lệch khung.
+   */
+  .leaflet-container img,
+  .leaflet-container .leaflet-tile {
+    max-width: none !important;
+    max-height: none !important;
+  }
+
+  .leaflet-container .leaflet-pane,
+  .leaflet-container .leaflet-map-pane,
+  .leaflet-container .leaflet-tile-pane,
+  .leaflet-container .leaflet-overlay-pane,
+  .leaflet-container .leaflet-shadow-pane,
+  .leaflet-container .leaflet-marker-pane,
+  .leaflet-container .leaflet-tooltip-pane,
+  .leaflet-container .leaflet-popup-pane {
+    box-sizing: content-box !important;
   }
 
   .address-map-side {
@@ -1186,6 +1233,26 @@
     }
   }
 
+  .address-map-canvas .leaflet-control-container {
+    font-family: "Inter", "Segoe UI", Roboto, Arial, sans-serif !important;
+  }
+
+  .address-map-canvas .leaflet-control-zoom {
+    border: none !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.16) !important;
+  }
+
+  .address-map-canvas .leaflet-control-zoom a {
+    width: 34px !important;
+    height: 34px !important;
+    line-height: 34px !important;
+    color: #1f2a44 !important;
+    font-size: 18px !important;
+    font-weight: 900 !important;
+  }
+
   body.address-map-open {
     overflow: hidden;
   }
@@ -1198,6 +1265,12 @@
     .address-map-canvas {
       min-height: 340px;
       height: 48vh;
+    }
+
+    .address-map-leaflet,
+    #addressMap {
+      min-height: inherit !important;
+      height: 100% !important;
     }
   }
 
@@ -1232,6 +1305,12 @@
       height: 44vh;
     }
 
+    .address-map-leaflet,
+    #addressMap {
+      min-height: inherit !important;
+      height: 100% !important;
+    }
+
     .address-map-footer {
       padding: 14px;
       flex-direction: column;
@@ -1245,6 +1324,69 @@
 
     .address-map-btn {
       width: 100%;
+    }
+  }
+
+
+
+  /* ===== LEAFLET HARD FIX V2: giữ tile đúng kích thước và phủ kín khung ===== */
+  .address-map-canvas {
+    position: relative !important;
+    width: 100% !important;
+    height: 520px !important;
+    min-height: 520px !important;
+    overflow: hidden !important;
+    background: #eef2f7 !important;
+  }
+
+  .address-map-leaflet,
+  #addressMap {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 100% !important;
+    z-index: 1 !important;
+  }
+
+  #addressMap.leaflet-container,
+  #addressMap .leaflet-container,
+  .address-map-canvas .leaflet-container {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 100% !important;
+  }
+
+  #addressMap .leaflet-tile,
+  .address-map-canvas .leaflet-tile,
+  .leaflet-container .leaflet-tile {
+    width: 256px !important;
+    height: 256px !important;
+    max-width: none !important;
+    max-height: none !important;
+  }
+
+  #addressMap .leaflet-map-pane,
+  #addressMap .leaflet-tile-pane,
+  #addressMap .leaflet-overlay-pane,
+  #addressMap .leaflet-marker-pane,
+  #addressMap .leaflet-shadow-pane,
+  #addressMap .leaflet-tooltip-pane,
+  #addressMap .leaflet-popup-pane {
+    position: absolute !important;
+  }
+
+  @media (max-width: 900px) {
+    .address-map-canvas {
+      height: 430px !important;
+      min-height: 430px !important;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .address-map-canvas {
+      height: 360px !important;
+      min-height: 360px !important;
     }
   }
 
@@ -3689,7 +3831,9 @@
 
       <div class="address-map-layout">
         <div class="address-map-left">
-          <div class="address-map-canvas" id="addressMap"></div>
+          <div class="address-map-canvas">
+            <div id="addressMap" class="address-map-leaflet"></div>
+          </div>
         </div>
 
         <div class="address-map-side">
@@ -4641,6 +4785,48 @@
       ]);
     }
 
+    function refreshMapSize(lat, lon) {
+      if (!map) {
+        return;
+      }
+
+      const parsedLat = Number(lat);
+      const parsedLon = Number(lon);
+
+      const targetLat = Number.isFinite(parsedLat)
+              ? parsedLat
+              : (currentLat != null ? currentLat : map.getCenter().lat);
+
+      const targetLon = Number.isFinite(parsedLon)
+              ? parsedLon
+              : (currentLon != null ? currentLon : map.getCenter().lng);
+
+      function doRefresh() {
+        if (!map) {
+          return;
+        }
+
+        map.invalidateSize({ pan: false, debounceMoveend: false });
+
+        if (Number.isFinite(targetLat) && Number.isFinite(targetLon)) {
+          map.setView([targetLat, targetLon], map.getZoom() || 17, {
+            animate: false
+          });
+
+          if (marker) {
+            marker.setLatLng([targetLat, targetLon]);
+          }
+
+          updateSelectedDot(targetLat, targetLon);
+        }
+      }
+
+      requestAnimationFrame(doRefresh);
+      setTimeout(doRefresh, 120);
+      setTimeout(doRefresh, 360);
+      setTimeout(doRefresh, 700);
+    }
+
     function openMapModal() {
       if (!modal) return;
 
@@ -4648,11 +4834,17 @@
       modal.setAttribute("aria-hidden", "false");
       document.body.classList.add("address-map-open");
 
+      /*
+       * Leaflet phải được render lại sau khi modal hiện ra.
+       * Nếu không, tile sẽ bị vỡ/lệch và không nằm gọn trong khung.
+       */
       setTimeout(function () {
-        if (map) {
-          map.invalidateSize();
-        }
-      }, 180);
+        refreshMapSize(currentLat, currentLon);
+      }, 120);
+
+      setTimeout(function () {
+        refreshMapSize(currentLat, currentLon);
+      }, 420);
     }
 
     function closeMapModal() {
@@ -4742,16 +4934,49 @@
       }
     }
 
+    function destroyMap() {
+      if (map) {
+        try {
+          map.off();
+          map.remove();
+        } catch (error) {
+          console.warn("Cannot remove old map instance", error);
+        }
+      }
+
+      map = null;
+      marker = null;
+      selectedDot = null;
+
+      if (mapEl) {
+        mapEl.innerHTML = "";
+        mapEl.classList.remove("leaflet-container", "leaflet-touch", "leaflet-retina", "leaflet-fade-anim", "leaflet-grab", "leaflet-touch-drag", "leaflet-touch-zoom");
+        mapEl.removeAttribute("tabindex");
+        mapEl.style.position = "";
+      }
+    }
+
     function ensureMap(lat, lon) {
       if (!window.L || !mapEl) {
         throw new Error("Leaflet library is not available");
       }
 
       if (!map) {
-        map = L.map(mapEl).setView([lat, lon], 17);
+        map = L.map("addressMap", {
+          zoomControl: true,
+          scrollWheelZoom: true,
+          trackResize: true,
+          fadeAnimation: false,
+          zoomAnimation: false,
+          markerZoomAnimation: false
+        }).setView([lat, lon], 17);
 
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
           maxZoom: 19,
+          tileSize: 256,
+          zoomOffset: 0,
+          updateWhenIdle: false,
+          keepBuffer: 4,
           attribution: "&copy; OpenStreetMap contributors"
         }).addTo(map);
 
@@ -4782,11 +5007,23 @@
           marker.setLatLng(event.latlng);
           updateSelectedPin(event.latlng.lat, event.latlng.lng);
         });
+
+        map.whenReady(function () {
+          refreshMapSize(lat, lon);
+        });
       } else {
-        map.setView([lat, lon], 17);
-        marker.setLatLng([lat, lon]);
+        map.setView([lat, lon], 17, {
+          animate: false
+        });
+
+        if (marker) {
+          marker.setLatLng([lat, lon]);
+        }
+
         updateSelectedDot(lat, lon);
       }
+
+      refreshMapSize(lat, lon);
     }
 
     async function confirmMapLocation() {
@@ -4916,12 +5153,40 @@
                   const lat = position.coords.latitude;
                   const lon = position.coords.longitude;
 
-                  ensureMap(lat, lon);
-                  openMapModal();
-                  await updateSelectedPin(lat, lon);
+                  currentLat = lat;
+                  currentLon = lon;
 
-                  useCurrentLocationBtn.textContent = "📍 Chọn lại vị trí";
-                  useCurrentLocationBtn.disabled = false;
+                  openMapModal();
+                  setMapStatus("Đang mở bản đồ và xác định địa chỉ tại vị trí hiện tại...", "");
+
+                  /*
+                   * FIX V2:
+                   * Không khởi tạo Leaflet khi modal còn ẩn.
+                   * Mở modal trước, xóa map cũ, chờ khung có kích thước thật,
+                   * rồi mới init lại map. Cách này xử lý triệt để lỗi tile bị đứt/vỡ.
+                   */
+                  setTimeout(async function () {
+                    try {
+                      destroyMap();
+                      ensureMap(lat, lon);
+                      refreshMapSize(lat, lon);
+                      await updateSelectedPin(lat, lon);
+                      refreshMapSize(lat, lon);
+
+                      setTimeout(function () {
+                        refreshMapSize(lat, lon);
+                      }, 500);
+
+                      useCurrentLocationBtn.textContent = "📍 Chọn lại vị trí";
+                      useCurrentLocationBtn.disabled = false;
+                    } catch (innerError) {
+                      console.error(innerError);
+                      setAddressError("Không thể mở bản đồ xác nhận vị trí. Vui lòng kiểm tra kết nối mạng hoặc thử lại sau.");
+                      closeMapModal();
+                      useCurrentLocationBtn.textContent = "📍 Dùng vị trí hiện tại";
+                      useCurrentLocationBtn.disabled = false;
+                    }
+                  }, 320);
                 } catch (error) {
                   console.error(error);
                   setAddressError("Không thể mở bản đồ xác nhận vị trí. Vui lòng kiểm tra kết nối mạng hoặc thử lại sau.");
