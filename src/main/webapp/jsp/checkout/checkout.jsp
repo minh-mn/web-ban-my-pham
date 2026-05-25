@@ -1401,6 +1401,409 @@
     }
   }
 
+  /* ================= ELECTRONIC INVOICE REQUEST ================= */
+
+  .e-invoice-card {
+    border: 1px solid #f1d3df;
+    background: linear-gradient(180deg, #ffffff 0%, #fff8fb 100%);
+  }
+
+  .e-invoice-header-line {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+  }
+
+  .e-invoice-info {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+  }
+
+  .e-invoice-icon {
+    width: 46px;
+    height: 46px;
+    flex: 0 0 46px;
+    border-radius: 16px;
+    background: #fff0f6;
+    color: var(--checkout-brand);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    box-shadow: inset 0 -4px 10px rgba(214, 51, 132, 0.08);
+  }
+
+  .e-invoice-info h2 {
+    margin: 0;
+    color: var(--checkout-text);
+    font-size: 19px;
+    line-height: 1.3;
+    font-weight: 950;
+  }
+
+  .e-invoice-info p {
+    margin: 4px 0 0;
+    color: var(--checkout-muted);
+    font-size: 13.5px;
+    line-height: 1.45;
+    font-weight: 650;
+  }
+
+  .e-invoice-open-btn {
+    min-width: 172px;
+    min-height: 44px;
+    padding: 0 18px;
+    border: none;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #df4b93 0%, var(--checkout-brand) 100%);
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 950;
+    cursor: pointer;
+    white-space: nowrap;
+    box-shadow: 0 12px 24px rgba(214, 51, 132, 0.22);
+    transition: 0.18s ease;
+  }
+
+  .e-invoice-open-btn:hover {
+    background: linear-gradient(180deg, #cf3d84 0%, #bd256f 100%);
+    transform: translateY(-1px);
+  }
+
+  .e-invoice-open-btn.is-selected {
+    background: linear-gradient(180deg, #16a34a 0%, #12804a 100%);
+    box-shadow: 0 12px 24px rgba(22, 163, 74, 0.18);
+  }
+
+  .e-invoice-selected-box {
+    display: none;
+    margin-top: 14px;
+    padding: 13px 14px;
+    border: 1px solid #bbf7d0;
+    border-radius: 15px;
+    background: #f0fdf4;
+    color: #166534;
+    font-size: 13.5px;
+    line-height: 1.55;
+    font-weight: 750;
+  }
+
+  .e-invoice-selected-box.show {
+    display: block;
+  }
+
+  .e-invoice-selected-box strong {
+    color: #14532d;
+    font-weight: 950;
+  }
+
+  .e-invoice-modal,
+  .e-invoice-modal * {
+    font-family: "Inter", "Segoe UI", Roboto, Arial, sans-serif;
+    box-sizing: border-box;
+  }
+
+  .e-invoice-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 10030;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 22px;
+  }
+
+  .e-invoice-modal.show {
+    display: flex;
+  }
+
+  .e-invoice-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.56);
+    backdrop-filter: blur(3px);
+  }
+
+  .e-invoice-dialog {
+    position: relative;
+    z-index: 1;
+    width: min(720px, calc(100vw - 28px));
+    max-height: min(92vh, 860px);
+    overflow: hidden;
+    border-radius: 24px;
+    background: #ffffff;
+    border: 1px solid rgba(243, 184, 210, 0.72);
+    box-shadow: 0 26px 78px rgba(15, 23, 42, 0.30);
+  }
+
+  .e-invoice-modal-header {
+    position: relative;
+    min-height: 84px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 86px 20px;
+    border-bottom: 1px solid #edf0f5;
+    background: #ffffff;
+  }
+
+  .e-invoice-modal-header h3 {
+    margin: 0;
+    color: var(--checkout-text);
+    font-size: 23px;
+    line-height: 1.25;
+    font-weight: 950;
+    text-align: center;
+  }
+
+  .e-invoice-close {
+    position: absolute;
+    left: 22px;
+    top: 18px;
+    width: 54px;
+    height: 54px;
+    border: none;
+    border-radius: 16px;
+    background: #f4f4f5;
+    color: #111827;
+    font-size: 32px;
+    line-height: 1;
+    cursor: pointer;
+    transition: 0.18s ease;
+  }
+
+  .e-invoice-close:hover {
+    background: #fff0f6;
+    color: var(--checkout-brand);
+    transform: rotate(4deg);
+  }
+
+  .e-invoice-modal-body {
+    max-height: calc(min(92vh, 860px) - 164px);
+    overflow-y: auto;
+    padding: 20px 24px 22px;
+    background: #ffffff;
+  }
+
+  .e-invoice-type-row {
+    display: flex;
+    align-items: center;
+    gap: 34px;
+    margin-bottom: 18px;
+  }
+
+  .e-invoice-radio {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: #111827;
+    font-size: 16px;
+    font-weight: 850;
+    cursor: pointer;
+  }
+
+  .e-invoice-radio input {
+    width: 22px;
+    height: 22px;
+    accent-color: #e88ba4;
+  }
+
+  .e-invoice-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .e-invoice-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .e-invoice-input {
+    width: 100%;
+    min-height: 58px;
+    padding: 0 17px;
+    border: 1px solid #dedede;
+    border-radius: 14px;
+    background: #ffffff;
+    color: #111827;
+    font-size: 15.5px;
+    line-height: 1.4;
+    font-weight: 650;
+    outline: none;
+    transition: 0.18s ease;
+  }
+
+  .e-invoice-input:focus {
+    border-color: #e88ba4;
+    box-shadow: 0 0 0 4px rgba(232, 139, 164, 0.16);
+  }
+
+  .e-invoice-input.is-invalid {
+    border-color: #ef4444;
+    background: #fff1f2;
+  }
+
+  .e-invoice-use-address {
+    width: 100%;
+    min-height: 52px;
+    border: none;
+    border-radius: 14px;
+    background: #eeeeef;
+    color: #111827;
+    font-size: 16px;
+    font-weight: 950;
+    cursor: pointer;
+    transition: 0.18s ease;
+  }
+
+  .e-invoice-use-address:hover {
+    background: #e7e7e9;
+  }
+
+  .e-invoice-save-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #111827;
+    font-size: 15px;
+    font-weight: 750;
+    cursor: pointer;
+  }
+
+  .e-invoice-save-row input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--checkout-brand);
+  }
+
+  .e-invoice-note {
+    display: grid;
+    grid-template-columns: 34px 1fr;
+    gap: 10px;
+    padding: 16px;
+    border: 1px solid #cfefff;
+    border-radius: 15px;
+    background: #f0fbff;
+    color: #111827;
+  }
+
+  .e-invoice-note-icon {
+    color: #0284c7;
+    font-size: 25px;
+    font-weight: 950;
+  }
+
+  .e-invoice-note strong {
+    display: block;
+    margin-bottom: 5px;
+    color: #111827;
+    font-size: 16px;
+    font-weight: 950;
+  }
+
+  .e-invoice-note ul {
+    margin: 0;
+    padding-left: 18px;
+  }
+
+  .e-invoice-note li {
+    margin: 4px 0;
+    color: #1f2937;
+    font-size: 14.5px;
+    line-height: 1.45;
+    font-weight: 650;
+  }
+
+  .e-invoice-error {
+    display: none;
+    padding: 11px 13px;
+    border-radius: 13px;
+    background: #fff1f2;
+    color: #dc2626;
+    font-size: 14px;
+    line-height: 1.45;
+    font-weight: 800;
+  }
+
+  .e-invoice-error.show {
+    display: block;
+  }
+
+  .e-invoice-modal-footer {
+    padding: 16px 24px 20px;
+    border-top: 1px solid #edf0f5;
+    background: #ffffff;
+  }
+
+  .e-invoice-submit {
+    width: 100%;
+    min-height: 58px;
+    border: none;
+    border-radius: 14px;
+    background: #eba0b2;
+    color: #ffffff;
+    font-size: 17px;
+    font-weight: 950;
+    cursor: pointer;
+    transition: 0.18s ease;
+  }
+
+  .e-invoice-submit:hover {
+    background: var(--checkout-brand);
+  }
+
+  body.e-invoice-modal-open {
+    overflow: hidden;
+  }
+
+  @media (max-width: 640px) {
+    .e-invoice-header-line {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .e-invoice-open-btn {
+      width: 100%;
+    }
+
+    .e-invoice-modal {
+      padding: 12px;
+    }
+
+    .e-invoice-dialog {
+      width: 100%;
+      border-radius: 18px;
+    }
+
+    .e-invoice-modal-header {
+      min-height: 74px;
+      padding: 20px 70px 18px;
+    }
+
+    .e-invoice-modal-header h3 {
+      font-size: 19px;
+    }
+
+    .e-invoice-close {
+      left: 16px;
+      width: 48px;
+      height: 48px;
+    }
+
+    .e-invoice-type-row {
+      gap: 20px;
+    }
+
+    .e-invoice-grid-2 {
+      grid-template-columns: 1fr;
+    }
+  }
+
 </style>
 
 
@@ -1444,6 +1847,20 @@
              id="checkoutRemoveCartKeyInput"
              name="removeCartKey"
              value="">
+
+      <!-- ================= ELECTRONIC INVOICE HIDDEN FIELDS ================= -->
+      <input type="hidden" id="needInvoiceInput" name="needInvoice" value="${not empty param.needInvoice ? param.needInvoice : 'false'}">
+      <input type="hidden" id="invoiceTypeInput" name="invoiceType" value="${param.invoiceType}">
+      <input type="hidden" id="invoiceNameInput" name="invoiceName" value="${param.invoiceName}">
+      <input type="hidden" id="invoiceTaxCodeInput" name="invoiceTaxCode" value="${param.invoiceTaxCode}">
+      <input type="hidden" id="invoiceBuyerNameInput" name="invoiceBuyerName" value="${param.invoiceBuyerName}">
+      <input type="hidden" id="invoiceCitizenIdInput" name="invoiceCitizenId" value="${param.invoiceCitizenId}">
+      <input type="hidden" id="invoicePassportInput" name="invoicePassport" value="${param.invoicePassport}">
+      <input type="hidden" id="invoiceEmailInput" name="invoiceEmail" value="${param.invoiceEmail}">
+      <input type="hidden" id="invoiceAddressInput" name="invoiceAddress" value="${param.invoiceAddress}">
+      <input type="hidden" id="invoiceBudgetCodeInput" name="invoiceBudgetCode" value="${param.invoiceBudgetCode}">
+      <input type="hidden" id="saveInvoiceInfoInput" name="saveInvoiceInfo" value="${not empty param.saveInvoiceInfo ? param.saveInvoiceInfo : 'false'}">
+
 
       <!-- ================= LEFT COLUMN ================= -->
       <div class="checkout-left">
@@ -1820,6 +2237,32 @@
           </div>
         </div>
 
+
+        <!-- ELECTRONIC INVOICE REQUEST -->
+        <div class="checkout-card e-invoice-card">
+          <div class="e-invoice-header-line">
+            <div class="e-invoice-info">
+              <div class="e-invoice-icon">🧾</div>
+
+              <div>
+                <h2>Xuất hóa đơn điện tử</h2>
+                <p>Yêu cầu xuất hóa đơn VAT bản PDF và gửi về email sau khi đặt hàng.</p>
+              </div>
+            </div>
+
+            <button type="button"
+                    class="e-invoice-open-btn"
+                    id="openEInvoiceModalBtn">
+              Xuất hóa đơn VAT
+            </button>
+          </div>
+
+          <div class="e-invoice-selected-box" id="eInvoiceSelectedBox">
+            <strong>Đã yêu cầu xuất hóa đơn.</strong>
+            <span id="eInvoiceSelectedText"></span>
+          </div>
+        </div>
+
       </div>
 
       <!-- ================= RIGHT COLUMN ================= -->
@@ -2163,6 +2606,474 @@
     </div>
   </div>
 </div>
+
+
+
+<!-- ================= ELECTRONIC INVOICE MODAL ================= -->
+<div class="e-invoice-modal" id="eInvoiceModal" aria-hidden="true">
+  <div class="e-invoice-backdrop" data-close-e-invoice></div>
+
+  <div class="e-invoice-dialog" role="dialog" aria-modal="true" aria-labelledby="eInvoiceModalTitle">
+    <div class="e-invoice-modal-header">
+      <button type="button"
+              class="e-invoice-close"
+              data-close-e-invoice
+              aria-label="Đóng cửa sổ xuất hóa đơn">
+        ×
+      </button>
+
+      <h3 id="eInvoiceModalTitle">Xuất hóa đơn VAT</h3>
+    </div>
+
+    <div class="e-invoice-modal-body">
+      <div class="e-invoice-type-row">
+        <label class="e-invoice-radio">
+          <input type="radio" name="modalInvoiceType" value="PERSONAL" checked>
+          <span>Cá nhân</span>
+        </label>
+
+        <label class="e-invoice-radio">
+          <input type="radio" name="modalInvoiceType" value="COMPANY">
+          <span>Công ty</span>
+        </label>
+      </div>
+
+      <div class="e-invoice-form" id="personalInvoiceForm">
+        <input type="text"
+               class="e-invoice-input"
+               id="personalInvoiceName"
+               placeholder="Họ và tên">
+
+        <div class="e-invoice-grid-2">
+          <input type="text"
+                 class="e-invoice-input"
+                 id="personalInvoiceCitizenId"
+                 placeholder="CCCD (không bắt buộc)"
+                 inputmode="numeric">
+
+          <input type="text"
+                 class="e-invoice-input"
+                 id="personalInvoicePassport"
+                 placeholder="Hộ chiếu (không bắt buộc)">
+        </div>
+      </div>
+
+      <div class="e-invoice-form" id="companyInvoiceForm" style="display:none;">
+        <div class="e-invoice-grid-2">
+          <input type="text"
+                 class="e-invoice-input"
+                 id="companyInvoiceName"
+                 placeholder="Nhập tên công ty">
+
+          <input type="text"
+                 class="e-invoice-input"
+                 id="companyInvoiceTaxCode"
+                 placeholder="MST/CCCD"
+                 inputmode="numeric">
+        </div>
+
+        <div class="e-invoice-grid-2">
+          <input type="text"
+                 class="e-invoice-input"
+                 id="companyInvoiceBuyerName"
+                 placeholder="Tên người mua (không bắt buộc)">
+
+          <input type="text"
+                 class="e-invoice-input"
+                 id="companyInvoiceBudgetCode"
+                 placeholder="Mã ĐVQHNS (không bắt buộc)">
+        </div>
+      </div>
+
+      <div class="e-invoice-form" style="margin-top:14px;">
+        <input type="email"
+               class="e-invoice-input"
+               id="modalInvoiceEmail"
+               placeholder="E-mail nhận hóa đơn">
+
+        <input type="text"
+               class="e-invoice-input"
+               id="modalInvoiceAddress"
+               placeholder="Địa chỉ xuất hóa đơn">
+
+        <button type="button"
+                class="e-invoice-use-address"
+                id="useShippingAddressForInvoiceBtn">
+          Dùng địa chỉ giao hàng
+        </button>
+
+        <label class="e-invoice-save-row">
+          <input type="checkbox" id="modalSaveInvoiceInfo">
+          <span>Lưu thông tin xuất hóa đơn làm mặc định</span>
+        </label>
+
+        <div class="e-invoice-note">
+          <div class="e-invoice-note-icon">ⓘ</div>
+          <div>
+            <strong>Lưu ý</strong>
+            <ul>
+              <li>Nhà bán hàng hỗ trợ xuất hóa đơn một lần sau khi đơn hàng được xác nhận.</li>
+              <li>MST/CCCD hợp lệ thường gồm 10 hoặc 12 chữ số.</li>
+              <li>Hóa đơn VAT bản PDF sẽ được gửi về email sau khi đơn hàng được tạo thành công.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="e-invoice-error" id="eInvoiceError"></div>
+      </div>
+    </div>
+
+    <div class="e-invoice-modal-footer">
+      <button type="button"
+              class="e-invoice-submit"
+              id="saveEInvoiceRequestBtn">
+        Gửi yêu cầu
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= ELECTRONIC INVOICE SCRIPT ================= -->
+<script>
+  (function () {
+    const modal = document.getElementById("eInvoiceModal");
+    const openBtn = document.getElementById("openEInvoiceModalBtn");
+    const saveBtn = document.getElementById("saveEInvoiceRequestBtn");
+    const errorBox = document.getElementById("eInvoiceError");
+
+    const personalForm = document.getElementById("personalInvoiceForm");
+    const companyForm = document.getElementById("companyInvoiceForm");
+
+    const selectedBox = document.getElementById("eInvoiceSelectedBox");
+    const selectedText = document.getElementById("eInvoiceSelectedText");
+
+    const needInvoiceInput = document.getElementById("needInvoiceInput");
+    const invoiceTypeInput = document.getElementById("invoiceTypeInput");
+    const invoiceNameInput = document.getElementById("invoiceNameInput");
+    const invoiceTaxCodeInput = document.getElementById("invoiceTaxCodeInput");
+    const invoiceBuyerNameInput = document.getElementById("invoiceBuyerNameInput");
+    const invoiceCitizenIdInput = document.getElementById("invoiceCitizenIdInput");
+    const invoicePassportInput = document.getElementById("invoicePassportInput");
+    const invoiceEmailInput = document.getElementById("invoiceEmailInput");
+    const invoiceAddressInput = document.getElementById("invoiceAddressInput");
+    const invoiceBudgetCodeInput = document.getElementById("invoiceBudgetCodeInput");
+    const saveInvoiceInfoInput = document.getElementById("saveInvoiceInfoInput");
+
+    if (!modal || !openBtn || !saveBtn) {
+      return;
+    }
+
+    function valueOf(id) {
+      const el = document.getElementById(id);
+      return el ? el.value.trim() : "";
+    }
+
+    function setValue(id, value) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.value = value || "";
+      }
+    }
+
+    function setHiddenValue(input, value) {
+      if (input) {
+        input.value = value || "";
+      }
+    }
+
+    function clearInvalidInputs() {
+      modal.querySelectorAll(".e-invoice-input").forEach(function (input) {
+        input.classList.remove("is-invalid");
+      });
+    }
+
+    function showError(message, inputId) {
+      if (errorBox) {
+        errorBox.textContent = message || "";
+        errorBox.classList.toggle("show", !!message);
+      }
+
+      clearInvalidInputs();
+
+      if (inputId) {
+        const input = document.getElementById(inputId);
+        if (input) {
+          input.classList.add("is-invalid");
+          input.focus();
+        }
+      }
+    }
+
+    function getSelectedType() {
+      const checked = document.querySelector("input[name='modalInvoiceType']:checked");
+      return checked ? checked.value : "PERSONAL";
+    }
+
+    function syncTypeUI() {
+      const type = getSelectedType();
+
+      if (type === "COMPANY") {
+        if (personalForm) personalForm.style.display = "none";
+        if (companyForm) companyForm.style.display = "flex";
+      } else {
+        if (personalForm) personalForm.style.display = "flex";
+        if (companyForm) companyForm.style.display = "none";
+      }
+
+      showError("");
+    }
+
+    function openModal() {
+      modal.classList.add("show");
+      modal.setAttribute("aria-hidden", "false");
+      document.body.classList.add("e-invoice-modal-open");
+      syncTypeUI();
+    }
+
+    function closeModal() {
+      modal.classList.remove("show");
+      modal.setAttribute("aria-hidden", "true");
+      document.body.classList.remove("e-invoice-modal-open");
+      showError("");
+    }
+
+    function getShippingAddress() {
+      const shippingAddressInput = document.getElementById("shippingAddressInput");
+      const addressInput = document.getElementById("address");
+      const wardInput = document.getElementById("wardInput");
+      const provinceInput = document.getElementById("provinceInput");
+
+      if (shippingAddressInput && shippingAddressInput.value.trim()) {
+        return shippingAddressInput.value.trim();
+      }
+
+      const parts = [];
+
+      if (addressInput && addressInput.value.trim()) {
+        parts.push(addressInput.value.trim());
+      }
+
+      if (wardInput && wardInput.value.trim()) {
+        parts.push(wardInput.value.trim());
+      }
+
+      if (provinceInput && provinceInput.value.trim()) {
+        parts.push(provinceInput.value.trim());
+      }
+
+      return parts.join(", ");
+    }
+
+    function getDefaultEmail() {
+      const accountEmailText = document.querySelector(".account-info span");
+      return accountEmailText ? accountEmailText.textContent.trim() : "";
+    }
+
+    function isValidEmail(email) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || "").trim());
+    }
+
+    function isValidTaxLikeCode(value) {
+      const normalized = String(value || "").replace(/\s+/g, "");
+      return /^\d{10}$/.test(normalized)
+              || /^\d{12}$/.test(normalized)
+              || /^\d{13}-\d$/.test(normalized);
+    }
+
+    function validate(type) {
+      const email = valueOf("modalInvoiceEmail");
+      const address = valueOf("modalInvoiceAddress");
+
+      if (type === "COMPANY") {
+        const companyName = valueOf("companyInvoiceName");
+        const taxCode = valueOf("companyInvoiceTaxCode");
+
+        if (!companyName) {
+          showError("Vui lòng nhập tên công ty.", "companyInvoiceName");
+          return false;
+        }
+
+        if (!taxCode) {
+          showError("Vui lòng nhập mã số thuế hoặc CCCD.", "companyInvoiceTaxCode");
+          return false;
+        }
+
+        if (!isValidTaxLikeCode(taxCode)) {
+          showError("MST/CCCD phải gồm 10 hoặc 12 số. MST 14 ký tự có dạng 13 số và dấu '-'.", "companyInvoiceTaxCode");
+          return false;
+        }
+      } else {
+        const personalName = valueOf("personalInvoiceName");
+        const citizenId = valueOf("personalInvoiceCitizenId");
+
+        if (!personalName) {
+          showError("Vui lòng nhập họ và tên.", "personalInvoiceName");
+          return false;
+        }
+
+        if (citizenId && !/^\d{10,12}$/.test(citizenId)) {
+          showError("CCCD cá nhân nếu nhập phải gồm 10 đến 12 chữ số.", "personalInvoiceCitizenId");
+          return false;
+        }
+      }
+
+      if (!email) {
+        showError("Vui lòng nhập email nhận hóa đơn.", "modalInvoiceEmail");
+        return false;
+      }
+
+      if (!isValidEmail(email)) {
+        showError("Email nhận hóa đơn không hợp lệ.", "modalInvoiceEmail");
+        return false;
+      }
+
+      if (!address) {
+        showError("Vui lòng nhập địa chỉ xuất hóa đơn.", "modalInvoiceAddress");
+        return false;
+      }
+
+      if (address.length < 6) {
+        showError("Địa chỉ xuất hóa đơn quá ngắn.", "modalInvoiceAddress");
+        return false;
+      }
+
+      showError("");
+      return true;
+    }
+
+    function updateSelectedSummary(type, name, email) {
+      if (selectedBox) {
+        selectedBox.classList.add("show");
+      }
+
+      if (selectedText) {
+        selectedText.textContent = " Loại: "
+                + (type === "COMPANY" ? "Công ty" : "Cá nhân")
+                + " • Tên: "
+                + name
+                + " • Email: "
+                + email;
+      }
+
+      openBtn.textContent = "Sửa thông tin hóa đơn";
+      openBtn.classList.add("is-selected");
+    }
+
+    function restoreModalFromHidden() {
+      const type = invoiceTypeInput && invoiceTypeInput.value ? invoiceTypeInput.value : "PERSONAL";
+
+      document.querySelectorAll("input[name='modalInvoiceType']").forEach(function (radio) {
+        radio.checked = radio.value === type;
+      });
+
+      if (type === "COMPANY") {
+        setValue("companyInvoiceName", invoiceNameInput ? invoiceNameInput.value : "");
+        setValue("companyInvoiceTaxCode", invoiceTaxCodeInput ? invoiceTaxCodeInput.value : "");
+        setValue("companyInvoiceBuyerName", invoiceBuyerNameInput ? invoiceBuyerNameInput.value : "");
+        setValue("companyInvoiceBudgetCode", invoiceBudgetCodeInput ? invoiceBudgetCodeInput.value : "");
+      } else {
+        setValue("personalInvoiceName", invoiceNameInput ? invoiceNameInput.value : "");
+        setValue("personalInvoiceCitizenId", invoiceCitizenIdInput ? invoiceCitizenIdInput.value : "");
+        setValue("personalInvoicePassport", invoicePassportInput ? invoicePassportInput.value : "");
+      }
+
+      setValue("modalInvoiceEmail", invoiceEmailInput && invoiceEmailInput.value ? invoiceEmailInput.value : getDefaultEmail());
+      setValue("modalInvoiceAddress", invoiceAddressInput ? invoiceAddressInput.value : "");
+
+      const saveCheckbox = document.getElementById("modalSaveInvoiceInfo");
+      if (saveCheckbox && saveInvoiceInfoInput) {
+        saveCheckbox.checked = saveInvoiceInfoInput.value === "true";
+      }
+
+      syncTypeUI();
+    }
+
+    document.querySelectorAll("input[name='modalInvoiceType']").forEach(function (radio) {
+      radio.addEventListener("change", syncTypeUI);
+    });
+
+    openBtn.addEventListener("click", function () {
+      restoreModalFromHidden();
+      openModal();
+    });
+
+    document.querySelectorAll("[data-close-e-invoice]").forEach(function (el) {
+      el.addEventListener("click", closeModal);
+    });
+
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape" && modal.classList.contains("show")) {
+        closeModal();
+      }
+    });
+
+    const useAddressBtn = document.getElementById("useShippingAddressForInvoiceBtn");
+    if (useAddressBtn) {
+      useAddressBtn.addEventListener("click", function () {
+        const address = getShippingAddress();
+
+        if (!address) {
+          showError("Chưa có địa chỉ giao hàng để sử dụng.", "modalInvoiceAddress");
+          return;
+        }
+
+        setValue("modalInvoiceAddress", address);
+        showError("");
+      });
+    }
+
+    saveBtn.addEventListener("click", function () {
+      const type = getSelectedType();
+
+      if (!validate(type)) {
+        return;
+      }
+
+      const email = valueOf("modalInvoiceEmail");
+      const address = valueOf("modalInvoiceAddress");
+      const saveCheckbox = document.getElementById("modalSaveInvoiceInfo");
+
+      let invoiceName = "";
+      let taxCode = "";
+      let buyerName = "";
+      let citizenId = "";
+      let passport = "";
+      let budgetCode = "";
+
+      if (type === "COMPANY") {
+        invoiceName = valueOf("companyInvoiceName");
+        taxCode = valueOf("companyInvoiceTaxCode");
+        buyerName = valueOf("companyInvoiceBuyerName");
+        budgetCode = valueOf("companyInvoiceBudgetCode");
+      } else {
+        invoiceName = valueOf("personalInvoiceName");
+        citizenId = valueOf("personalInvoiceCitizenId");
+        passport = valueOf("personalInvoicePassport");
+      }
+
+      setHiddenValue(needInvoiceInput, "true");
+      setHiddenValue(invoiceTypeInput, type);
+      setHiddenValue(invoiceNameInput, invoiceName);
+      setHiddenValue(invoiceTaxCodeInput, taxCode);
+      setHiddenValue(invoiceBuyerNameInput, buyerName);
+      setHiddenValue(invoiceCitizenIdInput, citizenId);
+      setHiddenValue(invoicePassportInput, passport);
+      setHiddenValue(invoiceEmailInput, email);
+      setHiddenValue(invoiceAddressInput, address);
+      setHiddenValue(invoiceBudgetCodeInput, budgetCode);
+      setHiddenValue(saveInvoiceInfoInput, saveCheckbox && saveCheckbox.checked ? "true" : "false");
+
+      updateSelectedSummary(type, invoiceName, email);
+      closeModal();
+    });
+
+    if (needInvoiceInput && needInvoiceInput.value === "true" && invoiceNameInput && invoiceNameInput.value) {
+      updateSelectedSummary(invoiceTypeInput ? invoiceTypeInput.value : "PERSONAL",
+              invoiceNameInput.value,
+              invoiceEmailInput ? invoiceEmailInput.value : "");
+    }
+  })();
+</script>
 
 
 <!-- ================= SYSTEM COUPON CODES FOR MANUAL INPUT ================= -->
