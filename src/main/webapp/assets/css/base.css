@@ -675,3 +675,107 @@ a { text-decoration: none; color: inherit; }
     opacity: 1;
   }
 }
+
+/* =========================================================
+   HEADER MENU (COPIED FROM HOME.CSS)
+========================================================= */
+.menu-horizontal-list {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.menu-link-item {
+  padding: 10px 16px;
+  border-radius: 10px;
+  transition: 0.2s;
+  font-weight: 600;
+}
+
+.menu-link-item:hover {
+  background: #fff0f6;
+  color: #ff5fa2;
+}
+
+.hot-menu {
+  background: linear-gradient(135deg,#ff5fa2,#ff85bc);
+  color: white !important;
+}
+
+/* --- Cấu hình Menu Đa cấp --- */
+
+/* Đảm bảo menu cha là tương đối để các menu con định vị chuẩn */
+.menu-horizontal-list li {
+  position: relative;
+}
+
+/* Ẩn các danh mục con mặc định */
+.dropdown-menu, .sub-dropdown-menu {
+  display: none;
+  position: absolute;
+  background-color: #ffffff;
+  min-width: 220px;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+  z-index: 1000;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* Vị trí menu cấp 1 (Danh mục cha) */
+.dropdown-menu {
+  top: 100%;
+  left: 0;
+  display: none;
+}
+
+/* Vị trí menu cấp 2 (Danh mục con - đẩy sang phải) */
+.sub-dropdown-menu {
+  top: 0;
+  left: 100%;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+/* Hiệu ứng khi di chuột (Hover) */
+.menu-horizontal-list li:hover > .dropdown-menu {
+  display: block;
+}
+
+.dropdown-menu li:hover > .sub-dropdown-menu {
+  display: block;
+}
+
+/* Định dạng các đường link trong menu */
+.dropdown-menu li a, .sub-dropdown-menu li a {
+  display: block;
+  padding: 12px 20px;
+  color: #333;
+  text-decoration: none;
+  transition: background 0.3s;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.dropdown-menu li a:hover {
+  background-color: #f8f8f8;
+  color: #e44d26; /* Màu nhấn nếu có */
+}
+
+/* 1. Hiển thị danh mục cấp 1 (Dropdown) khi di chuột vào "Sản phẩm" */
+.menu-horizontal-list > li:hover > .dropdown-menu {
+  display: block;
+}
+
+/* 2. Hiển thị danh mục cấp 2 (Sub-dropdown) khi di chuột vào danh mục cha */
+.dropdown-menu > li:hover > .sub-dropdown-menu {
+  display: block;
+  /* Đẩy menu con sang bên phải của menu cha */
+  left: 100%;
+  top: 0;
+}
+
+/* Tùy chỉnh thêm: Đổi màu nền khi di chuột vào từng dòng (li) để người dùng dễ nhìn */
+.dropdown-menu li:hover {
+  background-color: #f8f8f8;
+}
