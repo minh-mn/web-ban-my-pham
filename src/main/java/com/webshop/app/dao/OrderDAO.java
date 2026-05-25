@@ -69,6 +69,14 @@ public class OrderDAO {
         return Timestamp.valueOf(value);
     }
 
+    private static String generateInternalShippingCode(int orderId) {
+        if (orderId <= 0) {
+            return null;
+        }
+
+        return "MC-SHIP-" + String.format("%06d", orderId);
+    }
+
     /* ================= CREATE ================= */
 
     public int create(Connection conn, Order order) throws SQLException {
@@ -105,6 +113,10 @@ public class OrderDAO {
 
             int index = 1;
 
+            String shippingMethod = defaultIfBlank(order.getShippingMethod(), "ECONOMY");
+            String shippingProvider = defaultIfBlank(order.getShippingProvider(), "INTERNAL");
+            String shippingStatus = defaultIfBlank(order.getShippingStatus(), "PENDING");
+
             statement.setInt(index++, order.getUserId());
             statement.setString(index++, order.getFullName());
             statement.setString(index++, order.getPhone());
@@ -127,15 +139,8 @@ public class OrderDAO {
             statement.setString(index++, order.getStatus());
             statement.setString(index++, order.getVnpTxnRef());
 
-            statement.setString(
-                    index++,
-                    defaultIfBlank(order.getShippingMethod(), "ECONOMY")
-            );
-
-            statement.setString(
-                    index++,
-                    defaultIfBlank(order.getShippingProvider(), "INTERNAL")
-            );
+            statement.setString(index++, shippingMethod);
+            statement.setString(index++, shippingProvider);
 
             statement.setBigDecimal(
                     index++,
@@ -145,11 +150,7 @@ public class OrderDAO {
             );
 
             statement.setString(index++, order.getShippingCode());
-
-            statement.setString(
-                    index++,
-                    defaultIfBlank(order.getShippingStatus(), "PENDING")
-            );
+            statement.setString(index++, shippingStatus);
 
             statement.setTimestamp(index++, toTimestamp(order.getShippedAt()));
             statement.setTimestamp(index++, toTimestamp(order.getDeliveredAt()));
@@ -164,7 +165,28 @@ public class OrderDAO {
             try (ResultSet resultSet = statement.getGeneratedKeys()) {
 
                 if (resultSet.next()) {
-                    return resultSet.getInt(1);
+                    int orderId = resultSet.getInt(1);
+
+                    /*
+                     * Nếu đơn hàng chưa có mã vận chuyển thì tự sinh mã nội bộ.
+                     * Việc update dùng cùng Connection để vẫn nằm trong transaction checkout.
+                     */
+                    if (order.getShippingCode() == null || order.getShippingCode().isBlank()) {
+                        String generatedShippingCode = generateInternalShippingCode(orderId);
+
+                        updateShippingCreated(
+                                conn,
+                                orderId,
+                                shippingProvider,
+                                generatedShippingCode
+                        );
+
+                        order.setShippingCode(generatedShippingCode);
+                        order.setShippingProvider(shippingProvider);
+                        order.setShippingStatus("CREATED");
+                    }
+
+                    return orderId;
                 }
 
                 throw new SQLException(
@@ -226,6 +248,36 @@ public class OrderDAO {
 
                 return mapRow(resultSet);
             }
+        }
+    }
+
+    public Order findByIdAndUserId(int orderId, int userId) {
+
+        String sql = """
+                SELECT
+                """ + SELECT_COLUMNS + """
+                FROM store_order
+                WHERE id = ?
+                  AND user_id = ?
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setInt(1, orderId);
+            statement.setInt(2, userId);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+
+                if (!resultSet.next()) {
+                    return null;
+                }
+
+                return mapRow(resultSet);
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("OrderDAO.findByIdAndUserId error", e);
         }
     }
 
@@ -508,6 +560,29 @@ public class OrderDAO {
 
         } catch (SQLException e) {
             throw new RuntimeException("OrderDAO.updateShippingCreated error", e);
+        }
+    }
+
+    public void updateShippingCreated(Connection conn,
+                                      int orderId,
+                                      String shippingProvider,
+                                      String shippingCode) throws SQLException {
+
+        String sql = """
+                UPDATE store_order
+                SET shipping_provider = ?,
+                    shipping_code = ?,
+                    shipping_status = 'CREATED'
+                WHERE id = ?
+                """;
+
+        try (PreparedStatement statement = conn.prepareStatement(sql)) {
+
+            statement.setString(1, defaultIfBlank(shippingProvider, "INTERNAL"));
+            statement.setString(2, shippingCode);
+            statement.setInt(3, orderId);
+
+            statement.executeUpdate();
         }
     }
 
