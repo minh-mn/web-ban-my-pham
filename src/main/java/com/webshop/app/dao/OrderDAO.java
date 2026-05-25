@@ -25,11 +25,16 @@ public class OrderDAO {
 
     private static final String PAID = "PAID";
     private static final String COD = "COD";
-    private static final String DEFAULT_ORDER_STATUS = "processing";
-    private static final String DEFAULT_CONFIRMED_STATUS = "confirmed";
-    private static final String DEFAULT_SHIPPING_STATUS = "shipping";
-    private static final String DEFAULT_COMPLETED_STATUS = "completed";
-    private static final String DEFAULT_CANCELLED_STATUS = "cancelled";
+
+    private static final String PAYMENT_PENDING = "PENDING";
+    private static final String PAYMENT_FAILED = "FAILED";
+    private static final String PAYMENT_CANCELED = "CANCELED";
+
+    private static final String ORDER_PROCESSING = "processing";
+    private static final String ORDER_CONFIRMED = "confirmed";
+    private static final String ORDER_SHIPPING = "shipping";
+    private static final String ORDER_COMPLETED = "completed";
+    private static final String ORDER_CANCELLED = "cancelled";
 
     private static final String DEFAULT_SHIPPING_METHOD = "ECONOMY";
     private static final String DEFAULT_SHIPPING_PROVIDER = "INTERNAL";
@@ -64,8 +69,12 @@ public class OrderDAO {
         return value.setScale(0, RoundingMode.HALF_UP);
     }
 
+    private static boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
+    }
+
     private static String trimToNull(String value) {
-        if (value == null || value.trim().isEmpty()) {
+        if (isBlank(value)) {
             return null;
         }
 
@@ -86,25 +95,32 @@ public class OrderDAO {
     }
 
     private static String normalizeOrderStatus(String status) {
-        String normalized = defaultIfBlank(status, DEFAULT_ORDER_STATUS)
+        String normalized = defaultIfBlank(status, ORDER_PROCESSING)
                 .trim()
                 .toLowerCase();
 
+        if ("canceled".equals(normalized)) {
+            return ORDER_CANCELLED;
+        }
+
         return switch (normalized) {
-            case "processing", "confirmed", "shipping", "completed", "cancelled", "canceled" -> normalized;
-            default -> DEFAULT_ORDER_STATUS;
+            case "processing", "confirmed", "shipping", "completed", "cancelled" -> normalized;
+            default -> ORDER_PROCESSING;
         };
     }
 
     private static String normalizePaymentStatus(String paymentStatus) {
-        String normalized = defaultIfBlank(paymentStatus, "PENDING")
+        String normalized = defaultIfBlank(paymentStatus, PAYMENT_PENDING)
                 .trim()
                 .toUpperCase();
 
+        if ("CANCELLED".equals(normalized)) {
+            return PAYMENT_CANCELED;
+        }
+
         return switch (normalized) {
-            case "PENDING", "PAID", "FAILED", "CANCELED", "CANCELLED", "REFUNDED" ->
-                    "CANCELLED".equals(normalized) ? "CANCELED" : normalized;
-            default -> "PENDING";
+            case "PENDING", "PAID", "FAILED", "CANCELED", "REFUNDED" -> normalized;
+            default -> PAYMENT_PENDING;
         };
     }
 
@@ -153,38 +169,77 @@ public class OrderDAO {
         return "MC-SHIP-" + String.format("%06d", orderId);
     }
 
+    private static boolean shouldHaveShippingCode(String shippingStatus) {
+        String normalized = normalizeShippingStatus(shippingStatus);
+
+        return switch (normalized) {
+            case "PENDING_PICKUP", "DELIVERING", "DELIVERED", "FAILED" -> true;
+            default -> false;
+        };
+    }
+
+    private static String resolveShippingCodeForDisplay(
+            int orderId,
+            String shippingCode,
+            String shippingStatus
+    ) {
+        if (!isBlank(shippingCode)) {
+            return shippingCode.trim();
+        }
+
+        if (shouldHaveShippingCode(shippingStatus)) {
+            return generateInternalShippingCode(orderId);
+        }
+
+        return null;
+    }
+
     private static String getOrderStatusByShippingStatus(String shippingStatus, String currentOrderStatus) {
         String normalizedShippingStatus = normalizeShippingStatus(shippingStatus);
         String normalizedOrderStatus = normalizeOrderStatus(currentOrderStatus);
 
+        /*
+         * Đồng bộ logic:
+         * PENDING_PICKUP -> confirmed
+         * DELIVERING     -> shipping
+         * DELIVERED      -> completed
+         * FAILED         -> shipping, để shop có thể giao lại
+         * CANCELED       -> cancelled
+         */
         return switch (normalizedShippingStatus) {
-            case "PENDING_PICKUP" -> {
-                if ("processing".equals(normalizedOrderStatus)) {
-                    yield DEFAULT_CONFIRMED_STATUS;
-                }
-                yield normalizedOrderStatus;
-            }
-            case "DELIVERING" -> DEFAULT_SHIPPING_STATUS;
-            case "DELIVERED" -> DEFAULT_COMPLETED_STATUS;
-            case "CANCELED" -> DEFAULT_CANCELLED_STATUS;
-            case "FAILED" -> DEFAULT_SHIPPING_STATUS;
+            case "PENDING_PICKUP" -> ORDER_CONFIRMED;
+            case "DELIVERING" -> ORDER_SHIPPING;
+            case "DELIVERED" -> ORDER_COMPLETED;
+            case "FAILED" -> ORDER_SHIPPING;
+            case "CANCELED" -> ORDER_CANCELLED;
             default -> normalizedOrderStatus;
         };
     }
 
-    private static String getPaymentStatusByShippingStatus(String shippingStatus,
-                                                           String paymentMethod,
-                                                           String currentPaymentStatus) {
+    private static String getPaymentStatusByShippingStatus(
+            String shippingStatus,
+            String paymentMethod,
+            String currentPaymentStatus
+    ) {
         String normalizedShippingStatus = normalizeShippingStatus(shippingStatus);
         String normalizedPaymentMethod = normalizePaymentMethod(paymentMethod);
         String normalizedPaymentStatus = normalizePaymentStatus(currentPaymentStatus);
 
         /*
          * COD chỉ được xem là đã thanh toán khi giao thành công.
-         * VNPAY đã được xử lý thanh toán ở luồng riêng, không tự hạ trạng thái.
+         * VNPAY đã được xử lý thanh toán ở luồng riêng.
          */
         if ("DELIVERED".equals(normalizedShippingStatus) && COD.equals(normalizedPaymentMethod)) {
             return PAID;
+        }
+
+        /*
+         * Nếu vận chuyển bị hủy khi thanh toán còn đang chờ,
+         * chuyển payment_status sang CANCELED để thống nhất dữ liệu.
+         */
+        if ("CANCELED".equals(normalizedShippingStatus)
+                && PAYMENT_PENDING.equals(normalizedPaymentStatus)) {
+            return PAYMENT_CANCELED;
         }
 
         return normalizedPaymentStatus;
@@ -232,7 +287,6 @@ public class OrderDAO {
                 sql,
                 Statement.RETURN_GENERATED_KEYS
         )) {
-
             int index = 1;
 
             String shippingMethod = normalizeShippingMethod(order.getShippingMethod());
@@ -243,22 +297,17 @@ public class OrderDAO {
             statement.setString(index++, order.getFullName());
             statement.setString(index++, order.getPhone());
             statement.setString(index++, order.getAddress());
-
             statement.setBigDecimal(index++, vnd0(order.getTotal()));
             statement.setBigDecimal(index++, vnd0(order.getCouponDiscount()));
-
             statement.setString(index++, normalizePaymentMethod(order.getPaymentMethod()));
             statement.setString(index++, normalizePaymentStatus(order.getPaymentStatus()));
             statement.setString(index++, normalizeOrderStatus(order.getStatus()));
             statement.setString(index++, trimToNull(order.getVnpTxnRef()));
-
             statement.setString(index++, shippingMethod);
             statement.setString(index++, shippingProvider);
             statement.setBigDecimal(index++, vnd0(order.getShippingFee()));
-
             statement.setString(index++, trimToNull(order.getShippingCode()));
             statement.setString(index++, shippingStatus);
-
             statement.setTimestamp(index++, toTimestamp(order.getShippedAt()));
             statement.setTimestamp(index++, toTimestamp(order.getDeliveredAt()));
             statement.setTimestamp(index++, new Timestamp(System.currentTimeMillis()));
@@ -273,10 +322,10 @@ public class OrderDAO {
                 int orderId = resultSet.getInt(1);
 
                 /*
-                 * Nếu đơn hàng chưa có mã vận chuyển thì tự sinh mã vận đơn nội bộ.
-                 * Mã này giúp user/admin có thông tin tracking ngay từ lúc tạo đơn.
+                 * Mọi đơn hàng có tracking vận chuyển đều cần mã vận đơn.
+                 * Nếu chưa có shipping_code thì tự sinh mã nội bộ MC-SHIP-xxxxxx.
                  */
-                if (order.getShippingCode() == null || order.getShippingCode().isBlank()) {
+                if (isBlank(order.getShippingCode()) && shouldHaveShippingCode(shippingStatus)) {
                     String generatedShippingCode = generateInternalShippingCode(orderId);
 
                     updateShippingCreated(
@@ -288,6 +337,7 @@ public class OrderDAO {
 
                     order.setShippingCode(generatedShippingCode);
                     order.setShippingProvider(shippingProvider);
+                    order.setShippingMethod(shippingMethod);
                     order.setShippingStatus(ShippingStatus.PENDING_PICKUP.getCode());
                 }
 
@@ -620,17 +670,31 @@ public class OrderDAO {
                                       String shippingCode) throws SQLException {
         String sql = """
                 UPDATE store_order
-                SET shipping_provider = ?,
+                SET shipping_provider = COALESCE(NULLIF(shipping_provider, ''), ?),
+                    shipping_method = COALESCE(NULLIF(shipping_method, ''), ?),
                     shipping_code = ?,
-                    shipping_status = ?
+                    shipping_status = ?,
+                    status = CASE
+                        WHEN LOWER(COALESCE(status, '')) IN ('', 'processing') THEN ?
+                        ELSE status
+                    END
                 WHERE id = ?
                 """;
 
+        String safeShippingCode = isBlank(shippingCode)
+                ? generateInternalShippingCode(orderId)
+                : shippingCode.trim();
+
         try (PreparedStatement statement = conn.prepareStatement(sql)) {
-            statement.setString(1, normalizeShippingProvider(shippingProvider));
-            statement.setString(2, trimToNull(shippingCode));
-            statement.setString(3, ShippingStatus.PENDING_PICKUP.getCode());
-            statement.setInt(4, orderId);
+            int index = 1;
+
+            statement.setString(index++, normalizeShippingProvider(shippingProvider));
+            statement.setString(index++, DEFAULT_SHIPPING_METHOD);
+            statement.setString(index++, safeShippingCode);
+            statement.setString(index++, ShippingStatus.PENDING_PICKUP.getCode());
+            statement.setString(index++, ORDER_CONFIRMED);
+            statement.setInt(index++, orderId);
+
             statement.executeUpdate();
         }
     }
@@ -649,14 +713,19 @@ public class OrderDAO {
                 WHERE id = ?
                 """;
 
+        String safeShippingCode = isBlank(shippingCode)
+                ? generateInternalShippingCode(orderId)
+                : shippingCode.trim();
+
         try (Connection connection = DBConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setString(1, normalizeShippingProvider(shippingProvider));
-            statement.setString(2, trimToNull(shippingCode));
+            statement.setString(2, safeShippingCode);
             statement.setString(3, normalizeShippingMethod(shippingMethod));
             statement.setBigDecimal(4, vnd0(shippingFee));
             statement.setInt(5, orderId);
+
             statement.executeUpdate();
 
         } catch (SQLException e) {
@@ -664,51 +733,71 @@ public class OrderDAO {
         }
     }
 
-    public void updateShippingStatus(int orderId, String shippingStatus) {
-        Order order = findById(orderId);
-
-        if (order == null) {
-            throw new RuntimeException("Không tìm thấy đơn hàng #" + orderId);
-        }
-
-        String normalizedShippingStatus = normalizeShippingStatus(shippingStatus);
-        String nextOrderStatus = getOrderStatusByShippingStatus(normalizedShippingStatus, order.getStatus());
-        String nextPaymentStatus = getPaymentStatusByShippingStatus(
-                normalizedShippingStatus,
-                order.getPaymentMethod(),
-                order.getPaymentStatus()
-        );
-
+    public void ensureShippingCode(int orderId) {
         String sql = """
                 UPDATE store_order
-                SET shipping_status = ?,
-                    status = ?,
-                    payment_status = ?,
-                    shipped_at = CASE
-                        WHEN ? = 'DELIVERING' AND shipped_at IS NULL THEN NOW()
-                        WHEN ? = 'DELIVERED' AND shipped_at IS NULL THEN NOW()
-                        ELSE shipped_at
-                    END,
-                    delivered_at = CASE
-                        WHEN ? = 'DELIVERED' AND delivered_at IS NULL THEN NOW()
-                        ELSE delivered_at
-                    END
+                SET shipping_code = ?,
+                    shipping_provider = COALESCE(NULLIF(shipping_provider, ''), ?),
+                    shipping_method = COALESCE(NULLIF(shipping_method, ''), ?)
                 WHERE id = ?
+                  AND (shipping_code IS NULL OR shipping_code = '')
                 """;
 
         try (Connection connection = DBConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            int index = 1;
-            statement.setString(index++, normalizedShippingStatus);
-            statement.setString(index++, nextOrderStatus);
-            statement.setString(index++, nextPaymentStatus);
-            statement.setString(index++, normalizedShippingStatus);
-            statement.setString(index++, normalizedShippingStatus);
-            statement.setString(index++, normalizedShippingStatus);
-            statement.setInt(index++, orderId);
+            statement.setString(1, generateInternalShippingCode(orderId));
+            statement.setString(2, DEFAULT_SHIPPING_PROVIDER);
+            statement.setString(3, DEFAULT_SHIPPING_METHOD);
+            statement.setInt(4, orderId);
 
             statement.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new RuntimeException("OrderDAO.ensureShippingCode error", e);
+        }
+    }
+
+    public int backfillMissingShippingCodes() {
+        String sql = """
+                UPDATE store_order
+                SET shipping_code = CONCAT('MC-SHIP-', LPAD(id, 6, '0')),
+                    shipping_provider = COALESCE(NULLIF(shipping_provider, ''), ?),
+                    shipping_method = COALESCE(NULLIF(shipping_method, ''), ?)
+                WHERE (shipping_code IS NULL OR shipping_code = '')
+                  AND UPPER(COALESCE(shipping_status, '')) IN
+                      (
+                        'PENDING_PICKUP', 'PENDING', 'CREATED', 'PICKING',
+                        'DELIVERING', 'SHIPPING', 'IN_TRANSIT',
+                        'DELIVERED', 'SUCCESS', 'COMPLETED',
+                        'FAILED', 'DELIVERY_FAILED', 'RETURNED'
+                      )
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, DEFAULT_SHIPPING_PROVIDER);
+            statement.setString(2, DEFAULT_SHIPPING_METHOD);
+
+            return statement.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new RuntimeException("OrderDAO.backfillMissingShippingCodes error", e);
+        }
+    }
+
+    public void updateShippingStatus(int orderId, String shippingStatus) {
+        try (Connection connection = DBConnection.getConnection()) {
+            connection.setAutoCommit(false);
+
+            try {
+                updateShippingStatus(connection, orderId, shippingStatus);
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                throw e;
+            }
 
         } catch (SQLException e) {
             throw new RuntimeException("OrderDAO.updateShippingStatus error", e);
@@ -725,21 +814,38 @@ public class OrderDAO {
         }
 
         String normalizedShippingStatus = normalizeShippingStatus(shippingStatus);
-        String nextOrderStatus = getOrderStatusByShippingStatus(normalizedShippingStatus, order.getStatus());
+
+        String nextOrderStatus = getOrderStatusByShippingStatus(
+                normalizedShippingStatus,
+                order.getStatus()
+        );
+
         String nextPaymentStatus = getPaymentStatusByShippingStatus(
                 normalizedShippingStatus,
                 order.getPaymentMethod(),
                 order.getPaymentStatus()
         );
 
+        String safeShippingCode = isBlank(order.getShippingCode())
+                ? generateInternalShippingCode(orderId)
+                : order.getShippingCode().trim();
+
+        String safeShippingProvider = normalizeShippingProvider(order.getShippingProvider());
+        String safeShippingMethod = normalizeShippingMethod(order.getShippingMethod());
+
         String sql = """
                 UPDATE store_order
                 SET shipping_status = ?,
                     status = ?,
                     payment_status = ?,
+                    shipping_code = CASE
+                        WHEN ? = 1 AND (shipping_code IS NULL OR shipping_code = '') THEN ?
+                        ELSE shipping_code
+                    END,
+                    shipping_provider = COALESCE(NULLIF(shipping_provider, ''), ?),
+                    shipping_method = COALESCE(NULLIF(shipping_method, ''), ?),
                     shipped_at = CASE
-                        WHEN ? = 'DELIVERING' AND shipped_at IS NULL THEN NOW()
-                        WHEN ? = 'DELIVERED' AND shipped_at IS NULL THEN NOW()
+                        WHEN ? IN ('DELIVERING', 'DELIVERED') AND shipped_at IS NULL THEN NOW()
                         ELSE shipped_at
                     END,
                     delivered_at = CASE
@@ -751,10 +857,17 @@ public class OrderDAO {
 
         try (PreparedStatement statement = conn.prepareStatement(sql)) {
             int index = 1;
+
             statement.setString(index++, normalizedShippingStatus);
             statement.setString(index++, nextOrderStatus);
             statement.setString(index++, nextPaymentStatus);
-            statement.setString(index++, normalizedShippingStatus);
+
+            statement.setInt(index++, shouldHaveShippingCode(normalizedShippingStatus) ? 1 : 0);
+            statement.setString(index++, safeShippingCode);
+
+            statement.setString(index++, safeShippingProvider);
+            statement.setString(index++, safeShippingMethod);
+
             statement.setString(index++, normalizedShippingStatus);
             statement.setString(index++, normalizedShippingStatus);
             statement.setInt(index++, orderId);
@@ -906,11 +1019,11 @@ public class OrderDAO {
     }
 
     public void markPaidByTxnRef(String txnRef) {
-        updatePaymentByTxnRef(txnRef, PAID, DEFAULT_CONFIRMED_STATUS);
+        updatePaymentByTxnRef(txnRef, PAID, ORDER_CONFIRMED);
     }
 
     public void markFailedByTxnRef(String txnRef) {
-        updatePaymentByTxnRef(txnRef, "FAILED", DEFAULT_CANCELLED_STATUS);
+        updatePaymentByTxnRef(txnRef, PAYMENT_FAILED, ORDER_CANCELLED);
     }
 
     public boolean isPaidByTxnRef(String txnRef) {
@@ -1018,23 +1131,32 @@ public class OrderDAO {
     private Order mapRow(ResultSet resultSet) throws SQLException {
         Order order = new Order();
 
-        order.setId(resultSet.getInt("id"));
+        int orderId = resultSet.getInt("id");
+        String normalizedShippingStatus = normalizeShippingStatus(resultSet.getString("shipping_status"));
+
+        String displayShippingCode = resolveShippingCodeForDisplay(
+                orderId,
+                resultSet.getString("shipping_code"),
+                normalizedShippingStatus
+        );
+
+        order.setId(orderId);
         order.setUserId(resultSet.getInt("user_id"));
         order.setFullName(resultSet.getString("full_name"));
         order.setPhone(resultSet.getString("phone"));
         order.setAddress(resultSet.getString("address"));
         order.setTotal(vnd0(resultSet.getBigDecimal("total")));
         order.setCouponDiscount(vnd0(resultSet.getBigDecimal("coupon_discount")));
-        order.setPaymentMethod(resultSet.getString("payment_method"));
-        order.setPaymentStatus(resultSet.getString("payment_status"));
-        order.setStatus(resultSet.getString("status"));
+        order.setPaymentMethod(normalizePaymentMethod(resultSet.getString("payment_method")));
+        order.setPaymentStatus(normalizePaymentStatus(resultSet.getString("payment_status")));
+        order.setStatus(normalizeOrderStatus(resultSet.getString("status")));
         order.setVnpTxnRef(resultSet.getString("vnp_txn_ref"));
 
-        order.setShippingMethod(resultSet.getString("shipping_method"));
-        order.setShippingProvider(resultSet.getString("shipping_provider"));
+        order.setShippingMethod(normalizeShippingMethod(resultSet.getString("shipping_method")));
+        order.setShippingProvider(normalizeShippingProvider(resultSet.getString("shipping_provider")));
         order.setShippingFee(vnd0(resultSet.getBigDecimal("shipping_fee")));
-        order.setShippingCode(resultSet.getString("shipping_code"));
-        order.setShippingStatus(resultSet.getString("shipping_status"));
+        order.setShippingCode(displayShippingCode);
+        order.setShippingStatus(normalizedShippingStatus);
 
         Timestamp shippedAt = resultSet.getTimestamp("shipped_at");
         if (shippedAt != null) {
