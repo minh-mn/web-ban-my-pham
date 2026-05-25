@@ -8,6 +8,7 @@ import java.util.Map;
 import com.webshop.app.dao.OrderDAO;
 import com.webshop.app.model.CartItem;
 import com.webshop.app.model.Order;
+import com.webshop.app.model.User;
 import com.webshop.app.service.CheckoutService;
 import com.webshop.app.utils.CartUtil;
 import com.webshop.app.utils.VNPayUtil;
@@ -138,6 +139,7 @@ public class VNPayReturnServlet extends HttpServlet {
     ) throws IOException {
 
         HttpSession session = req.getSession(false);
+        User currentUser = getCurrentUser(session);
 
         /*
          * Nếu đơn đã PAID rồi thì không finalize lại.
@@ -147,6 +149,7 @@ public class VNPayReturnServlet extends HttpServlet {
 
         if (order != null && "PAID".equalsIgnoreCase(order.getPaymentStatus())) {
             cleanupPaidItems(session);
+            sendOrderSuccessEmailSafely(session, currentUser, orderId);
 
             resp.sendRedirect(req.getContextPath()
                     + "/checkout/success?success=true&orderId=" + orderId
@@ -185,6 +188,7 @@ public class VNPayReturnServlet extends HttpServlet {
              * Sản phẩm chưa tích chọn vẫn giữ trong CART.
              */
             cleanupPaidItems(session);
+            sendOrderSuccessEmailSafely(session, currentUser, orderId);
 
             resp.sendRedirect(req.getContextPath()
                     + "/checkout/success?success=true&orderId=" + orderId
@@ -200,6 +204,133 @@ public class VNPayReturnServlet extends HttpServlet {
                     + "/checkout/success?success=false&orderId=" + orderId
                     + "&message=finalize_failed");
         }
+    }
+
+    private User getCurrentUser(HttpSession session) {
+        if (session == null) {
+            return null;
+        }
+
+        Object rawUser = session.getAttribute("user");
+
+        if (rawUser instanceof User) {
+            return (User) rawUser;
+        }
+
+        return null;
+    }
+
+    /**
+     * Mục 91 - gửi email xác nhận đơn hàng sau khi VNPAY thanh toán thành công.
+     * Hàm này không làm hỏng luồng thanh toán nếu gửi mail lỗi.
+     */
+    private void sendOrderSuccessEmailSafely(HttpSession session, User user, int orderId) {
+        if (orderId <= 0) {
+            return;
+        }
+
+        String sentKey = "ORDER_SUCCESS_EMAIL_SENT_" + orderId;
+        String oldSentKey = "ORDER_EMAIL_SENT_" + orderId;
+        String failedKey = "ORDER_SUCCESS_EMAIL_FAILED_" + orderId;
+
+        if (session != null) {
+            Object alreadySent = session.getAttribute(sentKey);
+            Object alreadySentOld = session.getAttribute(oldSentKey);
+
+            if (Boolean.TRUE.equals(alreadySent) || Boolean.TRUE.equals(alreadySentOld)) {
+                return;
+            }
+        }
+
+        String email = getUserEmail(user);
+        boolean sent = false;
+
+        try {
+            Class<?> serviceClass = Class.forName("com.webshop.app.service.OrderEmailService");
+            Object emailService = serviceClass.getDeclaredConstructor().newInstance();
+
+            sent = tryInvokeEmailMethod(serviceClass, emailService, "sendOrderSuccessEmail", orderId, email)
+                    || tryInvokeEmailMethod(serviceClass, emailService, "sendOrderConfirmationEmail", orderId, email);
+
+        } catch (ClassNotFoundException ignored) {
+            /*
+             * Chưa có OrderEmailService thì bỏ qua để không làm lỗi thanh toán.
+             */
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        if (session != null) {
+            if (sent) {
+                session.setAttribute(sentKey, true);
+                session.setAttribute(oldSentKey, true);
+                session.removeAttribute(failedKey);
+            } else {
+                session.setAttribute(failedKey, true);
+            }
+        }
+    }
+
+    private boolean tryInvokeEmailMethod(Class<?> serviceClass,
+                                         Object service,
+                                         String methodName,
+                                         int orderId,
+                                         String email) {
+        if (!isBlank(email)) {
+            try {
+                serviceClass
+                        .getMethod(methodName, int.class, String.class)
+                        .invoke(service, orderId, email);
+                return true;
+            } catch (NoSuchMethodException ignored) {
+                // Thử signature tiếp theo.
+            } catch (Exception e) {
+                e.printStackTrace();
+                return false;
+            }
+
+            try {
+                serviceClass
+                        .getMethod(methodName, String.class, int.class)
+                        .invoke(service, email, orderId);
+                return true;
+            } catch (NoSuchMethodException ignored) {
+                // Thử signature tiếp theo.
+            } catch (Exception e) {
+                e.printStackTrace();
+                return false;
+            }
+        }
+
+        try {
+            serviceClass
+                    .getMethod(methodName, int.class)
+                    .invoke(service, orderId);
+            return true;
+        } catch (NoSuchMethodException ignored) {
+            return false;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    private String getUserEmail(User user) {
+        if (user == null) {
+            return "";
+        }
+
+        try {
+            Object value = user.getClass().getMethod("getEmail").invoke(user);
+
+            if (value != null) {
+                return value.toString().trim();
+            }
+        } catch (Exception ignored) {
+            // User model chưa có getEmail thì để rỗng.
+        }
+
+        return "";
     }
 
     @SuppressWarnings("unchecked")
