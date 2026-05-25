@@ -804,4 +804,29 @@ public class ProductDAO {
 
 		p.setFinalPrice(finalPrice);
 	}
+
+	// Thêm vào trong class ProductDAO
+	public List<Product> findAll() {
+		List<Product> list = new ArrayList<>();
+		String sql = "SELECT * FROM store_product"; // Hãy đảm bảo tên bảng khớp với DB của bạn
+
+		try (Connection conn = DBConnection.getConnection();
+		     PreparedStatement ps = conn.prepareStatement(sql);
+		     ResultSet rs = ps.executeQuery()) {
+
+			while (rs.next()) {
+				Product p = new Product();
+				p.setId(rs.getInt("id"));
+				p.setTitle(rs.getString("title"));
+				p.setPrice(rs.getBigDecimal("price"));
+				// Set thêm các thuộc tính khác nếu cần hiển thị, ví dụ:
+				// p.setImage(rs.getString("image"));
+
+				list.add(p);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return list;
+	}
 }
