@@ -1250,8 +1250,8 @@ public class CheckoutServlet extends HttpServlet {
     /**
      * Mục 91 - gửi thông báo đơn hàng qua email.
      *
-     * Hàm này gọi bất đồng bộ và không làm thất bại đơn hàng nếu email lỗi.
-     * Để hoạt động thật, project nên có một service:
+     * Hàm này không làm thất bại đơn hàng nếu email lỗi.
+     * Để gửi mail thật, project cần có service:
      *   com.webshop.app.service.OrderEmailService
      *
      * Các tên hàm được hỗ trợ:
@@ -1259,39 +1259,58 @@ public class CheckoutServlet extends HttpServlet {
      * - sendOrderSuccessEmail(String email, int orderId)
      * - sendOrderSuccessEmail(int orderId)
      * - sendOrderConfirmationEmail(int orderId, String email)
+     * - sendOrderConfirmationEmail(String email, int orderId)
      * - sendOrderConfirmationEmail(int orderId)
      *
-     * Nếu service chưa tồn tại thì hàm tự bỏ qua, project vẫn build bình thường.
+     * Nếu service chưa tồn tại hoặc SMTP chưa cấu hình, hệ thống vẫn đặt hàng thành công
+     * và lưu flag thất bại để trang success hiển thị thông báo phù hợp.
      */
-    private void sendOrderSuccessEmailAsync(User user, int orderId) {
+    private void sendOrderSuccessEmailSafely(HttpSession session, User user, int orderId) {
         if (orderId <= 0) {
             return;
         }
 
-        String email = getUserEmail(user);
+        String sentKey = "ORDER_SUCCESS_EMAIL_SENT_" + orderId;
+        String oldSentKey = "ORDER_EMAIL_SENT_" + orderId;
+        String failedKey = "ORDER_SUCCESS_EMAIL_FAILED_" + orderId;
 
-        CompletableFuture.runAsync(() -> {
-            try {
-                Class<?> serviceClass = Class.forName("com.webshop.app.service.OrderEmailService");
-                Object emailService = serviceClass.getDeclaredConstructor().newInstance();
+        if (session != null) {
+            Object alreadySent = session.getAttribute(sentKey);
+            Object alreadySentOld = session.getAttribute(oldSentKey);
 
-                if (tryInvokeEmailMethod(serviceClass, emailService, "sendOrderSuccessEmail", orderId, email)) {
-                    return;
-                }
-
-                if (tryInvokeEmailMethod(serviceClass, emailService, "sendOrderConfirmationEmail", orderId, email)) {
-                    return;
-                }
-
-            } catch (ClassNotFoundException ignored) {
-                /*
-                 * Chưa có OrderEmailService thì bỏ qua để không làm hỏng checkout.
-                 * Khi bạn thêm service gửi mail, hàm này sẽ tự gọi được nếu đúng signature.
-                 */
-            } catch (Exception e) {
-                e.printStackTrace();
+            if (Boolean.TRUE.equals(alreadySent) || Boolean.TRUE.equals(alreadySentOld)) {
+                return;
             }
-        });
+        }
+
+        String email = getUserEmail(user);
+        boolean sent = false;
+
+        try {
+            Class<?> serviceClass = Class.forName("com.webshop.app.service.OrderEmailService");
+            Object emailService = serviceClass.getDeclaredConstructor().newInstance();
+
+            sent = tryInvokeEmailMethod(serviceClass, emailService, "sendOrderSuccessEmail", orderId, email)
+                    || tryInvokeEmailMethod(serviceClass, emailService, "sendOrderConfirmationEmail", orderId, email);
+
+        } catch (ClassNotFoundException ignored) {
+            /*
+             * Chưa có OrderEmailService thì bỏ qua để không làm hỏng checkout.
+             * Khi bạn thêm service gửi mail đúng package/signature, hàm này sẽ gọi được.
+             */
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        if (session != null) {
+            if (sent) {
+                session.setAttribute(sentKey, true);
+                session.setAttribute(oldSentKey, true);
+                session.removeAttribute(failedKey);
+            } else {
+                session.setAttribute(failedKey, true);
+            }
+        }
     }
 
     private boolean tryInvokeEmailMethod(Class<?> serviceClass,
@@ -1299,28 +1318,30 @@ public class CheckoutServlet extends HttpServlet {
                                          String methodName,
                                          int orderId,
                                          String email) {
-        try {
-            serviceClass
-                    .getMethod(methodName, int.class, String.class)
-                    .invoke(service, orderId, email);
-            return true;
-        } catch (NoSuchMethodException ignored) {
-            // Thử signature tiếp theo.
-        } catch (Exception e) {
-            e.printStackTrace();
-            return true;
-        }
+        if (!isBlank(email)) {
+            try {
+                serviceClass
+                        .getMethod(methodName, int.class, String.class)
+                        .invoke(service, orderId, email);
+                return true;
+            } catch (NoSuchMethodException ignored) {
+                // Thử signature tiếp theo.
+            } catch (Exception e) {
+                e.printStackTrace();
+                return false;
+            }
 
-        try {
-            serviceClass
-                    .getMethod(methodName, String.class, int.class)
-                    .invoke(service, email, orderId);
-            return true;
-        } catch (NoSuchMethodException ignored) {
-            // Thử signature tiếp theo.
-        } catch (Exception e) {
-            e.printStackTrace();
-            return true;
+            try {
+                serviceClass
+                        .getMethod(methodName, String.class, int.class)
+                        .invoke(service, email, orderId);
+                return true;
+            } catch (NoSuchMethodException ignored) {
+                // Thử signature tiếp theo.
+            } catch (Exception e) {
+                e.printStackTrace();
+                return false;
+            }
         }
 
         try {
@@ -1332,7 +1353,7 @@ public class CheckoutServlet extends HttpServlet {
             return false;
         } catch (Exception e) {
             e.printStackTrace();
-            return true;
+            return false;
         }
     }
 
@@ -1524,7 +1545,7 @@ public class CheckoutServlet extends HttpServlet {
                  * Mục 91:
                  * Gửi email bất đồng bộ, lỗi mail không làm hỏng đơn hàng.
                  */
-                sendOrderSuccessEmailAsync(user, orderId);
+                sendOrderSuccessEmailSafely(session, user, orderId);
 
                 resp.sendRedirect(req.getContextPath()
                         + "/checkout/success?success=true&orderId=" + orderId
@@ -1557,7 +1578,7 @@ public class CheckoutServlet extends HttpServlet {
             CartUtil.clearSelectedCartKeys(session);
 
             clearCheckoutCoupon(session);
-            sendOrderSuccessEmailAsync(user, orderId);
+            sendOrderSuccessEmailSafely(session, user, orderId);
 
             resp.sendRedirect(req.getContextPath()
                     + "/checkout/success?success=true&orderId=" + orderId
