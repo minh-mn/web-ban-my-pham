@@ -203,6 +203,140 @@ public class UserCouponDAO {
         }
     }
 
+
+    public boolean hasUserUsedCoupon(int userId, long couponId) {
+        try (Connection connection = DBConnection.getConnection()) {
+            return hasUserUsedCoupon(connection, userId, couponId);
+        } catch (SQLException e) {
+            throw new RuntimeException("UserCouponDAO.hasUserUsedCoupon error", e);
+        }
+    }
+
+    public boolean hasUserUsedCoupon(Connection conn, int userId, long couponId) throws SQLException {
+        if (conn == null) {
+            throw new SQLException("Connection must not be null");
+        }
+
+        if (userId <= 0 || couponId <= 0) {
+            return false;
+        }
+
+        String sql = """
+                SELECT 1
+                FROM user_coupon
+                WHERE user_id = ?
+                  AND coupon_id = ?
+                  AND is_used = 1
+                LIMIT 1
+                """;
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setLong(2, couponId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
+
+    public void markCouponUsed(Connection conn, int userId, long couponId, int orderId) throws SQLException {
+        if (conn == null) {
+            throw new SQLException("Connection must not be null");
+        }
+
+        if (userId <= 0 || couponId <= 0 || orderId <= 0) {
+            throw new SQLException("Invalid userId/couponId/orderId when marking coupon used.");
+        }
+
+        String sql = """
+                INSERT INTO user_coupon
+                    (user_id, coupon_id, saved_at, is_used, used_at, used_order_id)
+                VALUES
+                    (?, ?, NOW(), 1, NOW(), ?)
+                ON DUPLICATE KEY UPDATE
+                    is_used = 1,
+                    used_at = COALESCE(used_at, NOW()),
+                    used_order_id = COALESCE(used_order_id, VALUES(used_order_id))
+                """;
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setLong(2, couponId);
+            ps.setInt(3, orderId);
+            ps.executeUpdate();
+        }
+    }
+
+    public List<UserCouponView> findAvailableCouponsForUser(int userId, String userRankCode) {
+        String sql = """
+                SELECT
+                    c.id,
+                    c.code,
+                    c.discount_percent,
+                    c.max_discount_amount,
+                    c.min_order_amount,
+                    c.start_date,
+                    c.end_date,
+                    c.is_active AS active,
+                    c.max_uses,
+                    c.used_count,
+                    COALESCE(c.min_rank_code, 'MEMBER') AS min_rank_code
+                FROM store_coupon c
+                WHERE c.is_active = 1
+                  AND (c.start_date IS NULL OR c.start_date <= CURDATE())
+                  AND (c.end_date IS NULL OR c.end_date >= CURDATE())
+                  AND (
+                        c.max_uses IS NULL
+                        OR c.max_uses <= 0
+                        OR COALESCE(c.used_count, 0) < c.max_uses
+                  )
+                  AND NOT EXISTS (
+                        SELECT 1
+                        FROM user_coupon uc
+                        WHERE uc.user_id = ?
+                          AND uc.coupon_id = c.id
+                          AND uc.is_used = 1
+                  )
+                ORDER BY
+                    CASE COALESCE(c.min_rank_code, 'MEMBER')
+                        WHEN 'VIP' THEN 5
+                        WHEN 'DIAMOND' THEN 4
+                        WHEN 'GOLD' THEN 3
+                        WHEN 'SILVER' THEN 2
+                        WHEN 'MEMBER' THEN 1
+                        ELSE 0
+                    END DESC,
+                    c.discount_percent DESC,
+                    c.end_date ASC
+                """;
+
+        String safeUserRank = normalizeRankCode(userRankCode);
+        int userRankLevel = rankLevel(safeUserRank);
+        List<UserCouponView> coupons = new ArrayList<>();
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setInt(1, userId);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    UserCouponView coupon = mapCoupon(resultSet);
+
+                    if (canUseCoupon(userRankLevel, coupon.getMinRankCode())) {
+                        coupons.add(coupon);
+                    }
+                }
+            }
+
+            return coupons;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("UserCouponDAO.findAvailableCouponsForUser error", e);
+        }
+    }
+
     /* =========================
      * HELPER LOGIC
      * ========================= */

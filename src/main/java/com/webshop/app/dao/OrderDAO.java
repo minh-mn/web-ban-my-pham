@@ -13,6 +13,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
@@ -51,6 +52,10 @@ public class OrderDAO {
             payment_status,
             status,
             vnp_txn_ref,
+            coupon_id,
+            stock_deducted,
+            payment_attempt_count,
+            last_payment_error,
             shipping_method,
             shipping_provider,
             shipping_fee,
@@ -271,6 +276,10 @@ public class OrderDAO {
                     payment_status,
                     status,
                     vnp_txn_ref,
+                    coupon_id,
+                    stock_deducted,
+                    payment_attempt_count,
+                    last_payment_error,
                     shipping_method,
                     shipping_provider,
                     shipping_fee,
@@ -280,7 +289,7 @@ public class OrderDAO {
                     delivered_at,
                     created_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
 
         try (PreparedStatement statement = conn.prepareStatement(
@@ -303,6 +312,17 @@ public class OrderDAO {
             statement.setString(index++, normalizePaymentStatus(order.getPaymentStatus()));
             statement.setString(index++, normalizeOrderStatus(order.getStatus()));
             statement.setString(index++, trimToNull(order.getVnpTxnRef()));
+
+            if (order.getCouponId() == null) {
+                statement.setNull(index++, Types.BIGINT);
+            } else {
+                statement.setInt(index++, order.getCouponId());
+            }
+
+            statement.setBoolean(index++, order.isStockDeducted());
+            statement.setInt(index++, order.getPaymentAttemptCount());
+            statement.setString(index++, trimToNull(order.getLastPaymentError()));
+
             statement.setString(index++, shippingMethod);
             statement.setString(index++, shippingProvider);
             statement.setBigDecimal(index++, vnd0(order.getShippingFee()));
@@ -1023,7 +1043,7 @@ public class OrderDAO {
     }
 
     public void markFailedByTxnRef(String txnRef) {
-        updatePaymentByTxnRef(txnRef, PAYMENT_FAILED, ORDER_CANCELLED);
+        updatePaymentByTxnRef(txnRef, PAYMENT_PENDING, ORDER_PROCESSING);
     }
 
     public boolean isPaidByTxnRef(String txnRef) {
@@ -1049,6 +1069,74 @@ public class OrderDAO {
 
         } catch (SQLException e) {
             throw new RuntimeException("OrderDAO.isPaidByTxnRef error", e);
+        }
+    }
+
+    public void prepareVnpayPaymentAttempt(int orderId, String txnRef) {
+        String sql = """
+                UPDATE store_order
+                SET payment_status = ?,
+                    status = ?,
+                    vnp_txn_ref = ?,
+                    payment_attempt_count = COALESCE(payment_attempt_count, 0) + 1,
+                    last_payment_error = NULL
+                WHERE id = ?
+                  AND UPPER(payment_method) = 'VNPAY'
+                  AND UPPER(COALESCE(payment_status, 'PENDING')) <> 'PAID'
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, PAYMENT_PENDING);
+            statement.setString(2, ORDER_PROCESSING);
+            statement.setString(3, trimToNull(txnRef));
+            statement.setInt(4, orderId);
+            statement.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new RuntimeException("OrderDAO.prepareVnpayPaymentAttempt error", e);
+        }
+    }
+
+    public void markVnpayAwaitingRetry(int orderId, String txnRef, String errorMessage) {
+        String sql = """
+                UPDATE store_order
+                SET payment_status = ?,
+                    status = ?,
+                    vnp_txn_ref = ?,
+                    last_payment_error = ?
+                WHERE id = ?
+                  AND UPPER(payment_method) = 'VNPAY'
+                  AND UPPER(COALESCE(payment_status, 'PENDING')) <> 'PAID'
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, PAYMENT_PENDING);
+            statement.setString(2, ORDER_PROCESSING);
+            statement.setString(3, trimToNull(txnRef));
+            statement.setString(4, trimToNull(errorMessage));
+            statement.setInt(5, orderId);
+            statement.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new RuntimeException("OrderDAO.markVnpayAwaitingRetry error", e);
+        }
+    }
+
+    public void markStockDeducted(Connection conn, int orderId) throws SQLException {
+        String sql = """
+                UPDATE store_order
+                SET stock_deducted = 1,
+                    last_payment_error = NULL
+                WHERE id = ?
+                """;
+
+        try (PreparedStatement statement = conn.prepareStatement(sql)) {
+            statement.setInt(1, orderId);
+            statement.executeUpdate();
         }
     }
 
@@ -1151,6 +1239,15 @@ public class OrderDAO {
         order.setPaymentStatus(normalizePaymentStatus(resultSet.getString("payment_status")));
         order.setStatus(normalizeOrderStatus(resultSet.getString("status")));
         order.setVnpTxnRef(resultSet.getString("vnp_txn_ref"));
+
+        Object couponIdObj = resultSet.getObject("coupon_id");
+        if (couponIdObj instanceof Number) {
+            order.setCouponId(((Number) couponIdObj).intValue());
+        }
+
+        order.setStockDeducted(resultSet.getBoolean("stock_deducted"));
+        order.setPaymentAttemptCount(resultSet.getInt("payment_attempt_count"));
+        order.setLastPaymentError(resultSet.getString("last_payment_error"));
 
         order.setShippingMethod(normalizeShippingMethod(resultSet.getString("shipping_method")));
         order.setShippingProvider(normalizeShippingProvider(resultSet.getString("shipping_provider")));
