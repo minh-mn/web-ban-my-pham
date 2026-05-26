@@ -104,15 +104,28 @@
     font-size: 13px;
   }
 
+  /*
+   * FIX CĂN NGANG:
+   * Hai cột "Trạng thái đơn" và "Vận chuyển" dùng cùng layout 2 hàng:
+   * hàng 1 = badge, hàng 2 = mô tả/mã vận đơn.
+   * Badge luôn nằm trên cùng một trục ngang dù dòng phụ có xuống hàng.
+   */
+  .order-status-td,
+  .shipping-status-td {
+    vertical-align: top !important;
+    padding-top: 18px !important;
+  }
+
   .status-cell {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 7px;
-    min-height: 74px;
     width: 100%;
+    min-height: 82px;
     margin: 0 auto;
+    display: grid;
+    grid-template-rows: 34px 42px;
+    row-gap: 8px;
+    justify-items: center;
+    align-items: start;
+    align-content: start;
   }
 
   .status-badge {
@@ -120,19 +133,22 @@
     align-items: center;
     justify-content: center;
     width: 152px;
+    height: 34px;
     min-height: 34px;
     padding: 0 14px;
     border-radius: 999px;
     font-size: 13.5px;
-    line-height: 1.2;
+    line-height: 1;
     font-weight: 900;
     text-align: center;
     white-space: nowrap;
+    box-sizing: border-box;
   }
 
   .status-subtext {
-    display: block;
     width: 100%;
+    min-height: 38px;
+    max-width: 172px;
     color: #64748b;
     font-size: 12.5px;
     font-weight: 750;
@@ -140,10 +156,13 @@
     text-align: center;
     white-space: normal;
     overflow-wrap: anywhere;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
   }
 
   .shipping-code-line {
-    margin-top: 1px;
+    margin-top: 0;
   }
 
   .status-badge.status-warning {
@@ -294,10 +313,12 @@
   }
 
   .admin-status-form {
+    min-height: 82px;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     gap: 8px;
+    padding-top: 0;
   }
 
   .order-status-select {
@@ -426,7 +447,7 @@
                     ₫
                   </td>
 
-                  <td class="text-center">
+                  <td class="text-center order-status-td">
                     <c:choose>
                       <c:when test="${not empty sessionScope.user and sessionScope.user.admin}">
                         <form method="post"
@@ -506,7 +527,7 @@
                     </c:choose>
                   </td>
 
-                  <td class="text-center">
+                  <td class="text-center shipping-status-td">
                     <div class="status-cell">
                       <c:choose>
                         <c:when test="${order.delivered}">
