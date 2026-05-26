@@ -1,18 +1,40 @@
 package com.webshop.app.controller.AdminController;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.Locale;
+import java.util.Set;
+import java.util.UUID;
 
+import com.webshop.app.config.UploadConfig;
 import com.webshop.app.dao.BrandDAO;
 import com.webshop.app.model.Brand;
 
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Part;
 
 @WebServlet("/admin/brands")
+@MultipartConfig(
+        fileSizeThreshold = 1024 * 1024,
+        maxFileSize = 5 * 1024 * 1024,
+        maxRequestSize = 10 * 1024 * 1024
+)
 public class AdminBrandServlet extends HttpServlet {
+
+    private static final long serialVersionUID = 1L;
+
+    private static final Set<String> ALLOWED_IMAGE_EXTENSIONS = Set.of(
+            "jpg", "jpeg", "png", "webp", "gif"
+    );
 
     private final BrandDAO brandDAO = new BrandDAO();
 
@@ -24,25 +46,29 @@ public class AdminBrandServlet extends HttpServlet {
         resp.setCharacterEncoding("UTF-8");
 
         String action = req.getParameter("action");
-        if (action == null) action = "list";
+        if (action == null || action.isBlank()) {
+            action = "list";
+        }
 
         switch (action) {
 
             case "new": {
                 req.setAttribute("mode", "create");
                 req.getRequestDispatcher("/jsp/admin/brand/brand_form.jsp")
-                   .forward(req, resp);
+                        .forward(req, resp);
                 break;
             }
 
             case "edit": {
                 int id = safeInt(req.getParameter("id"), -1);
+
                 if (id <= 0) {
                     resp.sendRedirect(req.getContextPath() + "/admin/brands");
                     return;
                 }
 
                 Brand brand = brandDAO.findById(id);
+
                 if (brand == null) {
                     resp.sendRedirect(req.getContextPath() + "/admin/brands");
                     return;
@@ -52,7 +78,7 @@ public class AdminBrandServlet extends HttpServlet {
                 req.setAttribute("brand", brand);
 
                 req.getRequestDispatcher("/jsp/admin/brand/brand_form.jsp")
-                   .forward(req, resp);
+                        .forward(req, resp);
                 break;
             }
 
@@ -60,7 +86,7 @@ public class AdminBrandServlet extends HttpServlet {
             default: {
                 req.setAttribute("brands", brandDAO.findAll());
                 req.getRequestDispatcher("/jsp/admin/brand/brand_list.jsp")
-                   .forward(req, resp);
+                        .forward(req, resp);
                 break;
             }
         }
@@ -74,7 +100,9 @@ public class AdminBrandServlet extends HttpServlet {
         resp.setCharacterEncoding("UTF-8");
 
         String action = req.getParameter("action");
-        if (action == null) action = "create";
+        if (action == null || action.isBlank()) {
+            action = "create";
+        }
 
         try {
             switch (action) {
@@ -83,24 +111,44 @@ public class AdminBrandServlet extends HttpServlet {
                     String name = safe(req.getParameter("name"));
                     validateName(name);
 
-                    brandDAO.create(name);
+                    String imageUrl = null;
+                    Part logoPart = getLogoPart(req);
+
+                    if (hasUploadedFile(logoPart)) {
+                        imageUrl = saveBrandLogo(logoPart);
+                    }
+
+                    brandDAO.create(name, imageUrl);
                     break;
                 }
 
                 case "update": {
                     int id = safeInt(req.getParameter("id"), -1);
-                    if (id <= 0) break;
+                    if (id <= 0) {
+                        throw new IllegalArgumentException("ID thương hiệu không hợp lệ.");
+                    }
 
                     String name = safe(req.getParameter("name"));
                     validateName(name);
 
-                    brandDAO.update(id, name);
+                    String imageUrl = safe(req.getParameter("existingImage"));
+                    Part logoPart = getLogoPart(req);
+
+                    if (hasUploadedFile(logoPart)) {
+                        imageUrl = saveBrandLogo(logoPart);
+                    }
+
+                    brandDAO.update(id, name, emptyToNull(imageUrl));
                     break;
                 }
 
                 case "delete": {
                     int id = safeInt(req.getParameter("id"), -1);
-                    if (id > 0) brandDAO.delete(id);
+
+                    if (id > 0) {
+                        brandDAO.delete(id);
+                    }
+
                     break;
                 }
 
@@ -111,35 +159,122 @@ public class AdminBrandServlet extends HttpServlet {
             resp.sendRedirect(req.getContextPath() + "/admin/brands");
 
         } catch (IllegalArgumentException ex) {
-            // validate fail -> quay lại form
-            req.setAttribute("error", ex.getMessage());
-
-            if ("update".equals(action)) {
-                req.setAttribute("mode", "edit");
-
-                Brand b = new Brand();
-                b.setId(safeInt(req.getParameter("id"), 0));
-                b.setName(safe(req.getParameter("name")));
-                req.setAttribute("brand", b);
-
-            } else {
-                req.setAttribute("mode", "create");
-
-                Brand b = new Brand();
-                b.setName(safe(req.getParameter("name")));
-                req.setAttribute("brand", b);
-            }
-
-            req.getRequestDispatcher("/jsp/admin/brand/brand_form.jsp")
-               .forward(req, resp);
+            forwardBackToForm(req, resp, action, ex.getMessage());
         }
+    }
+
+    /* ===================== FORM ERROR ===================== */
+
+    private void forwardBackToForm(HttpServletRequest req,
+                                   HttpServletResponse resp,
+                                   String action,
+                                   String errorMessage)
+            throws ServletException, IOException {
+
+        req.setAttribute("error", errorMessage);
+
+        Brand brand = new Brand();
+        brand.setId(safeInt(req.getParameter("id"), 0));
+        brand.setName(safe(req.getParameter("name")));
+        brand.setImage(safe(req.getParameter("existingImage")));
+
+        if ("update".equals(action)) {
+            req.setAttribute("mode", "edit");
+        } else {
+            req.setAttribute("mode", "create");
+        }
+
+        req.setAttribute("brand", brand);
+
+        req.getRequestDispatcher("/jsp/admin/brand/brand_form.jsp")
+                .forward(req, resp);
+    }
+
+    /* ===================== UPLOAD LOGO ===================== */
+
+    private Part getLogoPart(HttpServletRequest req) throws IOException, ServletException {
+        Part part = req.getPart("imageFile");
+
+        if (part == null) {
+            part = req.getPart("image");
+        }
+
+        return part;
+    }
+
+    private boolean hasUploadedFile(Part part) {
+        if (part == null || part.getSize() <= 0) {
+            return false;
+        }
+
+        String submittedFileName = part.getSubmittedFileName();
+        return submittedFileName != null && !submittedFileName.isBlank();
+    }
+
+    private String saveBrandLogo(Part part) throws IOException {
+        String submittedFileName = Paths.get(part.getSubmittedFileName())
+                .getFileName()
+                .toString();
+
+        String extension = getExtension(submittedFileName);
+
+        if (!ALLOWED_IMAGE_EXTENSIONS.contains(extension)) {
+            throw new IllegalArgumentException(
+                    "Logo thương hiệu chỉ hỗ trợ JPG, JPEG, PNG, WEBP hoặc GIF."
+            );
+        }
+
+        String contentType = part.getContentType();
+        if (contentType != null && !contentType.toLowerCase(Locale.ROOT).startsWith("image/")) {
+            throw new IllegalArgumentException("File tải lên không phải là ảnh hợp lệ.");
+        }
+
+        Files.createDirectories(UploadConfig.BRAND_DIR);
+
+        String fileName = "brand_"
+                + System.currentTimeMillis()
+                + "_"
+                + UUID.randomUUID().toString().replace("-", "").substring(0, 12)
+                + "."
+                + extension;
+
+        Path target = UploadConfig.BRAND_DIR.resolve(fileName);
+
+        try (InputStream inputStream = part.getInputStream()) {
+            Files.copy(inputStream, target, StandardCopyOption.REPLACE_EXISTING);
+        }
+
+        return UploadConfig.BRAND_URL_PREFIX + fileName;
+    }
+
+    private String getExtension(String fileName) {
+        if (fileName == null || fileName.isBlank() || !fileName.contains(".")) {
+            throw new IllegalArgumentException(
+                    "Tên file logo không hợp lệ. Vui lòng chọn ảnh JPG, JPEG, PNG, WEBP hoặc GIF."
+            );
+        }
+
+        String extension = fileName.substring(fileName.lastIndexOf('.') + 1)
+                .toLowerCase(Locale.ROOT)
+                .trim();
+
+        if (extension.isBlank()) {
+            throw new IllegalArgumentException(
+                    "File logo không có phần mở rộng hợp lệ."
+            );
+        }
+
+        return extension;
     }
 
     /* ===================== HELPERS ===================== */
 
     private int safeInt(String s, int def) {
         try {
-            if (s == null) return def;
+            if (s == null) {
+                return def;
+            }
+
             return Integer.parseInt(s.trim());
         } catch (Exception e) {
             return def;
@@ -150,9 +285,18 @@ public class AdminBrandServlet extends HttpServlet {
         return s == null ? "" : s.trim();
     }
 
+    private String emptyToNull(String s) {
+        String value = safe(s);
+        return value.isEmpty() ? null : value;
+    }
+
     private void validateName(String name) {
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Tên thương hiệu không được để trống.");
+        }
+
+        if (name.length() > 150) {
+            throw new IllegalArgumentException("Tên thương hiệu không được vượt quá 150 ký tự.");
         }
     }
 }
