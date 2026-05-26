@@ -19,6 +19,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import com.webshop.app.dao.CouponDAO;
+import com.webshop.app.dao.UserCouponDAO;
 import com.webshop.app.model.CartItem;
 import com.webshop.app.model.Coupon;
 import com.webshop.app.model.User;
@@ -94,6 +95,7 @@ public class CheckoutServlet extends HttpServlet {
 
     private final CheckoutService checkoutService = new CheckoutService();
     private final CouponDAO couponDAO = new CouponDAO();
+    private final UserCouponDAO userCouponDAO = new UserCouponDAO();
 
     private BigDecimal calcSubTotal(Map<String, CartItem> cart) {
         BigDecimal subTotal = BigDecimal.ZERO;
@@ -740,15 +742,31 @@ public class CheckoutServlet extends HttpServlet {
     }
 
     /**
-     * Lấy hạng hiện tại từ session User.
-     * Nếu model User chưa có getManualRankCode/getRankCode thì fallback MEMBER.
+     * Lấy hạng hiện tại hiệu lực của user.
+     * Account page đang tính rank theo UserRankService/DB, còn session User có thể chưa có rank tự tính.
+     * Vì vậy checkout phải ưu tiên CheckoutService.resolveEffectiveRankCode(userId) để không chặn nhầm voucher SILVER/GOLD.
      */
     private String getUserRankCode(User user) {
         if (user == null) {
             return DEFAULT_RANK_CODE;
         }
 
-        String[] getterNames = {"getManualRankCode", "getRankCode"};
+        try {
+            String effectiveRankCode = checkoutService.resolveEffectiveRankCode(user.getId());
+
+            if (!isBlank(effectiveRankCode)) {
+                return normalizeRankCode(effectiveRankCode);
+            }
+        } catch (Exception ignored) {
+            // Fallback sang getter trên User nếu DB/rank service lỗi.
+        }
+
+        String[] getterNames = {
+                "getManualRankCode",
+                "getCurrentRankCode",
+                "getDisplayRankCode",
+                "getRankCode"
+        };
 
         for (String getterName : getterNames) {
             try {
@@ -764,6 +782,7 @@ public class CheckoutServlet extends HttpServlet {
 
         return DEFAULT_RANK_CODE;
     }
+
 
     private boolean isRankEligible(Coupon coupon, String userRankCode) {
         if (coupon == null) {
@@ -801,6 +820,10 @@ public class CheckoutServlet extends HttpServlet {
 
         if (coupon.getMaxUses() > 0 && coupon.getUsedCount() >= coupon.getMaxUses()) {
             return "Mã khuyến mãi đã hết lượt sử dụng.";
+        }
+
+        if (user != null && user.getId() > 0 && userCouponDAO.hasUserUsedCoupon(user.getId(), coupon.getId())) {
+            return "Bạn đã sử dụng mã khuyến mãi này rồi.";
         }
 
         String userRankCode = getUserRankCode(user);

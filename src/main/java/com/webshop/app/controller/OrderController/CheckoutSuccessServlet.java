@@ -393,12 +393,12 @@ public class CheckoutSuccessServlet extends HttpServlet {
             case "checkout_failed" -> "Không thể hoàn tất thanh toán. Vui lòng thử lại.";
             case "order_not_found" -> "Không tìm thấy đơn hàng. Vui lòng kiểm tra lại.";
             case "order_create_failed" -> "Không thể tạo đơn hàng. Vui lòng thử lại.";
-            case "payment_cancelled" -> "Bạn đã hủy thanh toán.";
-            case "payment_failed" -> "Thanh toán thất bại. Vui lòng thử lại.";
-            case "invalid_signature" -> "Chữ ký thanh toán không hợp lệ.";
-            case "invalid_amount" -> "Số tiền thanh toán không hợp lệ.";
-            case "amount_mismatch" -> "Số tiền thanh toán không khớp với đơn hàng.";
-            case "finalize_failed" -> "Không thể hoàn tất xác nhận thanh toán.";
+            case "payment_cancelled" -> "Bạn đã hủy thanh toán. Đơn hàng đã được lưu ở trạng thái chờ thanh toán, bạn có thể thanh toán lại trong lịch sử đơn hàng.";
+            case "payment_failed" -> "Thanh toán thất bại. Đơn hàng đã được lưu ở trạng thái chờ thanh toán, bạn có thể bấm Thanh toán lại.";
+            case "invalid_signature" -> "Chữ ký thanh toán không hợp lệ. Đơn hàng vẫn được giữ để bạn thanh toán lại.";
+            case "invalid_amount" -> "Số tiền thanh toán không hợp lệ. Đơn hàng vẫn được giữ để bạn thanh toán lại.";
+            case "amount_mismatch" -> "Số tiền thanh toán không khớp với đơn hàng. Đơn hàng vẫn được giữ để bạn thanh toán lại.";
+            case "finalize_failed" -> "Không thể hoàn tất xác nhận thanh toán. Đơn hàng đã được lưu để bạn thanh toán lại.";
             default -> messageKey;
         };
     }
