@@ -39,11 +39,23 @@
 			</div>
 
 			<div class="success-actions success-actions-center">
+				<c:if test="${order != null && order.retryPaymentAvailable}">
+					<a href="${pageContext.request.contextPath}/vnpay/payment?orderId=${order.id}" class="success-btn">
+						Thanh toán lại
+					</a>
+				</c:if>
+
+				<c:if test="${order != null}">
+					<a href="${pageContext.request.contextPath}/orders/detail?id=${order.id}" class="success-btn-secondary">
+						Xem chi tiết đơn hàng
+					</a>
+				</c:if>
+
 				<a href="${pageContext.request.contextPath}/cart" class="success-btn-secondary">
 					Quay lại giỏ hàng
 				</a>
 
-				<a href="${pageContext.request.contextPath}/" class="success-btn">
+				<a href="${pageContext.request.contextPath}/" class="success-btn-secondary">
 					Về trang chủ
 				</a>
 			</div>
