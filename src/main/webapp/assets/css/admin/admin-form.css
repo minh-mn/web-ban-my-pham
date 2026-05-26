@@ -1,20 +1,76 @@
-/* admin-form.css: dùng chung cho các trang form CRUD */
+/* =========================================================
+   admin-form.css
+   Dùng chung cho các trang form CRUD trong Admin:
+   - Banner form
+   - Product form
+   - Coupon form
+   - User edit form
+   - Brand / Category form
+========================================================= */
+
+/* =========================
+   Form layout chung
+========================= */
 
 .admin-form {
   display: grid;
   gap: 14px;
 }
 
+.admin-form--narrow {
+  max-width: 520px;
+}
+
 .admin-grid-2 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  gap: 16px;
+  align-items: start;
 }
 
-@media (max-width: 900px) {
-  .admin-grid-2 {
-    grid-template-columns: 1fr;
-  }
+.admin-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.admin-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #374151;
+}
+
+.admin-input,
+.admin-select,
+.admin-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  outline: none;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+  background: #fff;
+  color: var(--admin-text);
+  font-size: 13px;
+}
+
+.admin-input:focus,
+.admin-select:focus,
+.admin-textarea:focus {
+  border-color: var(--admin-brand, #ff5fa2);
+  box-shadow: var(--admin-focus, 0 0 0 3px rgba(255, 95, 162, 0.25));
+}
+
+.admin-input[type="file"] {
+  cursor: pointer;
+  padding: 9px 12px;
+}
+
+.admin-textarea {
+  min-height: 160px;
+  resize: vertical;
 }
 
 .admin-help {
@@ -23,34 +79,79 @@
   line-height: 1.45;
 }
 
-/* Actions bar chuẩn */
-.admin-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-top: 6px;
+.admin-break {
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
+
+/* =========================
+   Card spacing cho form
+========================= */
+
+.admin-card__body {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.admin-topbar {
+  margin-bottom: 18px;
+}
+
+/* =========================
+   Empty state dùng trong form
+========================= */
+
+.admin-empty {
+  padding: 14px;
+  border: 1px dashed var(--admin-border);
+  border-radius: var(--admin-radius);
+  background: rgba(15, 23, 42, 0.02);
+  color: var(--admin-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* =========================
+   Preview ảnh dùng chung
+========================= */
 
 .admin-preview {
   display: grid;
-  gap: 10px;
+  gap: 12px;
+  align-content: start;
 }
 
 .admin-preview__img {
   width: 100%;
   max-width: 560px;
-  border-radius: 14px;
+  min-height: 180px;
+  max-height: 320px;
+  object-fit: cover;
+  border-radius: 16px;
   border: 1px solid var(--admin-border);
+  background: rgba(15, 23, 42, 0.02);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+}
+
+.admin-preview__img[src=""] {
+  display: none;
+}
+
+.admin-preview__box {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-lg);
   background: rgba(15, 23, 42, 0.02);
 }
 
-/* Form narrow cho các form đơn giản */
-.admin-form--narrow {
-  max-width: 520px;
-}
+/* =========================
+   Alert
+========================= */
 
-/* Alert */
 .admin-alert {
   padding: 12px 14px;
   border-radius: var(--admin-radius);
@@ -58,6 +159,7 @@
   background: rgba(15, 23, 42, 0.03);
   margin-bottom: 12px;
   font-size: 13px;
+  line-height: 1.45;
 }
 
 .admin-alert--danger {
@@ -73,9 +175,29 @@
   color: #065f46;
 }
 
+.admin-alert--warning {
+  border-color: rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.10);
+  color: #92400e;
+}
+
+/* =========================
+   Actions bar chuẩn cho form
+========================= */
+
+.admin-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
 /* =========================================================
    USER EDIT FORM
    Dùng cho: /jsp/admin/user/user_form.jsp
+   Giữ lại để không ảnh hưởng trang chỉnh sửa user hiện tại
 ========================================================= */
 
 .user-edit-page {
@@ -274,7 +396,10 @@
   word-break: break-word;
 }
 
-/* Responsive */
+/* =========================
+   Responsive
+========================= */
+
 @media (max-width: 1180px) {
   .user-edit-layout {
     grid-template-columns: 1fr;
@@ -282,6 +407,17 @@
 
   .user-summary-card {
     position: static;
+  }
+}
+
+@media (max-width: 900px) {
+  .admin-grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-preview__img {
+    max-width: 100%;
+    max-height: 280px;
   }
 }
 
@@ -294,7 +430,8 @@
     grid-template-columns: 1fr;
   }
 
-  .user-form-actions {
+  .user-form-actions,
+  .admin-actions {
     justify-content: flex-start;
     flex-wrap: wrap;
   }
@@ -309,62 +446,13 @@
   }
 }
 
-/* ===== FORM SPACING IMPROVEMENT ===== */
+@media (max-width: 560px) {
+  .admin-actions .admin-btn,
+  .admin-actions button {
+    width: 100%;
+  }
 
-.admin-field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-bottom: 14px; /*tạo khoảng cách giữa fields */
+  .admin-preview__img {
+    min-height: 140px;
+  }
 }
-
-.admin-label {
-  font-size: 13px;
-  font-weight: 600;
-  color: #374151;
-}
-
-.admin-input,
-.admin-select,
-.admin-textarea {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  outline: none;
-  transition: 0.2s;
-  background: #fff;
-}
-
-.admin-input:focus,
-.admin-select:focus,
-.admin-textarea:focus {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
-}
-
-/* Card spacing nội dung */
-.admin-card__body {
-  padding: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-/* TOP spacing giữa sections */
-.admin-topbar {
-  margin-bottom: 18px;
-}
-
-/* Button area */
-.admin-actions {
-  margin-top: 16px;
-}
-
-/* improve textarea */
-.admin-textarea {
-  min-height: 160px;
-  resize: vertical;
-}
-
-
