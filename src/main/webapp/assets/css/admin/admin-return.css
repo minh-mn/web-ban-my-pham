@@ -1,0 +1,159 @@
+.return-alert {
+    padding: 13px 15px;
+    border-radius: 14px;
+    margin-bottom: 16px;
+    font-size: 14px;
+    font-weight: 850;
+}
+
+.return-alert.success {
+    background: #ecfdf5;
+    color: #047857;
+    border: 1px solid #a7f3d0;
+}
+
+.return-alert.error {
+    background: #fff1f2;
+    color: #be123c;
+    border: 1px solid #fecdd3;
+}
+
+.return-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.return-table {
+    min-width: 1200px;
+}
+
+.return-order-link {
+    color: #d63384;
+    font-weight: 900;
+    text-decoration: none;
+}
+
+.return-muted {
+    margin-top: 4px;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 750;
+}
+
+.return-reason {
+    max-width: 320px;
+    color: #1f2a44;
+    font-size: 13.5px;
+    line-height: 1.45;
+    font-weight: 750;
+}
+
+.return-admin-note {
+    margin-top: 8px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: #fff8fb;
+    color: #7b3a56;
+    font-size: 12.5px;
+    font-weight: 800;
+}
+
+.return-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 30px;
+    padding: 0 11px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.return-pill.warning {
+    background: #fff7ed;
+    color: #c2410c;
+    border: 1px solid #fed7aa;
+}
+
+.return-pill.info {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+}
+
+.return-pill.ok {
+    background: #ecfdf5;
+    color: #047857;
+    border: 1px solid #a7f3d0;
+}
+
+.return-pill.danger {
+    background: #fff1f2;
+    color: #be123c;
+    border: 1px solid #fecdd3;
+}
+
+.return-action-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.return-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.return-action-form select,
+.return-action-form input,
+.return-action-form textarea {
+    width: 100%;
+    border: 1px solid #dbe3ef;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #1f2a44;
+    padding: 8px 9px;
+    font-size: 12.5px;
+    font-weight: 750;
+    box-sizing: border-box;
+}
+
+.return-action-form textarea {
+    min-height: 58px;
+    resize: vertical;
+}
+
+.return-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.return-btn {
+    min-height: 30px;
+    border-radius: 999px;
+    border: none;
+    padding: 0 10px;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.return-btn.info {
+    background: #2563eb;
+}
+
+.return-btn.danger {
+    background: #e11d48;
+}
+
+.return-btn.warning {
+    background: #f59e0b;
+}
+
+.return-btn.ok {
+    background: #059669;
+}
