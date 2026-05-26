@@ -1,60 +1,120 @@
 /* =========================
    admin-list.css (FINAL - CLEAN)
-   - Table gọn
-   - Path không bị cắt .p/ng
-   - Status + Actions căn giữa dọc
-   - Actions luôn nằm 1 hàng ngang
+   Dùng chung cho các trang danh sách Admin:
+   - Banner
+   - Product
+   - Coupon
+   - Order
+   - User
+   - Brand / Category
 ========================= */
 
-.admin-empty{
+/* =========================
+   Empty state
+========================= */
+
+.admin-empty {
   padding: 14px;
   border: 1px dashed var(--admin-border);
   border-radius: var(--admin-radius);
   background: rgba(15, 23, 42, 0.02);
   color: var(--admin-muted);
   font-size: 13px;
+  line-height: 1.5;
 }
 
-.admin-inline{ display: inline; }
+.admin-inline {
+  display: inline;
+}
 
-/* Table compact */
+/* =========================
+   Table compact
+========================= */
+
+.admin-table {
+  width: 100%;
+}
+
 .admin-table th,
-.admin-table td{
+.admin-table td {
   padding: 10px 12px;
   vertical-align: middle;
 }
 
-/* Media cell */
-.admin-media{
+.admin-table th {
+  white-space: nowrap;
+}
+
+.admin-table td {
+  color: var(--admin-text);
+}
+
+/* =========================
+   Media cell: ảnh + thông tin
+========================= */
+
+.admin-media {
   display: flex;
-  gap: 12px;
   align-items: center;
+  gap: 12px;
   min-width: 260px;
 }
 
-.admin-thumb{
+.admin-thumb {
   width: 96px;
   height: 54px;
   object-fit: cover;
+  flex: 0 0 auto;
   border-radius: 12px;
   border: 1px solid var(--admin-border);
   background: rgba(15, 23, 42, 0.02);
 }
 
-.admin-media__meta{
+/* Dùng cho banner nếu muốn ảnh nhìn rộng hơn */
+.admin-thumb--banner {
+  width: 140px;
+  height: 72px;
+  border-radius: 14px;
+}
+
+.admin-media__meta {
   display: grid;
   gap: 6px;
   min-width: 0;
 }
 
-/* Chip */
-.admin-chip{
-  padding: 3px 9px;
-  font-size: 11px;
+.admin-media__title {
+  font-size: 13px;
+  font-weight: 850;
+  color: var(--admin-text);
+  line-height: 1.35;
 }
 
-/* ✅ PATH: không dùng break-all để tránh .p / ng */
-.admin-path{
+/* =========================
+   Chip
+========================= */
+
+.admin-chip {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--admin-border);
+  background: rgba(15, 23, 42, 0.03);
+  color: rgba(15, 23, 42, 0.72);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+/* =========================
+   Text / path / long content
+========================= */
+
+/* Path ảnh: không dùng break-all để tránh lỗi .p / ng */
+.admin-path {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 12px;
   color: var(--admin-muted);
@@ -65,138 +125,189 @@
   white-space: normal;
 }
 
-/* Link/chuỗi dài */
-.admin-break{
+/* Link hoặc chuỗi dài */
+.admin-break {
   overflow-wrap: anywhere;
   word-break: break-word;
 }
 
-/* Pills */
-.admin-pill{
+.admin-muted {
+  color: var(--admin-muted);
+}
+
+/* =========================
+   Pills / status
+========================= */
+
+.admin-pill {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  width: fit-content;
+  min-width: 76px;
   height: 24px;
   padding: 0 9px;
+
   border-radius: 999px;
   border: 1px solid var(--admin-border);
   background: rgba(15, 23, 42, 0.03);
+
+  color: rgba(15, 23, 42, 0.72);
   font-size: 12px;
   font-weight: 800;
-  color: rgba(15, 23, 42, 0.72);
+  line-height: 1;
+  white-space: nowrap;
 }
 
-.admin-pill--ok{
+.admin-pill--ok {
   border-color: rgba(16, 185, 129, 0.35);
   background: rgba(16, 185, 129, 0.10);
   color: #065f46;
 }
 
-.admin-pill--danger{
+.admin-pill--danger {
   border-color: rgba(220, 38, 38, 0.35);
   background: rgba(220, 38, 38, 0.10);
   color: #991b1b;
 }
 
-/* Danger button */
-.admin-btn--danger{
+.admin-pill--warning {
+  border-color: rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.10);
+  color: #92400e;
+}
+
+/* =========================
+   Buttons
+========================= */
+
+.admin-btn--danger {
   border-color: rgba(220, 38, 38, 0.35);
   color: #b91c1c;
   background: #fff;
 }
 
-.admin-btn--danger:hover{
+.admin-btn--danger:hover {
   box-shadow: var(--admin-shadow-sm);
 }
 
 /* =========================
-   FIX chuẩn: Status & Actions không dính cột
+   Status & Actions cell
 ========================= */
 
-/* Trạng thái: chỉ căn giữa badge */
-.admin-status-cell{
+.admin-status-cell {
   text-align: center;
-}
-
-/* Thao tác: dùng inline-flex để giữ 1 hàng ngang */
-td.admin-actions{
-  /* giữ nguyên table-cell */
-  text-align: left;
-  white-space: nowrap;
-  min-height: 75px;
-}
-
-.admin-actions{
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
   white-space: nowrap;
 }
 
-/* form không phá layout */
-.admin-actions form{
-  margin: 0;
-}
-
-/* nút gọn trong actions */
-.admin-actions .admin-btn{
-  padding: 8px 10px;
-  font-size: 13px;
-  border-radius: 12px;
-}
-
-/* ===== Toolbar (search/filter) ===== */
-.admin-toolbar{
-  margin-bottom: 12px;
-}
-
-.admin-toolbar__form{
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-/* input trong toolbar gọn và không quá dài */
-.admin-toolbar__form .admin-input{
-  width: 260px;
-  max-width: 100%;
-}
-
-/* =========================
-   Product Actions (tương tự admin-actions)
-========================= */
-
-td.product-actions{
-  /* giữ nguyên table-cell */
+/* Trường hợp td dùng trực tiếp class admin-actions */
+td.admin-actions {
   text-align: left;
   white-space: nowrap;
   min-height: 75px;
   vertical-align: middle;
 }
 
-/* wrapper bên trong td */
-.product-actions-inner{
+/* Nhóm nút thao tác dùng chung */
+.admin-actions {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   white-space: nowrap;
 }
 
-/* nút trong product actions */
-.product-actions-inner .admin-btn{
+.admin-actions form {
+  margin: 0;
+}
+
+.admin-actions .admin-btn {
+  padding: 8px 10px;
+  font-size: 13px;
+  border-radius: 12px;
+}
+
+/* Dùng nếu muốn bọc action bằng div riêng */
+.admin-action-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.admin-action-group form {
+  margin: 0;
+}
+
+.admin-action-group .admin-btn {
+  padding: 8px 10px;
+  font-size: 13px;
+  border-radius: 12px;
+}
+
+/* =========================
+   Toolbar search/filter
+========================= */
+
+.admin-toolbar {
+  margin-bottom: 12px;
+}
+
+.admin-toolbar__form {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.admin-toolbar__form .admin-input {
+  width: 260px;
+  max-width: 100%;
+}
+
+.admin-toolbar__form .admin-select {
+  width: 180px;
+  max-width: 100%;
+}
+
+/* =========================
+   Product actions
+   Giữ lại để không ảnh hưởng trang Product hiện tại
+========================= */
+
+td.product-actions {
+  text-align: left;
+  white-space: nowrap;
+  min-height: 75px;
+  vertical-align: middle;
+}
+
+.product-actions-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.product-actions-inner .admin-btn {
   padding: 8px 12px;
   font-size: 13px;
   border-radius: 12px;
 }
+
+/* =========================
+   Badge dùng cho coupon / discount / type
+========================= */
 
 .badge {
   display: inline-block;
   padding: 4px 10px;
   border-radius: 999px;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   color: #fff;
   text-transform: uppercase;
+  line-height: 1.25;
+  white-space: nowrap;
 }
 
 /* DISCOUNT */
@@ -219,3 +330,50 @@ td.product-actions{
   background: #6b7280;
 }
 
+/* =========================
+   Responsive
+========================= */
+
+@media (max-width: 900px) {
+  .admin-table {
+    min-width: 780px;
+  }
+
+  .admin-card__body {
+    overflow-x: auto;
+  }
+
+  .admin-media {
+    min-width: 220px;
+  }
+
+  .admin-thumb--banner {
+    width: 120px;
+    height: 64px;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-toolbar__form {
+    align-items: stretch;
+  }
+
+  .admin-toolbar__form .admin-input,
+  .admin-toolbar__form .admin-select,
+  .admin-toolbar__form .admin-btn {
+    width: 100%;
+  }
+
+  .admin-actions,
+  .admin-action-group,
+  .product-actions-inner {
+    gap: 6px;
+  }
+
+  .admin-actions .admin-btn,
+  .admin-action-group .admin-btn,
+  .product-actions-inner .admin-btn {
+    padding: 8px 9px;
+    font-size: 12px;
+  }
+}
