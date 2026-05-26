@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.webshop.app.dao.OrderDAO;
 import com.webshop.app.dao.OrderItemDAO;
+import com.webshop.app.dao.ReturnRequestDAO;
 import com.webshop.app.model.Order;
 import com.webshop.app.model.OrderItem;
 import com.webshop.app.model.User;
@@ -22,6 +23,7 @@ public class OrderDetailServlet extends HttpServlet {
 
 	private final OrderDAO orderDAO = new OrderDAO();
 	private final OrderItemDAO itemDAO = new OrderItemDAO();
+	private final ReturnRequestDAO returnRequestDAO = new ReturnRequestDAO();
 
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -64,6 +66,9 @@ public class OrderDetailServlet extends HttpServlet {
 		order.setStatusLabel(OrderStatusUtils.toLabel(order.getStatus()));
 		req.setAttribute("order", order);
 		req.setAttribute("orderItems", items);
+		req.setAttribute("returnRequest", returnRequestDAO.findByOrderId(orderId));
+		req.setAttribute("success", req.getParameter("success"));
+		req.setAttribute("error", req.getParameter("error"));
 
 		req.setAttribute("pageTitle", "MyCosmetic | Chi tiết đơn hàng #" + order.getId());
 		req.setAttribute("pageContent", "/jsp/order/order_detail.jsp");
