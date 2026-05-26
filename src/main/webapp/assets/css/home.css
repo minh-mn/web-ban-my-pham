@@ -4,7 +4,7 @@
 body {
     margin: 0;
     min-height: 100vh;
-    background: var(--pink-bg);
+    background: #ffffff;
 }
 
 /* =========================================================
@@ -13,8 +13,7 @@ body {
 .hero-upgrade {
     padding: 120px 20px;
     text-align: center;
-    /* Giữ lại vầng sáng mờ màu hồng ở trên cùng, nền dưới trong suốt để lộ nền trắng */
-    background: radial-gradient(circle at top, rgba(255,95,162,.15), transparent 60%);
+    background: #ffffff;
 }
 
 .hero-badge {
@@ -92,6 +91,7 @@ body {
     justify-content: space-between;
     min-height: 400px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); /* Thêm đổ bóng nhẹ để thẻ trắng nổi bật trên nền trắng */
+    border: 1px solid rgba(0, 0, 0, 0.12);
 }
 
 .product-card:hover {
@@ -496,79 +496,257 @@ body {
 }
 
 /* ================= VOUCHER CARD REDESIGN ================= */
-/* Container */
+/* =========================================================
+   VOUCHER UI PREMIUM REDESIGN
+========================================================= */
 .voucher-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 18px;
 }
 
-/* Thẻ Voucher dạng Ticket */
+/* CARD */
 .voucher-card {
-    display: flex;
-    background: #fff;
-    border: 1px solid #ff5fa2;
-    border-radius: 4px;
-    overflow: hidden;
     position: relative;
+    display: flex;
+    align-items: stretch;
+    overflow: hidden;
+
+    min-height: 170px; /* giảm chiều cao */
+
+    border-radius: 20px;
+    background:
+            linear-gradient(135deg,
+            rgba(255,255,255,.98),
+            rgba(255,245,248,.96));
+
+    border: 1px solid rgba(255,95,162,.10);
+
+    box-shadow:
+            0 8px 22px rgba(255,95,162,.08),
+            0 2px 8px rgba(0,0,0,.03);
+
+    transition: .28s ease;
 }
 
-/* Phần trái: Icon */
+.voucher-card:hover {
+    transform: translateY(-4px);
+
+    box-shadow:
+            0 14px 28px rgba(255,95,162,.16),
+            0 4px 14px rgba(0,0,0,.05);
+}
+
+/* LEFT */
 .voucher-left {
-    width: 80px;
-    background: #fff0f0;
+    width: 82px; /* nhỏ lại */
+
+    background:
+            linear-gradient(180deg,#ff5fa2,#ff85bc);
+
     display: flex;
     align-items: center;
     justify-content: center;
+
+    color: #fff;
     font-size: 30px;
-    border-right: 1px dashed #ff5fa2;
+
+    position: relative;
 }
 
-/* Phần phải: Thông tin */
+/* Ticket hole */
+.voucher-left::before,
+.voucher-left::after {
+    content: "";
+    position: absolute;
+    right: -10px;
+
+    width: 20px;
+    height: 20px;
+
+    border-radius: 50%;
+    background: #fff;
+}
+
+.voucher-left::before {
+    top: -10px;
+}
+
+.voucher-left::after {
+    bottom: -10px;
+}
+
+/* RIGHT */
 .voucher-right {
     flex: 1;
-    padding: 15px;
+    padding: 16px 18px; /* gọn hơn */
+
     display: flex;
     flex-direction: column;
     justify-content: space-between;
 }
 
-.v-code { font-weight: 800; font-size: 16px; color: #333; }
-.v-discount { font-weight: 900; color: #d0021b; font-size: 18px; display: block; margin-bottom: 5px; }
+/* HOT BADGE */
+.voucher-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
 
-.v-info-text { font-size: 12px; color: #555; margin-bottom: 5px; }
-.v-info-text b { color: #222; }
+    background:
+            linear-gradient(135deg,#ff8a00,#ff4800);
 
-/* Link xem chi tiết & Nút Lưu */
-.btn-wrapper { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
-.btn-detail { font-size: 12px; color: #ff5fa2; text-decoration: underline; background: none; border: none; cursor: pointer; }
-
-/* Nút Lưu mã - Thiết kế nổi bật */
-.btn-save {
-    background: #d0021b; /* Màu hồng chủ đạo */
     color: #fff;
+
+    padding: 4px 10px;
+    border-radius: 999px;
+
+    font-size: 10px;
+    font-weight: 800;
+}
+
+/* CODE */
+.v-code {
+    display: inline-flex;
+
+    padding: 5px 10px;
+
+    border-radius: 999px;
+
+    background: #fff0f6;
+
+    color: #ff3f8e;
+
+    font-size: 11px;
+    font-weight: 800;
+
+    margin-bottom: 10px;
+}
+
+/* DISCOUNT */
+.v-discount {
+    display: block;
+
+    font-size: 22px; /* nhỏ lại */
+    line-height: 1.2;
+
+    font-weight: 900;
+    color: #d0021b;
+
+    margin-bottom: 12px;
+}
+
+/* INFO */
+.v-info-text {
+    display: grid;
+    gap: 6px;
+}
+
+.v-info-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    font-size: 12px;
+    color: #555;
+}
+
+.v-info-row i {
+    width: 14px;
+    color: #ff5fa2;
+    font-size: 12px;
+}
+
+.v-info-row b {
+    color: #222;
+}
+
+/* BUTTON AREA */
+.btn-wrapper {
+    margin-top: 14px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+/* DETAIL */
+.btn-detail {
     border: none;
-    padding: 8px 16px;
-    border-radius: 6px; /* Bo tròn vừa phải */
+    background: transparent;
+
+    color: #ff5fa2;
+
+    font-size: 12px;
     font-weight: 700;
-    font-size: 13px;
+
     cursor: pointer;
-    transition: all 0.3s ease; /* Hiệu ứng chuyển động mượt mà */
-    box-shadow: 0 4px 6px rgba(255, 95, 162, 0.3); /* Tạo chiều sâu cho nút */
-    text-transform: uppercase; /* Chữ viết hoa để trông mạnh mẽ hơn */
+    transition: .2s;
 }
 
-/* Hiệu ứng khi di chuột vào (Hover) */
+.btn-detail:hover {
+    color: #ff2f87;
+}
+
+/* SAVE */
+.btn-save {
+    border: none;
+
+    padding: 10px 16px;
+
+    border-radius: 999px;
+
+    background:
+            linear-gradient(135deg,#ff5fa2,#ff85bc);
+
+    color: #fff;
+
+    font-size: 12px;
+    font-weight: 800;
+
+    cursor: pointer;
+
+    transition: .25s;
+
+    box-shadow:
+            0 8px 18px rgba(255,95,162,.25);
+}
+
 .btn-save:hover {
-    background: #e63e85; /* Màu hồng đậm hơn khi di chuột */
-    box-shadow: 0 6px 12px rgba(255, 95, 162, 0.4); /* Bóng đổ lớn hơn tạo cảm giác nút nổi lên */
-    transform: translateY(-2px); /* Hiệu ứng nút nhích lên trên một chút */
+    transform: translateY(-2px);
+
+    box-shadow:
+            0 12px 24px rgba(255,95,162,.32);
 }
 
-/* Hiệu ứng khi nhấn xuống (Active) */
-.btn-save:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 4px rgba(255, 95, 162, 0.3);
+/* MOBILE */
+@media (max-width: 768px) {
+
+    .voucher-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .voucher-card {
+        min-height: auto;
+    }
+
+    .voucher-left {
+        width: 72px;
+        font-size: 26px;
+    }
+
+    .v-discount {
+        font-size: 20px;
+    }
+}
+
+.voucher-card {
+    border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+/* Hover nổi bật hơn */
+.voucher-card:hover {
+    border-color: rgba(0, 0, 0, 0.2);
 }
 
 /* ================= CUSTOM ALERT POPUP ================= */
