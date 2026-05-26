@@ -104,6 +104,29 @@
         transform: translateY(-1px);
     }
 
+    .order-retry-payment-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 42px;
+        padding: 0 18px;
+        border-radius: 12px;
+        border: none;
+        color: #ffffff;
+        text-decoration: none;
+        background: linear-gradient(180deg, #f45ea7 0%, #d63384 100%);
+        font-weight: 900;
+        box-shadow: 0 12px 24px rgba(214, 51, 132, 0.22);
+        transition: 0.18s ease;
+        white-space: nowrap;
+    }
+
+    .order-retry-payment-btn:hover {
+        color: #ffffff;
+        transform: translateY(-1px);
+        box-shadow: 0 14px 28px rgba(214, 51, 132, 0.28);
+    }
+
     .order-card {
         background: #ffffff;
         border: 1px solid #f0e8ee;
@@ -560,9 +583,18 @@
                 </div>
             </div>
 
-            <a href="${pageContext.request.contextPath}/account" class="order-back-btn">
-                Quay lại tài khoản
-            </a>
+            <div style="display:flex; flex-direction:column; gap:10px; align-items:flex-end;">
+                <c:if test="${order.retryPaymentAvailable}">
+                    <a href="${pageContext.request.contextPath}/vnpay/payment?orderId=${order.id}"
+                       class="order-retry-payment-btn">
+                        Thanh toán lại
+                    </a>
+                </c:if>
+
+                <a href="${pageContext.request.contextPath}/account" class="order-back-btn">
+                    Quay lại tài khoản
+                </a>
+            </div>
         </div>
 
         <div class="order-card">

@@ -312,6 +312,39 @@
     text-align: center;
   }
 
+  .order-action-stack {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn-retry-payment {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 132px;
+    min-height: 40px;
+    padding: 0 16px;
+    border: none;
+    border-radius: 999px;
+    background: #1f2a44;
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 900;
+    box-shadow: 0 10px 20px rgba(31, 42, 68, 0.18);
+    transition: 0.18s ease;
+    white-space: nowrap;
+  }
+
+  .btn-retry-payment:hover {
+    transform: translateY(-1px);
+    color: #ffffff;
+    box-shadow: 0 12px 24px rgba(31, 42, 68, 0.25);
+  }
+
   .admin-status-form {
     min-height: 82px;
     display: flex;
@@ -599,10 +632,19 @@
                   </td>
 
                   <td class="detail-cell">
-                    <a href="${pageContext.request.contextPath}/orders/detail?id=${order.id}"
-                       class="btn-detail">
-                      Xem chi tiết
-                    </a>
+                    <div class="order-action-stack">
+                      <c:if test="${order.retryPaymentAvailable}">
+                        <a href="${pageContext.request.contextPath}/vnpay/payment?orderId=${order.id}"
+                           class="btn-retry-payment">
+                          Thanh toán lại
+                        </a>
+                      </c:if>
+
+                      <a href="${pageContext.request.contextPath}/orders/detail?id=${order.id}"
+                         class="btn-detail">
+                        Xem chi tiết
+                      </a>
+                    </div>
                   </td>
                 </tr>
               </c:forEach>
