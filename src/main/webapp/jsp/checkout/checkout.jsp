@@ -1804,6 +1804,298 @@
     }
   }
 
+
+  /* ================= E-INVOICE / CHECKOUT REFINEMENT ================= */
+
+  .checkout-container {
+    max-width: 1360px !important;
+    padding: 26px 20px 44px !important;
+  }
+
+  .checkout-grid {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1.38fr) minmax(340px, 0.92fr) !important;
+    gap: 22px !important;
+    align-items: start !important;
+  }
+
+  .checkout-left,
+  .checkout-right {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 18px !important;
+  }
+
+  .checkout-right {
+    position: sticky;
+    top: 18px;
+    align-self: start;
+  }
+
+  .checkout-card {
+    padding: 18px 20px !important;
+    border-radius: 22px !important;
+  }
+
+  .checkout-card-header {
+    margin-bottom: 14px !important;
+  }
+
+  .checkout-card-header h2 {
+    font-size: 21px !important;
+    line-height: 1.25 !important;
+  }
+
+  .payment-methods,
+  .delivery-options {
+    gap: 10px !important;
+  }
+
+  .payment-option,
+  .delivery-option {
+    padding: 13px 14px !important;
+    border-radius: 16px !important;
+  }
+
+  .e-invoice-card {
+    padding: 16px 18px !important;
+  }
+
+  .e-invoice-header-line {
+    gap: 12px;
+  }
+
+  .e-invoice-info {
+    gap: 12px;
+  }
+
+  .e-invoice-icon {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+    border-radius: 14px;
+    font-size: 20px;
+  }
+
+  .e-invoice-info h2 {
+    font-size: 18px;
+  }
+
+  .e-invoice-info p {
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  .e-invoice-open-btn {
+    min-width: 162px;
+    min-height: 42px;
+    padding: 0 16px;
+    font-size: 13.5px;
+  }
+
+  .e-invoice-selected-box {
+    margin-top: 12px;
+    padding: 12px 13px;
+    border-radius: 14px;
+    font-size: 13px;
+  }
+
+  .e-invoice-dialog {
+    display: flex;
+    flex-direction: column;
+    width: min(660px, calc(100vw - 32px));
+    max-height: min(84vh, 760px);
+    border-radius: 22px;
+  }
+
+  .e-invoice-modal-header {
+    min-height: 76px;
+    padding: 18px 78px 16px;
+  }
+
+  .e-invoice-modal-header h3 {
+    font-size: 20px;
+  }
+
+  .e-invoice-close {
+    left: 16px;
+    top: 14px;
+    width: 46px;
+    height: 46px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    background: #fff1f6;
+    color: var(--checkout-brand);
+    font-size: 0;
+    line-height: 1;
+    box-shadow: inset 0 0 0 1px #f7cade;
+  }
+
+  .e-invoice-close:hover {
+    background: #ffe5f0;
+    color: var(--checkout-brand-dark);
+    transform: none;
+  }
+
+  .e-invoice-close-icon {
+    display: block;
+    font-size: 32px;
+    line-height: 1;
+    font-weight: 500;
+    transform: translateY(-1px);
+  }
+
+  .e-invoice-modal-body {
+    max-height: calc(min(84vh, 760px) - 144px);
+    padding: 16px 18px 18px;
+    scrollbar-gutter: stable;
+  }
+
+  .e-invoice-type-row {
+    gap: 24px;
+    margin-bottom: 14px;
+  }
+
+  .e-invoice-radio {
+    font-size: 15px;
+  }
+
+  .e-invoice-radio input {
+    width: 20px;
+    height: 20px;
+  }
+
+  .e-invoice-form {
+    gap: 12px;
+  }
+
+  .e-invoice-grid-2 {
+    gap: 12px;
+  }
+
+  .e-invoice-input {
+    min-height: 52px;
+    padding: 0 15px;
+    border-radius: 13px;
+    font-size: 14.5px;
+  }
+
+  .e-invoice-use-address {
+    min-height: 48px;
+    border-radius: 13px;
+    font-size: 15px;
+  }
+
+  .e-invoice-save-row {
+    font-size: 14.5px;
+  }
+
+  .e-invoice-note {
+    grid-template-columns: 30px 1fr;
+    gap: 10px;
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  .e-invoice-note-icon {
+    font-size: 22px;
+  }
+
+  .e-invoice-note strong {
+    margin-bottom: 4px;
+    font-size: 15px;
+  }
+
+  .e-invoice-note li {
+    font-size: 13.5px;
+    margin: 3px 0;
+  }
+
+  .e-invoice-modal-footer {
+    padding: 14px 18px 18px;
+  }
+
+  .e-invoice-submit {
+    min-height: 52px;
+    border-radius: 13px;
+    font-size: 16px;
+  }
+
+  @media (max-width: 1100px) {
+    .checkout-grid {
+      grid-template-columns: 1fr !important;
+    }
+
+    .checkout-right {
+      position: static;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .checkout-container {
+      padding: 18px 12px 28px !important;
+    }
+
+    .checkout-card {
+      padding: 15px 14px !important;
+      border-radius: 18px !important;
+    }
+
+    .e-invoice-dialog {
+      width: 100%;
+      max-height: 88vh;
+      border-radius: 18px;
+    }
+
+    .e-invoice-modal-header {
+      min-height: 68px;
+      padding: 16px 58px 14px;
+    }
+
+    .e-invoice-modal-header h3 {
+      font-size: 18px;
+    }
+
+    .e-invoice-close {
+      left: 12px;
+      top: 11px;
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+    }
+
+    .e-invoice-close-icon {
+      font-size: 28px;
+    }
+
+    .e-invoice-modal-body {
+      max-height: calc(88vh - 132px);
+      padding: 14px 14px 16px;
+    }
+
+    .e-invoice-type-row {
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    .e-invoice-grid-2 {
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .e-invoice-header-line {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .e-invoice-open-btn {
+      width: 100%;
+    }
+  }
+
 </style>
 
 
@@ -2619,7 +2911,7 @@
               class="e-invoice-close"
               data-close-e-invoice
               aria-label="Đóng cửa sổ xuất hóa đơn">
-        ×
+        <span class="e-invoice-close-icon" aria-hidden="true">×</span>
       </button>
 
       <h3 id="eInvoiceModalTitle">Xuất hóa đơn VAT</h3>
