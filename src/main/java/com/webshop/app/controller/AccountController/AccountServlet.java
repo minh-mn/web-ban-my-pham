@@ -135,7 +135,7 @@ public class AccountServlet extends HttpServlet {
         try {
             req.setAttribute(
                     "availableCoupons",
-                    userCouponDAO.findAvailableCouponsByRankCode(currentRankCode)
+                    userCouponDAO.findAvailableCouponsForUser(user.getId(), currentRankCode)
             );
         } catch (RuntimeException e) {
             /*
