@@ -46,6 +46,7 @@ public class UploadServlet extends HttpServlet {
          * MyCosmeticShopUploads/product
          * MyCosmeticShopUploads/product/gallery
          * MyCosmeticShopUploads/policy
+         * MyCosmeticShopUploads/brand
          * đã tồn tại khi app chạy.
          */
         UploadConfig.ensureUploadDirectories();
@@ -61,6 +62,7 @@ public class UploadServlet extends HttpServlet {
          * /uploads/product/abc.png
          * /uploads/product/gallery/abc.png
          * /uploads/policy/abc.pdf
+         * /uploads/brand/abc.png
          */
         String pathInfo = req.getPathInfo();
 
@@ -152,7 +154,8 @@ public class UploadServlet extends HttpServlet {
     private boolean isAllowedUploadPath(String relative) {
         return relative.startsWith("banner/")
                 || relative.startsWith("product/")
-                || relative.startsWith("policy/");
+                || relative.startsWith("policy/")
+                || relative.startsWith("brand/");
     }
 
     private boolean isAllowedExtension(String relative) {
