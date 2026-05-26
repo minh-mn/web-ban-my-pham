@@ -1,5 +1,6 @@
 package com.webshop.app.dao;
 
+import com.webshop.app.config.UploadConfig;
 import com.webshop.app.model.Brand;
 import com.webshop.app.utils.DBConnection;
 
@@ -59,11 +60,11 @@ public class BrandDAO {
                 }
             }
 
-            return brands;
-
         } catch (SQLException e) {
             throw new RuntimeException("BrandDAO.findAllWithProductCount error", e);
         }
+
+        return brands;
     }
 
     public List<Brand> findAllActive() {
@@ -86,29 +87,40 @@ public class BrandDAO {
 
             String sql = hasImageColumn
                     ? """
-                    SELECT id, name, image
-                    FROM store_brand
-                    ORDER BY id DESC
+                    SELECT
+                        b.id,
+                        b.name,
+                        b.image,
+                        COUNT(DISTINCT p.id) AS product_count
+                    FROM store_brand b
+                    LEFT JOIN store_product p ON p.brand_id = b.id
+                    GROUP BY b.id, b.name, b.image
+                    ORDER BY b.id DESC
                     """
                     : """
-                    SELECT id, name
-                    FROM store_brand
-                    ORDER BY id DESC
+                    SELECT
+                        b.id,
+                        b.name,
+                        COUNT(DISTINCT p.id) AS product_count
+                    FROM store_brand b
+                    LEFT JOIN store_product p ON p.brand_id = b.id
+                    GROUP BY b.id, b.name
+                    ORDER BY b.id DESC
                     """;
 
             try (PreparedStatement statement = connection.prepareStatement(sql);
                  ResultSet resultSet = statement.executeQuery()) {
 
                 while (resultSet.next()) {
-                    brands.add(mapRow(resultSet, hasImageColumn));
+                    brands.add(mapRowWithProductCount(resultSet, hasImageColumn));
                 }
             }
-
-            return brands;
 
         } catch (SQLException e) {
             throw new RuntimeException("BrandDAO.findAll error", e);
         }
+
+        return brands;
     }
 
     public Brand findById(int id) {
@@ -133,21 +145,21 @@ public class BrandDAO {
                 statement.setInt(1, id);
 
                 try (ResultSet resultSet = statement.executeQuery()) {
-                    if (!resultSet.next()) {
-                        return null;
+                    if (resultSet.next()) {
+                        return mapRow(resultSet, hasImageColumn);
                     }
-
-                    return mapRow(resultSet, hasImageColumn);
                 }
             }
 
         } catch (SQLException e) {
             throw new RuntimeException("BrandDAO.findById error", e);
         }
+
+        return null;
     }
 
     /*
-     * Dùng cho code cũ:
+     * Tương thích code cũ:
      * brandDAO.create(name)
      */
     public void create(String name) {
@@ -155,8 +167,9 @@ public class BrandDAO {
     }
 
     /*
-     * Nếu DB có cột image thì lưu ảnh.
-     * Nếu DB chưa có cột image thì vẫn thêm được thương hiệu, tránh lỗi SQL.
+     * Thêm thương hiệu.
+     * Nếu database có cột image thì lưu logo.
+     * Nếu database chưa có cột image thì vẫn thêm được brand, không lỗi SQL.
      */
     public void create(String name, String image) {
         validateName(name);
@@ -186,7 +199,7 @@ public class BrandDAO {
 
         } catch (SQLException e) {
             if (isDuplicateNameError(e)) {
-                throw new RuntimeException("Tên thương hiệu đã tồn tại.", e);
+                throw new IllegalArgumentException("Tên thương hiệu đã tồn tại.");
             }
 
             throw new RuntimeException("BrandDAO.create error", e);
@@ -194,10 +207,10 @@ public class BrandDAO {
     }
 
     /*
-     * Dùng cho code cũ:
+     * Tương thích code cũ:
      * brandDAO.update(id, name)
      *
-     * Khi chỉ sửa tên thương hiệu, giữ lại ảnh cũ nếu có.
+     * Khi chỉ sửa tên, giữ lại logo cũ.
      */
     public void update(int id, String name) {
         validateId(id);
@@ -210,8 +223,9 @@ public class BrandDAO {
     }
 
     /*
-     * Nếu DB có cột image thì cập nhật cả name và image.
-     * Nếu DB chưa có cột image thì chỉ cập nhật name.
+     * Cập nhật thương hiệu.
+     * Nếu database có cột image thì cập nhật cả name và logo.
+     * Nếu database chưa có cột image thì chỉ cập nhật name.
      */
     public void update(int id, String name, String image) {
         validateId(id);
@@ -248,7 +262,7 @@ public class BrandDAO {
 
         } catch (SQLException e) {
             if (isDuplicateNameError(e)) {
-                throw new RuntimeException("Tên thương hiệu đã tồn tại.", e);
+                throw new IllegalArgumentException("Tên thương hiệu đã tồn tại.");
             }
 
             throw new RuntimeException("BrandDAO.update error", e);
@@ -271,9 +285,8 @@ public class BrandDAO {
 
         } catch (SQLException e) {
             if (e.getErrorCode() == MYSQL_FOREIGN_KEY_CONSTRAINT_ERROR) {
-                throw new RuntimeException(
-                        "Không thể xóa thương hiệu vì đang được sản phẩm sử dụng.",
-                        e
+                throw new IllegalArgumentException(
+                        "Không thể xóa thương hiệu vì đang được sản phẩm sử dụng."
                 );
             }
 
@@ -299,10 +312,13 @@ public class BrandDAO {
             statement.setString(2, COLUMN_IMAGE);
 
             try (ResultSet resultSet = statement.executeQuery()) {
-                resultSet.next();
-                return resultSet.getInt(1) > 0;
+                if (resultSet.next()) {
+                    return resultSet.getInt(1) > 0;
+                }
             }
         }
+
+        return false;
     }
 
     /* =========================================================
@@ -316,11 +332,13 @@ public class BrandDAO {
     }
 
     private void validateName(String name) {
-        if (name == null || name.trim().isEmpty()) {
+        String normalizedName = normalizeName(name);
+
+        if (normalizedName == null || normalizedName.isEmpty()) {
             throw new IllegalArgumentException("Tên thương hiệu không được để trống.");
         }
 
-        if (name.trim().length() > 100) {
+        if (normalizedName.length() > 100) {
             throw new IllegalArgumentException("Tên thương hiệu không được vượt quá 100 ký tự.");
         }
     }
@@ -334,7 +352,7 @@ public class BrandDAO {
             return null;
         }
 
-        return image.trim();
+        return UploadConfig.normalizeBrandImageUrl(image);
     }
 
     private boolean isDuplicateNameError(SQLException e) {
