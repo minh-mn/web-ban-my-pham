@@ -8,7 +8,7 @@
 
 .cart-section {
   padding: 30px 0 42px;
-  background: #fafafa;
+  background: #ffffff;
   color: #111827;
 }
 
@@ -63,10 +63,10 @@
   border-radius: 18px;
   overflow-x: visible;
   box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+  border: 1px solid #222;
 }
 
 /* ================= TABLE ================= */
-
 .cart-table {
   width: 100%;
   min-width: 0;
@@ -431,6 +431,7 @@
   padding: 22px 24px 20px;
   border-radius: 18px;
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.12);
 }
 
 .order-summary-card h2,
