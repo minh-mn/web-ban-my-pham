@@ -35,6 +35,9 @@ public final class UploadConfig {
     public static final Path PRODUCT_GALLERY_DIR = PRODUCT_DIR.resolve("gallery");
     public static final Path POLICY_DIR = BASE_DIR.resolve("policy");
 
+    // Issue 118: thư mục lưu logo thương hiệu
+    public static final Path BRAND_DIR = BASE_DIR.resolve("brand");
+
     /*
      * =========================
      * PUBLIC URL PREFIX
@@ -48,6 +51,9 @@ public final class UploadConfig {
     public static final String PRODUCT_URL_PREFIX = UPLOAD_URL_PREFIX + "/product/";
     public static final String PRODUCT_GALLERY_URL_PREFIX = UPLOAD_URL_PREFIX + "/product/gallery/";
     public static final String POLICY_URL_PREFIX = UPLOAD_URL_PREFIX + "/policy/";
+
+    // Issue 118: URL lưu vào database cho logo thương hiệu
+    public static final String BRAND_URL_PREFIX = UPLOAD_URL_PREFIX + "/brand/";
 
     private UploadConfig() {
     }
@@ -163,6 +169,7 @@ public final class UploadConfig {
             Files.createDirectories(PRODUCT_DIR);
             Files.createDirectories(PRODUCT_GALLERY_DIR);
             Files.createDirectories(POLICY_DIR);
+            Files.createDirectories(BRAND_DIR);
 
             System.out.println("========== MyCosmetic Upload Path ==========");
             System.out.println("user.dir = " + System.getProperty("user.dir"));
@@ -172,6 +179,7 @@ public final class UploadConfig {
             System.out.println("PRODUCT_DIR = " + PRODUCT_DIR);
             System.out.println("PRODUCT_GALLERY_DIR = " + PRODUCT_GALLERY_DIR);
             System.out.println("POLICY_DIR = " + POLICY_DIR);
+            System.out.println("BRAND_DIR = " + BRAND_DIR);
             System.out.println("============================================");
         } catch (IOException e) {
             throw new RuntimeException("Cannot create upload directories at: " + BASE_DIR, e);
@@ -200,6 +208,10 @@ public final class UploadConfig {
         return POLICY_URL_PREFIX + cleanFileName(fileName);
     }
 
+    public static String toBrandUrl(String fileName) {
+        return BRAND_URL_PREFIX + cleanFileName(fileName);
+    }
+
     /*
      * =========================
      * RESOLVE PHYSICAL FILE PATH
@@ -222,6 +234,10 @@ public final class UploadConfig {
         return POLICY_DIR.resolve(cleanFileName(fileName)).normalize();
     }
 
+    public static Path resolveBrandFile(String fileName) {
+        return BRAND_DIR.resolve(cleanFileName(fileName)).normalize();
+    }
+
     /*
      * =========================
      * NORMALIZE EXISTING IMAGE URL
@@ -238,6 +254,10 @@ public final class UploadConfig {
 
     public static String normalizeBannerImageUrl(String image) {
         return normalizeUploadUrl(image, BANNER_URL_PREFIX);
+    }
+
+    public static String normalizeBrandImageUrl(String image) {
+        return normalizeUploadUrl(image, BRAND_URL_PREFIX);
     }
 
     private static String normalizeUploadUrl(String image, String targetPrefix) {
@@ -272,6 +292,11 @@ public final class UploadConfig {
         value = value.replaceFirst("^assets/images/banners/", "");
         value = value.replaceFirst("^assets/images/banner/", "");
 
+        value = value.replaceFirst("^/assets/images/brands/", "");
+        value = value.replaceFirst("^/assets/images/brand/", "");
+        value = value.replaceFirst("^assets/images/brands/", "");
+        value = value.replaceFirst("^assets/images/brand/", "");
+
         value = value.replaceFirst("^products/gallery/", "");
         value = value.replaceFirst("^/products/gallery/", "");
         value = value.replaceFirst("^products/", "");
@@ -281,6 +306,11 @@ public final class UploadConfig {
         value = value.replaceFirst("^/banners/", "");
         value = value.replaceFirst("^banner/", "");
         value = value.replaceFirst("^/banner/", "");
+
+        value = value.replaceFirst("^brands/", "");
+        value = value.replaceFirst("^/brands/", "");
+        value = value.replaceFirst("^brand/", "");
+        value = value.replaceFirst("^/brand/", "");
 
         value = cleanFileName(value);
 
