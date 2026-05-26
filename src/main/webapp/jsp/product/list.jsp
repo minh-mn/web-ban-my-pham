@@ -3,6 +3,10 @@
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
+<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/base.css">
+
+<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/product-list.css">
+
 <!-- ================= PAGE HEADER ================= -->
 <section class="section">
   <div class="container page-header" style="text-align:center; max-width:760px;">
