@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.webshop.app.dao.OrderDAO;
+import com.webshop.app.service.CheckoutService;
 import com.webshop.app.utils.VNPayUtil;
 
 import jakarta.servlet.annotation.WebServlet;
@@ -17,6 +18,7 @@ import jakarta.servlet.http.HttpServletResponse;
 public class VNPayIpnServlet extends HttpServlet {
 
     private final OrderDAO orderDAO = new OrderDAO();
+    private final CheckoutService checkoutService = new CheckoutService();
 
     private boolean isBlank(String s) {
         return s == null || s.trim().isEmpty();
@@ -88,21 +90,26 @@ public class VNPayIpnServlet extends HttpServlet {
             return;
         }
 
-        // ===== 6) Update status =====
-        // Với kiến trúc hiện tại: finalize (items/stock/coupon) đang làm ở RETURN dựa vào session snapshot.
-        // IPN KHÔNG có session => IPN chỉ đánh dấu thanh toán, nhưng để status ở PENDING
-        // để RETURN finalize xong mới set CONFIRMED.
+        // ===== 6) Finalize payment =====
         if ("00".equals(respCode) && "00".equals(transStatus)) {
-
-            // payment paid but not finalized yet
-            orderDAO.updatePaymentStatus(orderId, "PAID", "PENDING", txnRef);
-
-            resp.getWriter().write("{\"RspCode\":\"00\",\"Message\":\"Confirm Success\"}");
-            return;
+            try {
+                /*
+                 * Order item đã được lưu ngay từ lúc checkout VNPay, nên IPN có thể
+                 * finalize không cần session/cart. Method này idempotent.
+                 */
+                checkoutService.finalizeVnpayPaid(orderId);
+                resp.getWriter().write("{\"RspCode\":\"00\",\"Message\":\"Confirm Success\"}");
+                return;
+            } catch (Exception e) {
+                e.printStackTrace();
+                orderDAO.markVnpayAwaitingRetry(orderId, txnRef, "IPN không thể hoàn tất đơn VNPay.");
+                resp.getWriter().write("{\"RspCode\":\"99\",\"Message\":\"Finalize failed\"}");
+                return;
+            }
         }
 
-        // Failed / cancelled
-        orderDAO.updatePaymentStatus(orderId, "FAILED", "CANCELLED", txnRef);
+        // Failed / cancelled: không hủy đơn, giữ ở trạng thái chờ thanh toán lại.
+        orderDAO.markVnpayAwaitingRetry(orderId, txnRef, "VNPay response code: " + respCode);
         resp.getWriter().write("{\"RspCode\":\"00\",\"Message\":\"Confirm Success\"}");
     }
 }

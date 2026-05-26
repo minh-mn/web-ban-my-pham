@@ -27,6 +27,18 @@ public class VNPayPaymentServlet extends HttpServlet {
         return s == null || s.trim().isEmpty();
     }
 
+    private Integer parseInteger(String value) {
+        if (isBlank(value)) {
+            return null;
+        }
+
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
@@ -43,19 +55,15 @@ public class VNPayPaymentServlet extends HttpServlet {
             return;
         }
 
-        // 1) Require orderId from session
-        Integer orderId = (session != null) ? (Integer) session.getAttribute("VNP_ORDER_ID") : null;
-        if (orderId == null || orderId <= 0) {
-            resp.sendRedirect(req.getContextPath() + "/cart");
-            return;
+        // 1) OrderId có thể đến từ session checkout lần đầu hoặc request khi thanh toán lại.
+        Integer orderId = parseInteger(req.getParameter("orderId"));
+
+        if ((orderId == null || orderId <= 0) && session != null) {
+            orderId = (Integer) session.getAttribute("VNP_ORDER_ID");
         }
 
-        // 2) Require snapshot cart (để return/finalize dùng, tránh CART thay đổi)
-        Object vnpCartObj = session.getAttribute("VNP_CART");
-        if (vnpCartObj == null) {
-            // Flow bị thiếu snapshot => quay về checkout tạo lại chuẩn
-            resp.sendRedirect(req.getContextPath()
-                    + "/checkout/success?success=false&message=vnp_cart_missing");
+        if (orderId == null || orderId <= 0) {
+            resp.sendRedirect(req.getContextPath() + "/cart");
             return;
         }
 
@@ -87,6 +95,12 @@ public class VNPayPaymentServlet extends HttpServlet {
             return;
         }
 
+        if (!o.isRetryPaymentAvailable()) {
+            resp.sendRedirect(req.getContextPath()
+                    + "/orders/detail?id=" + orderId + "&message=payment_retry_not_allowed");
+            return;
+        }
+
         // 6) Amount (VND * 100)
         BigDecimal total = (o.getTotal() != null) ? o.getTotal() : BigDecimal.ZERO;
         if (total.compareTo(BigDecimal.ZERO) <= 0) {
@@ -96,11 +110,12 @@ public class VNPayPaymentServlet extends HttpServlet {
         }
         long amount = total.multiply(BigDecimal.valueOf(100)).longValue();
 
-        // 7) TxnRef: reuse if exists (avoid mismatch on refresh)
-        String txnRef = o.getVnpTxnRef();
-        if (isBlank(txnRef)) {
-            txnRef = "MC" + orderId + "_" + System.currentTimeMillis();
-            orderDAO.setVnpTxnRef(orderId, txnRef);
+        // 7) TxnRef: tạo mã giao dịch mới cho mỗi lần thanh toán/thanh toán lại.
+        String txnRef = "MC" + orderId + "_" + System.currentTimeMillis();
+        orderDAO.prepareVnpayPaymentAttempt(orderId, txnRef);
+
+        if (session != null) {
+            session.setAttribute("VNP_ORDER_ID", orderId);
         }
 
         String clientIp = VNPayUtil.getClientIp(req);

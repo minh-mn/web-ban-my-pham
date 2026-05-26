@@ -75,7 +75,7 @@ public class VNPayReturnServlet extends HttpServlet {
         }
 
         if (!validSignature) {
-            orderDAO.updatePaymentStatus(orderId, "FAILED", "CANCELLED", txnRef);
+            orderDAO.markVnpayAwaitingRetry(orderId, txnRef, "VNPay payment failed or needs retry.");
             cleanupVnpayOnly(req.getSession(false));
 
             resp.sendRedirect(req.getContextPath()
@@ -98,7 +98,7 @@ public class VNPayReturnServlet extends HttpServlet {
         try {
             vnpAmount = Long.parseLong(vnpAmountStr);
         } catch (Exception e) {
-            orderDAO.updatePaymentStatus(orderId, "FAILED", "CANCELLED", txnRef);
+            orderDAO.markVnpayAwaitingRetry(orderId, txnRef, "VNPay payment failed or needs retry.");
             cleanupVnpayOnly(req.getSession(false));
 
             resp.sendRedirect(req.getContextPath()
@@ -108,7 +108,7 @@ public class VNPayReturnServlet extends HttpServlet {
         }
 
         if (dbAmount != vnpAmount) {
-            orderDAO.updatePaymentStatus(orderId, "FAILED", "CANCELLED", txnRef);
+            orderDAO.markVnpayAwaitingRetry(orderId, txnRef, "VNPay payment failed or needs retry.");
             cleanupVnpayOnly(req.getSession(false));
 
             resp.sendRedirect(req.getContextPath()
@@ -123,7 +123,7 @@ public class VNPayReturnServlet extends HttpServlet {
             return;
         }
 
-        orderDAO.updatePaymentStatus(orderId, "FAILED", "CANCELLED", txnRef);
+        orderDAO.markVnpayAwaitingRetry(orderId, txnRef, "VNPay payment failed or needs retry.");
         cleanupVnpayOnly(req.getSession(false));
 
         resp.sendRedirect(req.getContextPath()
@@ -147,7 +147,9 @@ public class VNPayReturnServlet extends HttpServlet {
          */
         Order order = orderDAO.findById(orderId);
 
-        if (order != null && "PAID".equalsIgnoreCase(order.getPaymentStatus())) {
+        if (order != null
+                && "PAID".equalsIgnoreCase(order.getPaymentStatus())
+                && order.isStockDeducted()) {
             cleanupPaidItems(session);
             sendOrderSuccessEmailSafely(session, currentUser, orderId);
 
@@ -161,16 +163,6 @@ public class VNPayReturnServlet extends HttpServlet {
 
         String couponCode =
                 (session != null) ? (String) session.getAttribute("VNP_COUPON") : null;
-
-        if (vnpCart == null || vnpCart.isEmpty()) {
-            orderDAO.updatePaymentStatus(orderId, "FAILED", "CANCELLED", txnRef);
-            cleanupVnpayOnly(session);
-
-            resp.sendRedirect(req.getContextPath()
-                    + "/checkout/success?success=false&orderId=" + orderId
-                    + "&message=vnp_cart_missing");
-            return;
-        }
 
         try {
             /*
@@ -197,7 +189,7 @@ public class VNPayReturnServlet extends HttpServlet {
         } catch (Exception e) {
             e.printStackTrace();
 
-            orderDAO.updatePaymentStatus(orderId, "FAILED", "CANCELLED", txnRef);
+            orderDAO.markVnpayAwaitingRetry(orderId, txnRef, "Không thể hoàn tất đơn sau khi VNPay trả về thành công.");
             cleanupVnpayOnly(session);
 
             resp.sendRedirect(req.getContextPath()
