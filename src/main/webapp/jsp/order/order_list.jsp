@@ -345,6 +345,46 @@
     box-shadow: 0 12px 24px rgba(31, 42, 68, 0.25);
   }
 
+  .order-inline-form {
+    margin: 0;
+  }
+
+  .btn-cancel-order,
+  .btn-return-order {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 132px;
+    min-height: 38px;
+    padding: 0 14px;
+    border-radius: 999px;
+    border: none;
+    text-decoration: none;
+    font-size: 12.8px;
+    font-weight: 900;
+    cursor: pointer;
+    transition: 0.18s ease;
+    white-space: nowrap;
+  }
+
+  .btn-cancel-order {
+    background: #fff1f2;
+    color: #be123c;
+    border: 1px solid #fecdd3;
+  }
+
+  .btn-return-order {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+  }
+
+  .btn-cancel-order:hover,
+  .btn-return-order:hover {
+    transform: translateY(-1px);
+    filter: brightness(0.98);
+  }
+
   .admin-status-form {
     min-height: 82px;
     display: flex;
@@ -640,6 +680,31 @@
                         </a>
                       </c:if>
 
+                      <c:if test="${order.cancelable}">
+                        <form method="post"
+                              action="${pageContext.request.contextPath}/orders/cancel"
+                              class="order-inline-form"
+                              onsubmit="return confirmCancelOrder(this);">
+                          <input type="hidden" name="csrf_token" value="${sessionScope.CSRF_TOKEN}" />
+                          <input type="hidden" name="orderId" value="${order.id}" />
+                          <input type="hidden" name="reason" value="" />
+                          <button type="submit" class="btn-cancel-order">Hủy đơn</button>
+                        </form>
+                      </c:if>
+
+                      <c:if test="${order.returnable}">
+                        <form method="post"
+                              action="${pageContext.request.contextPath}/orders/return"
+                              class="order-inline-form"
+                              onsubmit="return confirmReturnOrder(this);">
+                          <input type="hidden" name="csrf_token" value="${sessionScope.CSRF_TOKEN}" />
+                          <input type="hidden" name="orderId" value="${order.id}" />
+                          <input type="hidden" name="refundMethod" value="MANUAL" />
+                          <input type="hidden" name="reason" value="" />
+                          <button type="submit" class="btn-return-order">Hoàn hàng</button>
+                        </form>
+                      </c:if>
+
                       <a href="${pageContext.request.contextPath}/orders/detail?id=${order.id}"
                          class="btn-detail">
                         Xem chi tiết
@@ -667,3 +732,34 @@
 
   </div>
 </section>
+
+
+<script>
+  function confirmCancelOrder(form) {
+    const reason = window.prompt("Nhập lý do hủy đơn hàng:");
+    if (reason === null) return false;
+
+    const trimmed = reason.trim();
+    if (trimmed.length < 5) {
+      alert("Lý do hủy đơn cần ít nhất 5 ký tự.");
+      return false;
+    }
+
+    form.querySelector('input[name="reason"]').value = trimmed;
+    return confirm("Bạn chắc chắn muốn hủy đơn hàng này?");
+  }
+
+  function confirmReturnOrder(form) {
+    const reason = window.prompt("Nhập lý do hoàn hàng:");
+    if (reason === null) return false;
+
+    const trimmed = reason.trim();
+    if (trimmed.length < 10) {
+      alert("Lý do hoàn hàng cần ít nhất 10 ký tự.");
+      return false;
+    }
+
+    form.querySelector('input[name="reason"]').value = trimmed;
+    return confirm("Gửi yêu cầu hoàn hàng cho đơn này?");
+  }
+</script>

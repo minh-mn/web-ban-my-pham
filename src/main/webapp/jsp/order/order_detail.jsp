@@ -502,6 +502,131 @@
         font-size: 22px;
     }
 
+
+
+    .order-alert {
+        padding: 13px 15px;
+        border-radius: 15px;
+        margin-bottom: 18px;
+        font-size: 14px;
+        font-weight: 800;
+        line-height: 1.45;
+    }
+
+    .order-alert.success {
+        background: #ecfdf5;
+        color: #047857;
+        border: 1px solid #a7f3d0;
+    }
+
+    .order-alert.error {
+        background: #fff1f2;
+        color: #be123c;
+        border: 1px solid #fecdd3;
+    }
+
+    .order-action-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+    }
+
+    .order-action-box {
+        padding: 16px;
+        border-radius: 18px;
+        border: 1px solid #eef2f7;
+        background: #f8fafc;
+    }
+
+    .order-action-box h3 {
+        margin: 0 0 8px;
+        color: #1f2a44;
+        font-size: 16px;
+        font-weight: 950;
+    }
+
+    .order-action-box p {
+        margin: 0 0 12px;
+        color: #64748b;
+        font-size: 13.5px;
+        line-height: 1.45;
+        font-weight: 700;
+    }
+
+    .order-action-box textarea,
+    .order-action-box select,
+    .order-action-box input[type="text"] {
+        width: 100%;
+        border: 1px solid #dbe3ef;
+        border-radius: 12px;
+        background: #ffffff;
+        color: #1f2a44;
+        padding: 10px 12px;
+        font-size: 14px;
+        font-weight: 700;
+        box-sizing: border-box;
+        outline: none;
+        margin-bottom: 10px;
+    }
+
+    .order-action-box textarea {
+        min-height: 82px;
+        resize: vertical;
+    }
+
+    .order-action-btn {
+        min-height: 40px;
+        border-radius: 12px;
+        border: none;
+        padding: 0 16px;
+        color: #fff;
+        font-weight: 900;
+        cursor: pointer;
+        transition: 0.18s ease;
+    }
+
+    .order-action-btn.cancel {
+        background: #e11d48;
+    }
+
+    .order-action-btn.return {
+        background: #2563eb;
+    }
+
+    .order-action-btn:hover {
+        transform: translateY(-1px);
+        filter: brightness(0.98);
+    }
+
+    .return-request-summary {
+        padding: 15px;
+        border-radius: 16px;
+        background: #fff8fb;
+        border: 1px dashed #f3b8d2;
+        margin-top: 10px;
+    }
+
+    .return-request-summary p {
+        margin: 7px 0 0;
+        color: #475569;
+        font-size: 13.5px;
+        font-weight: 700;
+        line-height: 1.5;
+    }
+
+    .policy-links {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+    }
+
+    .policy-links a {
+        color: #d63384;
+        font-weight: 900;
+        text-decoration: none;
+    }
+
     @media (max-width: 1100px) {
         .shipping-summary-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -594,6 +719,95 @@
                 <a href="${pageContext.request.contextPath}/account" class="order-back-btn">
                     Quay lại tài khoản
                 </a>
+            </div>
+        </div>
+
+
+
+        <c:if test="${not empty success}">
+            <div class="order-alert success"><c:out value="${success}" /></div>
+        </c:if>
+
+        <c:if test="${not empty error}">
+            <div class="order-alert error"><c:out value="${error}" /></div>
+        </c:if>
+
+        <div class="order-card">
+            <h2 class="order-card-title">Hủy đơn / Hoàn hàng</h2>
+
+            <div class="order-action-grid">
+                <div class="order-action-box">
+                    <h3>Hủy đơn hàng</h3>
+                    <p>Chỉ có thể hủy khi đơn đang chờ xác nhận hoặc đã xác nhận nhưng chưa bắt đầu giao hàng.</p>
+
+                    <c:choose>
+                        <c:when test="${order.cancelable}">
+                            <form method="post" action="${pageContext.request.contextPath}/orders/cancel">
+                                <input type="hidden" name="csrf_token" value="${sessionScope.CSRF_TOKEN}" />
+                                <input type="hidden" name="orderId" value="${order.id}" />
+                                <textarea name="reason" required minlength="5" maxlength="500"
+                                          placeholder="Nhập lý do hủy đơn..."></textarea>
+                                <button type="submit" class="order-action-btn cancel"
+                                        onclick="return confirm('Bạn chắc chắn muốn hủy đơn hàng này?');">
+                                    Hủy đơn
+                                </button>
+                            </form>
+                        </c:when>
+                        <c:otherwise>
+                            <p class="order-muted">Đơn hàng hiện không đủ điều kiện hủy.</p>
+                            <c:if test="${not empty order.cancelReason}">
+                                <p><strong>Lý do đã hủy:</strong> <c:out value="${order.cancelReason}" /></p>
+                            </c:if>
+                        </c:otherwise>
+                    </c:choose>
+                </div>
+
+                <div class="order-action-box">
+                    <h3>Yêu cầu hoàn hàng</h3>
+                    <p>Áp dụng cho đơn đã giao thành công và còn trong thời hạn 7 ngày kể từ lúc nhận hàng.</p>
+
+                    <c:choose>
+                        <c:when test="${order.returnable}">
+                            <form method="post" action="${pageContext.request.contextPath}/orders/return">
+                                <input type="hidden" name="csrf_token" value="${sessionScope.CSRF_TOKEN}" />
+                                <input type="hidden" name="orderId" value="${order.id}" />
+                                <select name="refundMethod">
+                                    <option value="MANUAL">Shop liên hệ xác nhận phương thức hoàn tiền</option>
+                                    <option value="VNPAY">Hoàn về VNPay</option>
+                                    <option value="BANK_TRANSFER">Chuyển khoản ngân hàng</option>
+                                    <option value="STORE_CREDIT">Điểm / ví cửa hàng</option>
+                                </select>
+                                <textarea name="reason" required minlength="10" maxlength="1000"
+                                          placeholder="Nhập lý do hoàn hàng, tình trạng sản phẩm..."></textarea>
+                                <button type="submit" class="order-action-btn return"
+                                        onclick="return confirm('Gửi yêu cầu hoàn hàng cho đơn này?');">
+                                    Gửi yêu cầu hoàn hàng
+                                </button>
+                            </form>
+                        </c:when>
+                        <c:otherwise>
+                            <p class="order-muted">Đơn hàng hiện không đủ điều kiện tạo yêu cầu hoàn hàng.</p>
+                        </c:otherwise>
+                    </c:choose>
+
+                    <c:if test="${not empty returnRequest}">
+                        <div class="return-request-summary">
+                            <span class="order-pill ${returnRequest.statusCssClass}">
+                                <c:out value="${returnRequest.statusLabel}" />
+                            </span>
+                            <p><strong>Lý do:</strong> <c:out value="${returnRequest.reason}" /></p>
+                            <p><strong>Số tiền dự kiến:</strong> <c:out value="${returnRequest.refundAmountVnd}" /> ₫</p>
+                            <c:if test="${not empty returnRequest.adminNote}">
+                                <p><strong>Phản hồi shop:</strong> <c:out value="${returnRequest.adminNote}" /></p>
+                            </c:if>
+                        </div>
+                    </c:if>
+                </div>
+            </div>
+
+            <div class="policy-links">
+                <a href="${pageContext.request.contextPath}/policy/cancel">Xem chính sách hủy đơn</a>
+                <a href="${pageContext.request.contextPath}/policy/return">Xem chính sách hoàn hàng</a>
             </div>
         </div>
 
