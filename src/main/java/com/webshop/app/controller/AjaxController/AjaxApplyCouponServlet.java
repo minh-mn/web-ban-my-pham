@@ -7,6 +7,7 @@ import java.time.LocalDate;
 import java.util.Map;
 
 import com.webshop.app.dao.CouponDAO;
+import com.webshop.app.dao.UserCouponDAO;
 import com.webshop.app.model.CartItem;
 import com.webshop.app.model.Coupon;
 import com.webshop.app.model.User;
@@ -32,6 +33,7 @@ public class AjaxApplyCouponServlet extends HttpServlet {
 
     private final CheckoutService checkoutService = new CheckoutService();
     private final CouponDAO couponDAO = new CouponDAO();
+    private final UserCouponDAO userCouponDAO = new UserCouponDAO();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
@@ -115,6 +117,10 @@ public class AjaxApplyCouponServlet extends HttpServlet {
         }
 
         String invalidReason = getCouponInvalidReason(coupon, subTotal);
+
+        if (invalidReason == null && userCouponDAO.hasUserUsedCoupon(user.getId(), coupon.getId())) {
+            invalidReason = "Bạn đã sử dụng mã khuyến mãi này rồi.";
+        }
 
         if (invalidReason != null) {
             clearCheckoutCoupon(session);
