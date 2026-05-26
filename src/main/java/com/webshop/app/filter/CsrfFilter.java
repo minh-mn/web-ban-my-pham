@@ -1,6 +1,8 @@
 package com.webshop.app.filter;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Set;
@@ -13,6 +15,7 @@ import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.Part;
 
 public class CsrfFilter implements Filter {
 
@@ -42,7 +45,10 @@ public class CsrfFilter implements Filter {
 
         String method = req.getMethod().toUpperCase();
 
-        // GET, HEAD, OPTIONS: chỉ tạo token rồi cho đi tiếp
+        /*
+         * GET, HEAD, OPTIONS:
+         * Chỉ tạo token rồi cho request đi tiếp.
+         */
         if (SAFE_METHODS.contains(method)) {
             chain.doFilter(request, response);
             return;
@@ -63,18 +69,81 @@ public class CsrfFilter implements Filter {
             return;
         }
 
-        String requestToken = req.getParameter(CSRF_PARAM);
+        String requestToken = getRequestToken(req);
 
-        if (requestToken == null || requestToken.isBlank()) {
-            requestToken = req.getHeader(CSRF_HEADER);
-        }
+        if (requestToken == null
+                || requestToken.isBlank()
+                || !isSameToken(sessionToken, requestToken)) {
 
-        if (requestToken == null || requestToken.isBlank() || !sessionToken.equals(requestToken)) {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN, "CSRF invalid");
             return;
         }
 
         chain.doFilter(request, response);
+    }
+
+    /*
+     * Lấy CSRF token theo thứ tự:
+     * 1. request parameter csrf_token
+     * 2. request header X-CSRF-TOKEN
+     * 3. multipart part csrf_token
+     *
+     * Lý do cần multipart part:
+     * Form upload ảnh brand/banner dùng enctype="multipart/form-data".
+     * Một số trường hợp getParameter("csrf_token") không đọc được token multipart,
+     * dẫn tới lỗi 403 CSRF invalid.
+     */
+    private String getRequestToken(HttpServletRequest req) {
+        String token = req.getParameter(CSRF_PARAM);
+
+        if (token != null && !token.isBlank()) {
+            return token.trim();
+        }
+
+        token = req.getHeader(CSRF_HEADER);
+
+        if (token != null && !token.isBlank()) {
+            return token.trim();
+        }
+
+        if (isMultipart(req)) {
+            token = readTokenFromMultipart(req);
+        }
+
+        return token == null ? null : token.trim();
+    }
+
+    private String readTokenFromMultipart(HttpServletRequest req) {
+        try {
+            for (Part part : req.getParts()) {
+                if (!CSRF_PARAM.equals(part.getName())) {
+                    continue;
+                }
+
+                /*
+                 * Token CSRF rất ngắn.
+                 * Nếu part quá lớn thì bỏ qua để tránh đọc dữ liệu không cần thiết.
+                 */
+                if (part.getSize() <= 0 || part.getSize() > 2048) {
+                    return null;
+                }
+
+                byte[] bytes = part.getInputStream().readAllBytes();
+
+                return new String(bytes, StandardCharsets.UTF_8);
+            }
+        } catch (Exception ignored) {
+            return null;
+        }
+
+        return null;
+    }
+
+    private boolean isMultipart(HttpServletRequest req) {
+        String contentType = req.getContentType();
+
+        return contentType != null
+                && contentType.toLowerCase().startsWith("multipart/form-data");
     }
 
     private boolean requiresCsrf(HttpServletRequest req) {
@@ -87,6 +156,17 @@ public class CsrfFilter implements Filter {
         return path.startsWith("/admin/")
                 || path.equals("/orders")
                 || path.startsWith("/orders/");
+    }
+
+    private boolean isSameToken(String sessionToken, String requestToken) {
+        if (sessionToken == null || requestToken == null) {
+            return false;
+        }
+
+        byte[] sessionBytes = sessionToken.getBytes(StandardCharsets.UTF_8);
+        byte[] requestBytes = requestToken.getBytes(StandardCharsets.UTF_8);
+
+        return MessageDigest.isEqual(sessionBytes, requestBytes);
     }
 
     private String generateToken() {
