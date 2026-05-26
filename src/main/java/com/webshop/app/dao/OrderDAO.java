@@ -56,6 +56,11 @@ public class OrderDAO {
             stock_deducted,
             payment_attempt_count,
             last_payment_error,
+            cancel_reason,
+            cancelled_at,
+            refund_status,
+            refund_amount,
+            refund_method,
             shipping_method,
             shipping_provider,
             shipping_fee,
@@ -164,6 +169,32 @@ public class OrderDAO {
 
     private static String normalizeShippingStatus(String shippingStatus) {
         return ShippingStatus.normalizeCode(shippingStatus);
+    }
+
+    private static String normalizeRefundStatus(String refundStatus) {
+        String normalized = defaultIfBlank(refundStatus, "NONE")
+                .trim()
+                .toUpperCase();
+
+        return switch (normalized) {
+            case "NONE", "PENDING", "REQUESTED", "APPROVED", "REJECTED", "RETURNED", "REFUNDED" -> normalized;
+            default -> "NONE";
+        };
+    }
+
+    private static String normalizeRefundMethod(String refundMethod) {
+        String normalized = trimToNull(refundMethod);
+
+        if (normalized == null) {
+            return null;
+        }
+
+        normalized = normalized.toUpperCase();
+
+        return switch (normalized) {
+            case "VNPAY", "BANK_TRANSFER", "CASH", "STORE_CREDIT", "MANUAL" -> normalized;
+            default -> "MANUAL";
+        };
     }
 
     private static String generateInternalShippingCode(int orderId) {
@@ -280,6 +311,11 @@ public class OrderDAO {
                     stock_deducted,
                     payment_attempt_count,
                     last_payment_error,
+                    cancel_reason,
+                    cancelled_at,
+                    refund_status,
+                    refund_amount,
+                    refund_method,
                     shipping_method,
                     shipping_provider,
                     shipping_fee,
@@ -289,7 +325,7 @@ public class OrderDAO {
                     delivered_at,
                     created_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
 
         try (PreparedStatement statement = conn.prepareStatement(
@@ -322,6 +358,12 @@ public class OrderDAO {
             statement.setBoolean(index++, order.isStockDeducted());
             statement.setInt(index++, order.getPaymentAttemptCount());
             statement.setString(index++, trimToNull(order.getLastPaymentError()));
+
+            statement.setString(index++, trimToNull(order.getCancelReason()));
+            statement.setTimestamp(index++, toTimestamp(order.getCancelledAt()));
+            statement.setString(index++, normalizeRefundStatus(order.getRefundStatus()));
+            statement.setBigDecimal(index++, vnd0(order.getRefundAmount()));
+            statement.setString(index++, normalizeRefundMethod(order.getRefundMethod()));
 
             statement.setString(index++, shippingMethod);
             statement.setString(index++, shippingProvider);
@@ -916,6 +958,178 @@ public class OrderDAO {
         updateShippingStatus(orderId, ShippingStatus.CANCELED.getCode());
     }
 
+
+    /* =========================================================
+       CANCEL / RETURN / REFUND
+    ========================================================= */
+
+    public boolean cancelOrderByUser(int orderId, int userId, String reason) {
+        if (orderId <= 0 || userId <= 0) {
+            return false;
+        }
+
+        try (Connection connection = DBConnection.getConnection()) {
+            connection.setAutoCommit(false);
+
+            try {
+                boolean updated = cancelOrderByUser(connection, orderId, userId, reason);
+                connection.commit();
+                return updated;
+            } catch (SQLException e) {
+                connection.rollback();
+                throw e;
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("OrderDAO.cancelOrderByUser error", e);
+        }
+    }
+
+    public boolean cancelOrderByUser(Connection conn, int orderId, int userId, String reason) throws SQLException {
+        Order order = findByIdForUpdate(conn, orderId, userId);
+
+        if (order == null || !isCancelable(order)) {
+            return false;
+        }
+
+        boolean paidVnpay = "VNPAY".equalsIgnoreCase(order.getPaymentMethod())
+                && PAID.equalsIgnoreCase(order.getPaymentStatus());
+
+        String sql = """
+                UPDATE store_order
+                SET status = ?,
+                    shipping_status = ?,
+                    cancel_reason = ?,
+                    cancelled_at = NOW(),
+                    refund_status = ?,
+                    refund_amount = ?,
+                    refund_method = ?,
+                    payment_status = CASE
+                        WHEN UPPER(COALESCE(payment_status, 'PENDING')) = 'PENDING' THEN ?
+                        ELSE payment_status
+                    END
+                WHERE id = ?
+                  AND user_id = ?
+                """;
+
+        try (PreparedStatement statement = conn.prepareStatement(sql)) {
+            int index = 1;
+            statement.setString(index++, ORDER_CANCELLED);
+            statement.setString(index++, ShippingStatus.CANCELED.getCode());
+            statement.setString(index++, trimToNull(reason));
+            statement.setString(index++, paidVnpay ? "PENDING" : "NONE");
+            statement.setBigDecimal(index++, paidVnpay ? vnd0(order.getTotal()) : BigDecimal.ZERO);
+            statement.setString(index++, paidVnpay ? "VNPAY" : null);
+            statement.setString(index++, PAYMENT_CANCELED);
+            statement.setInt(index++, orderId);
+            statement.setInt(index++, userId);
+
+            return statement.executeUpdate() > 0;
+        }
+    }
+
+    public boolean isOrderCancelable(int orderId, int userId) {
+        Order order = findByIdAndUserId(orderId, userId);
+        return order != null && isCancelable(order);
+    }
+
+    public boolean isOrderReturnable(int orderId, int userId) {
+        Order order = findByIdAndUserId(orderId, userId);
+        return order != null && order.isReturnable();
+    }
+
+    public void markReturnRequested(Connection conn, int orderId, BigDecimal refundAmount, String refundMethod) throws SQLException {
+        String sql = """
+                UPDATE store_order
+                SET refund_status = ?,
+                    refund_amount = ?,
+                    refund_method = ?
+                WHERE id = ?
+                """;
+
+        try (PreparedStatement statement = conn.prepareStatement(sql)) {
+            statement.setString(1, "REQUESTED");
+            statement.setBigDecimal(2, vnd0(refundAmount));
+            statement.setString(3, normalizeRefundMethod(refundMethod));
+            statement.setInt(4, orderId);
+            statement.executeUpdate();
+        }
+    }
+
+    public boolean updateRefundStatus(int orderId,
+                                      String refundStatus,
+                                      BigDecimal refundAmount,
+                                      String refundMethod) {
+        String sql = """
+                UPDATE store_order
+                SET refund_status = ?,
+                    refund_amount = ?,
+                    refund_method = ?,
+                    payment_status = CASE
+                        WHEN ? = 'REFUNDED' THEN 'REFUNDED'
+                        ELSE payment_status
+                    END
+                WHERE id = ?
+                """;
+
+        String normalizedRefundStatus = normalizeRefundStatus(refundStatus);
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, normalizedRefundStatus);
+            statement.setBigDecimal(2, vnd0(refundAmount));
+            statement.setString(3, normalizeRefundMethod(refundMethod));
+            statement.setString(4, normalizedRefundStatus);
+            statement.setInt(5, orderId);
+
+            return statement.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("OrderDAO.updateRefundStatus error", e);
+        }
+    }
+
+    private Order findByIdForUpdate(Connection conn, int orderId, int userId) throws SQLException {
+        String sql = """
+                SELECT
+                """ + SELECT_COLUMNS + """
+                FROM store_order
+                WHERE id = ?
+                  AND user_id = ?
+                FOR UPDATE
+                """;
+
+        try (PreparedStatement statement = conn.prepareStatement(sql)) {
+            statement.setInt(1, orderId);
+            statement.setInt(2, userId);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (!resultSet.next()) {
+                    return null;
+                }
+
+                return mapRow(resultSet);
+            }
+        }
+    }
+
+    private boolean isCancelable(Order order) {
+        if (order == null) {
+            return false;
+        }
+
+        String orderStatus = normalizeOrderStatus(order.getStatus());
+        String shippingStatus = normalizeShippingStatus(order.getShippingStatus());
+
+        boolean orderOpen = ORDER_PROCESSING.equals(orderStatus)
+                || ORDER_CONFIRMED.equals(orderStatus);
+
+        boolean shippingNotStarted = ShippingStatus.PENDING_PICKUP.getCode().equals(shippingStatus);
+
+        return orderOpen && shippingNotStarted;
+    }
+
     /* =========================================================
        VNPAY
     ========================================================= */
@@ -1248,6 +1462,15 @@ public class OrderDAO {
         order.setStockDeducted(resultSet.getBoolean("stock_deducted"));
         order.setPaymentAttemptCount(resultSet.getInt("payment_attempt_count"));
         order.setLastPaymentError(resultSet.getString("last_payment_error"));
+
+        order.setCancelReason(resultSet.getString("cancel_reason"));
+        Timestamp cancelledAt = resultSet.getTimestamp("cancelled_at");
+        if (cancelledAt != null) {
+            order.setCancelledAt(cancelledAt.toLocalDateTime());
+        }
+        order.setRefundStatus(normalizeRefundStatus(resultSet.getString("refund_status")));
+        order.setRefundAmount(vnd0(resultSet.getBigDecimal("refund_amount")));
+        order.setRefundMethod(normalizeRefundMethod(resultSet.getString("refund_method")));
 
         order.setShippingMethod(normalizeShippingMethod(resultSet.getString("shipping_method")));
         order.setShippingProvider(normalizeShippingProvider(resultSet.getString("shipping_provider")));
