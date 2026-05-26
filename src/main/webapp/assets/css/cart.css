@@ -785,3 +785,128 @@
     width: 100%;
   }
 }
+
+/* ================= ORDER / CHECKOUT SUCCESS ACTION BUTTONS =================
+   Dùng cho trang đặt hàng thành công.
+   Mục tiêu:
+   - Nút chính "Xem chi tiết đơn hàng" màu hồng.
+   - Nút phụ "Về trang chủ" và "Tiếp tục mua hàng" chữ màu đen.
+   - Tất cả nút cùng chiều cao, bo tròn, căn giữa đẹp.
+========================================================= */
+
+.checkout-success-actions,
+.order-success-actions,
+.success-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-top: 28px;
+  margin-bottom: 8px;
+}
+
+.checkout-success-actions a,
+.order-success-actions a,
+.success-actions a {
+  min-width: 220px;
+  height: 54px;
+  padding: 0 26px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1;
+  transition: transform 0.22s ease, box-shadow 0.22s ease, background-color 0.22s ease, border-color 0.22s ease, color 0.22s ease;
+}
+
+/* Nút chính */
+.checkout-success-actions .btn-primary,
+.order-success-actions .btn-primary,
+.success-actions .btn-primary,
+.checkout-success-actions .btn-main,
+.order-success-actions .btn-main,
+.success-actions .btn-main {
+  background: linear-gradient(180deg, #f45aa5 0%, #d63384 100%);
+  color: #ffffff !important;
+  border: 1px solid transparent;
+  box-shadow: 0 14px 28px rgba(214, 51, 132, 0.25);
+}
+
+.checkout-success-actions .btn-primary:hover,
+.order-success-actions .btn-primary:hover,
+.success-actions .btn-primary:hover,
+.checkout-success-actions .btn-main:hover,
+.order-success-actions .btn-main:hover,
+.success-actions .btn-main:hover {
+  color: #ffffff !important;
+  transform: translateY(-2px);
+  box-shadow: 0 18px 32px rgba(214, 51, 132, 0.32);
+}
+
+/* Nút phụ: Về trang chủ / Tiếp tục mua hàng */
+.checkout-success-actions .btn-secondary,
+.order-success-actions .btn-secondary,
+.success-actions .btn-secondary,
+.checkout-success-actions .btn-home,
+.order-success-actions .btn-home,
+.success-actions .btn-home,
+.checkout-success-actions .continue-shopping,
+.order-success-actions .continue-shopping,
+.success-actions .continue-shopping {
+  background: #ffffff;
+  color: #111827 !important;
+  border: 1.5px solid #f3b4d0;
+  box-shadow: 0 8px 18px rgba(214, 51, 132, 0.08);
+}
+
+.checkout-success-actions .btn-secondary:hover,
+.order-success-actions .btn-secondary:hover,
+.success-actions .btn-secondary:hover,
+.checkout-success-actions .btn-home:hover,
+.order-success-actions .btn-home:hover,
+.success-actions .btn-home:hover,
+.checkout-success-actions .continue-shopping:hover,
+.order-success-actions .continue-shopping:hover,
+.success-actions .continue-shopping:hover {
+  background: #fff5fa;
+  color: #111827 !important;
+  border-color: #e98ab7;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(214, 51, 132, 0.14);
+}
+
+/* Chặn style link toàn cục đổi màu chữ 2 nút phụ sang hồng */
+.checkout-success-actions a.btn-secondary,
+.order-success-actions a.btn-secondary,
+.success-actions a.btn-secondary,
+.checkout-success-actions a.btn-home,
+.order-success-actions a.btn-home,
+.success-actions a.btn-home,
+.checkout-success-actions a.continue-shopping,
+.order-success-actions a.continue-shopping,
+.success-actions a.continue-shopping {
+  color: #111827 !important;
+}
+
+@media (max-width: 768px) {
+  .checkout-success-actions,
+  .order-success-actions,
+  .success-actions {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .checkout-success-actions a,
+  .order-success-actions a,
+  .success-actions a {
+    width: 100%;
+    max-width: 320px;
+    min-width: unset;
+  }
+}
+
