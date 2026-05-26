@@ -58,6 +58,12 @@
         <span class="admin-nav__meta">/admin/orders</span>
       </a>
 
+      <a class="${activeMenu == 'returns' ? 'is-active' : ''}"
+         href="${pageContext.request.contextPath}/admin/returns">
+        <span>Return Requests</span>
+        <span class="admin-nav__meta">/admin/returns</span>
+      </a>
+
       <a class="${activeMenu == 'coupons' ? 'is-active' : ''}"
          href="${pageContext.request.contextPath}/admin/coupons">
         <span>Coupons</span>
