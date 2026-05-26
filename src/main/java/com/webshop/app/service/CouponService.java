@@ -1,6 +1,7 @@
 package com.webshop.app.service;
 
 import com.webshop.app.dao.CouponDAO;
+import com.webshop.app.dao.UserCouponDAO;
 import com.webshop.app.model.Coupon;
 
 import java.math.BigDecimal;
@@ -21,6 +22,7 @@ public class CouponService {
     );
 
     private final CouponDAO couponDAO = new CouponDAO();
+    private final UserCouponDAO userCouponDAO = new UserCouponDAO();
 
     /**
      * Hàm cũ để tránh lỗi các file khác đang gọi.
@@ -72,6 +74,25 @@ public class CouponService {
         }
 
         if (!isRankAllowed(userRankCode, coupon.getMinRankCode())) {
+            return null;
+        }
+
+        return coupon;
+    }
+
+    public Coupon validateCoupon(
+            int userId,
+            String code,
+            BigDecimal subtotal,
+            String userRankCode
+    ) {
+        Coupon coupon = validateCoupon(code, subtotal, userRankCode);
+
+        if (coupon == null) {
+            return null;
+        }
+
+        if (userId > 0 && userCouponDAO.hasUserUsedCoupon(userId, coupon.getId())) {
             return null;
         }
 
@@ -183,6 +204,25 @@ public class CouponService {
 
         if (!isRankAllowed(userRankCode, coupon.getMinRankCode())) {
             return "Hạng thành viên của bạn chưa đủ điều kiện để dùng mã này.";
+        }
+
+        return "";
+    }
+
+    public String buildCouponErrorMessage(
+            int userId,
+            Coupon coupon,
+            BigDecimal subtotal,
+            String userRankCode
+    ) {
+        String baseMessage = buildCouponErrorMessage(coupon, subtotal, userRankCode);
+
+        if (baseMessage != null && !baseMessage.isBlank()) {
+            return baseMessage;
+        }
+
+        if (coupon != null && userId > 0 && userCouponDAO.hasUserUsedCoupon(userId, coupon.getId())) {
+            return "Bạn đã sử dụng mã khuyến mãi này rồi.";
         }
 
         return "";
