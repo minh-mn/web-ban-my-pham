@@ -13,6 +13,8 @@ import com.webshop.app.model.Product;
 import com.webshop.app.model.ProductVariant;
 import com.webshop.app.model.Review;
 import com.webshop.app.service.ProductPricingFacade;
+import com.webshop.app.model.User;
+import jakarta.servlet.http.HttpSession;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -65,7 +67,11 @@ public class ProductDetailServlet extends HttpServlet {
         List<ProductVariant> variants =
                 productVariantDAO.findActiveByProductId(product.getId());
 
-        List<Review> reviews = reviewDAO.findByProductId(product.getId());
+        Integer reviewRating = parseNullableRating(req.getParameter("reviewRating"));
+        String reviewSort = req.getParameter("reviewSort");
+        String reviewMedia = req.getParameter("reviewMedia");
+
+        List<Review> reviews = reviewDAO.findByProductId(product.getId(), reviewSort, reviewRating, reviewMedia);
 
         int reviewCount = reviews != null ? reviews.size() : 0;
         product.setReviewCount(reviewCount);
@@ -88,6 +94,14 @@ public class ProductDetailServlet extends HttpServlet {
         req.setAttribute("product", product);
         req.setAttribute("reviews", reviews);
         req.setAttribute("variants", variants);
+        req.setAttribute("reviewSort", reviewSort);
+        req.setAttribute("reviewRating", reviewRating);
+        req.setAttribute("reviewMedia", reviewMedia);
+
+        HttpSession session = req.getSession(false);
+        User user = session == null ? null : (User) session.getAttribute("user");
+        boolean canReviewProduct = user != null && reviewDAO.canUserReviewProduct(user.getId(), product.getId());
+        req.setAttribute("canReviewProduct", canReviewProduct);
 
         req.setAttribute("pageTitle", "MyCosmetic | " + product.getTitle());
         req.setAttribute("pageCss", "product-detail.css");
@@ -96,4 +110,18 @@ public class ProductDetailServlet extends HttpServlet {
         req.getRequestDispatcher("/jsp/common/base.jsp")
                 .forward(req, resp);
     }
+
+
+    private Integer parseNullableRating(String value) {
+        try {
+            if (value == null || value.isBlank()) {
+                return null;
+            }
+            int rating = Integer.parseInt(value.trim());
+            return rating >= 1 && rating <= 5 ? rating : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
 }
