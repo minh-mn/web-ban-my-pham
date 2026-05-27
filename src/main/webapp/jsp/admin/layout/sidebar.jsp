@@ -64,30 +64,20 @@
         <span class="admin-nav__meta">/admin/returns</span>
       </a>
 
-      <a class="${activeMenu == 'coupons' ? 'is-active' : ''}"
-         href="${pageContext.request.contextPath}/admin/coupons">
-        <span>Coupons</span>
-        <span class="admin-nav__meta">/admin/coupons</span>
-      </a>
-
       <div class="admin-nav__section">Promotions</div>
 
-      <a class="${activeMenu == 'promotionEvents' ? 'is-active' : ''}"
-         href="${pageContext.request.contextPath}/admin/promotion-events">
-        <span>Promotion Events</span>
-        <span class="admin-nav__meta">/admin/promotion-events</span>
-      </a>
-
-      <a class="${activeMenu == 'brandDiscounts' ? 'is-active' : ''}"
-         href="${pageContext.request.contextPath}/admin/brand-discounts">
-        <span>Brand Discounts</span>
-        <span class="admin-nav__meta">/admin/brand-discounts</span>
-      </a>
-
-      <a class="${activeMenu == 'orderDiscounts' ? 'is-active' : ''}"
-         href="${pageContext.request.contextPath}/admin/order-discounts">
-        <span>Order Discounts</span>
-        <span class="admin-nav__meta">/admin/order-discounts</span>
+      <a class="${
+            activeMenu == 'promotions'
+            || activeMenu == 'coupons'
+            || activeMenu == 'promotionEvents'
+            || activeMenu == 'brandDiscounts'
+            || activeMenu == 'orderDiscounts'
+            ? 'is-active'
+            : ''
+          }"
+         href="${pageContext.request.contextPath}/admin/promotions">
+        <span>Khuyến mãi &amp; Mã giảm giá</span>
+        <span class="admin-nav__meta">/admin/promotions</span>
       </a>
 
       <div class="admin-nav__section">System</div>
