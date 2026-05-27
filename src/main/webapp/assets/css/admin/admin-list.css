@@ -365,29 +365,50 @@ td.product-actions {
 }
 
 /* =========================================================
-   Unified Promotion List
+   Unified Promotion List - Wide Layout Fix
    Scope: promotion_list.jsp
    Chỉ dùng cho trang /admin/promotions
 ========================================================= */
 
+.admin-promo-page .admin-promo-container {
+  width: 100%;
+  max-width: 1680px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 18px;
+  padding-right: 18px;
+}
+
 .admin-promotion-topbar {
-  align-items: flex-start;
-  gap: 16px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: start;
+}
+
+.admin-promotion-heading {
+  min-width: 0;
 }
 
 .admin-promotion-create {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
+  display: grid;
+  grid-template-columns: repeat(4, max-content);
   gap: 10px;
-  flex-wrap: wrap;
+  justify-content: end;
+  align-items: center;
 }
 
-.admin-promotion-create .admin-btn {
+.admin-promo-create-btn {
+  min-width: 148px;
+  height: 38px;
+  justify-content: center;
   white-space: nowrap;
+  font-weight: 850;
 }
 
-/* Stats cards */
+/* =========================
+   Stats cards
+========================= */
 
 .admin-promo-stats {
   display: grid;
@@ -420,7 +441,21 @@ td.product-actions {
   letter-spacing: -0.03em;
 }
 
-/* Tabs */
+/* =========================
+   Main card
+========================= */
+
+.admin-promo-list-card {
+  width: 100%;
+}
+
+.admin-promo-list-card .admin-card__body {
+  overflow: visible;
+}
+
+/* =========================
+   Tabs
+========================= */
 
 .admin-promo-tabs {
   display: flex;
@@ -468,7 +503,9 @@ td.product-actions {
   color: #be185d;
 }
 
-/* Toolbar */
+/* =========================
+   Toolbar / Filter
+========================= */
 
 .admin-promo-toolbar {
   margin-bottom: 14px;
@@ -479,23 +516,29 @@ td.product-actions {
 }
 
 .admin-promo-filter-form {
-  display: flex;
-  align-items: center;
+  display: grid;
+  grid-template-columns: minmax(340px, 1fr) 210px 72px auto;
   gap: 10px;
-  flex-wrap: wrap;
-}
-
-.admin-promo-filter-form .admin-input,
-.admin-promo-filter-form .admin-select {
-  height: 40px;
+  align-items: center;
 }
 
 .admin-promo-search {
-  width: 360px;
-  max-width: 100%;
+  width: 100%;
 }
 
-/* Table */
+.admin-promo-status-filter {
+  width: 100%;
+}
+
+.admin-promo-filter-btn {
+  height: 40px;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+/* =========================
+   Table
+========================= */
 
 .admin-promo-table-wrap {
   width: 100%;
@@ -504,15 +547,63 @@ td.product-actions {
 }
 
 .admin-promo-table {
-  min-width: 1380px;
+  width: 100%;
+  min-width: 1540px;
+  table-layout: fixed;
+}
+
+.admin-promo-table th,
+.admin-promo-table td {
+  vertical-align: middle;
 }
 
 .admin-promo-table th {
+  font-size: 12px;
   white-space: nowrap;
 }
 
-.admin-promo-table td {
-  vertical-align: middle;
+.admin-promo-col-id {
+  width: 56px;
+}
+
+.admin-promo-col-type {
+  width: 160px;
+}
+
+.admin-promo-col-title {
+  width: 210px;
+}
+
+.admin-promo-col-scope {
+  width: 190px;
+}
+
+.admin-promo-col-discount-type {
+  width: 112px;
+}
+
+.admin-promo-col-value {
+  width: 96px;
+}
+
+.admin-promo-col-condition {
+  width: 250px;
+}
+
+.admin-promo-col-period {
+  width: 178px;
+}
+
+.admin-promo-col-status {
+  width: 120px;
+}
+
+.admin-promo-col-actions {
+  width: 220px;
+}
+
+.admin-promo-id-cell {
+  white-space: nowrap;
 }
 
 .admin-promo-title {
@@ -520,7 +611,7 @@ td.product-actions {
   font-size: 13px;
   font-weight: 900;
   line-height: 1.35;
-  max-width: 340px;
+  max-width: 100%;
   overflow-wrap: anywhere;
 }
 
@@ -538,18 +629,25 @@ td.product-actions {
 
 .admin-promo-scope,
 .admin-promo-condition {
-  max-width: 300px;
+  max-width: 100%;
   color: rgba(15, 23, 42, 0.74);
   font-size: 13px;
   line-height: 1.45;
   overflow-wrap: anywhere;
 }
 
+.admin-promo-value-cell {
+  white-space: nowrap;
+  font-weight: 900;
+}
+
 .admin-promo-empty {
   margin-top: 8px;
 }
 
-/* Promotion type badges */
+/* =========================
+   Promotion type badges
+========================= */
 
 .admin-promo-type {
   display: inline-flex;
@@ -594,13 +692,63 @@ td.product-actions {
   color: #be185d;
 }
 
-/* Actions riêng cho bảng promotion */
+/* =========================
+   Period column
+========================= */
 
-.admin-promo-actions {
+.admin-promo-period-cell {
+  min-width: 178px;
+}
+
+.admin-promo-period {
+  display: grid;
+  gap: 5px;
+  min-width: 154px;
+}
+
+.admin-promo-period__row {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 6px;
+  align-items: center;
+}
+
+.admin-promo-period__label {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  min-height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.05);
+  color: var(--admin-muted);
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.admin-promo-period__date {
+  color: var(--admin-text);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.35;
   white-space: nowrap;
+}
+
+/* =========================
+   Actions
+========================= */
+
+.admin-promo-action-cell {
+  white-space: nowrap;
+}
+
+.admin-promo-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 58px);
+  gap: 8px;
+  align-items: center;
+  justify-content: start;
 }
 
 .admin-promo-actions form {
@@ -608,31 +756,56 @@ td.product-actions {
 }
 
 .admin-promo-actions .admin-inline {
-  display: inline-flex;
+  display: block;
   margin: 0;
 }
 
-.admin-promo-actions .admin-btn {
-  padding: 8px 10px;
-  border-radius: 12px;
-  font-size: 13px;
+.admin-promo-action-btn {
+  width: 58px;
+  min-width: 58px;
+  height: 34px;
+  padding: 0 8px;
+  justify-content: center;
+  border-radius: 11px;
+  font-size: 12px;
+  font-weight: 850;
 }
 
 /* =========================
    Responsive
 ========================= */
 
+@media (max-width: 1500px) {
+  .admin-promo-page .admin-promo-container {
+    max-width: 1480px;
+  }
+
+  .admin-promotion-create {
+    grid-template-columns: repeat(2, minmax(170px, 1fr));
+  }
+
+  .admin-promo-create-btn {
+    width: 100%;
+  }
+}
+
 @media (max-width: 1280px) {
   .admin-promo-stats {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+}
 
+@media (max-width: 1180px) {
   .admin-promotion-topbar {
-    flex-direction: column;
+    grid-template-columns: 1fr;
   }
 
   .admin-promotion-create {
-    justify-content: flex-start;
+    justify-content: start;
+  }
+
+  .admin-promo-filter-form {
+    grid-template-columns: 1fr 210px 72px auto;
   }
 }
 
@@ -642,7 +815,7 @@ td.product-actions {
   }
 
   .admin-promo-table {
-    min-width: 1380px;
+    min-width: 1540px;
   }
 
   .admin-card__body {
@@ -664,22 +837,29 @@ td.product-actions {
   }
 }
 
-@media (max-width: 720px) {
-  .admin-promo-stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+@media (max-width: 760px) {
+  .admin-promo-page .admin-promo-container {
+    padding-left: 12px;
+    padding-right: 12px;
   }
 
-  .admin-promotion-create,
+  .admin-promotion-create {
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
   .admin-promo-filter-form {
-    width: 100%;
-    align-items: stretch;
+    grid-template-columns: 1fr;
   }
 
-  .admin-promotion-create .admin-btn,
-  .admin-promo-filter-form .admin-input,
-  .admin-promo-filter-form .admin-select,
-  .admin-promo-filter-form .admin-btn {
+  .admin-promo-filter-btn,
+  .admin-promo-status-filter,
+  .admin-promo-search {
     width: 100%;
+  }
+
+  .admin-promo-stats {
+    grid-template-columns: 1fr;
   }
 
   .admin-promo-tabs {
@@ -712,14 +892,8 @@ td.product-actions {
   .admin-actions .admin-btn,
   .admin-action-group .admin-btn,
   .product-actions-inner .admin-btn,
-  .admin-promo-actions .admin-btn {
-    padding: 8px 9px;
+  .admin-promo-action-btn {
+    padding: 0 8px;
     font-size: 12px;
-  }
-}
-
-@media (max-width: 520px) {
-  .admin-promo-stats {
-    grid-template-columns: 1fr;
   }
 }
