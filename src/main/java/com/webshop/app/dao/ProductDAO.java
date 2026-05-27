@@ -31,7 +31,7 @@ public class ProductDAO {
 						"c.id AS c_id, c.name AS c_name, " +
 						"b.id AS b_id, b.name AS b_name " +
 						"FROM store_product p " +
-						"LEFT JOIN store_review r ON p.id = r.product_id " +
+						"LEFT JOIN store_review r ON p.id = r.product_id AND r.status = 'APPROVED' AND COALESCE(r.is_hidden, 0) = 0 " +
 						"LEFT JOIN store_category c ON p.category_id = c.id " +
 						"LEFT JOIN store_brand b ON p.brand_id = b.id " +
 						"WHERE p.is_active = 1 "
@@ -80,7 +80,7 @@ public class ProductDAO {
 				"SELECT COUNT(*) FROM ( " +
 						"SELECT p.id " +
 						"FROM store_product p " +
-						"LEFT JOIN store_review r ON p.id = r.product_id " +
+						"LEFT JOIN store_review r ON p.id = r.product_id AND r.status = 'APPROVED' AND COALESCE(r.is_hidden, 0) = 0 " +
 						"WHERE p.is_active = 1 "
 		);
 
@@ -132,7 +132,7 @@ public class ProductDAO {
 						"c.id AS c_id, c.name AS c_name, " +
 						"b.id AS b_id, b.name AS b_name " +
 						"FROM store_product p " +
-						"LEFT JOIN store_review r ON p.id = r.product_id " +
+						"LEFT JOIN store_review r ON p.id = r.product_id AND r.status = 'APPROVED' AND COALESCE(r.is_hidden, 0) = 0 " +
 						"LEFT JOIN store_category c ON p.category_id = c.id " +
 						"LEFT JOIN store_brand b ON p.brand_id = b.id " +
 						"WHERE p.is_active = 1 "
@@ -190,7 +190,7 @@ public class ProductDAO {
 						"c.id AS c_id, c.name AS c_name, " +
 						"b.id AS b_id, b.name AS b_name " +
 						"FROM store_product p " +
-						"LEFT JOIN store_review r ON p.id = r.product_id " +
+						"LEFT JOIN store_review r ON p.id = r.product_id AND r.status = 'APPROVED' AND COALESCE(r.is_hidden, 0) = 0 " +
 						"LEFT JOIN store_category c ON p.category_id = c.id " +
 						"LEFT JOIN store_brand b ON p.brand_id = b.id " +
 						"WHERE 1 = 1 "
@@ -273,7 +273,7 @@ public class ProductDAO {
 						"c.id AS c_id, c.name AS c_name, " +
 						"b.id AS b_id, b.name AS b_name " +
 						"FROM store_product p " +
-						"LEFT JOIN store_review r ON p.id = r.product_id " +
+						"LEFT JOIN store_review r ON p.id = r.product_id AND r.status = 'APPROVED' AND COALESCE(r.is_hidden, 0) = 0 " +
 						"LEFT JOIN store_category c ON p.category_id = c.id " +
 						"LEFT JOIN store_brand b ON p.brand_id = b.id " +
 						"WHERE p.slug = ? AND p.is_active = 1 " +
@@ -548,7 +548,7 @@ public class ProductDAO {
 						"LEFT JOIN store_brand b ON p.brand_id = b.id " +
 						"LEFT JOIN ( " +
 						"SELECT product_id, AVG(rating) AS avg_rating, COUNT(*) AS review_count " +
-						"FROM store_review GROUP BY product_id " +
+						"FROM store_review WHERE status = 'APPROVED' AND COALESCE(is_hidden, 0) = 0 GROUP BY product_id " +
 						") rv ON rv.product_id = p.id " +
 						"LEFT JOIN ( " +
 						"SELECT oi.product_id, SUM(oi.quantity) AS sold_qty " +
@@ -587,7 +587,7 @@ public class ProductDAO {
 						"c.id AS c_id, c.name AS c_name, " +
 						"b.id AS b_id, b.name AS b_name " +
 						"FROM store_product p " +
-						"LEFT JOIN store_review r ON p.id = r.product_id " +
+						"LEFT JOIN store_review r ON p.id = r.product_id AND r.status = 'APPROVED' AND COALESCE(r.is_hidden, 0) = 0 " +
 						"LEFT JOIN store_category c ON p.category_id = c.id " +
 						"LEFT JOIN store_brand b ON p.brand_id = b.id " +
 						"WHERE p.is_active = 1 " +
@@ -811,8 +811,8 @@ public class ProductDAO {
 		String sql = "SELECT * FROM store_product"; // Hãy đảm bảo tên bảng khớp với DB của bạn
 
 		try (Connection conn = DBConnection.getConnection();
-		     PreparedStatement ps = conn.prepareStatement(sql);
-		     ResultSet rs = ps.executeQuery()) {
+			 PreparedStatement ps = conn.prepareStatement(sql);
+			 ResultSet rs = ps.executeQuery()) {
 
 			while (rs.next()) {
 				Product p = new Product();
