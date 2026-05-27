@@ -11,10 +11,7 @@
 		<h2 class="auth-title">Đăng nhập vào MyCosmetic</h2>
 
 		<div class="social-login-stack" style="display: flex; flex-direction: column; gap: 12px; margin-top: 10px;">
-			<a href="javascript:void(0)" id="btn-google" class="social-btn" style="border: 1px solid #d9dadc; border-radius: 500px; padding: 12px 24px; text-decoration: none; color: #121212; font-weight: 700; display: flex; align-items: center;">
-				<img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google" style="width: 20px; margin-right: 12px;">
-				<span style="flex: 1; text-align: center;">Tiếp tục bằng Google</span>
-			</a>
+			<div id="googleRegisterBtn" style="margin-top:20px"></div>
 
 			<a href="javascript:void(0)" id="btn-facebook" class="social-btn" style="border: 1px solid #d9dadc; border-radius: 500px; padding: 12px 24px; text-decoration: none; color: #121212; font-weight: 700; display: flex; align-items: center;">
 				<img src="https://upload.wikimedia.org/wikipedia/commons/0/05/Facebook_Logo_%282019%29.png" alt="Facebook" style="width: 20px; margin-right: 12px;">
@@ -47,24 +44,69 @@
 </section>
 
 <script>
-	
+
 	// 1. CẤU HÌNH GOOGLE LOGIN
 
-	const GOOGLE_CLIENT_ID = '130995484397-cmqdo3kgqa8soio7i84he5kiep7folpm.apps.googleusercontent.com';
+	const GOOGLE_CLIENT_ID = "78979081819-fo21lsm5idv3pp22779bais8l1f5csnm.apps.googleusercontent.com";
 
-	document.getElementById('btn-google').addEventListener('click', () => {
-		const client = google.accounts.oauth2.initTokenClient({
+	const contextPath = "${pageContext.request.contextPath}";
+
+	window.onload = function () {
+
+		google.accounts.id.initialize({
 			client_id: GOOGLE_CLIENT_ID,
-			scope: 'https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
-			callback: (response) => {
-				if (response && response.access_token) {
-					// Gửi Token về Backend Java để xử lý
-					sendTokenToServer('google', response.access_token);
-				}
-			},
+
+			callback: handleGoogleLogin
 		});
-		client.requestAccessToken();
-	});
+
+		google.accounts.id.renderButton(
+				document.getElementById("googleLoginBtn"),
+				{
+					theme: "outline",
+					size: "large",
+					width: 350,
+					shape: "pill"
+				}
+		);
+	};
+
+	function handleGoogleLogin(response) {
+
+		fetch(contextPath + '/social-auth', {
+			method: 'POST',
+
+			headers: {
+				'Content-Type': 'application/x-www-form-urlencoded'
+			},
+
+			body: new URLSearchParams({
+				provider: 'google',
+				credential: response.credential,
+				mode: 'login'
+			})
+		})
+				.then(res => res.json())
+				.then(data => {
+
+					if (data.status === 'success') {
+
+						Swal.fire({
+							icon: 'success',
+							title: 'Đăng nhập thành công'
+						}).then(() => {
+							window.location.href = contextPath + data.redirectUrl;
+						});
+
+					} else {
+
+						Swal.fire({
+							icon: 'error',
+							title: 'Lỗi',
+							text: data.message
+						});
+					}
+				});
+	}
 
 	
 	// 2. CẤU HÌNH FACEBOOK LOGIN
