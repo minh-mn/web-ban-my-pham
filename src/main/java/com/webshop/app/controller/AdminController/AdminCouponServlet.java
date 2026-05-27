@@ -1,127 +1,37 @@
 package com.webshop.app.controller.AdminController;
 
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.List;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
-
-import com.webshop.app.dao.CouponDAO;
-import com.webshop.app.model.Coupon;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
 
 @WebServlet("/admin/coupons")
 public class AdminCouponServlet extends HttpServlet {
 
-    private static final Set<String> VALID_COUPON_TYPES = Set.of(
-            "DISCOUNT",
-            "FREESHIP",
-            "PRODUCT",
-            "PERCENT"
-    );
-
-    private static final Set<String> VALID_RANK_CODES = Set.of(
-            "MEMBER",
-            "SILVER",
-            "GOLD",
-            "DIAMOND",
-            "VIP"
-    );
-
-    private static final String DEFAULT_COUPON_TYPE = "DISCOUNT";
-    private static final String DEFAULT_RANK_CODE = "MEMBER";
-
-    private final CouponDAO couponDAO = new CouponDAO();
+    private static final String UNIFIED_PROMOTION_PATH = "/admin/promotions";
+    private static final String PROMOTION_TYPE_PARAM = "type";
+    private static final String COUPON_TYPE = "COUPON";
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
-        couponDAO.deactivateExpiredCoupons();
-
         req.setCharacterEncoding("UTF-8");
         resp.setCharacterEncoding("UTF-8");
-        resp.setContentType("text/html;charset=UTF-8");
 
-        String action = req.getParameter("action");
-        if (action == null || action.isBlank()) {
-            action = "list";
-        }
-
-        switch (action) {
-
-            case "new": {
-                Coupon coupon = new Coupon();
-                coupon.setActive(true);
-                coupon.setType(DEFAULT_COUPON_TYPE);
-                coupon.setMinOrderAmount(BigDecimal.ZERO);
-                coupon.setMinRankCode(DEFAULT_RANK_CODE);
-
-                req.setAttribute("mode", "create");
-                req.setAttribute("coupon", coupon);
-                req.getRequestDispatcher("/jsp/admin/coupon/coupon_form.jsp").forward(req, resp);
-                return;
-            }
-
-            case "edit": {
-                int id = safeInt(req.getParameter("id"), -1);
-                if (id <= 0) {
-                    resp.sendRedirect(req.getContextPath() + "/admin/coupons");
-                    return;
-                }
-
-                Coupon coupon = couponDAO.findById(id);
-                if (coupon == null) {
-                    resp.sendRedirect(req.getContextPath() + "/admin/coupons");
-                    return;
-                }
-
-                req.setAttribute("mode", "edit");
-                req.setAttribute("coupon", coupon);
-                req.getRequestDispatcher("/jsp/admin/coupon/coupon_form.jsp").forward(req, resp);
-                return;
-            }
-
-            case "list":
-            default: {
-                String q = safe(req.getParameter("q"));
-                String status = safe(req.getParameter("status"));
-
-                List<Coupon> coupons = couponDAO.findAll();
-
-                if (!q.isEmpty()) {
-                    String keyword = q.toUpperCase();
-                    coupons = coupons.stream()
-                            .filter(coupon ->
-                                    coupon.getCode() != null
-                                            && coupon.getCode().toUpperCase().contains(keyword)
-                            )
-                            .collect(Collectors.toList());
-                }
-
-                if ("active".equalsIgnoreCase(status)) {
-                    coupons = coupons.stream()
-                            .filter(Coupon::isActive)
-                            .collect(Collectors.toList());
-                } else if ("inactive".equalsIgnoreCase(status)) {
-                    coupons = coupons.stream()
-                            .filter(coupon -> !coupon.isActive())
-                            .collect(Collectors.toList());
-                }
-
-                req.setAttribute("q", q);
-                req.setAttribute("status", status);
-                req.setAttribute("coupons", coupons);
-                req.getRequestDispatcher("/jsp/admin/coupon/coupon_list.jsp").forward(req, resp);
-                return;
-            }
-        }
+        resp.sendRedirect(buildRedirectUrl(req));
     }
 
     @Override
@@ -130,278 +40,119 @@ public class AdminCouponServlet extends HttpServlet {
 
         req.setCharacterEncoding("UTF-8");
         resp.setCharacterEncoding("UTF-8");
-        resp.setContentType("text/html;charset=UTF-8");
 
-        String action = req.getParameter("action");
-        if (action == null || action.isBlank()) {
-            action = "create";
+        /*
+         * Giữ tương thích cho các form cũ đang POST về /admin/coupons.
+         * Request sẽ được forward nội bộ sang /admin/promotions,
+         * đồng thời tự bổ sung type=COUPON để servlet quản lý khuyến mãi mới xử lý đúng loại.
+         */
+        HttpServletRequest wrappedRequest = new PromotionTypeRequestWrapper(req, COUPON_TYPE);
+        req.getRequestDispatcher(UNIFIED_PROMOTION_PATH).forward(wrappedRequest, resp);
+    }
+
+    private String buildRedirectUrl(HttpServletRequest req) {
+        Map<String, String[]> params = new LinkedHashMap<>(req.getParameterMap());
+
+        /*
+         * Ép type=COUPON để mọi link cũ /admin/coupons đều được chuyển đúng tab mã giảm giá
+         * trong giao diện quản lý khuyến mãi tập trung.
+         */
+        params.put(PROMOTION_TYPE_PARAM, new String[]{COUPON_TYPE});
+
+        StringBuilder url = new StringBuilder();
+        url.append(req.getContextPath()).append(UNIFIED_PROMOTION_PATH);
+
+        String queryString = buildQueryString(params);
+        if (!queryString.isBlank()) {
+            url.append("?").append(queryString);
         }
 
-        try {
-            switch (action) {
+        return url.toString();
+    }
 
-                case "create": {
-                    Coupon coupon = new Coupon();
+    private String buildQueryString(Map<String, String[]> params) {
+        StringBuilder query = new StringBuilder();
 
-                    bind(req, coupon);
-                    validate(coupon, false);
+        for (Map.Entry<String, String[]> entry : params.entrySet()) {
+            String key = entry.getKey();
+            String[] values = entry.getValue();
 
-                    couponDAO.create(coupon);
-
-                    resp.sendRedirect(req.getContextPath() + "/admin/coupons");
-                    return;
-                }
-
-                case "update": {
-                    int id = safeInt(req.getParameter("id"), -1);
-                    if (id <= 0) {
-                        resp.sendRedirect(req.getContextPath() + "/admin/coupons");
-                        return;
-                    }
-
-                    Coupon coupon = couponDAO.findById(id);
-                    if (coupon == null) {
-                        resp.sendRedirect(req.getContextPath() + "/admin/coupons");
-                        return;
-                    }
-
-                    bind(req, coupon);
-                    coupon.setId(id);
-                    validate(coupon, true);
-
-                    couponDAO.update(coupon);
-
-                    resp.sendRedirect(req.getContextPath() + "/admin/coupons");
-                    return;
-                }
-
-                case "delete": {
-                    int id = safeInt(req.getParameter("id"), -1);
-                    if (id > 0) {
-                        couponDAO.softDisable(id);
-                    }
-
-                    resp.sendRedirect(req.getContextPath() + "/admin/coupons");
-                    return;
-                }
-
-                case "toggle": {
-                    int id = safeInt(req.getParameter("id"), -1);
-                    if (id > 0) {
-                        couponDAO.toggleActive(id);
-                    }
-
-                    resp.sendRedirect(req.getContextPath() + "/admin/coupons");
-                    return;
-                }
-
-                default: {
-                    resp.sendRedirect(req.getContextPath() + "/admin/coupons");
-                    return;
-                }
+            if (key == null || key.isBlank()) {
+                continue;
             }
 
-        } catch (IllegalArgumentException ex) {
-            Coupon coupon = new Coupon();
-
-            if ("update".equalsIgnoreCase(action)) {
-                req.setAttribute("mode", "edit");
-                coupon.setId(safeInt(req.getParameter("id"), 0));
-            } else {
-                req.setAttribute("mode", "create");
+            if (values == null || values.length == 0) {
+                appendParam(query, key, "");
+                continue;
             }
 
-            try {
-                bind(req, coupon);
-            } catch (Exception ignore) {
-                // Giữ lỗi validate chính để hiển thị cho admin.
+            for (String value : values) {
+                appendParam(query, key, value == null ? "" : value);
             }
-
-            req.setAttribute("error", ex.getMessage());
-            req.setAttribute("coupon", coupon);
-            req.getRequestDispatcher("/jsp/admin/coupon/coupon_form.jsp").forward(req, resp);
         }
+
+        return query.toString();
     }
 
-    /* ===================== BIND + VALIDATE ===================== */
-
-    private void bind(HttpServletRequest req, Coupon coupon) {
-
-        String code = safe(req.getParameter("code")).toUpperCase();
-        coupon.setCode(code);
-
-        String type = safe(req.getParameter("type")).toUpperCase();
-        if (type.isEmpty()) {
-            type = DEFAULT_COUPON_TYPE;
-        }
-        coupon.setType(type);
-
-        coupon.setDescription(safe(req.getParameter("description")));
-
-        BigDecimal minOrderAmount = parseBigDecimal(
-                req.getParameter("minOrderAmount"),
-                BigDecimal.ZERO,
-                "Đơn tối thiểu không hợp lệ."
-        );
-        coupon.setMinOrderAmount(minOrderAmount);
-
-        String minRankCode = safe(req.getParameter("minRankCode")).toUpperCase();
-        if (minRankCode.isEmpty()) {
-            minRankCode = DEFAULT_RANK_CODE;
-        }
-        coupon.setMinRankCode(minRankCode);
-
-        coupon.setDiscountPercent(safeInt(req.getParameter("discountPercent"), 0));
-
-        coupon.setMaxUses(safeInt(req.getParameter("maxUses"), 1));
-
-        String maxDiscountAmountRaw = req.getParameter("maxDiscountAmount");
-        if (maxDiscountAmountRaw == null || maxDiscountAmountRaw.trim().isEmpty()) {
-            coupon.setMaxDiscountAmount(null);
-        } else {
-            BigDecimal maxDiscountAmount = parseBigDecimal(
-                    maxDiscountAmountRaw,
-                    null,
-                    "Số tiền giảm tối đa không hợp lệ."
-            );
-            coupon.setMaxDiscountAmount(maxDiscountAmount);
+    private void appendParam(StringBuilder query, String key, String value) {
+        if (query.length() > 0) {
+            query.append("&");
         }
 
-        coupon.setStartDate(safeDate(req.getParameter("startDate")));
-        coupon.setEndDate(safeDate(req.getParameter("endDate")));
-
-        boolean active =
-                "1".equals(req.getParameter("active"))
-                        || "true".equalsIgnoreCase(req.getParameter("active"))
-                        || "on".equalsIgnoreCase(req.getParameter("active"));
-
-        coupon.setActive(active);
+        query.append(encode(key))
+                .append("=")
+                .append(encode(value));
     }
 
-    private void validate(Coupon coupon, boolean isUpdate) {
-
-        if (coupon.getCode() == null || coupon.getCode().isBlank()) {
-            throw new IllegalArgumentException("Mã coupon không được để trống.");
-        }
-
-        if (!isUpdate && couponDAO.existsByCode(coupon.getCode())) {
-            throw new IllegalArgumentException("Mã coupon đã tồn tại.");
-        }
-
-        if (isUpdate && isDuplicateCodeForOtherCoupon(coupon)) {
-            throw new IllegalArgumentException("Mã coupon đã được sử dụng bởi coupon khác.");
-        }
-
-        if (coupon.getType() == null || coupon.getType().isBlank()) {
-            throw new IllegalArgumentException("Loại coupon không được để trống.");
-        }
-
-        if (!VALID_COUPON_TYPES.contains(coupon.getType())) {
-            throw new IllegalArgumentException("Loại coupon không hợp lệ.");
-        }
-
-        if (coupon.getDiscountPercent() <= 0 || coupon.getDiscountPercent() > 100) {
-            throw new IllegalArgumentException("Phần trăm giảm giá phải nằm trong khoảng 1 đến 100.");
-        }
-
-        if (coupon.getMaxUses() < 1) {
-            throw new IllegalArgumentException("Số lượt dùng tối đa phải lớn hơn hoặc bằng 1.");
-        }
-
-        if (coupon.getMaxDiscountAmount() != null
-                && coupon.getMaxDiscountAmount().compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException("Số tiền giảm tối đa không được âm.");
-        }
-
-        if (coupon.getMinOrderAmount() == null) {
-            coupon.setMinOrderAmount(BigDecimal.ZERO);
-        }
-
-        if (coupon.getMinOrderAmount().compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException("Đơn tối thiểu không được âm.");
-        }
-
-        if (coupon.getMinRankCode() == null || coupon.getMinRankCode().isBlank()) {
-            coupon.setMinRankCode(DEFAULT_RANK_CODE);
-        }
-
-        if (!VALID_RANK_CODES.contains(coupon.getMinRankCode())) {
-            throw new IllegalArgumentException("Rank tối thiểu không hợp lệ.");
-        }
-
-        if (coupon.getStartDate() != null
-                && coupon.getEndDate() != null
-                && coupon.getEndDate().isBefore(coupon.getStartDate())) {
-            throw new IllegalArgumentException("Ngày kết thúc phải sau hoặc bằng ngày bắt đầu.");
-        }
+    private String encode(String value) {
+        return URLEncoder.encode(value, StandardCharsets.UTF_8);
     }
 
-    private boolean isDuplicateCodeForOtherCoupon(Coupon coupon) {
-        return couponDAO.findAll()
-                .stream()
-                .anyMatch(existing ->
-                        existing.getId() != coupon.getId()
-                                && existing.getCode() != null
-                                && existing.getCode().equalsIgnoreCase(coupon.getCode())
-                );
-    }
+    private static class PromotionTypeRequestWrapper extends HttpServletRequestWrapper {
 
-    /* ===================== HELPERS ===================== */
+        private final String promotionType;
 
-    private int safeInt(String value, int defaultValue) {
-        try {
-            if (value == null) {
-                return defaultValue;
-            }
-
-            String trimmed = value.trim();
-            if (trimmed.isEmpty()) {
-                return defaultValue;
-            }
-
-            return Integer.parseInt(trimmed);
-
-        } catch (Exception e) {
-            return defaultValue;
+        PromotionTypeRequestWrapper(HttpServletRequest request, String promotionType) {
+            super(request);
+            this.promotionType = promotionType;
         }
-    }
 
-    private String safe(String value) {
-        return value == null ? "" : value.trim();
-    }
-
-    private LocalDate safeDate(String value) {
-        try {
-            if (value == null) {
+        @Override
+        public String getParameter(String name) {
+            String[] values = getParameterValues(name);
+            if (values == null || values.length == 0) {
                 return null;
             }
-
-            String trimmed = value.trim();
-            if (trimmed.isEmpty()) {
-                return null;
-            }
-
-            return LocalDate.parse(trimmed);
-
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Ngày không hợp lệ, định dạng đúng là yyyy-MM-dd: " + value);
+            return values[0];
         }
-    }
 
-    private BigDecimal parseBigDecimal(
-            String value,
-            BigDecimal defaultValue,
-            String errorMessage
-    ) {
-        try {
-            if (value == null || value.trim().isEmpty()) {
-                return defaultValue;
+        @Override
+        public String[] getParameterValues(String name) {
+            if (PROMOTION_TYPE_PARAM.equals(name)) {
+                return new String[]{promotionType};
             }
 
-            return new BigDecimal(value.trim());
+            return super.getParameterValues(name);
+        }
 
-        } catch (Exception e) {
-            throw new IllegalArgumentException(errorMessage);
+        @Override
+        public Map<String, String[]> getParameterMap() {
+            Map<String, String[]> mergedParams = new LinkedHashMap<>(super.getParameterMap());
+            mergedParams.put(PROMOTION_TYPE_PARAM, new String[]{promotionType});
+            return Collections.unmodifiableMap(mergedParams);
+        }
+
+        @Override
+        public Enumeration<String> getParameterNames() {
+            Set<String> names = new LinkedHashSet<>();
+
+            Enumeration<String> originalNames = super.getParameterNames();
+            while (originalNames.hasMoreElements()) {
+                names.add(originalNames.nextElement());
+            }
+
+            names.add(PROMOTION_TYPE_PARAM);
+            return Collections.enumeration(names);
         }
     }
 }
