@@ -2,12 +2,11 @@
 
 /* =========================================================
    CHECKOUT PAGE - FINAL CLEAN UI
-   Mục tiêu:
-   - Giữ layout checkout hiện tại
-   - Dọn CSS coupon modal bị lặp
-   - Badge "Tốt nhất" nổi bật hơn
-   - Nút + / ✓ dùng tone hồng
-   - Modal ổn định, không bị lệch style
+   Giữ bố cục cũ
+   Chỉ chỉnh:
+   - Nền ombre phớt nhẹ
+   - Nút chính dùng 1 màu rose mauve
+   - Hover nút đậm nhẹ hơn
 ========================================================= */
 
 :root {
@@ -19,13 +18,14 @@
 	--text-muted: #6b7280;
 	--text-light: #94a3b8;
 
-	--brand: #d63384;
-	--brand-hover: #c22573;
-	--brand-dark: #b1125b;
-	--brand-soft: #fff4f9;
-	--brand-softer: #fff8fb;
-	--brand-border: #f2bfd7;
-	--brand-disabled: #e8a8bd;
+	/* Màu chủ đạo mới */
+	--brand: #c94f7c;
+	--brand-hover: #b83f6b;
+	--brand-dark: #9f315b;
+	--brand-soft: #fff3f7;
+	--brand-softer: #fffafd;
+	--brand-border: #f3c6d6;
+	--brand-disabled: #d8a0b4;
 
 	--success: #0f8f61;
 	--success-bg: #ecfdf5;
@@ -41,14 +41,17 @@
 
 	--surface: #ffffff;
 	--surface-soft: #f8fafc;
-	--surface-pink: #fff7fb;
+	--surface-pink: #fff9fc;
 
 	--border: #e5e7eb;
 	--border-soft: #eef2f7;
 
 	--shadow-card: 0 10px 26px rgba(15, 23, 42, 0.06);
-	--shadow-card-hover: 0 14px 30px rgba(214, 51, 132, 0.12);
+	--shadow-card-hover: 0 14px 30px rgba(201, 79, 124, 0.10);
 	--shadow-modal: 0 26px 80px rgba(15, 23, 42, 0.24);
+
+	--shadow-button: 0 10px 22px rgba(201, 79, 124, 0.18);
+	--shadow-button-hover: 0 14px 28px rgba(201, 79, 124, 0.25);
 
 	--radius-card: 24px;
 	--radius-input: 16px;
@@ -71,8 +74,9 @@
 	min-height: 100vh;
 	padding: 34px 0 60px;
 	background:
-			radial-gradient(circle at top left, rgba(214, 51, 132, 0.04), transparent 340px),
-			#f7f8fb;
+			radial-gradient(circle at 10% 8%, rgba(255, 229, 241, 0.36) 0%, transparent 260px),
+			radial-gradient(circle at 90% 12%, rgba(238, 230, 255, 0.30) 0%, transparent 280px),
+			linear-gradient(135deg, #fffafd 0%, #fffdf8 52%, #fbf8ff 100%);
 	color: var(--text-main);
 }
 
@@ -153,14 +157,14 @@
 	gap: 18px;
 	border: 1px solid var(--border);
 	border-radius: var(--radius-soft);
-	background: linear-gradient(180deg, #ffffff 0%, #fffafc 100%);
+	background: #ffffff;
 }
 
 .account-avatar {
 	width: 56px;
 	height: 56px;
 	border-radius: 50%;
-	background: linear-gradient(135deg, #d63384, #eba9ba);
+	background: var(--brand);
 	color: #ffffff;
 	font-size: 20px;
 	font-weight: 850;
@@ -169,6 +173,7 @@
 	justify-content: center;
 	text-transform: uppercase;
 	flex-shrink: 0;
+	box-shadow: 0 10px 22px rgba(201, 79, 124, 0.16);
 }
 
 .account-info strong {
@@ -232,7 +237,7 @@
 
 .checkout-field input:focus {
 	border-color: var(--brand);
-	box-shadow: 0 0 0 4px rgba(214, 51, 132, 0.1);
+	box-shadow: 0 0 0 4px rgba(201, 79, 124, 0.10);
 }
 
 .checkout-field input[readonly] {
@@ -610,11 +615,12 @@
 	border: none;
 	background: #ffffff;
 	cursor: pointer;
-	transition: background 0.18s ease;
+	transition: background 0.18s ease, color 0.18s ease;
 }
 
 .checkout-qty button:hover {
-	background: #f6f7fb;
+	background: var(--brand-soft);
+	color: var(--brand-hover);
 }
 
 .checkout-qty button:disabled {
@@ -664,7 +670,7 @@
 	border-color: var(--brand-border);
 	background: var(--brand-softer);
 	color: var(--brand);
-	box-shadow: 0 0 0 4px rgba(214, 51, 132, 0.06);
+	box-shadow: 0 0 0 4px rgba(201, 79, 124, 0.06);
 }
 
 .coupon-select-btn.has-selected {
@@ -714,7 +720,7 @@
 
 .coupon-input-row input:focus {
 	border-color: var(--brand);
-	box-shadow: 0 0 0 4px rgba(214, 51, 132, 0.1);
+	box-shadow: 0 0 0 4px rgba(201, 79, 124, 0.10);
 }
 
 .btn-apply-coupon {
@@ -730,7 +736,7 @@
 }
 
 .btn-apply-coupon:hover {
-	background: #d98ba2;
+	background: #c98aa1;
 }
 
 .coupon-message {
@@ -795,7 +801,7 @@
 }
 
 .summary-total strong {
-	color: var(--text-main);
+	color: var(--brand-hover);
 	font-size: 24px;
 	font-weight: 900;
 	letter-spacing: 0.01em;
@@ -813,12 +819,12 @@
 	line-height: 1;
 	font-weight: 850;
 	cursor: pointer;
-	box-shadow: 0 10px 24px rgba(233, 161, 181, 0.25);
+	box-shadow: 0 10px 22px rgba(201, 79, 124, 0.15);
 	transition: background 0.22s ease, box-shadow 0.22s ease, transform 0.2s ease;
 }
 
 .btn-place-order:hover {
-	background: #d98ba2;
+	background: #c98aa1;
 }
 
 /* =========================================================
@@ -1034,17 +1040,17 @@
 
 .btn-apply-coupon:not(:disabled),
 .btn-place-order:not(:disabled) {
-	background: linear-gradient(180deg, #df4d96 0%, var(--brand) 100%) !important;
+	background: var(--brand) !important;
 	color: #ffffff !important;
 	cursor: pointer !important;
-	box-shadow: 0 10px 24px rgba(214, 51, 132, 0.22);
+	box-shadow: var(--shadow-button);
 }
 
 .btn-apply-coupon:not(:disabled):hover,
 .btn-place-order:not(:disabled):hover {
-	background: linear-gradient(180deg, #d8478f 0%, var(--brand-hover) 100%) !important;
+	background: var(--brand-hover) !important;
 	transform: translateY(-1px);
-	box-shadow: 0 14px 28px rgba(214, 51, 132, 0.26);
+	box-shadow: var(--shadow-button-hover);
 }
 
 /* =========================================================
@@ -1081,7 +1087,7 @@
 	box-shadow: var(--shadow-modal);
 	overflow: hidden;
 	z-index: 1;
-	border: 1px solid rgba(243, 184, 210, 0.62);
+	border: 1px solid rgba(243, 198, 214, 0.72);
 }
 
 .coupon-modal-header {
@@ -1092,7 +1098,7 @@
 	justify-content: center;
 	padding: 20px 74px;
 	border-bottom: 1px solid #f0f2f5;
-	background: linear-gradient(180deg, #ffffff 0%, #fff9fc 100%);
+	background: #ffffff;
 }
 
 .coupon-modal-header h3 {
@@ -1143,7 +1149,7 @@
 }
 
 .coupon-modal-close:hover {
-	background: #fff0f6;
+	background: var(--brand-soft);
 	color: var(--brand);
 }
 
@@ -1184,7 +1190,7 @@
 	padding: 18px 18px 18px 20px;
 	border: 1.5px solid #f1c2d6;
 	border-radius: 18px;
-	background: linear-gradient(180deg, #fff8fb 0%, #fff3f8 100%);
+	background: #fff8fb;
 	cursor: pointer;
 	text-align: left;
 	transition: 0.2s ease;
@@ -1215,20 +1221,20 @@
 }
 
 .coupon-item.is-usable {
-	border-color: #ee7cb2;
-	background: linear-gradient(180deg, #fff8fc 0%, #ffffff 100%);
+	border-color: var(--brand-border);
+	background: #ffffff;
 }
 
 .coupon-item.is-usable:hover {
 	border-color: var(--brand);
-	box-shadow: 0 14px 30px rgba(214, 51, 132, 0.13);
+	box-shadow: 0 14px 30px rgba(201, 79, 124, 0.12);
 	transform: translateY(-1px);
 }
 
 .coupon-item.is-selected {
 	border-color: var(--brand);
-	background: linear-gradient(180deg, #fff4f9 0%, #ffedf5 100%);
-	box-shadow: 0 16px 34px rgba(214, 51, 132, 0.16);
+	background: var(--brand-soft);
+	box-shadow: 0 16px 34px rgba(201, 79, 124, 0.15);
 }
 
 .coupon-item.is-disabled {
@@ -1251,11 +1257,11 @@
 ========================================================= */
 
 .coupon-item.is-best {
-	border-color: #e84f98 !important;
-	background: linear-gradient(180deg, #fff7fb 0%, #fff1f7 100%) !important;
+	border-color: var(--brand) !important;
+	background: #fff9fc !important;
 	box-shadow:
-			0 14px 30px rgba(232, 79, 152, 0.14),
-			0 0 0 1px rgba(232, 79, 152, 0.08) !important;
+			0 14px 30px rgba(201, 79, 124, 0.13),
+			0 0 0 1px rgba(201, 79, 124, 0.08) !important;
 	padding-top: 22px !important;
 }
 
@@ -1276,7 +1282,7 @@
 	padding: 0 12px !important;
 	border-radius: 999px !important;
 
-	background: linear-gradient(135deg, #d63384 0%, #ff63a8 100%) !important;
+	background: var(--brand) !important;
 	color: #ffffff !important;
 	border: 1px solid rgba(255, 255, 255, 0.65) !important;
 
@@ -1287,8 +1293,8 @@
 	white-space: nowrap !important;
 
 	box-shadow:
-			0 8px 18px rgba(214, 51, 132, 0.32),
-			0 2px 5px rgba(177, 18, 91, 0.16) !important;
+			0 8px 18px rgba(201, 79, 124, 0.30),
+			0 2px 5px rgba(159, 49, 91, 0.14) !important;
 	z-index: 8 !important;
 	pointer-events: none;
 }
@@ -1313,13 +1319,13 @@
 	width: 62px;
 	height: 62px;
 	border-radius: 50%;
-	background: linear-gradient(180deg, #f8b7cc 0%, #ea91b0 100%);
+	background: #d8a0b4;
 	color: #ffffff;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	font-size: 27px;
-	box-shadow: inset 0 -5px 12px rgba(177, 18, 91, 0.08);
+	box-shadow: inset 0 -5px 12px rgba(159, 49, 91, 0.08);
 }
 
 .coupon-item.is-disabled .coupon-voucher-icon {
@@ -1405,16 +1411,16 @@
 	height: 42px;
 	justify-self: end;
 	border-radius: 50%;
-	border: 2px solid #efc2d8;
-	background: #fff8fb;
-	color: #c65b8c;
+	border: 2px solid var(--brand-border);
+	background: var(--brand-softer);
+	color: var(--brand);
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	font-size: 0;
 	font-weight: 900;
 	transition: 0.18s ease;
-	box-shadow: 0 4px 10px rgba(214, 51, 132, 0.06);
+	box-shadow: 0 4px 10px rgba(201, 79, 124, 0.06);
 }
 
 .coupon-ticket-right::before {
@@ -1425,18 +1431,18 @@
 }
 
 .coupon-item.is-usable:hover .coupon-ticket-right {
-	border-color: #d7659a;
-	background: #fff0f6;
+	border-color: var(--brand);
+	background: var(--brand-soft);
 	color: var(--brand-dark);
 }
 
 .coupon-item.is-selected .coupon-ticket-right {
-	background: linear-gradient(135deg, #e83e8c 0%, #ff6fab 100%) !important;
-	border-color: #e83e8c !important;
+	background: var(--brand) !important;
+	border-color: var(--brand) !important;
 	color: #ffffff !important;
 	box-shadow:
-			0 10px 22px rgba(232, 62, 140, 0.30),
-			0 0 0 4px rgba(232, 62, 140, 0.10) !important;
+			0 10px 22px rgba(201, 79, 124, 0.28),
+			0 0 0 4px rgba(201, 79, 124, 0.10) !important;
 }
 
 .coupon-item.is-selected .coupon-ticket-right::before {
@@ -1490,18 +1496,19 @@
 	height: 50px;
 	border: none;
 	border-radius: 12px;
-	background: linear-gradient(180deg, var(--brand) 0%, var(--brand-hover) 100%);
+	background: var(--brand);
 	color: #ffffff;
 	font-size: 15.5px;
 	font-weight: 850;
 	cursor: pointer;
-	box-shadow: 0 12px 24px rgba(177, 18, 91, 0.22);
+	box-shadow: var(--shadow-button);
 	transition: 0.18s ease;
 }
 
 .coupon-confirm-btn:hover {
+	background: var(--brand-hover);
 	transform: translateY(-1px);
-	box-shadow: 0 14px 28px rgba(177, 18, 91, 0.26);
+	box-shadow: var(--shadow-button-hover);
 }
 
 body.coupon-modal-open {
@@ -1510,9 +1517,6 @@ body.coupon-modal-open {
 
 /* =========================================================
    MANUAL COUPON INPUT - MỤC 72
-   Lưu ý:
-   - CSS chỉ đổi viền
-   - Thông báo lỗi/thành công do JS/backend quyết định
 ========================================================= */
 
 .coupon-input-row input.is-valid,
@@ -1535,15 +1539,19 @@ body.coupon-modal-open {
 }
 
 #applyCouponBtn:disabled {
-	background: #e8a8bd !important;
+	background: var(--brand-disabled) !important;
 	cursor: not-allowed !important;
 	box-shadow: none !important;
 }
 
 #applyCouponBtn:not(:disabled) {
-	background: linear-gradient(180deg, #df4d96 0%, #d63384 100%) !important;
+	background: var(--brand) !important;
 	cursor: pointer !important;
-	box-shadow: 0 10px 24px rgba(214, 51, 132, 0.22);
+	box-shadow: var(--shadow-button);
+}
+
+#applyCouponBtn:not(:disabled):hover {
+	background: var(--brand-hover) !important;
 }
 
 /* =========================================================
@@ -1726,12 +1734,6 @@ body.coupon-modal-open {
 
 /* =========================================================
    ADDRESS MAP PICKER - FRAME FIX FINAL
-   Mục tiêu:
-   - Bản đồ Leaflet nằm gọn trong đúng 1 khung
-   - Không vỡ tile khi mở modal
-   - Panel địa chỉ gợi ý rõ ràng
-   - Ghim đỏ nổi bật
-   - Đồng bộ font Be Vietnam Pro với checkout
 ========================================================= */
 
 :root {
@@ -1784,7 +1786,7 @@ body.coupon-modal-open {
 	background: #ffffff;
 	overflow: hidden;
 	box-shadow: 0 30px 90px rgba(15, 23, 42, 0.30);
-	border: 1px solid rgba(243, 184, 210, 0.85);
+	border: 1px solid rgba(243, 198, 214, 0.85);
 }
 
 .address-map-header {
@@ -1793,7 +1795,7 @@ body.coupon-modal-open {
 	min-height: 88px;
 	padding: 22px 78px 18px 28px;
 	border-bottom: 1px solid #f1f5f9;
-	background: linear-gradient(180deg, #ffffff 0%, #fff7fb 100%);
+	background: #fffafd;
 }
 
 .address-map-header h3 {
@@ -1821,7 +1823,7 @@ body.coupon-modal-open {
 	height: 46px;
 	border: none;
 	border-radius: 50%;
-	background: #fff0f6;
+	background: var(--brand-soft);
 	color: var(--brand);
 	font-size: 26px;
 	line-height: 1;
@@ -1886,11 +1888,6 @@ body.coupon-modal-open {
 	min-height: 0;
 }
 
-/*
-   Quan trọng:
-   #addressMap hiện vừa là khung vừa là Leaflet container.
-   Do đó phải cố định height, width và overflow ngay trên chính .address-map-canvas.
-*/
 .address-map-canvas,
 #addressMap,
 #deliveryMap,
@@ -1911,11 +1908,6 @@ body.coupon-modal-open {
 	isolation: isolate !important;
 }
 
-/*
-   Leaflet fix:
-   Nhiều CSS global hay set img {max-width: 100%}
-   làm tile bản đồ vỡ. Bắt buộc reset max-width/max-height.
-*/
 .address-map-canvas.leaflet-container,
 #addressMap.leaflet-container,
 #deliveryMap.leaflet-container,
@@ -2101,27 +2093,28 @@ body.coupon-modal-open {
 
 .address-map-btn.suggestion {
 	width: 100%;
-	border-color: #f4b8d2;
-	background: #fff5fa;
+	border-color: var(--brand-border);
+	background: var(--brand-soft);
 	color: var(--brand);
 }
 
 .address-map-btn.suggestion:hover:not(:disabled) {
-	background: linear-gradient(180deg, #df4d96 0%, var(--brand) 100%);
+	background: var(--brand);
 	color: #ffffff;
 	border-color: var(--brand);
-	box-shadow: 0 12px 24px rgba(214, 51, 132, 0.22);
+	box-shadow: var(--shadow-button);
 }
 
 .address-map-btn.primary {
 	border: none;
-	background: linear-gradient(180deg, #df4d96 0%, var(--brand) 100%);
+	background: var(--brand);
 	color: #ffffff;
-	box-shadow: 0 12px 24px rgba(214, 51, 132, 0.22);
+	box-shadow: var(--shadow-button);
 }
 
 .address-map-btn.primary:hover:not(:disabled) {
-	box-shadow: 0 14px 30px rgba(214, 51, 132, 0.30);
+	background: var(--brand-hover);
+	box-shadow: var(--shadow-button-hover);
 }
 
 .address-map-btn:disabled {
@@ -2131,7 +2124,6 @@ body.coupon-modal-open {
 	transform: none !important;
 }
 
-/* Marker đỏ nổi bật trên bản đồ */
 .custom-red-map-marker,
 .leaflet-marker-icon.custom-red-map-marker {
 	background: transparent !important;
@@ -2313,8 +2305,8 @@ body.address-map-open {
 
 /* =========================================================
    LEAFLET MAP TILE HARD FIX V2
-   Dán cuối file checkout.css để bản đồ phủ kín khung
 ========================================================= */
+
 .address-map-canvas {
 	position: relative !important;
 	width: 100% !important;
@@ -2374,4 +2366,231 @@ body.address-map-open {
 		height: 360px !important;
 		min-height: 360px !important;
 	}
+}
+/* =========================================================
+   FINAL COLOR OVERRIDE - RASPBERRY PINK THEME
+   Giữ nguyên bố cục, chỉ đổi tone hồng đậm hơn
+========================================================= */
+
+:root {
+	/* Hồng raspberry: đậm hơn, tươi hơn, vẫn hợp web mỹ phẩm */
+	--brand: #e83e8c;
+	--brand-hover: #d63384;
+	--brand-dark: #b91e63;
+	--brand-soft: #fff0f6;
+	--brand-softer: #fff8fb;
+	--brand-border: #f6b7d0;
+	--brand-disabled: #e9a6bd;
+
+	--shadow-button: 0 12px 24px rgba(232, 62, 140, 0.22);
+	--shadow-button-hover: 0 16px 30px rgba(232, 62, 140, 0.30);
+}
+
+/* Nền vẫn phớt nhẹ, không đổi bố cục */
+.checkout-page {
+	background:
+			radial-gradient(circle at 10% 8%, rgba(255, 226, 239, 0.34) 0%, transparent 260px),
+			radial-gradient(circle at 90% 14%, rgba(255, 235, 245, 0.28) 0%, transparent 280px),
+			linear-gradient(135deg, #fffafd 0%, #fffdf8 52%, #fff8fc 100%) !important;
+}
+
+/* Avatar tài khoản */
+.account-avatar {
+	background: var(--brand) !important;
+	box-shadow: 0 10px 22px rgba(232, 62, 140, 0.18) !important;
+}
+
+/* Focus input */
+.checkout-field input:focus,
+.coupon-input-row input:focus {
+	border-color: var(--brand) !important;
+	box-shadow: 0 0 0 4px rgba(232, 62, 140, 0.12) !important;
+}
+
+/* Radio / checkbox */
+.delivery-option input,
+.payment-item input {
+	accent-color: var(--brand) !important;
+}
+
+/* Trạng thái đang chọn */
+.delivery-option:has(input:checked),
+.payment-item:has(input:checked) {
+	background: var(--brand-softer) !important;
+	border-color: var(--brand) !important;
+	box-shadow: inset 4px 0 0 var(--brand) !important;
+}
+
+.payment-item input:checked + .payment-dot {
+	border-color: var(--brand) !important;
+	box-shadow: inset 0 0 0 5px #ffffff, 0 0 0 1px var(--brand) !important;
+}
+
+/* Hover item */
+.delivery-option:hover,
+.coupon-select-btn:hover {
+	border-color: var(--brand-border) !important;
+	background: var(--brand-softer) !important;
+	color: var(--brand-dark) !important;
+}
+
+/* Nút cộng trừ số lượng */
+.checkout-qty button:hover {
+	background: var(--brand-soft) !important;
+	color: var(--brand-dark) !important;
+}
+
+/* Tổng tiền và phí ship */
+.summary-total strong,
+.delivery-fee {
+	color: var(--brand-dark) !important;
+}
+
+/* Nút chính: áp dụng mã, đặt hàng */
+.btn-apply-coupon:not(:disabled),
+.btn-place-order:not(:disabled),
+#applyCouponBtn:not(:disabled) {
+	background: var(--brand) !important;
+	color: #ffffff !important;
+	box-shadow: var(--shadow-button) !important;
+}
+
+.btn-apply-coupon:not(:disabled):hover,
+.btn-place-order:not(:disabled):hover,
+#applyCouponBtn:not(:disabled):hover {
+	background: var(--brand-hover) !important;
+	color: #ffffff !important;
+	transform: translateY(-1px);
+	box-shadow: var(--shadow-button-hover) !important;
+}
+
+/* Nút disabled */
+.btn-apply-coupon:disabled,
+.btn-place-order:disabled,
+#applyCouponBtn:disabled {
+	background: var(--brand-disabled) !important;
+	color: #ffffff !important;
+	box-shadow: none !important;
+	cursor: not-allowed !important;
+}
+
+/* Nút chọn mã khuyến mãi */
+.coupon-select-btn.has-selected {
+	background: var(--brand-soft) !important;
+	border-color: var(--brand-border) !important;
+	color: var(--text-main) !important;
+}
+
+.coupon-select-btn.has-selected .coupon-open-text {
+	color: var(--brand-dark) !important;
+}
+
+/* Coupon card */
+.coupon-item.is-usable {
+	border-color: var(--brand-border) !important;
+	background: #ffffff !important;
+}
+
+.coupon-item.is-usable:hover {
+	border-color: var(--brand) !important;
+	box-shadow: 0 14px 30px rgba(232, 62, 140, 0.13) !important;
+}
+
+.coupon-item.is-selected {
+	border-color: var(--brand) !important;
+	background: var(--brand-soft) !important;
+	box-shadow: 0 16px 34px rgba(232, 62, 140, 0.16) !important;
+}
+
+.coupon-item.is-best {
+	border-color: var(--brand) !important;
+	background: #fff8fb !important;
+	box-shadow:
+			0 14px 30px rgba(232, 62, 140, 0.14),
+			0 0 0 1px rgba(232, 62, 140, 0.08) !important;
+}
+
+/* Badge tốt nhất */
+.coupon-best-badge {
+	background: var(--brand) !important;
+	box-shadow:
+			0 8px 18px rgba(232, 62, 140, 0.32),
+			0 2px 5px rgba(185, 30, 99, 0.15) !important;
+}
+
+/* Icon voucher */
+.coupon-voucher-icon {
+	background: #f28ab6 !important;
+	color: #ffffff !important;
+}
+
+/* Nút + / tick trong coupon */
+.coupon-ticket-right {
+	border-color: var(--brand-border) !important;
+	background: var(--brand-softer) !important;
+	color: var(--brand-dark) !important;
+}
+
+.coupon-item.is-usable:hover .coupon-ticket-right {
+	border-color: var(--brand) !important;
+	background: var(--brand-soft) !important;
+	color: var(--brand-dark) !important;
+}
+
+.coupon-item.is-selected .coupon-ticket-right {
+	background: var(--brand) !important;
+	border-color: var(--brand) !important;
+	color: #ffffff !important;
+	box-shadow:
+			0 10px 22px rgba(232, 62, 140, 0.30),
+			0 0 0 4px rgba(232, 62, 140, 0.10) !important;
+}
+
+/* Nút xác nhận trong modal coupon */
+.coupon-confirm-btn {
+	background: var(--brand) !important;
+	color: #ffffff !important;
+	box-shadow: var(--shadow-button) !important;
+}
+
+.coupon-confirm-btn:hover {
+	background: var(--brand-hover) !important;
+	box-shadow: var(--shadow-button-hover) !important;
+}
+
+/* Modal bản đồ */
+.address-map-close {
+	background: var(--brand-soft) !important;
+	color: var(--brand-dark) !important;
+}
+
+.address-map-close:hover {
+	background: var(--brand) !important;
+	color: #ffffff !important;
+}
+
+.address-map-btn.suggestion {
+	border-color: var(--brand-border) !important;
+	background: var(--brand-soft) !important;
+	color: var(--brand-dark) !important;
+}
+
+.address-map-btn.suggestion:hover:not(:disabled),
+.address-map-btn.primary {
+	background: var(--brand) !important;
+	border-color: var(--brand) !important;
+	color: #ffffff !important;
+	box-shadow: var(--shadow-button) !important;
+}
+
+.address-map-btn.primary:hover:not(:disabled) {
+	background: var(--brand-hover) !important;
+	box-shadow: var(--shadow-button-hover) !important;
+}
+
+/* Link hover */
+.checkout-logout:hover,
+.checkout-remove:hover,
+.address-map-note strong {
+	color: var(--brand-dark) !important;
 }
