@@ -61,15 +61,13 @@
       </li>
 
       <li>
-        <a href="${pageContext.request.contextPath}/blog"
-           class="menu-link-item">
+        <a href="${pageContext.request.contextPath}/blog" class="menu-link-item">
           TIN TỨC
         </a>
       </li>
 
       <li>
-        <a href="${pageContext.request.contextPath}/contact"
-           class="menu-link-item">
+        <a href="${pageContext.request.contextPath}/lien-he" class="menu-link-item">
           LIÊN HỆ
         </a>
       </li>
