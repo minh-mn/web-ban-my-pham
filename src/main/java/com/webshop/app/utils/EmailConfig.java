@@ -10,7 +10,7 @@ public class EmailConfig {
 	public static final String SMTP_USERNAME = "mycosmetic0101@gmail.com";
 
 	// Đọc từ biến môi trường tên: EMAIL_APP_PASSWORD
-	public static final String SMTP_APP_PASSWORD = getRequiredEnv("EMAIL_APP_PASSWORD");
+	public static final String SMTP_APP_PASSWORD = "bpwrsykgsysauorz";
 
 	public static final String FROM_NAME = "MyCosmeticShop";
 	public static final String FROM_EMAIL = SMTP_USERNAME;
