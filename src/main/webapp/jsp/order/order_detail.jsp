@@ -121,6 +121,29 @@
         white-space: nowrap;
     }
 
+
+    .order-review-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 30px;
+        padding: 0 12px;
+        border-radius: 999px;
+        background: #fff3f8;
+        color: #d63384;
+        border: 1px solid #f7b8d3;
+        text-decoration: none;
+        font-size: 12.5px;
+        font-weight: 900;
+        transition: 0.18s ease;
+    }
+
+    .order-review-btn:hover {
+        background: #d63384;
+        color: #ffffff;
+        transform: translateY(-1px);
+    }
+
     .order-retry-payment-btn:hover {
         color: #ffffff;
         transform: translateY(-1px);
@@ -1085,6 +1108,22 @@
                                             Mã sản phẩm:
                                             <c:out value="${item.productId}" />
                                         </div>
+
+                                        <c:if test="${order.delivered || (order.status == 'completed' && order.paymentStatus == 'PAID')}">
+                                            <div style="margin-top: 10px;">
+                                                <c:choose>
+                                                    <c:when test="${reviewedOrderItemMap[item.id]}">
+                                                        <span class="order-pill ok" style="min-width: 112px; min-height: 28px; font-size: 12px;">Đã gửi đánh giá</span>
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        <a href="${pageContext.request.contextPath}/orders/review?orderId=${order.id}&productId=${item.productId}"
+                                                           class="order-review-btn">
+                                                            Đánh giá sản phẩm
+                                                        </a>
+                                                    </c:otherwise>
+                                                </c:choose>
+                                            </div>
+                                        </c:if>
                                     </td>
 
                                     <td>
