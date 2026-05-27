@@ -63,16 +63,17 @@
         <p class="admin-subtext admin-promo-form-note">
           <c:choose>
             <c:when test="${promotionType == 'COUPON'}">
-              Tạo mã giảm giá để khách hàng nhập khi thanh toán.
+              Tạo mã giảm giá để khách hàng nhập khi thanh toán. Có thể áp dụng cho toàn bộ giỏ hàng,
+              theo thương hiệu hoặc một số sản phẩm cụ thể.
             </c:when>
             <c:when test="${promotionType == 'BRAND'}">
-              Tạo giảm giá tự động cho sản phẩm thuộc một thương hiệu.
+              Tạo giảm giá tự động cho toàn bộ sản phẩm của thương hiệu hoặc chỉ các sản phẩm được chọn.
             </c:when>
             <c:when test="${promotionType == 'ORDER'}">
               Tạo giảm giá tự động khi đơn hàng đạt giá trị tối thiểu.
             </c:when>
             <c:when test="${promotionType == 'EVENT'}">
-              Tạo chương trình khuyến mãi toàn cửa hàng, theo danh mục hoặc theo thương hiệu.
+              Tạo chương trình khuyến mãi toàn cửa hàng, theo danh mục, thương hiệu hoặc sản phẩm cụ thể.
             </c:when>
             <c:otherwise>
               Chọn loại khuyến mãi cần tạo.
@@ -158,15 +159,31 @@
                 </label>
 
                 <label class="admin-field">
-                  <span>Phần trăm giảm <b>*</b></span>
+                  <span>Kiểu giảm <b>*</b></span>
+                  <select class="admin-select" name="discountType" id="couponDiscountType" required>
+                    <option value="PERCENT" ${coupon.discountType == 'PERCENT' ? 'selected' : ''}>
+                      PERCENT - Theo phần trăm
+                    </option>
+                    <option value="FIXED" ${coupon.discountType == 'FIXED' ? 'selected' : ''}>
+                      FIXED - Theo số tiền
+                    </option>
+                  </select>
+                </label>
+
+                <label class="admin-field">
+                  <span>Giá trị giảm <b>*</b></span>
                   <input class="admin-input"
                          type="number"
-                         name="discountPercent"
+                         name="discountValue"
                          min="1"
-                         max="100"
-                         value="${coupon.discountPercent}"
+                         step="0.01"
+                         value="${coupon.discountValue}"
+                         placeholder="VD: 10 hoặc 50000"
                          required>
                 </label>
+
+                <!-- Giữ lại để tương thích code cũ nếu còn đọc discountPercent -->
+                <input type="hidden" name="discountPercent" value="${coupon.discountPercent}"/>
 
                 <label class="admin-field">
                   <span>Số lượt dùng tối đa <b>*</b></span>
@@ -210,6 +227,43 @@
                     <option value="VIP" ${coupon.minRankCode == 'VIP' ? 'selected' : ''}>VIP</option>
                   </select>
                 </label>
+              </div>
+            </div>
+
+            <div class="admin-form-section">
+              <h2 class="admin-form-section__title">Phạm vi áp dụng</h2>
+
+              <div class="admin-form-grid admin-form-grid--2">
+                <label class="admin-field">
+                  <span>Áp dụng cho <b>*</b></span>
+                  <select class="admin-select" name="applyScope" id="couponApplyScope" required>
+                    <option value="ALL" ${coupon.applyScope == 'ALL' ? 'selected' : ''}>
+                      ALL - Toàn bộ giỏ hàng
+                    </option>
+                    <option value="BRAND" ${coupon.applyScope == 'BRAND' ? 'selected' : ''}>
+                      BRAND - Sản phẩm thuộc thương hiệu
+                    </option>
+                    <option value="PRODUCTS" ${coupon.applyScope == 'PRODUCTS' ? 'selected' : ''}>
+                      PRODUCTS - Sản phẩm cụ thể
+                    </option>
+                  </select>
+                </label>
+
+                <label class="admin-field admin-promo-coupon-brand-field">
+                  <span>Thương hiệu áp dụng</span>
+                  <select class="admin-select" name="brandId">
+                    <option value="">-- Chọn thương hiệu --</option>
+                    <c:forEach var="brand" items="${brands}">
+                      <option value="${brand.id}" ${coupon.brandId == brand.id ? 'selected' : ''}>
+                        <c:out value="${brand.name}"/>
+                      </option>
+                    </c:forEach>
+                  </select>
+                </label>
+              </div>
+
+              <div class="admin-promo-products-section admin-promo-coupon-products">
+                <jsp:include page="/jsp/admin/promotions/product_picker.jspf"/>
               </div>
             </div>
 
@@ -272,6 +326,20 @@
                 </label>
 
                 <label class="admin-field">
+                  <span>Phạm vi áp dụng <b>*</b></span>
+                  <select class="admin-select" name="applyScope" id="brandApplyScope" required>
+                    <option value="ALL_BRAND_PRODUCTS"
+                      ${discount.applyScope == 'ALL_BRAND_PRODUCTS' ? 'selected' : ''}>
+                      ALL_BRAND_PRODUCTS - Toàn bộ sản phẩm của thương hiệu
+                    </option>
+                    <option value="SELECTED_PRODUCTS"
+                      ${discount.applyScope == 'SELECTED_PRODUCTS' ? 'selected' : ''}>
+                      SELECTED_PRODUCTS - Chỉ sản phẩm được chọn
+                    </option>
+                  </select>
+                </label>
+
+                <label class="admin-field">
                   <span>Kiểu giảm <b>*</b></span>
                   <select class="admin-select" name="discountType" required>
                     <option value="PERCENT" ${discount.discountType == 'PERCENT' ? 'selected' : ''}>
@@ -305,6 +373,13 @@
                          value="${discount.maxDiscountAmount}"
                          placeholder="Để trống nếu không giới hạn">
                 </label>
+              </div>
+            </div>
+
+            <div class="admin-promo-products-section admin-promo-brand-products">
+              <div class="admin-form-section">
+                <h2 class="admin-form-section__title">Sản phẩm cụ thể</h2>
+                <jsp:include page="/jsp/admin/promotions/product_picker.jspf"/>
               </div>
             </div>
 
@@ -474,6 +549,9 @@
                     <option value="BRAND" ${event.scope == 'BRAND' ? 'selected' : ''}>
                       BRAND - Theo thương hiệu
                     </option>
+                    <option value="PRODUCTS" ${event.scope == 'PRODUCTS' ? 'selected' : ''}>
+                      PRODUCTS - Sản phẩm cụ thể
+                    </option>
                   </select>
                 </label>
 
@@ -535,6 +613,13 @@
                     </c:forEach>
                   </select>
                 </label>
+              </div>
+            </div>
+
+            <div class="admin-promo-products-section admin-promo-event-products">
+              <div class="admin-form-section">
+                <h2 class="admin-form-section__title">Sản phẩm cụ thể</h2>
+                <jsp:include page="/jsp/admin/promotions/product_picker.jspf"/>
               </div>
             </div>
 
@@ -600,26 +685,116 @@
 
 <script>
   (function () {
-    const scopeSelect = document.getElementById("promotionScope");
-    const categoryField = document.querySelector(".admin-promo-scope-category");
-    const brandField = document.querySelector(".admin-promo-scope-brand");
+    const couponApplyScope = document.getElementById("couponApplyScope");
+    const couponBrandField = document.querySelector(".admin-promo-coupon-brand-field");
+    const couponProductsSection = document.querySelector(".admin-promo-coupon-products");
 
-    function updateScopeFields() {
-      if (!scopeSelect || !categoryField || !brandField) {
+    const brandApplyScope = document.getElementById("brandApplyScope");
+    const brandProductsSection = document.querySelector(".admin-promo-brand-products");
+
+    const eventScope = document.getElementById("promotionScope");
+    const eventCategoryField = document.querySelector(".admin-promo-scope-category");
+    const eventBrandField = document.querySelector(".admin-promo-scope-brand");
+    const eventProductsSection = document.querySelector(".admin-promo-event-products");
+
+    function toggleElement(element, visible) {
+      if (!element) {
         return;
       }
 
-      const scope = scopeSelect.value;
-
-      categoryField.style.display = scope === "CATEGORY" ? "" : "none";
-      brandField.style.display = scope === "BRAND" ? "" : "none";
+      element.style.display = visible ? "" : "none";
     }
 
-    updateScopeFields();
+    function updateCouponScope() {
+      if (!couponApplyScope) {
+        return;
+      }
 
-    if (scopeSelect) {
-      scopeSelect.addEventListener("change", updateScopeFields);
+      const scope = couponApplyScope.value;
+
+      toggleElement(couponBrandField, scope === "BRAND");
+      toggleElement(couponProductsSection, scope === "PRODUCTS");
     }
+
+    function updateBrandScope() {
+      if (!brandApplyScope) {
+        return;
+      }
+
+      toggleElement(brandProductsSection, brandApplyScope.value === "SELECTED_PRODUCTS");
+    }
+
+    function updateEventScope() {
+      if (!eventScope) {
+        return;
+      }
+
+      const scope = eventScope.value;
+
+      toggleElement(eventCategoryField, scope === "CATEGORY");
+      toggleElement(eventBrandField, scope === "BRAND");
+      toggleElement(eventProductsSection, scope === "PRODUCTS");
+    }
+
+    updateCouponScope();
+    updateBrandScope();
+    updateEventScope();
+
+    if (couponApplyScope) {
+      couponApplyScope.addEventListener("change", updateCouponScope);
+    }
+
+    if (brandApplyScope) {
+      brandApplyScope.addEventListener("change", updateBrandScope);
+    }
+
+    if (eventScope) {
+      eventScope.addEventListener("change", updateEventScope);
+    }
+
+    const productSearchInput = document.querySelector("[data-promo-product-search]");
+    const productCards = document.querySelectorAll("[data-promo-product-card]");
+    const productCounter = document.querySelector("[data-promo-product-counter]");
+
+    function normalizeText(value) {
+      return (value || "")
+              .toString()
+              .toLowerCase()
+              .normalize("NFD")
+              .replace(/[\u0300-\u036f]/g, "");
+    }
+
+    function updateProductCounter() {
+      if (!productCounter) {
+        return;
+      }
+
+      const checkedCount = document.querySelectorAll("input[name='selectedProductIds']:checked").length;
+      productCounter.textContent = checkedCount + " sản phẩm đã chọn";
+    }
+
+    function filterProducts() {
+      if (!productSearchInput || !productCards) {
+        return;
+      }
+
+      const keyword = normalizeText(productSearchInput.value);
+
+      productCards.forEach(function (card) {
+        const searchable = normalizeText(card.getAttribute("data-product-key"));
+        card.style.display = searchable.includes(keyword) ? "" : "none";
+      });
+    }
+
+    if (productSearchInput) {
+      productSearchInput.addEventListener("input", filterProducts);
+    }
+
+    document.querySelectorAll("input[name='selectedProductIds']").forEach(function (checkbox) {
+      checkbox.addEventListener("change", updateProductCounter);
+    });
+
+    updateProductCounter();
   })();
 </script>
 
