@@ -3,7 +3,7 @@
 
 <c:set var="pageTitle" value="ADMIN | Form khuyến mãi" scope="request"/>
 <c:set var="activeMenu" value="promotions" scope="request"/>
-<c:set var="pageCss" value="/assets/css/admin/admin-promotion.css" scope="request"/>
+<c:set var="pageCss" value="/assets/css/admin/admin-form.css" scope="request"/>
 
 <jsp:include page="/jsp/admin/layout/header.jsp"/>
 <jsp:include page="/jsp/admin/layout/sidebar.jsp"/>
