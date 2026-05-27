@@ -13,39 +13,54 @@ import java.io.IOException;
 
 @WebServlet("/verify-registration")
 public class VerifyRegistrationServlet extends HttpServlet {
+
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        // Hiển thị trang nhập OTP
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
         req.setAttribute("pageTitle", "Xác thực OTP");
         req.setAttribute("pageContent", "/jsp/auth/verify-otp.jsp");
         req.getRequestDispatcher("/jsp/common/base.jsp").forward(req, resp);
     }
 
+    @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        resp.setContentType("application/json");
+        resp.setCharacterEncoding("UTF-8");
+
         String inputOtp = req.getParameter("otp_input");
         HttpSession session = req.getSession();
+
         String serverOtp = (String) session.getAttribute("REGISTER_OTP");
         User pendingUser = (User) session.getAttribute("pendingUser");
+        String pendingProvider = (String) session.getAttribute("pendingProvider");
+        String pendingSocialId = (String) session.getAttribute("pendingSocialId");
 
-        if (serverOtp != null && serverOtp.equals(inputOtp)) {
-            // OTP đúng -> Lưu vào Database chính thức
+        if (serverOtp == null || !serverOtp.equals(inputOtp)) {
+            resp.getWriter().write("{\"status\":\"error\",\"message\":\"Mã OTP xác thực không chính xác!\"}");
+            return;
+        }
+
+        try {
             UserDAO userDAO = new UserDAO();
-            boolean isSaved = userDAO.insert(pendingUser); // Giả sử bạn có hàm insert
 
-            if (isSaved) {
-                // Xóa session tạm
-                session.removeAttribute("REGISTER_OTP");
-                session.removeAttribute("pendingUser");
-                // Thông báo đăng ký thành công
-                resp.sendRedirect(req.getContextPath() + "/login?status=success");
+            if (pendingProvider != null && pendingSocialId != null) {
+                userDAO.saveSocialUser(pendingUser, pendingProvider, pendingSocialId);
             } else {
-                req.setAttribute("error", "Có lỗi xảy ra khi lưu tài khoản.");
-                req.getRequestDispatcher("/jsp/auth/verify-otp.jsp").forward(req, resp);
+                userDAO.insert(pendingUser); // Tiến hành lưu chính thức vào DATABASE
             }
-        } else {
-            // OTP sai
-            req.setAttribute("error", "Mã OTP không chính xác. Vui lòng thử lại.");
-            req.getRequestDispatcher("/jsp/auth/verify-otp.jsp").forward(req, resp);
+
+            // Giải phóng bộ nhớ Session
+            session.removeAttribute("REGISTER_OTP");
+            session.removeAttribute("pendingUser");
+            session.removeAttribute("pendingProvider");
+            session.removeAttribute("pendingSocialId");
+            session.removeAttribute("OTP_TIME");
+
+            // Trả về JSON thành công đúng với câu thông báo bạn yêu cầu
+            resp.getWriter().write("{\"status\":\"success\",\"message\":\"Đăng ký tài khoản thành công vui lòng đăng nhập để trải nghiệm\"}");
+        } catch (Exception e) {
+            e.printStackTrace();
+            resp.getWriter().write("{\"status\":\"error\",\"message\":\"Lỗi lưu tài khoản vào cơ sở dữ liệu!\"}");
         }
     }
 }
