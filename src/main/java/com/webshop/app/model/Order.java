@@ -10,6 +10,7 @@ import java.util.Locale;
 public class Order {
 
 	private static final Locale VIETNAM_LOCALE = new Locale("vi", "VN");
+	private static final int RETURN_POLICY_DAYS = 7;
 
 	private int id;
 	private int userId;
@@ -21,7 +22,7 @@ public class Order {
 	private BigDecimal couponDiscount = BigDecimal.ZERO;
 
 	private String paymentMethod; // COD | VNPAY
-	private String paymentStatus; // PENDING | PAID | CANCELED | CANCELLED | FAILED
+	private String paymentStatus; // PENDING | PAID | CANCELED | CANCELLED | FAILED | REFUNDED
 	private String status;        // processing | confirmed | shipping | completed | cancelled
 
 	/**
@@ -48,12 +49,20 @@ public class Order {
 	private int paymentAttemptCount;
 	private String lastPaymentError;
 
+	// ================= CANCEL / RETURN / REFUND =================
+
+	private String cancelReason;
+	private LocalDateTime cancelledAt;
+	private String refundStatus; // NONE | PENDING | REQUESTED | APPROVED | REJECTED | RETURNED | REFUNDED
+	private BigDecimal refundAmount = BigDecimal.ZERO;
+	private String refundMethod; // VNPAY | BANK_TRANSFER | CASH | STORE_CREDIT | MANUAL
+
 	// ================= SHIPPING / TRACKING =================
 
 	private String shippingMethod;   // ECONOMY | FAST | EXPRESS
 	private String shippingProvider; // GHTK | GHN | INTERNAL
 	private BigDecimal shippingFee = BigDecimal.ZERO;
-	private String shippingCode;
+	private String shippingCode;     // mã vận đơn
 
 	/**
 	 * Trạng thái vận chuyển chuẩn:
@@ -221,6 +230,49 @@ public class Order {
 		this.lastPaymentError = normalizeNullable(lastPaymentError);
 	}
 
+	// ================= CANCEL / RETURN / REFUND GET / SET =================
+
+	public String getCancelReason() {
+		return cancelReason;
+	}
+
+	public void setCancelReason(String cancelReason) {
+		this.cancelReason = normalizeNullable(cancelReason);
+	}
+
+	public LocalDateTime getCancelledAt() {
+		return cancelledAt;
+	}
+
+	public void setCancelledAt(LocalDateTime cancelledAt) {
+		this.cancelledAt = cancelledAt;
+	}
+
+	public String getRefundStatus() {
+		return refundStatus == null || refundStatus.isBlank() ? "NONE" : refundStatus;
+	}
+
+	public void setRefundStatus(String refundStatus) {
+		String value = normalizeUpper(refundStatus);
+		this.refundStatus = value == null ? "NONE" : value;
+	}
+
+	public BigDecimal getRefundAmount() {
+		return refundAmount;
+	}
+
+	public void setRefundAmount(BigDecimal refundAmount) {
+		this.refundAmount = safeMoney(refundAmount);
+	}
+
+	public String getRefundMethod() {
+		return refundMethod;
+	}
+
+	public void setRefundMethod(String refundMethod) {
+		this.refundMethod = normalizeUpper(refundMethod);
+	}
+
 	// ================= SHIPPING GET / SET =================
 
 	public String getShippingMethod() {
@@ -303,30 +355,27 @@ public class Order {
 	// VIEW PROPERTIES FOR JSP
 	// =========================================================
 
-	/**
-	 * JSP gọi: ${order.totalVnd}
-	 */
+	/** JSP gọi: ${order.totalVnd} */
 	public String getTotalVnd() {
 		return formatVnd(total);
 	}
 
-	/**
-	 * JSP gọi: ${order.couponDiscountVnd}
-	 */
+	/** JSP gọi: ${order.couponDiscountVnd} */
 	public String getCouponDiscountVnd() {
 		return formatVnd(couponDiscount);
 	}
 
-	/**
-	 * JSP gọi: ${order.shippingFeeVnd}
-	 */
+	/** JSP gọi: ${order.shippingFeeVnd} */
 	public String getShippingFeeVnd() {
 		return formatVnd(shippingFee);
 	}
 
-	/**
-	 * JSP gọi: ${order.paymentMethodLabel}
-	 */
+	/** JSP gọi: ${order.refundAmountVnd} */
+	public String getRefundAmountVnd() {
+		return formatVnd(refundAmount);
+	}
+
+	/** JSP gọi: ${order.paymentMethodLabel} */
 	public String getPaymentMethodLabel() {
 		if (paymentMethod == null || paymentMethod.isBlank()) {
 			return "Chưa xác định";
@@ -339,9 +388,7 @@ public class Order {
 		};
 	}
 
-	/**
-	 * JSP gọi: ${order.paymentStatusLabel}
-	 */
+	/** JSP gọi: ${order.paymentStatusLabel} */
 	public String getPaymentStatusLabel() {
 		if (paymentStatus == null || paymentStatus.isBlank()) {
 			return "Chờ thanh toán";
@@ -351,58 +398,112 @@ public class Order {
 			case "PAID" -> "Đã thanh toán";
 			case "CANCELED", "CANCELLED" -> "Đã hủy thanh toán";
 			case "FAILED" -> "Thanh toán thất bại";
+			case "REFUNDED" -> "Đã hoàn tiền";
 			case "PENDING" -> "Chờ thanh toán";
 			default -> paymentStatus;
 		};
 	}
 
-	/**
-	 * JSP gọi: ${order.retryPaymentAvailable}
-	 *
-	 * Điều kiện được thanh toán lại:
-	 * - Đơn thanh toán bằng VNPay
-	 * - Chưa thanh toán thành công
-	 * - Đơn chưa bị hủy
-	 * - Đơn chưa hoàn tất
-	 */
+	/** JSP gọi: ${order.refundStatusLabel} */
+	public String getRefundStatusLabel() {
+		String value = getRefundStatus();
+
+		return switch (value.toUpperCase(Locale.ROOT)) {
+			case "PENDING" -> "Chờ xử lý hoàn tiền";
+			case "REQUESTED" -> "Đã gửi yêu cầu hoàn hàng";
+			case "APPROVED" -> "Yêu cầu đã được duyệt";
+			case "REJECTED" -> "Yêu cầu bị từ chối";
+			case "RETURNED" -> "Shop đã nhận hàng hoàn";
+			case "REFUNDED" -> "Đã hoàn tiền";
+			default -> "Không có yêu cầu hoàn tiền";
+		};
+	}
+
+	/** JSP gọi: ${order.refundStatusCssClass} */
+	public String getRefundStatusCssClass() {
+		String value = getRefundStatus();
+
+		return switch (value.toUpperCase(Locale.ROOT)) {
+			case "PENDING", "REQUESTED" -> "warning";
+			case "APPROVED", "RETURNED" -> "info";
+			case "REFUNDED" -> "ok";
+			case "REJECTED" -> "danger";
+			default -> "muted";
+		};
+	}
+
+	/** JSP gọi: ${order.retryPaymentAvailable} */
 	public boolean isRetryPaymentAvailable() {
 		boolean isVnpay = "VNPAY".equalsIgnoreCase(paymentMethod);
 		boolean paid = "PAID".equalsIgnoreCase(paymentStatus);
-
 		boolean cancelled = "cancelled".equalsIgnoreCase(status)
-				|| "canceled".equalsIgnoreCase(status)
-				|| "CANCELLED".equalsIgnoreCase(status)
-				|| "CANCELED".equalsIgnoreCase(status);
-
-		boolean completed = "completed".equalsIgnoreCase(status)
-				|| "COMPLETED".equalsIgnoreCase(status);
+				|| "canceled".equalsIgnoreCase(status);
+		boolean completed = "completed".equalsIgnoreCase(status);
 
 		return isVnpay && !paid && !cancelled && !completed;
 	}
 
-	/**
-	 * Thêm getter dạng get... để Tomcat/JSP EL nhận property chắc chắn.
-	 * JSP vẫn gọi: ${order.retryPaymentAvailable}
-	 */
+	/** Getter dạng get... để Tomcat/JSP EL nhận property chắc chắn. */
 	public boolean getRetryPaymentAvailable() {
 		return isRetryPaymentAvailable();
 	}
 
-	/**
-	 * JSP gọi: ${order.canRetryPayment}
-	 * Getter phụ để nếu sau này muốn đổi JSP thành ${order.canRetryPayment}.
-	 */
-	public boolean isCanRetryPayment() {
-		return isRetryPaymentAvailable();
+	/** JSP gọi: ${order.cancelable} */
+	public boolean isCancelable() {
+		boolean orderOpen = "processing".equalsIgnoreCase(status)
+				|| "confirmed".equalsIgnoreCase(status)
+				|| "pending".equalsIgnoreCase(status);
+
+		boolean shippingNotStarted = ShippingStatus.PENDING_PICKUP.matches(shippingStatus)
+				|| "PENDING".equalsIgnoreCase(shippingStatus)
+				|| "CREATED".equalsIgnoreCase(shippingStatus)
+				|| shippingStatus == null
+				|| shippingStatus.isBlank();
+
+		return orderOpen && shippingNotStarted;
 	}
 
-	public boolean getCanRetryPayment() {
-		return isRetryPaymentAvailable();
+	public boolean getCancelable() {
+		return isCancelable();
 	}
 
-	/**
-	 * JSP gọi: ${order.shippingMethodLabel}
-	 */
+	/** JSP gọi: ${order.returnable} */
+	public boolean isReturnable() {
+		if (!"completed".equalsIgnoreCase(status) || !ShippingStatus.DELIVERED.matches(shippingStatus)) {
+			return false;
+		}
+
+		if (deliveredAt == null) {
+			return false;
+		}
+
+		if (!"NONE".equalsIgnoreCase(getRefundStatus())) {
+			return false;
+		}
+
+		return !deliveredAt.isBefore(LocalDateTime.now().minusDays(RETURN_POLICY_DAYS));
+	}
+
+	public boolean getReturnable() {
+		return isReturnable();
+	}
+
+	/** JSP gọi: ${order.returnDeadlineText} */
+	public String getReturnDeadlineText() {
+		if (deliveredAt == null) {
+			return "Chưa xác định";
+		}
+
+		LocalDateTime deadline = deliveredAt.plusDays(RETURN_POLICY_DAYS);
+		return String.format("%02d/%02d/%04d %02d:%02d",
+				deadline.getDayOfMonth(),
+				deadline.getMonthValue(),
+				deadline.getYear(),
+				deadline.getHour(),
+				deadline.getMinute());
+	}
+
+	/** JSP gọi: ${order.shippingMethodLabel} */
 	public String getShippingMethodLabel() {
 		if (shippingMethod == null || shippingMethod.isBlank()) {
 			return "Giao hàng tiết kiệm";
@@ -416,9 +517,7 @@ public class Order {
 		};
 	}
 
-	/**
-	 * JSP gọi: ${order.shippingProviderLabel}
-	 */
+	/** JSP gọi: ${order.shippingProviderLabel} */
 	public String getShippingProviderLabel() {
 		if (shippingProvider == null || shippingProvider.isBlank()) {
 			return "Vận chuyển nội bộ";
@@ -432,30 +531,22 @@ public class Order {
 		};
 	}
 
-	/**
-	 * JSP gọi: ${order.shippingStatusLabel}
-	 */
+	/** JSP gọi: ${order.shippingStatusLabel} */
 	public String getShippingStatusLabel() {
 		return ShippingStatus.labelOf(shippingStatus);
 	}
 
-	/**
-	 * JSP gọi: ${order.shippingStatusCssClass}
-	 */
+	/** JSP gọi: ${order.shippingStatusCssClass} */
 	public String getShippingStatusCssClass() {
 		return ShippingStatus.cssClassOf(shippingStatus);
 	}
 
-	/**
-	 * JSP gọi: ${order.shippingStatusStep} để vẽ timeline.
-	 */
+	/** JSP gọi: ${order.shippingStatusStep} để vẽ timeline. */
 	public int getShippingStatusStep() {
 		return ShippingStatus.stepOf(shippingStatus);
 	}
 
-	/**
-	 * JSP gọi: ${order.pendingPickup}
-	 */
+	/** JSP gọi: ${order.pendingPickup} */
 	public boolean isPendingPickup() {
 		return ShippingStatus.PENDING_PICKUP.matches(shippingStatus);
 	}
@@ -464,9 +555,7 @@ public class Order {
 		return isPendingPickup();
 	}
 
-	/**
-	 * JSP gọi: ${order.delivering}
-	 */
+	/** JSP gọi: ${order.delivering} */
 	public boolean isDelivering() {
 		return ShippingStatus.DELIVERING.matches(shippingStatus);
 	}
@@ -475,9 +564,7 @@ public class Order {
 		return isDelivering();
 	}
 
-	/**
-	 * JSP gọi: ${order.delivered}
-	 */
+	/** JSP gọi: ${order.delivered} */
 	public boolean isDelivered() {
 		return ShippingStatus.DELIVERED.matches(shippingStatus);
 	}
@@ -486,9 +573,7 @@ public class Order {
 		return isDelivered();
 	}
 
-	/**
-	 * JSP gọi: ${order.deliveryFailed}
-	 */
+	/** JSP gọi: ${order.deliveryFailed} */
 	public boolean isDeliveryFailed() {
 		return ShippingStatus.FAILED.matches(shippingStatus);
 	}
@@ -497,9 +582,7 @@ public class Order {
 		return isDeliveryFailed();
 	}
 
-	/**
-	 * JSP gọi: ${order.shippingCanceled}
-	 */
+	/** JSP gọi: ${order.shippingCanceled} */
 	public boolean isShippingCanceled() {
 		return ShippingStatus.CANCELED.matches(shippingStatus);
 	}
@@ -508,9 +591,7 @@ public class Order {
 		return isShippingCanceled();
 	}
 
-	/**
-	 * JSP gọi: ${order.shippingFinished}
-	 */
+	/** JSP gọi: ${order.shippingFinished} */
 	public boolean isShippingFinished() {
 		return ShippingStatus.fromCode(shippingStatus).isTerminal();
 	}
@@ -519,9 +600,7 @@ public class Order {
 		return isShippingFinished();
 	}
 
-	/**
-	 * JSP/JSTL fmt:formatDate dùng Date tốt hơn LocalDateTime.
-	 */
+	/** JSP/JSTL fmt:formatDate dùng Date tốt hơn LocalDateTime. */
 	public Date getCreatedAtDate() {
 		return toDate(createdAt);
 	}
@@ -532,6 +611,10 @@ public class Order {
 
 	public Date getDeliveredAtDate() {
 		return toDate(deliveredAt);
+	}
+
+	public Date getCancelledAtDate() {
+		return toDate(cancelledAt);
 	}
 
 	// =========================================================
