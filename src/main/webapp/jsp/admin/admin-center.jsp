@@ -14,7 +14,7 @@
     <div class="admin-topbar">
       <div>
         <h1 class="admin-h1">Admin Center</h1>
-        <p class="admin-subtext">Chọn phân hệ để quản trị.</p>
+        <p class="admin-subtext">Chọn phân hệ để quản trị hệ thống MyCosmeticShop.</p>
       </div>
     </div>
 
@@ -22,92 +22,112 @@
       <div class="admin-card__body">
         <div class="admin-grid admin-grid--3">
 
-          <!-- ✅ HOME -->
+          <!-- HOME -->
           <a class="admin-menu-card" href="${pageContext.request.contextPath}/">
             <div class="admin-menu-card__title">Trang chủ</div>
-            <p class="admin-menu-card__desc">Quay về trang người dùng (Home).</p>
+            <p class="admin-menu-card__desc">
+              Quay về giao diện người dùng để kiểm tra hiển thị cửa hàng.
+            </p>
             <span class="admin-chip">/</span>
           </a>
 
+          <!-- DASHBOARD -->
           <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/dashboard">
             <div class="admin-menu-card__title">Dashboard</div>
-            <p class="admin-menu-card__desc">Tổng quan nhanh hệ thống (đơn hàng, doanh thu, KPI).</p>
+            <p class="admin-menu-card__desc">
+              Theo dõi tổng quan đơn hàng, doanh thu, KPI và tình hình hoạt động.
+            </p>
             <span class="admin-chip">/admin/dashboard</span>
           </a>
 
+          <!-- BANNERS -->
           <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/banners">
             <div class="admin-menu-card__title">Banners</div>
-            <p class="admin-menu-card__desc">Quản lý banner slider trang chủ.</p>
+            <p class="admin-menu-card__desc">
+              Quản lý banner slider, hình ảnh quảng bá và trạng thái hiển thị.
+            </p>
             <span class="admin-chip">/admin/banners</span>
           </a>
 
-          <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/brands">
-            <div class="admin-menu-card__title">Brands</div>
-            <p class="admin-menu-card__desc">Quản lý thương hiệu sản phẩm.</p>
-            <span class="admin-chip">/admin/brands</span>
+          <!-- PRODUCTS -->
+          <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/products">
+            <div class="admin-menu-card__title">Products</div>
+            <p class="admin-menu-card__desc">
+              Quản lý sản phẩm, hình ảnh, giá bán, tồn kho và trạng thái kinh doanh.
+            </p>
+            <span class="admin-chip">/admin/products</span>
           </a>
 
-          <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/brand-discounts">
-            <div class="admin-menu-card__title">Brand Discounts</div>
-            <p class="admin-menu-card__desc">Giảm giá theo thương hiệu theo thời gian.</p>
-            <span class="admin-chip">/admin/brand-discounts</span>
-          </a>
-
+          <!-- CATEGORIES -->
           <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/categories">
             <div class="admin-menu-card__title">Categories</div>
-            <p class="admin-menu-card__desc">Quản lý danh mục sản phẩm và cây danh mục.</p>
+            <p class="admin-menu-card__desc">
+              Quản lý danh mục sản phẩm, danh mục cha con và trạng thái hiển thị.
+            </p>
             <span class="admin-chip">/admin/categories</span>
           </a>
 
-          <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/coupons">
-            <div class="admin-menu-card__title">Coupons</div>
+          <!-- BRANDS -->
+          <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/brands">
+            <div class="admin-menu-card__title">Brands</div>
             <p class="admin-menu-card__desc">
-              Quản lý mã giảm giá, điều kiện đơn tối thiểu và rank khách hàng được áp dụng.
+              Quản lý thương hiệu mỹ phẩm và thông tin liên quan đến sản phẩm.
             </p>
-            <span class="admin-chip">/admin/coupons</span>
+            <span class="admin-chip">/admin/brands</span>
           </a>
 
+          <!-- PROMOTIONS - UNIFIED -->
+          <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/promotions">
+            <div class="admin-menu-card__title">Khuyến mãi &amp; Mã giảm giá</div>
+            <p class="admin-menu-card__desc">
+              Quản lý tập trung mã giảm giá, giảm giá thương hiệu, giảm theo giá trị đơn hàng
+              và chương trình khuyến mãi cửa hàng.
+            </p>
+            <span class="admin-chip">/admin/promotions</span>
+          </a>
+
+          <!-- USER RANKS -->
           <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/ranks">
             <div class="admin-menu-card__title">User Ranks</div>
             <p class="admin-menu-card__desc">
-              Quản lý hạng khách hàng, mốc chi tiêu và ưu đãi theo rank.
+              Quản lý hạng khách hàng, mốc chi tiêu và ưu đãi theo từng cấp bậc.
             </p>
             <span class="admin-chip">/admin/ranks</span>
           </a>
 
+          <!-- ORDERS -->
           <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/orders">
             <div class="admin-menu-card__title">Orders</div>
-            <p class="admin-menu-card__desc">Danh sách đơn hàng, xem chi tiết và cập nhật trạng thái.</p>
+            <p class="admin-menu-card__desc">
+              Danh sách đơn hàng, xem chi tiết, cập nhật trạng thái và xử lý thanh toán.
+            </p>
             <span class="admin-chip">/admin/orders</span>
           </a>
 
-          <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/order-discounts">
-            <div class="admin-menu-card__title">Order Discounts</div>
-            <p class="admin-menu-card__desc">Quản lý chương trình giảm giá theo giá trị đơn hàng.</p>
-            <span class="admin-chip">/admin/order-discounts</span>
+          <!-- RETURNS -->
+          <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/returns">
+            <div class="admin-menu-card__title">Return Requests</div>
+            <p class="admin-menu-card__desc">
+              Quản lý yêu cầu hoàn hàng, duyệt hoàn tiền và theo dõi trạng thái xử lý.
+            </p>
+            <span class="admin-chip">/admin/returns</span>
           </a>
 
-          <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/products">
-            <div class="admin-menu-card__title">Products</div>
-            <p class="admin-menu-card__desc">Quản lý sản phẩm, hình ảnh, giá bán, tồn kho và trạng thái.</p>
-            <span class="admin-chip">/admin/products</span>
-          </a>
-
-          <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/promotion-events">
-            <div class="admin-menu-card__title">Promotion Events</div>
-            <p class="admin-menu-card__desc">Quản lý chương trình khuyến mãi theo sự kiện.</p>
-            <span class="admin-chip">/admin/promotion-events</span>
-          </a>
-
+          <!-- REVIEWS -->
           <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/reviews">
             <div class="admin-menu-card__title">Reviews</div>
-            <p class="admin-menu-card__desc">Quản lý đánh giá và phản hồi của khách hàng.</p>
+            <p class="admin-menu-card__desc">
+              Quản lý đánh giá sản phẩm, duyệt nội dung và phản hồi khách hàng.
+            </p>
             <span class="admin-chip">/admin/reviews</span>
           </a>
 
+          <!-- USERS -->
           <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/users">
             <div class="admin-menu-card__title">Users</div>
-            <p class="admin-menu-card__desc">Quản lý tài khoản người dùng, vai trò và trạng thái hoạt động.</p>
+            <p class="admin-menu-card__desc">
+              Quản lý tài khoản người dùng, vai trò, trạng thái và thông tin hồ sơ.
+            </p>
             <span class="admin-chip">/admin/users</span>
           </a>
 
