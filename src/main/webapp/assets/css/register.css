@@ -375,3 +375,26 @@
   display: inline-block !important;
   text-transform: uppercase;
 }
+
+/* =========================================================
+   REAL-TIME VALIDATION CLASSES
+========================================================= */
+.error-msg {
+  display: none;
+  margin-top: 6px;
+  color: #e53935;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+}
+
+.input-error {
+  border: 1.5px solid #e53935 !important;
+  background: #fff5f5 !important;
+  box-shadow: 0 0 0 4px rgba(229, 57, 53, 0.1) !important;
+}
+
+.input-success {
+  border: 1.5px solid #43a047 !important;
+  background: #f1fff3 !important;
+}
