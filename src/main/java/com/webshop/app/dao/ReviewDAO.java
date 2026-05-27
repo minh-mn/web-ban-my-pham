@@ -1,61 +1,74 @@
 package com.webshop.app.dao;
 
+import com.webshop.app.model.Review;
+import com.webshop.app.utils.DBConnection;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.Timestamp;
+import java.sql.Types;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-
-import com.webshop.app.model.Review;
-import com.webshop.app.utils.DBConnection;
+import java.util.Locale;
+import java.util.Map;
 
 public class ReviewDAO {
 
-    // ================= LOAD REVIEW THEO PRODUCT =================
-
     public List<Review> findByProductId(int productId) {
+        return findByProductId(productId, "newest", null, null);
+    }
 
+    public List<Review> findByProductId(int productId, String sort, Integer rating, String mediaType) {
         List<Review> list = new ArrayList<>();
 
-        String sql =
-                "SELECT r.id, r.product_id, r.rating, r.comment, r.created_at, " +
-                        "       r.author_id, r.has_emoji, r.sentiment, " +
-                        "       u.username AS author_name " +
-                        "FROM store_review r " +
-                        "JOIN users u ON r.author_id = u.id " +
-                        "WHERE r.product_id = ? " +
-                        "ORDER BY r.created_at DESC";
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT r.id, r.product_id, r.order_id, r.order_item_id, r.rating, r.comment, r.created_at, ");
+        sql.append("       r.author_id, r.has_emoji, r.sentiment, r.status, r.is_hidden, r.admin_note, ");
+        sql.append("       r.approved_at, r.approved_by, r.voucher_awarded, ");
+        sql.append("       u.username AS author_name, p.title AS product_name, p.slug AS product_slug, p.image AS product_image, ");
+        sql.append("       COALESCE(m.media_count, 0) AS media_count, ");
+        sql.append("       COALESCE(m.has_image, 0) AS has_image, COALESCE(m.has_video, 0) AS has_video, ");
+        sql.append("       m.image_url, m.video_url ");
+        sql.append("FROM store_review r ");
+        sql.append("JOIN users u ON r.author_id = u.id ");
+        sql.append("LEFT JOIN store_product p ON p.id = r.product_id ");
+        sql.append(mediaAggregateSql());
+        sql.append("WHERE r.product_id = ? ");
+        sql.append("AND r.status = 'APPROVED' ");
+        sql.append("AND COALESCE(r.is_hidden, 0) = 0 ");
+
+        List<Object> params = new ArrayList<>();
+        params.add(productId);
+
+        if (rating != null && rating >= 1 && rating <= 5) {
+            sql.append("AND r.rating = ? ");
+            params.add(rating);
+        }
+
+        String normalizedMedia = normalizeMediaType(mediaType);
+        if ("IMAGE".equals(normalizedMedia)) {
+            sql.append("AND COALESCE(m.has_image, 0) = 1 ");
+        } else if ("VIDEO".equals(normalizedMedia)) {
+            sql.append("AND COALESCE(m.has_video, 0) = 1 ");
+        } else if ("MEDIA".equals(normalizedMedia)) {
+            sql.append("AND COALESCE(m.media_count, 0) > 0 ");
+        }
+
+        appendSort(sql, sort);
 
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
 
-            ps.setInt(1, productId);
+            bind(ps, params);
 
             try (ResultSet rs = ps.executeQuery()) {
-
                 while (rs.next()) {
-
-                    Review r = new Review();
-
-                    r.setId(rs.getInt("id"));
-                    r.setProductId(rs.getInt("product_id"));
-                    r.setRating(rs.getInt("rating"));
-                    r.setComment(rs.getString("comment"));
-
-                    Timestamp ts = rs.getTimestamp("created_at");
-
-                    if (ts != null) {
-                        r.setCreatedAt(ts.toLocalDateTime());
-                    }
-
-                    r.setAuthorId(rs.getInt("author_id"));
-                    r.setAuthorName(rs.getString("author_name"));
-                    r.setHasEmoji(rs.getBoolean("has_emoji"));
-                    r.setSentiment(rs.getInt("sentiment"));
-
-                    list.add(r);
+                    list.add(mapRow(rs));
                 }
             }
 
@@ -66,174 +79,455 @@ public class ReviewDAO {
         return list;
     }
 
-    // ================= CHECK EXISTS =================
+    public Review findReviewableOrderItem(int userId, int orderId, int productId) {
+        String sql = """
+                SELECT
+                    o.id AS order_id,
+                    oi.id AS order_item_id,
+                    oi.product_id,
+                    COALESCE(p.title, CONCAT('Sản phẩm #', oi.product_id)) AS product_name,
+                    p.slug AS product_slug,
+                    p.image AS product_image
+                FROM store_order o
+                JOIN store_orderitem oi ON oi.order_id = o.id
+                LEFT JOIN store_product p ON p.id = oi.product_id
+                WHERE o.id = ?
+                  AND o.user_id = ?
+                  AND oi.product_id = ?
+                  AND LOWER(o.status) = 'completed'
+                  AND UPPER(o.payment_status) = 'PAID'
+                  AND UPPER(o.shipping_status) = 'DELIVERED'
+                LIMIT 1
+                """;
 
-    private boolean existsByProductAndAuthor(
-            Connection conn,
-            int productId,
-            int authorId
-    ) throws SQLException {
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-        String sql =
-                "SELECT 1 " +
-                        "FROM store_review " +
-                        "WHERE product_id = ? " +
-                        "AND author_id = ?";
-
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setInt(1, productId);
-            ps.setInt(2, authorId);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next();
-            }
-        }
-    }
-
-    // ================= VALIDATE FK =================
-
-    private boolean existsAuthor(
-            Connection conn,
-            int authorId
-    ) throws SQLException {
-
-        String sql =
-                "SELECT 1 " +
-                        "FROM users " +
-                        "WHERE id = ?";
-
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setInt(1, authorId);
+            ps.setInt(1, orderId);
+            ps.setInt(2, userId);
+            ps.setInt(3, productId);
 
             try (ResultSet rs = ps.executeQuery()) {
-                return rs.next();
-            }
-        }
-    }
+                if (!rs.next()) {
+                    return null;
+                }
 
-    // ================= UPDATE REVIEW =================
-
-    private void update(Connection conn, Review r)
-            throws SQLException {
-
-        String sql =
-                "UPDATE store_review " +
-                        "SET rating = ?, comment = ?, has_emoji = ?, sentiment = ? " +
-                        "WHERE product_id = ? " +
-                        "AND author_id = ?";
-
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setInt(1, r.getRating());
-            ps.setString(2, r.getComment());
-            ps.setBoolean(3, r.isHasEmoji());
-            ps.setInt(4, r.getSentiment());
-            ps.setInt(5, r.getProductId());
-            ps.setInt(6, r.getAuthorId());
-
-            ps.executeUpdate();
-        }
-    }
-
-    // ================= INSERT REVIEW =================
-
-    private void insert(Connection conn, Review r)
-            throws SQLException {
-
-        String sql =
-                "INSERT INTO store_review " +
-                        "(product_id, author_id, rating, comment, created_at, has_emoji, sentiment) " +
-                        "VALUES (?, ?, ?, ?, NOW(), ?, ?)";
-
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setInt(1, r.getProductId());
-            ps.setInt(2, r.getAuthorId());
-            ps.setInt(3, r.getRating());
-            ps.setString(4, r.getComment());
-            ps.setBoolean(5, r.isHasEmoji());
-            ps.setInt(6, r.getSentiment());
-
-            ps.executeUpdate();
-        }
-    }
-
-    // ================= CREATE OR UPDATE =================
-
-    public void createOrUpdate(Review r) {
-
-        if (r == null) {
-            throw new RuntimeException(
-                    "ReviewDAO.createOrUpdate error: review is null"
-            );
-        }
-
-        if (r.getProductId() <= 0) {
-            throw new RuntimeException(
-                    "ReviewDAO.createOrUpdate error: productId invalid"
-            );
-        }
-
-        if (r.getAuthorId() <= 0) {
-            throw new RuntimeException(
-                    "ReviewDAO.createOrUpdate error: authorId invalid"
-            );
-        }
-
-        try (Connection conn = DBConnection.getConnection()) {
-
-            if (!existsAuthor(conn, r.getAuthorId())) {
-
-                throw new RuntimeException(
-                        "ReviewDAO.createOrUpdate error: author_id="
-                                + r.getAuthorId()
-                                + " không tồn tại trong users"
-                );
-            }
-
-            if (existsByProductAndAuthor(
-                    conn,
-                    r.getProductId(),
-                    r.getAuthorId()
-            )) {
-
-                update(conn, r);
-
-            } else {
-
-                insert(conn, r);
+                Review review = new Review();
+                review.setOrderId(rs.getInt("order_id"));
+                review.setOrderItemId(rs.getInt("order_item_id"));
+                review.setProductId(rs.getInt("product_id"));
+                review.setProductName(rs.getString("product_name"));
+                review.setProductSlug(rs.getString("product_slug"));
+                review.setProductImage(rs.getString("product_image"));
+                return review;
             }
 
         } catch (SQLException e) {
-            throw new RuntimeException(
-                    "ReviewDAO.createOrUpdate error",
-                    e
-            );
+            throw new RuntimeException("ReviewDAO.findReviewableOrderItem error", e);
         }
     }
 
-    // ================= DELETE =================
+    public boolean canUserReviewProduct(int userId, int productId) {
+        if (userId <= 0 || productId <= 0) {
+            return false;
+        }
+
+        String sql = """
+                SELECT 1
+                FROM store_order o
+                JOIN store_orderitem oi ON oi.order_id = o.id
+                WHERE o.user_id = ?
+                  AND oi.product_id = ?
+                  AND LOWER(o.status) = 'completed'
+                  AND UPPER(o.payment_status) = 'PAID'
+                  AND UPPER(o.shipping_status) = 'DELIVERED'
+                LIMIT 1
+                """;
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, userId);
+            ps.setInt(2, productId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("ReviewDAO.canUserReviewProduct error", e);
+        }
+    }
+
+    public boolean canUserReviewOrderItem(int userId, int orderId, int orderItemId, int productId) {
+        if (userId <= 0 || orderId <= 0 || orderItemId <= 0 || productId <= 0) {
+            return false;
+        }
+
+        String sql = """
+                SELECT 1
+                FROM store_order o
+                JOIN store_orderitem oi ON oi.order_id = o.id
+                WHERE o.id = ?
+                  AND o.user_id = ?
+                  AND oi.id = ?
+                  AND oi.product_id = ?
+                  AND LOWER(o.status) = 'completed'
+                  AND UPPER(o.payment_status) = 'PAID'
+                  AND UPPER(o.shipping_status) = 'DELIVERED'
+                LIMIT 1
+                """;
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, orderId);
+            ps.setInt(2, userId);
+            ps.setInt(3, orderItemId);
+            ps.setInt(4, productId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("ReviewDAO.canUserReviewOrderItem error", e);
+        }
+    }
+
+    public Map<Integer, Boolean> findReviewedOrderItemMap(int userId, int orderId) {
+        Map<Integer, Boolean> result = new HashMap<>();
+        if (userId <= 0 || orderId <= 0) {
+            return result;
+        }
+
+        String sql = """
+                SELECT order_item_id
+                FROM store_review
+                WHERE author_id = ?
+                  AND order_id = ?
+                  AND order_item_id IS NOT NULL
+                """;
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, userId);
+            ps.setInt(2, orderId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    result.put(rs.getInt("order_item_id"), Boolean.TRUE);
+                }
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("ReviewDAO.findReviewedOrderItemMap error", e);
+        }
+
+        return result;
+    }
+
+    public void createOrUpdate(Review review) {
+        createOrUpdate(review, review == null ? null : review.getImageUrl(), review == null ? null : review.getVideoUrl());
+    }
+
+    public void createOrUpdate(Review review, String imageUrl, String videoUrl) {
+        if (review == null) {
+            throw new RuntimeException("ReviewDAO.createOrUpdate error: review is null");
+        }
+        if (review.getProductId() <= 0 || review.getAuthorId() <= 0) {
+            throw new RuntimeException("ReviewDAO.createOrUpdate error: invalid productId/authorId");
+        }
+
+        try (Connection conn = DBConnection.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                if (!existsAuthor(conn, review.getAuthorId())) {
+                    throw new RuntimeException("ReviewDAO.createOrUpdate error: author_id=" + review.getAuthorId() + " không tồn tại");
+                }
+
+                Integer existingId = findExistingReviewId(conn, review);
+                int reviewId;
+                if (existingId != null && existingId > 0) {
+                    reviewId = existingId;
+                    update(conn, review, reviewId);
+                } else {
+                    reviewId = insert(conn, review);
+                }
+
+                replaceMedia(conn, reviewId, imageUrl, videoUrl);
+                conn.commit();
+
+            } catch (Exception e) {
+                conn.rollback();
+                throw e;
+            } finally {
+                conn.setAutoCommit(true);
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("ReviewDAO.createOrUpdate error", e);
+        }
+    }
+
+    private Integer findExistingReviewId(Connection conn, Review review) throws SQLException {
+        String sql;
+        if (review.getOrderItemId() != null) {
+            sql = """
+                    SELECT id
+                    FROM store_review
+                    WHERE author_id = ?
+                      AND order_item_id = ?
+                    LIMIT 1
+                    """;
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setInt(1, review.getAuthorId());
+                ps.setInt(2, review.getOrderItemId());
+                try (ResultSet rs = ps.executeQuery()) {
+                    return rs.next() ? rs.getInt(1) : null;
+                }
+            }
+        }
+
+        sql = """
+                SELECT id
+                FROM store_review
+                WHERE product_id = ?
+                  AND author_id = ?
+                ORDER BY id DESC
+                LIMIT 1
+                """;
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, review.getProductId());
+            ps.setInt(2, review.getAuthorId());
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getInt(1) : null;
+            }
+        }
+    }
+
+    private void update(Connection conn, Review review, int reviewId) throws SQLException {
+        String sql = """
+                UPDATE store_review
+                SET order_id = ?,
+                    order_item_id = ?,
+                    rating = ?,
+                    comment = ?,
+                    has_emoji = ?,
+                    sentiment = ?,
+                    status = 'PENDING',
+                    is_hidden = 0,
+                    admin_note = NULL,
+                    approved_at = NULL,
+                    approved_by = NULL,
+                    created_at = NOW()
+                WHERE id = ?
+                """;
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            setNullableInt(ps, 1, review.getOrderId());
+            setNullableInt(ps, 2, review.getOrderItemId());
+            ps.setInt(3, review.getRating());
+            ps.setString(4, safeString(review.getComment()));
+            ps.setBoolean(5, review.isHasEmoji());
+            ps.setInt(6, review.getSentiment());
+            ps.setInt(7, reviewId);
+            ps.executeUpdate();
+        }
+    }
+
+    private int insert(Connection conn, Review review) throws SQLException {
+        String sql = """
+                INSERT INTO store_review
+                (product_id, author_id, order_id, order_item_id, rating, comment,
+                 created_at, has_emoji, sentiment, status, is_hidden, voucher_awarded)
+                VALUES (?, ?, ?, ?, ?, ?, NOW(), ?, ?, 'PENDING', 0, 0)
+                """;
+
+        try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setInt(1, review.getProductId());
+            ps.setInt(2, review.getAuthorId());
+            setNullableInt(ps, 3, review.getOrderId());
+            setNullableInt(ps, 4, review.getOrderItemId());
+            ps.setInt(5, review.getRating());
+            ps.setString(6, safeString(review.getComment()));
+            ps.setBoolean(7, review.isHasEmoji());
+            ps.setInt(8, review.getSentiment());
+            ps.executeUpdate();
+
+            try (ResultSet keys = ps.getGeneratedKeys()) {
+                if (keys.next()) {
+                    return keys.getInt(1);
+                }
+            }
+        }
+
+        throw new SQLException("Cannot create review: generated id not returned");
+    }
+
+    private void replaceMedia(Connection conn, int reviewId, String imageUrl, String videoUrl) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement("DELETE FROM store_review_media WHERE review_id = ?")) {
+            ps.setInt(1, reviewId);
+            ps.executeUpdate();
+        }
+
+        insertMedia(conn, reviewId, "IMAGE", imageUrl);
+        insertMedia(conn, reviewId, "VIDEO", videoUrl);
+    }
+
+    private void insertMedia(Connection conn, int reviewId, String mediaType, String mediaUrl) throws SQLException {
+        String value = normalize(mediaUrl);
+        if (value == null) {
+            return;
+        }
+
+        String sql = """
+                INSERT INTO store_review_media (review_id, media_type, media_url, created_at)
+                VALUES (?, ?, ?, NOW())
+                """;
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, reviewId);
+            ps.setString(2, mediaType);
+            ps.setString(3, value);
+            ps.executeUpdate();
+        }
+    }
+
+    private boolean existsAuthor(Connection conn, int authorId) throws SQLException {
+        String sql = "SELECT 1 FROM users WHERE id = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, authorId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
 
     public int deleteByProductId(int productId) {
-
-        String sql =
-                "DELETE FROM store_review " +
-                        "WHERE product_id = ?";
+        String sql = "DELETE FROM store_review WHERE product_id = ?";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, productId);
-
             return ps.executeUpdate();
 
         } catch (SQLException e) {
-            throw new RuntimeException(
-                    "ReviewDAO.deleteByProductId error",
-                    e
-            );
+            throw new RuntimeException("ReviewDAO.deleteByProductId error", e);
         }
+    }
+
+    private String mediaAggregateSql() {
+        return """
+                LEFT JOIN (
+                    SELECT
+                        review_id,
+                        COUNT(*) AS media_count,
+                        MAX(CASE WHEN media_type = 'IMAGE' THEN 1 ELSE 0 END) AS has_image,
+                        MAX(CASE WHEN media_type = 'VIDEO' THEN 1 ELSE 0 END) AS has_video,
+                        MAX(CASE WHEN media_type = 'IMAGE' THEN media_url ELSE NULL END) AS image_url,
+                        MAX(CASE WHEN media_type = 'VIDEO' THEN media_url ELSE NULL END) AS video_url
+                    FROM store_review_media
+                    GROUP BY review_id
+                ) m ON m.review_id = r.id
+                """;
+    }
+
+    private void appendSort(StringBuilder sql, String sort) {
+        String value = sort == null ? "newest" : sort.trim().toLowerCase(Locale.ROOT);
+        switch (value) {
+            case "oldest":
+                sql.append("ORDER BY r.created_at ASC, r.id ASC");
+                break;
+            case "highest":
+                sql.append("ORDER BY r.rating DESC, r.created_at DESC, r.id DESC");
+                break;
+            case "lowest":
+                sql.append("ORDER BY r.rating ASC, r.created_at DESC, r.id DESC");
+                break;
+            case "media":
+                sql.append("ORDER BY COALESCE(m.media_count, 0) DESC, r.created_at DESC, r.id DESC");
+                break;
+            case "newest":
+            default:
+                sql.append("ORDER BY r.created_at DESC, r.id DESC");
+                break;
+        }
+    }
+
+    private String normalizeMediaType(String mediaType) {
+        String value = normalize(mediaType);
+        return value == null ? null : value.toUpperCase(Locale.ROOT);
+    }
+
+    private Review mapRow(ResultSet rs) throws SQLException {
+        Review r = new Review();
+        r.setId(rs.getInt("id"));
+        r.setProductId(rs.getInt("product_id"));
+        r.setAuthorId(rs.getInt("author_id"));
+        r.setOrderId(getNullableInt(rs, "order_id"));
+        r.setOrderItemId(getNullableInt(rs, "order_item_id"));
+        r.setRating(rs.getInt("rating"));
+        r.setComment(rs.getString("comment"));
+        r.setCreatedAt(toLocalDateTime(rs.getTimestamp("created_at")));
+        r.setHasEmoji(rs.getBoolean("has_emoji"));
+        r.setSentiment(rs.getInt("sentiment"));
+        r.setStatus(rs.getString("status"));
+        r.setHidden(rs.getBoolean("is_hidden"));
+        r.setAdminNote(rs.getString("admin_note"));
+        r.setApprovedAt(toLocalDateTime(rs.getTimestamp("approved_at")));
+        r.setApprovedBy(getNullableInt(rs, "approved_by"));
+        r.setVoucherAwarded(rs.getBoolean("voucher_awarded"));
+        r.setAuthorName(rs.getString("author_name"));
+        r.setProductName(rs.getString("product_name"));
+        r.setProductSlug(rs.getString("product_slug"));
+        r.setProductImage(rs.getString("product_image"));
+        r.setMediaCount(rs.getInt("media_count"));
+        r.setHasImage(rs.getBoolean("has_image"));
+        r.setHasVideo(rs.getBoolean("has_video"));
+        r.setImageUrl(rs.getString("image_url"));
+        r.setVideoUrl(rs.getString("video_url"));
+        return r;
+    }
+
+    private void bind(PreparedStatement ps, List<Object> params) throws SQLException {
+        for (int i = 0; i < params.size(); i++) {
+            Object value = params.get(i);
+            int index = i + 1;
+            if (value instanceof Integer) {
+                ps.setInt(index, (Integer) value);
+            } else {
+                ps.setString(index, String.valueOf(value));
+            }
+        }
+    }
+
+    private Integer getNullableInt(ResultSet rs, String column) throws SQLException {
+        int value = rs.getInt(column);
+        return rs.wasNull() ? null : value;
+    }
+
+    private void setNullableInt(PreparedStatement ps, int index, Integer value) throws SQLException {
+        if (value == null || value <= 0) {
+            ps.setNull(index, Types.INTEGER);
+        } else {
+            ps.setInt(index, value);
+        }
+    }
+
+    private LocalDateTime toLocalDateTime(Timestamp timestamp) {
+        return timestamp == null ? null : timestamp.toLocalDateTime();
+    }
+
+    private String safeString(String value) {
+        return value == null ? "" : value.trim();
+    }
+
+    private String normalize(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return null;
+        }
+        return value.trim();
     }
 }
