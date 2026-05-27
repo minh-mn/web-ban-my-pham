@@ -11,8 +11,30 @@ public class Category {
 	private Integer parentId;
 	private boolean active;
 
-	private int productCount; // ✅ CHO JSP
+	/*
+	 * Used by JSP to display the number of active products
+	 * belonging to this category.
+	 */
+	private int productCount;
+
+	/*
+	 * Used to display hierarchical categories:
+	 * parent category -> child categories.
+	 */
 	private List<Category> children = new ArrayList<>();
+
+	// ===== CONSTRUCTORS =====
+
+	public Category() {
+	}
+
+	public Category(int id, String name, String slug, Integer parentId, boolean active) {
+		this.id = id;
+		this.name = name;
+		this.slug = slug;
+		this.parentId = parentId;
+		this.active = active;
+	}
 
 	// ===== GETTER / SETTER =====
 
@@ -56,7 +78,9 @@ public class Category {
 		this.active = active;
 	}
 
-	/** ✅ JSP: ${category.productCount} */
+	/**
+	 * JSP: ${category.productCount}
+	 */
 	public int getProductCount() {
 		return productCount;
 	}
@@ -65,12 +89,30 @@ public class Category {
 		this.productCount = productCount;
 	}
 
-	// ===== CHILDREN =====
+	/**
+	 * JSP: ${category.children}
+	 */
 	public List<Category> getChildren() {
 		return children;
 	}
 
 	public void setChildren(List<Category> children) {
-		this.children = children;
+		this.children = children != null ? children : new ArrayList<>();
+	}
+
+	// ===== HELPER METHODS =====
+
+	public boolean hasParent() {
+		return parentId != null && parentId > 0;
+	}
+
+	public boolean hasChildren() {
+		return children != null && !children.isEmpty();
+	}
+
+	public void addChild(Category child) {
+		if (child != null) {
+			this.children.add(child);
+		}
 	}
 }
