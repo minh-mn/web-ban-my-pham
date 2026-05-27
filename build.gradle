@@ -24,14 +24,17 @@ dependencies {
     implementation 'com.mysql:mysql-connector-j:9.1.0'
 
     // Mail
-    implementation 'jakarta.mail:jakarta.mail-api:2.1.2'
-    implementation 'org.eclipse.angus:jakarta.mail:2.0.4'
+    implementation 'jakarta.mail:jakarta.mail-api:2.0.1'
+    implementation 'com.sun.mail:jakarta.mail:2.0.1'
+    implementation 'com.sun.activation:jakarta.activation:2.0.1'
 
     // BCrypt
     implementation 'org.mindrot:jbcrypt:0.4'
 
     // Google login
-    implementation 'com.google.api-client:google-api-client:2.2.0'
+    implementation 'com.google.api-client:google-api-client:2.7.0'
+    implementation 'com.google.oauth-client:google-oauth-client:1.36.0'
+    implementation 'com.google.http-client:google-http-client-jackson2:1.45.0'
 
     // Facebook login
     implementation 'com.restfb:restfb:2023.10.0'
