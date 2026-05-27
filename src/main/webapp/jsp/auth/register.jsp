@@ -10,7 +10,7 @@
     <h2 class="auth-title">Tạo tài khoản</h2>
     <p class="auth-subtitle">Tham gia MyCosmetic để mua sắm và theo dõi đơn hàng</p>
 
-    <form method="post" action="${pageContext.request.contextPath}/register" class="auth-form" id="registerForm">
+    <form id="registerForm" method="post" action="${pageContext.request.contextPath}/register" class="auth-form">
       <input type="hidden" id="registerStatus" value="${status}">
       <input type="hidden" name="csrf_token" value="<c:out value='${sessionScope.CSRF_TOKEN}'/>">
 
@@ -21,7 +21,7 @@
             <span class="input-icon">📧</span>
             <input type="email" name="email" id="emailInput" placeholder="vd: example@gmail.com" required value="<c:out value='${param.email}'/>">
           </div>
-          <small id="email-error" class="error-msg" style="display: none; color: #ff4d4f; text-align: left; margin-top: 4px; font-size: 13px;"></small>
+          <small id="email-error" class="error-msg"></small>
         </div>
 
         <button type="button" class="btn-auth" id="btnNext" onclick="handleEmailCheck(event)">
@@ -33,10 +33,7 @@
         </div>
 
         <div class="social-login-stack">
-          <a href="javascript:void(0)" id="btn-google" class="social-btn">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google">
-            <span>Tiếp tục bằng Google</span>
-          </a>
+          <div id="googleRegisterBtn" style="margin-top:20px"></div>
           <a href="javascript:void(0)" id="btn-facebook" class="social-btn">
             <img src="https://upload.wikimedia.org/wikipedia/commons/b/b9/2023_Facebook_icon.svg" alt="Facebook">
             <span>Tiếp tục bằng Facebook</span>
@@ -45,14 +42,13 @@
       </div>
 
       <div id="step-profile" style="display: none;">
-
         <div class="form-group">
           <label>Họ và tên của bạn</label>
           <div class="input-group">
             <span class="input-icon">👤</span>
             <input type="text" name="fullName" id="nameInput" placeholder="Nhập họ và tên đầy đủ" value="<c:out value='${param.fullName}'/>">
           </div>
-          <small id="name-error" class="error-msg" style="display: none; color: #ff4d4f; text-align: left; margin-top: 4px; font-size: 13px;"></small>
+          <small id="name-error" class="error-msg"></small>
         </div>
 
         <div class="form-group">
@@ -61,7 +57,7 @@
             <span class="input-icon">📞</span>
             <input type="tel" name="phone" id="phoneInput" placeholder="Nhập số điện thoại của bạn" value="<c:out value='${param.phone}'/>">
           </div>
-          <small id="phone-error" class="error-msg" style="display: none; color: #ff4d4f; text-align: left; margin-top: 4px; font-size: 13px;"></small>
+          <small id="phone-error" class="error-msg"></small>
         </div>
 
         <div class="form-group">
@@ -70,7 +66,7 @@
             <span class="input-icon">📅</span>
             <input type="date" name="birthDate" id="birthDateInput" value="<c:out value='${param.birthDate}'/>">
           </div>
-          <small id="birthdate-error" class="error-msg" style="display: none; color: #ff4d4f; text-align: left; margin-top: 4px; font-size: 13px;"></small>
+          <small id="birthdate-error" class="error-msg"></small>
         </div>
 
         <div class="form-group">
@@ -92,9 +88,9 @@
           <label>Mật khẩu</label>
           <div class="input-group">
             <span class="input-icon">🔒</span>
-            <input type="password" name="password" id="passInput" placeholder="Tối thiểu 6 ký tự">
+            <input type="password" name="password" id="passInput" placeholder="Tối thiểu 8 ký tự">
           </div>
-          <small id="pass-error" class="error-msg" style="display: none; color: #ff4d4f; text-align: left; margin-top: 4px; font-size: 13px;"></small>
+          <small id="pass-error" class="error-msg"></small>
         </div>
 
         <div class="form-group">
@@ -103,7 +99,7 @@
             <span class="input-icon">🛡️</span>
             <input type="password" name="confirmPassword" id="confirmPassInput" placeholder="Nhập lại mật khẩu">
           </div>
-          <small id="password-error" class="error-msg" style="display: none; color: #ff4d4f; text-align: left; margin-top: 4px; font-size: 13px;"></small>
+          <small id="password-error" class="error-msg"></small>
         </div>
 
         <div class="form-group">
@@ -115,7 +111,7 @@
           </div>
         </div>
 
-        <button type="submit" class="btn-register">
+        <button type="submit" class="btn-register" id="btnSubmit">
           Hoàn tất Đăng ký
         </button>
       </div>
@@ -127,133 +123,434 @@
   </div>
 </section>
 
+<div id="otpModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+  <div style="background: #ffffff; padding: 35px; border-radius: 12px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 8px 30px rgba(0,0,0,0.3); animation: fadeInModal 0.3s ease;">
+
+    <div id="otpSuccessBanner" style="background-color: #e8f5e9; color: #2e7d32; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; border: 1px solid #c8e6c9; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 500;">
+      <span style="font-size: 16px;">✅</span> <span id="otpSuccessMessage">Mã OTP đã được gửi thành công!</span>
+    </div>
+
+    <div style="font-size: 50px; color: #d81b60; margin-bottom: 10px;">✉️</div>
+
+    <h3 style="color: #333333; margin: 0 0 10px 0; font-size: 22px; font-weight: 600;">Xác Thực Mã OTP</h3>
+    <p style="color: #666666; font-size: 14px; line-height: 1.5; margin: 0 0 20px 0;">
+      Hệ thống đã gửi một mã OTP gồm 6 chữ số đến Email của bạn. Vui lòng kiểm tra và nhập vào dưới đây.
+    </p>
+
+    <input type="text" id="otp_input" placeholder="******" maxlength="6" autocomplete="off"
+           style="width: 80%; padding: 12px; margin-bottom: 20px; border: 2px solid #e0e0e0; border-radius: 8px; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 8px; color: #333; outline: none; transition: border-color 0.2s;">
+
+    <div style="display: flex; gap: 12px; justify-content: center;">
+      <button type="button" onclick="dongPopupOtp()"
+              style="flex: 1; background: #f5f5f5; color: #555555; border: 1px solid #cccccc; padding: 12px; border-radius: 6px; font-size: 15px; font-weight: 500; cursor: pointer; transition: background 0.2s;">
+        Hủy Bỏ
+      </button>
+      <button type="button" onclick="xacThucOtp()"
+              style="flex: 1; background: #d81b60; color: #ffffff; border: none; padding: 12px; border-radius: 6px; font-size: 15px; font-weight: 500; cursor: pointer; box-shadow: 0 4px 10px rgba(216,27,96,0.3); transition: background 0.2s;">
+        Xác Nhận
+      </button>
+    </div>
+  </div>
+</div>
+
+<style>
+  @keyframes fadeInModal {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  #otp_input:focus {
+    border-color: #d81b60 !important;
+  }
+  .swal2-container {
+    z-index: 99999 !important;
+  }
+</style>
+
 <script>
-  // Script đơn giản chặn nút đăng ký nếu chưa tích
+  // =====================================================
+  // 1. CÁC BIẾN & HÀM TIỆN ÍCH UI VALIDATION
+  // =====================================================
+  const emailInput = document.getElementById("emailInput");
+  const nameInput = document.getElementById("nameInput");
+  const phoneInput = document.getElementById("phoneInput");
+  const birthDateInput = document.getElementById("birthDateInput");
+  const passInput = document.getElementById("passInput");
+  const confirmInput = document.getElementById("confirmPassInput");
+
+  const emailError = document.getElementById("email-error");
+  const nameError = document.getElementById("name-error");
+  const phoneError = document.getElementById("phone-error");
+  const birthdateError = document.getElementById("birthdate-error");
+  const passError = document.getElementById("pass-error");
+  const confirmError = document.getElementById("password-error");
+
+  const btnSubmit = document.getElementById('btnSubmit');
   const checkbox = document.getElementById('agreeTerms');
-  const btnSubmit = document.getElementById('btnSubmit'); // ID nút đăng ký của bạn
 
-  btnSubmit.disabled = true; // Mặc định khóa nút
+  // Vô hiệu hóa nút Submit nếu chưa đồng ý điều khoản
+  if (btnSubmit && checkbox) {
+    btnSubmit.disabled = true;
+    checkbox.addEventListener('change', function() {
+      btnSubmit.disabled = !this.checked;
+    });
+  }
 
-  checkbox.addEventListener('change', function() {
-    btnSubmit.disabled = !this.checked;
-  });
+  function showError(input, errorElement, message) {
+    input.classList.remove("input-success");
+    input.classList.add("input-error");
+    errorElement.innerText = message;
+    errorElement.style.display = "block";
+  }
 
-  // 1. Hàm Xử lý AJAX kiểm tra trùng email và chuyển tiếp bước mượt mà
+  function showSuccess(input, errorElement) {
+    input.classList.remove("input-error");
+    input.classList.add("input-success");
+    errorElement.innerText = "";
+    errorElement.style.display = "none";
+  }
+
+  function resetState(input, errorElement) {
+    input.classList.remove("input-error", "input-success");
+    errorElement.style.display = "none";
+  }
+
+  // =====================================================
+  // 2. LOGIC REAL-TIME TỪNG TRƯỜNG DỮ LIỆU
+  // =====================================================
+  if (emailInput) {
+    emailInput.addEventListener("input", () => {
+      const value = emailInput.value.trim();
+      resetState(emailInput, emailError);
+      const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!regex.test(value)) {
+        showError(emailInput, emailError, "Định dạng email không hợp lệ.");
+        return;
+      }
+      if (!value.endsWith("@gmail.com")) {
+        showError(emailInput, emailError, "Vui lòng sử dụng địa chỉ email @gmail.com.");
+        return;
+      }
+      showSuccess(emailInput, emailError);
+    });
+  }
+
+  if (nameInput) {
+    nameInput.addEventListener("input", () => {
+      const value = nameInput.value.trim();
+      resetState(nameInput, nameError);
+      if (value.length < 4) {
+        showError(nameInput, nameError, "Họ và tên tối thiểu 4 ký tự.");
+        return;
+      }
+      showSuccess(nameInput, nameError);
+    });
+  }
+
+  if (phoneInput) {
+    phoneInput.addEventListener("input", () => {
+      const value = phoneInput.value.trim();
+      resetState(phoneInput, phoneError);
+      const regex = /^(03|05|07|08|09)\d{8}$/;
+      if (!regex.test(value)) {
+        showError(phoneInput, phoneError, "Số điện thoại không hợp lệ (10 số, bắt đầu 03/05/07/08/09).");
+        return;
+      }
+      showSuccess(phoneInput, phoneError);
+    });
+  }
+
+  if (birthDateInput) {
+    birthDateInput.addEventListener("input", () => {
+      const value = birthDateInput.value;
+      resetState(birthDateInput, birthdateError);
+      if (!value) {
+        showError(birthDateInput, birthdateError, "Vui lòng chọn ngày sinh của bạn.");
+        return;
+      }
+      showSuccess(birthDateInput, birthdateError);
+    });
+  }
+
+  if (passInput) {
+    passInput.addEventListener("input", () => {
+      const value = passInput.value;
+      resetState(passInput, passError);
+      if (value.length < 8) {
+        showError(passInput, passError, "Mật khẩu tối thiểu 8 ký tự.");
+        return;
+      }
+      if (!/[A-Z]/.test(value)) {
+        showError(passInput, passError, "Cần ít nhất 1 chữ in hoa.");
+        return;
+      }
+      if (!/[0-9]/.test(value)) {
+        showError(passInput, passError, "Cần ít nhất 1 chữ số.");
+        return;
+      }
+      if (!/[!@#$%^&*]/.test(value)) {
+        showError(passInput, passError, "Cần ít nhất 1 ký tự đặc biệt (!@#$%^&*).");
+        return;
+      }
+      showSuccess(passInput, passError);
+      if(confirmInput && confirmInput.value) {
+        confirmInput.dispatchEvent(new Event('input'));
+      }
+    });
+  }
+
+  if (confirmInput) {
+    confirmInput.addEventListener("input", () => {
+      resetState(confirmInput, confirmError);
+      if (confirmInput.value === "" || confirmInput.value !== passInput.value) {
+        showError(confirmInput, confirmError, "Mật khẩu xác nhận không khớp.");
+        return;
+      }
+      showSuccess(confirmInput, confirmError);
+    });
+  }
+
+  // =====================================================
+  // 3. XỬ LÝ NÚT TIẾP TỤC (BƯỚC 1 - KIỂM TRA EMAIL)
+  // =====================================================
   function handleEmailCheck(event) {
     if (event) event.preventDefault();
-    const emailInput = document.getElementById('emailInput');
-    const emailError = document.getElementById('email-error');
-    // Chuyển email về chữ thường để kiểm tra đồng nhất
+    emailInput.dispatchEvent(new Event('input'));
+    if (emailInput.classList.contains("input-error")) {
+      return;
+    }
     const email = emailInput.value.trim().toLowerCase();
-
-    // 1. Kiểm tra định dạng email cơ bản (Regex)
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      emailError.innerText = "Định dạng email không hợp lệ.";
-      emailError.style.display = "block";
-      emailInput.classList.add('invalid');
-      return;
-    }
-
-    // 2. Kiểm tra bắt buộc phải là @gmail.com
-    if (!email.endsWith("@gmail.com")) {
-      emailError.innerText = "Vui lòng sử dụng địa chỉ email @gmail.com.";
-      emailError.style.display = "block";
-      emailInput.classList.add('invalid');
-      return;
-    }
-
-    // Nếu vượt qua các bước kiểm tra, ẩn lỗi và tiếp tục
-    emailError.style.display = "none";
-    emailInput.classList.remove('invalid');
-
-    // Gửi request kiểm tra email tồn tại
     fetch('${pageContext.request.contextPath}/check-email?email=' + encodeURIComponent(email))
-            .then(res => res.json())
+  .then(res => res.json())
+  .then(data => {
+      if (data.exists) {
+        showError(emailInput, emailError, "Email này đã được đăng ký.");
+      } else {
+        showSuccess(emailInput, emailError);
+        document.getElementById('step-email').style.display = 'none';
+        document.getElementById('step-profile').style.display = 'block';
+      }
+    })
+  .catch(err => {
+      console.error(err);
+      showError(emailInput, emailError, "Lỗi hệ thống, vui lòng thử lại sau.");
+    });
+  }
+
+  // =====================================================
+  // 4. DUY NHẤT MỘT KHỐI XỬ LÝ SUBMIT FORM (SỬA LỖI GỬI 2 OTP)
+  // =====================================================
+  document.getElementById("registerForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    if (nameInput) nameInput.dispatchEvent(new Event('input'));
+    if (phoneInput) phoneInput.dispatchEvent(new Event('input'));
+    if (birthDateInput) birthDateInput.dispatchEvent(new Event('input'));
+    if (passInput) passInput.dispatchEvent(new Event('input'));
+    if (confirmInput) confirmInput.dispatchEvent(new Event('input'));
+
+    const totalErrors = document.querySelectorAll(".input-error").length;
+    if (totalErrors > 0) {
+      Swal.fire({
+      icon: 'error',
+      title: 'Thông tin chưa hợp lệ',
+      text: 'Vui lòng chỉnh sửa lại các trường thông tin đang báo đỏ!'
+    });
+      return;
+    }
+
+    const formData = new URLSearchParams(new FormData(this));
+    Swal.fire({
+    title: 'Đang gửi yêu cầu...',
+    text: 'Hệ thống đang kiểm tra dữ liệu và gửi mã OTP về Email.',
+    allowOutsideClick: false,
+    didOpen: () => { Swal.showLoading(); }
+  });
+
+    fetch(this.action || '${pageContext.request.contextPath}/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: formData.toString()
+  })
+  .then(res => res.json())
+  .then(data => {
+      Swal.close();
+      if (data.status === 'otp_required') {
+        // GỌI HÀM MỞ VÀ TRUYỀN NỘI DUNG THÔNG BÁO Backend về giao diện
+        moPopupOtp(data.message);
+      } else if (data.status === 'error') {
+        let noiDungLoi = "";
+        if (data.errors) {
+          for (const key in data.errors) {
+            noiDungLoi += data.errors[key] + "\n";
+            // Gắn trực tiếp text báo đỏ dưới từng ô nhập liệu tương ứng
+            const errorSpan = document.getElementById("error-" + key) || document.getElementById(key + "-error");
+            if (errorSpan) errorSpan.innerText = data.errors[key];
+          }
+        } else {
+          noiDungLoi = data.message;
+        }
+        Swal.fire('Không thể đi tiếp', noiDungLoi, 'error');
+      } else {
+        Swal.fire('Thất bại', data.message || 'Đăng ký không thành công', 'error');
+      }
+    })
+  .catch(err => {
+      Swal.close();
+      console.error(err);
+      Swal.fire('Lỗi đường truyền', 'Máy chủ đang bận, vui lòng thử lại sau ít phút!', 'error');
+    });
+  });
+
+  // Hàm hiển thị Popup OTP và gán nội dung câu chữ thông báo lên UI
+  function moPopupOtp(messageText) {
+    document.getElementById('otp_input').value = "";
+    if (messageText) {
+      document.getElementById('otpSuccessMessage').innerText = messageText;
+    }
+    document.getElementById('otpModal').style.display = 'flex';
+    document.getElementById('otp_input').focus();
+  }
+
+  function dongPopupOtp() {
+    document.getElementById('otpModal').style.display = 'none';
+  }
+
+  // Hàm gửi mã OTP từ trình duyệt lên VerifyRegistrationServlet để lưu tài khoản
+  function xacThucOtp() {
+    const otpValue = document.getElementById('otp_input').value.trim();
+
+    // Kiểm tra tính hợp lệ sơ bộ ngoài client
+    if (!otpValue || otpValue.length !== 6 || isNaN(otpValue)) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Cảnh báo',
+        text: 'Vui lòng nhập chính xác mã OTP gồm 6 chữ số!',
+        confirmButtonColor: '#d81b60'
+      });
+      return;
+    }
+
+    // 1. Tìm nút Xác Nhận và khóa ngay lập tức để tránh bấm vô hiệu, chống lag dữ liệu
+    const btnXacNhan = document.querySelector('#otpModal button[onclick="xacThucOtp()"]');
+    let originalText = "Xác Nhận";
+
+    if (btnXacNhan) {
+      originalText = btnXacNhan.innerText;
+      btnXacNhan.disabled = true;
+      btnXacNhan.innerText = "Đang xử lý...";
+      btnXacNhan.style.opacity = "0.7";
+      btnXacNhan.style.cursor = "not-allowed";
+    }
+
+    // Gửi mã OTP qua phương thức POST lên VerifyRegistrationServlet
+    fetch('${pageContext.request.contextPath}/verify-registration', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'otp_input=' + encodeURIComponent(otpValue)
+    })
+            .then(response => response.json())
             .then(data => {
-              if (data.exists) {
-                emailError.innerText = "Email này đã được đăng ký.";
-                emailError.style.display = "block";
-                emailInput.classList.add('invalid');
-              } else {
-                emailError.style.display = "none";
-                document.getElementById('step-email').style.display = 'none';
-                document.getElementById('step-profile').style.display = 'block';
+              // Mở khóa lại nút bấm nếu tiến trình chạy xong hoặc có lỗi trả về
+              if (btnXacNhan) {
+                btnXacNhan.disabled = false;
+                btnXacNhan.innerText = originalText;
+                btnXacNhan.style.opacity = "1";
+                btnXacNhan.style.cursor = "pointer";
+              }
+
+              if (data.status === 'success') {
+                // 2. ẨN POPUP OTP NGAY LẬP TỨC để giải phóng giao diện
+                dongPopupOtp();
+
+                // 3. HIỂN THỊ THÔNG BÁO TỰ ĐỘNG ĐÓNG SAU 2 GIÂY (Không cần người dùng bấm OK)
+                Swal.fire({
+                  icon: 'success',
+                  title: 'Thành công!',
+                  text: data.message,
+                  timer: 2000,               // Tự động đóng sau 2000ms (2 giây)
+                  showConfirmButton: false,  // Ẩn hoàn toàn nút OK phiền phức
+                  allowOutsideClick: false
+                }).then(() => {
+                  // 4. Chuyển hướng trang tự động sau khi thông báo biến mất
+                  window.location.href = '${pageContext.request.contextPath}/login';
+                });
+
+              } else if (data.status === 'error') {
+                // Sai OTP hoặc lỗi kết nối DB khi lưu, thông báo lỗi cho người dùng
+                Swal.fire({
+                  icon: 'error',
+                  title: 'Lỗi xác thực',
+                  text: data.message,
+                  confirmButtonColor: '#d81b60'
+                });
               }
             })
-            .catch(err => {
-              console.error(err);
-              emailError.innerText = "Lỗi hệ thống, vui lòng thử lại sau.";
-              emailError.style.display = "block";
+            .catch(error => {
+              // Mở khóa lại nút bấm nếu lỗi đường truyền mạng
+              if (btnXacNhan) {
+                btnXacNhan.disabled = false;
+                btnXacNhan.innerText = originalText;
+                btnXacNhan.style.opacity = "1";
+                btnXacNhan.style.cursor = "pointer";
+              }
+              console.error('Error:', error);
+              Swal.fire({
+                icon: 'error',
+                title: 'Lỗi mạng',
+                text: 'Đã xảy ra lỗi đường truyền trong quá trình xác thực OTP!',
+                confirmButtonColor: '#d81b60'
+              });
             });
   }
 
-  // 2. Logic Real-time Validation cho các ô nhập liệu còn lại
-  const validationRules = {
-    nameInput: { required: true, message: "Họ và tên không được để trống." },
-    phoneInput: { required: true, pattern: /^[0-9]{10,11}$/, message: "Số điện thoại gồm 10-11 chữ số hợp lệ." },
-    birthDateInput: { required: true, message: "Vui lòng chọn ngày sinh của bạn." },
-    passInput: {
-      required: true,
-      pattern: /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,20}$/,
-      message: "Mật khẩu dài 6-20 ký tự, bao gồm ít nhất 1 chữ hoa, 1 chữ thường và 1 chữ số."
-    }
-  };
-
-  function validateField(inputElement) {
-    const rule = validationRules[inputElement.id];
-    if (!rule) return;
-
-    const errorId = inputElement.id === 'nameInput' ? 'name-error' :
-            inputElement.id === 'phoneInput' ? 'phone-error' :
-                    inputElement.id === 'birthDateInput' ? 'birthdate-error' : 'pass-error';
-    const errorElement = document.getElementById(errorId);
-    let isValid = true;
-
-    if (rule.required && !inputElement.value.trim()) isValid = false;
-    if (rule.minLength && inputElement.value.length < rule.minLength) isValid = false;
-    if (rule.pattern && !rule.pattern.test(inputElement.value.trim())) isValid = false;
-
-    if (!isValid) {
-      errorElement.style.display = "block";
-      errorElement.innerText = rule.message;
-      inputElement.classList.add('invalid');
-    } else {
-      errorElement.style.display = "none";
-      inputElement.classList.remove('invalid');
-      inputElement.classList.add('valid');
-    }
-  }
-
-  Object.keys(validationRules).forEach(id => {
-    const input = document.getElementById(id);
-    if (input) input.addEventListener('input', () => validateField(input));
-  });
-
-  // Kiểm tra xác nhận mật khẩu khớp nhau
-  const passInput = document.getElementById('passInput');
-  const confirmInput = document.getElementById('confirmPassInput');
-  const confirmError = document.getElementById('password-error');
-
-  confirmInput.addEventListener('input', function() {
-    if (this.value !== passInput.value) {
-      confirmError.innerText = "Mật khẩu xác nhận không khớp.";
-      confirmError.style.display = "block";
-      this.classList.add('invalid');
-    } else {
-      confirmError.style.display = "none";
-      this.classList.remove('invalid');
-      this.classList.add('valid');
-    }
-  });
-
-  // Đọc Trạng thái phản hồi từ Server thông qua SweetAlert2
+  // =====================================================
+  // 5. TRẠNG THÁI STATUS CHUYỂN HƯỚNG TỪ BACKEND
+  // =====================================================
   const status = document.getElementById('registerStatus').value;
   if (status === "success") {
     Swal.fire('Thành công!', 'Đang chuyển hướng đến đăng nhập...', 'success')
-            .then(() => window.location.href = "${pageContext.request.contextPath}/login");
+  .then(() => window.location.href = "${pageContext.request.contextPath}/login");
   } else if (status === "wrong_otp") {
     Swal.fire('Lỗi', 'Mã OTP không chính xác!', 'error');
   } else if (status === "fail") {
     Swal.fire('Lỗi', 'Có lỗi xảy ra trong quá trình đăng ký.', 'error');
+  }
+
+  // =====================================================
+  // 6. TÍCH HỢP ĐĂNG NHẬP GOOGLE
+  // =====================================================
+  const GOOGLE_CLIENT_ID = "78979081819-fo21lsm5idv3pp22779bais8l1f5csnm.apps.googleusercontent.com";
+  const contextPath = "${pageContext.request.contextPath}";
+
+  window.onload = function () {
+    google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: handleGoogleRegister
+  });
+    google.accounts.id.renderButton(
+    document.getElementById("googleRegisterBtn"),
+    { theme: "outline", size: "large", width: 350, shape: "pill" }
+  );
+  };
+
+  function handleGoogleRegister(response) {
+    fetch(contextPath + '/social-auth', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+    provider: 'google',
+    credential: response.credential,
+    mode: 'register'
+  })
+  })
+  .then(res => res.json())
+  .then(data => {
+      if (data.status === 'otp_required') {
+        Swal.fire({ icon: 'success', title: 'Đã gửi OTP', text: 'Vui lòng kiểm tra Gmail' })
+      .then(() => window.location.href = contextPath + data.redirectUrl);
+      } else {
+        Swal.fire({ icon: 'error', title: 'Lỗi', text: data.message });
+      }
+    });
   }
 </script>
