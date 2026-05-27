@@ -215,6 +215,16 @@
   box-shadow: var(--admin-shadow-sm);
 }
 
+.admin-btn--ok {
+  background: #16a34a !important;
+  color: #ffffff !important;
+  border-color: #16a34a !important;
+}
+
+.admin-btn--ok:hover {
+  filter: brightness(0.96);
+}
+
 /* =========================
    Status & Actions cell
 ========================= */
@@ -354,13 +364,285 @@ td.product-actions {
   background: #6b7280;
 }
 
+/* =========================================================
+   Unified Promotion List
+   Scope: promotion_list.jsp
+   Chỉ dùng cho trang /admin/promotions
+========================================================= */
+
+.admin-promotion-topbar {
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.admin-promotion-create {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.admin-promotion-create .admin-btn {
+  white-space: nowrap;
+}
+
+/* Stats cards */
+
+.admin-promo-stats {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.admin-promo-stat {
+  padding: 15px;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius);
+  background: #fff;
+  box-shadow: var(--admin-shadow-sm);
+}
+
+.admin-promo-stat__label {
+  color: var(--admin-muted);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.admin-promo-stat__value {
+  margin-top: 7px;
+  color: var(--admin-text);
+  font-size: 24px;
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+
+/* Tabs */
+
+.admin-promo-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.admin-promo-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 38px;
+  padding: 0 13px;
+  border-radius: 999px;
+  border: 1px solid var(--admin-border);
+
+  background: #fff;
+  color: rgba(15, 23, 42, 0.72);
+  text-decoration: none;
+
+  font-size: 13px;
+  font-weight: 850;
+  line-height: 1;
+  white-space: nowrap;
+
+  transition:
+          background 0.14s ease,
+          border-color 0.14s ease,
+          color 0.14s ease,
+          box-shadow 0.14s ease,
+          transform 0.14s ease;
+}
+
+.admin-promo-tab:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--admin-shadow-sm);
+}
+
+.admin-promo-tab.is-active {
+  border-color: rgba(255, 95, 162, 0.45);
+  background: rgba(255, 95, 162, 0.12);
+  color: #be185d;
+}
+
+/* Toolbar */
+
+.admin-promo-toolbar {
+  margin-bottom: 14px;
+  padding: 12px;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius);
+  background: rgba(15, 23, 42, 0.02);
+}
+
+.admin-promo-filter-form {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.admin-promo-filter-form .admin-input,
+.admin-promo-filter-form .admin-select {
+  height: 40px;
+}
+
+.admin-promo-search {
+  width: 360px;
+  max-width: 100%;
+}
+
+/* Table */
+
+.admin-promo-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: var(--admin-radius);
+}
+
+.admin-promo-table {
+  min-width: 1380px;
+}
+
+.admin-promo-table th {
+  white-space: nowrap;
+}
+
+.admin-promo-table td {
+  vertical-align: middle;
+}
+
+.admin-promo-title {
+  color: var(--admin-text);
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.35;
+  max-width: 340px;
+  overflow-wrap: anywhere;
+}
+
+.admin-promo-code {
+  margin-top: 5px;
+  color: var(--admin-muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.admin-promo-code strong {
+  color: #be185d;
+  letter-spacing: 0.03em;
+}
+
+.admin-promo-scope,
+.admin-promo-condition {
+  max-width: 300px;
+  color: rgba(15, 23, 42, 0.74);
+  font-size: 13px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.admin-promo-empty {
+  margin-top: 8px;
+}
+
+/* Promotion type badges */
+
+.admin-promo-type {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--admin-border);
+
+  background: rgba(15, 23, 42, 0.035);
+  color: rgba(15, 23, 42, 0.72);
+
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.admin-promo-type--coupon {
+  border-color: rgba(59, 130, 246, 0.28);
+  background: rgba(59, 130, 246, 0.10);
+  color: #1d4ed8;
+}
+
+.admin-promo-type--brand {
+  border-color: rgba(168, 85, 247, 0.30);
+  background: rgba(168, 85, 247, 0.10);
+  color: #7e22ce;
+}
+
+.admin-promo-type--order {
+  border-color: rgba(245, 158, 11, 0.36);
+  background: rgba(245, 158, 11, 0.12);
+  color: #92400e;
+}
+
+.admin-promo-type--event {
+  border-color: rgba(255, 95, 162, 0.35);
+  background: rgba(255, 95, 162, 0.12);
+  color: #be185d;
+}
+
+/* Actions riêng cho bảng promotion */
+
+.admin-promo-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.admin-promo-actions form {
+  margin: 0;
+}
+
+.admin-promo-actions .admin-inline {
+  display: inline-flex;
+  margin: 0;
+}
+
+.admin-promo-actions .admin-btn {
+  padding: 8px 10px;
+  border-radius: 12px;
+  font-size: 13px;
+}
+
 /* =========================
    Responsive
 ========================= */
 
+@media (max-width: 1280px) {
+  .admin-promo-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .admin-promotion-topbar {
+    flex-direction: column;
+  }
+
+  .admin-promotion-create {
+    justify-content: flex-start;
+  }
+}
+
 @media (max-width: 900px) {
   .admin-table {
     min-width: 780px;
+  }
+
+  .admin-promo-table {
+    min-width: 1380px;
   }
 
   .admin-card__body {
@@ -382,6 +664,33 @@ td.product-actions {
   }
 }
 
+@media (max-width: 720px) {
+  .admin-promo-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-promotion-create,
+  .admin-promo-filter-form {
+    width: 100%;
+    align-items: stretch;
+  }
+
+  .admin-promotion-create .admin-btn,
+  .admin-promo-filter-form .admin-input,
+  .admin-promo-filter-form .admin-select,
+  .admin-promo-filter-form .admin-btn {
+    width: 100%;
+  }
+
+  .admin-promo-tabs {
+    align-items: stretch;
+  }
+
+  .admin-promo-tab {
+    width: 100%;
+  }
+}
+
 @media (max-width: 640px) {
   .admin-toolbar__form {
     align-items: stretch;
@@ -395,23 +704,22 @@ td.product-actions {
 
   .admin-actions,
   .admin-action-group,
-  .product-actions-inner {
+  .product-actions-inner,
+  .admin-promo-actions {
     gap: 6px;
   }
 
   .admin-actions .admin-btn,
   .admin-action-group .admin-btn,
-  .product-actions-inner .admin-btn {
+  .product-actions-inner .admin-btn,
+  .admin-promo-actions .admin-btn {
     padding: 8px 9px;
     font-size: 12px;
   }
 }
-.admin-btn--ok {
-  background: #16a34a !important;
-  color: #ffffff !important;
-  border-color: #16a34a !important;
-}
 
-.admin-btn--ok:hover {
-  filter: brightness(0.96);
+@media (max-width: 520px) {
+  .admin-promo-stats {
+    grid-template-columns: 1fr;
+  }
 }
