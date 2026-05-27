@@ -1,27 +1,28 @@
 package com.webshop.app.controller.AdminController;
 
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.time.LocalDate;
-
-import com.webshop.app.dao.BrandDAO;
-import com.webshop.app.dao.CategoryDAO;
-import com.webshop.app.dao.PromotionEventDAO;
-import com.webshop.app.model.DiscountType;
-import com.webshop.app.model.PromotionEvent;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
 
 @WebServlet("/admin/promotion-events")
 public class AdminPromotionEventServlet extends HttpServlet {
 
-    private final PromotionEventDAO eventDAO = new PromotionEventDAO();
-    private final CategoryDAO categoryDAO = new CategoryDAO();
-    private final BrandDAO brandDAO = new BrandDAO();
+    private static final String UNIFIED_PROMOTION_PATH = "/admin/promotions";
+    private static final String PROMOTION_TYPE_PARAM = "type";
+    private static final String EVENT_PROMOTION_TYPE = "EVENT";
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
@@ -30,50 +31,7 @@ public class AdminPromotionEventServlet extends HttpServlet {
         req.setCharacterEncoding("UTF-8");
         resp.setCharacterEncoding("UTF-8");
 
-        String action = req.getParameter("action");
-        if (action == null) action = "list";
-
-        switch (action) {
-
-            case "new": {
-                req.setAttribute("mode", "create");
-                loadRefs(req);
-                req.getRequestDispatcher("/jsp/admin/promotion_event/promotion_event_form.jsp")
-                        .forward(req, resp);
-                break;
-            }
-
-            case "edit": {
-                int id = safeInt(req.getParameter("id"), -1);
-                if (id <= 0) {
-                    resp.sendRedirect(req.getContextPath() + "/admin/promotion-events");
-                    return;
-                }
-
-                PromotionEvent ev = eventDAO.findById(id);
-                if (ev == null) {
-                    resp.sendRedirect(req.getContextPath() + "/admin/promotion-events");
-                    return;
-                }
-
-                req.setAttribute("mode", "edit");
-                req.setAttribute("event", ev);
-                loadRefs(req);
-
-                req.getRequestDispatcher("/jsp/admin/promotion_event/promotion_event_form.jsp")
-                        .forward(req, resp);
-                break;
-            }
-
-            case "list":
-            default: {
-                // ✅ joinRef = true để JSP hiển thị brandName/categoryName
-                req.setAttribute("events", eventDAO.findAll(true));
-                req.getRequestDispatcher("/jsp/admin/promotion_event/promotion_event_list.jsp")
-                        .forward(req, resp);
-                break;
-            }
-        }
+        resp.sendRedirect(buildRedirectUrl(req));
     }
 
     @Override
@@ -83,205 +41,119 @@ public class AdminPromotionEventServlet extends HttpServlet {
         req.setCharacterEncoding("UTF-8");
         resp.setCharacterEncoding("UTF-8");
 
-        String action = req.getParameter("action");
-        if (action == null) action = "create";
+        /*
+         * Giữ tương thích cho các form cũ đang POST về /admin/promotion-events.
+         * Request sẽ được forward nội bộ sang /admin/promotions,
+         * đồng thời tự bổ sung type=EVENT để servlet quản lý khuyến mãi mới
+         * xử lý đúng loại chương trình khuyến mãi cửa hàng.
+         */
+        HttpServletRequest wrappedRequest = new PromotionTypeRequestWrapper(req, EVENT_PROMOTION_TYPE);
+        req.getRequestDispatcher(UNIFIED_PROMOTION_PATH).forward(wrappedRequest, resp);
+    }
 
-        try {
-            switch (action) {
+    private String buildRedirectUrl(HttpServletRequest req) {
+        Map<String, String[]> params = new LinkedHashMap<>(req.getParameterMap());
 
-                case "create": {
-                    PromotionEvent ev = new PromotionEvent();
-                    bind(req, ev);
-                    validate(ev);
-                    eventDAO.create(ev);
-                    break;
-                }
+        /*
+         * Ép type=EVENT để mọi link cũ /admin/promotion-events đều được chuyển đúng tab
+         * Chương trình khuyến mãi trong giao diện quản lý khuyến mãi tập trung.
+         */
+        params.put(PROMOTION_TYPE_PARAM, new String[]{EVENT_PROMOTION_TYPE});
 
-                case "update": {
-                    int id = safeInt(req.getParameter("id"), -1);
-                    if (id <= 0) break;
+        StringBuilder url = new StringBuilder();
+        url.append(req.getContextPath()).append(UNIFIED_PROMOTION_PATH);
 
-                    PromotionEvent ev = eventDAO.findById(id);
-                    if (ev == null) break;
+        String queryString = buildQueryString(params);
+        if (!queryString.isBlank()) {
+            url.append("?").append(queryString);
+        }
 
-                    bind(req, ev);
-                    ev.setId(id);
-                    validate(ev);
-                    eventDAO.update(ev);
-                    break;
-                }
+        return url.toString();
+    }
 
-                case "delete": {
-                    int id = safeInt(req.getParameter("id"), -1);
-                    if (id > 0) eventDAO.delete(id);
-                    break;
-                }
+    private String buildQueryString(Map<String, String[]> params) {
+        StringBuilder query = new StringBuilder();
 
-                case "toggle": {
-                    int id = safeInt(req.getParameter("id"), -1);
-                    if (id > 0) eventDAO.toggleActive(id);
-                    break;
-                }
+        for (Map.Entry<String, String[]> entry : params.entrySet()) {
+            String key = entry.getKey();
+            String[] values = entry.getValue();
 
-                default:
-                    break;
+            if (key == null || key.isBlank()) {
+                continue;
             }
 
-            resp.sendRedirect(req.getContextPath() + "/admin/promotion-events");
-
-        } catch (IllegalArgumentException ex) {
-
-            req.setAttribute("error", ex.getMessage());
-            loadRefs(req);
-
-            PromotionEvent ev = new PromotionEvent();
-            if ("update".equals(action)) {
-                req.setAttribute("mode", "edit");
-                ev.setId(safeInt(req.getParameter("id"), 0));
-            } else {
-                req.setAttribute("mode", "create");
+            if (values == null || values.length == 0) {
+                appendParam(query, key, "");
+                continue;
             }
 
-            try { bind(req, ev); } catch (Exception ignore) {}
-            req.setAttribute("event", ev);
-
-            req.getRequestDispatcher("/jsp/admin/promotion_event/promotion_event_form.jsp")
-                    .forward(req, resp);
-        }
-    }
-
-    /* ===================== LOAD REFS ===================== */
-
-    private void loadRefs(HttpServletRequest req) {
-        // categories là tree parent->children (CategoryDAO.findParents())
-        req.setAttribute("categories", categoryDAO.findParents());
-        // brands list
-        req.setAttribute("brands", brandDAO.findAll());
-    }
-
-    /* ===================== BIND / VALIDATE ===================== */
-
-    private void bind(HttpServletRequest req, PromotionEvent ev) {
-
-        ev.setName(safe(req.getParameter("name")));
-
-        PromotionEvent.Scope scope = safeEnum(PromotionEvent.Scope.class, req.getParameter("scope"));
-        ev.setScope(scope);
-
-        DiscountType discountType = safeEnum(DiscountType.class, req.getParameter("discountType"));
-        ev.setDiscountType(discountType);
-
-        ev.setDiscountValue(safeBigDecimal(req.getParameter("discountValue"), null));
-
-        String maxStr = req.getParameter("maxDiscountAmount");
-        ev.setMaxDiscountAmount((maxStr == null || maxStr.trim().isEmpty()) ? null : safeBigDecimal(maxStr, null));
-
-        // categoryId / brandId
-        Integer categoryId = null;
-        Integer brandId = null;
-
-        String catStr = req.getParameter("categoryId");
-        if (catStr != null && !catStr.trim().isEmpty()) {
-            int cid = safeInt(catStr, -1);
-            categoryId = (cid > 0) ? cid : null;
+            for (String value : values) {
+                appendParam(query, key, value == null ? "" : value);
+            }
         }
 
-        String brandStr = req.getParameter("brandId");
-        if (brandStr != null && !brandStr.trim().isEmpty()) {
-            int bid = safeInt(brandStr, -1);
-            brandId = (bid > 0) ? bid : null;
+        return query.toString();
+    }
+
+    private void appendParam(StringBuilder query, String key, String value) {
+        if (query.length() > 0) {
+            query.append("&");
         }
 
-        ev.setCategoryId(categoryId);
-        ev.setBrandId(brandId);
-
-        ev.setStartDate(safeDate(req.getParameter("startDate")));
-        ev.setEndDate(safeDate(req.getParameter("endDate")));
-
-        boolean active = "1".equals(req.getParameter("active")) || "true".equalsIgnoreCase(req.getParameter("active"));
-        ev.setActive(active);
+        query.append(encode(key))
+                .append("=")
+                .append(encode(value));
     }
 
-    private void validate(PromotionEvent ev) {
+    private String encode(String value) {
+        return URLEncoder.encode(value, StandardCharsets.UTF_8);
+    }
 
-        if (ev.getName() == null || ev.getName().isBlank())
-            throw new IllegalArgumentException("Tên chương trình không được để trống.");
+    private static class PromotionTypeRequestWrapper extends HttpServletRequestWrapper {
 
-        if (ev.getScope() == null)
-            throw new IllegalArgumentException("Vui lòng chọn scope.");
+        private final String promotionType;
 
-        if (ev.getDiscountType() == null)
-            throw new IllegalArgumentException("Vui lòng chọn discountType.");
-
-        if (ev.getDiscountValue() == null || ev.getDiscountValue().compareTo(BigDecimal.ZERO) <= 0)
-            throw new IllegalArgumentException("discountValue phải > 0.");
-
-        if (ev.getDiscountType() == DiscountType.PERCENT &&
-            ev.getDiscountValue().compareTo(new BigDecimal("100")) > 0)
-            throw new IllegalArgumentException("Giảm theo % không được > 100.");
-
-        if (ev.getStartDate() == null || ev.getEndDate() == null)
-            throw new IllegalArgumentException("Vui lòng nhập startDate và endDate.");
-
-        if (ev.getEndDate().isBefore(ev.getStartDate()))
-            throw new IllegalArgumentException("endDate không được trước startDate.");
-
-        // scope rules
-        if (ev.getScope() == PromotionEvent.Scope.CATEGORY && ev.getCategoryId() == null)
-            throw new IllegalArgumentException("Scope CATEGORY cần chọn category.");
-
-        if (ev.getScope() == PromotionEvent.Scope.BRAND && ev.getBrandId() == null)
-            throw new IllegalArgumentException("Scope BRAND cần chọn brand.");
-
-        if (ev.getScope() == PromotionEvent.Scope.ALL) {
-            ev.setCategoryId(null);
-            ev.setBrandId(null);
+        PromotionTypeRequestWrapper(HttpServletRequest request, String promotionType) {
+            super(request);
+            this.promotionType = promotionType;
         }
-    }
 
-    /* ===================== SAFE HELPERS ===================== */
-
-    private int safeInt(String s, int def) {
-        try {
-            if (s == null) return def;
-            return Integer.parseInt(s.trim());
-        } catch (Exception e) {
-            return def;
+        @Override
+        public String getParameter(String name) {
+            String[] values = getParameterValues(name);
+            if (values == null || values.length == 0) {
+                return null;
+            }
+            return values[0];
         }
-    }
 
-    private String safe(String s) {
-        return s == null ? "" : s.trim();
-    }
+        @Override
+        public String[] getParameterValues(String name) {
+            if (PROMOTION_TYPE_PARAM.equals(name)) {
+                return new String[]{promotionType};
+            }
 
-    private BigDecimal safeBigDecimal(String s, BigDecimal def) {
-        try {
-            if (s == null) return def;
-            String t = s.trim();
-            if (t.isEmpty()) return def;
-            return new BigDecimal(t);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Giá trị số không hợp lệ: " + s);
+            return super.getParameterValues(name);
         }
-    }
 
-    private LocalDate safeDate(String s) {
-        try {
-            if (s == null) return null;
-            String t = s.trim();
-            if (t.isEmpty()) return null;
-            return LocalDate.parse(t);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Ngày không hợp lệ (yyyy-MM-dd): " + s);
+        @Override
+        public Map<String, String[]> getParameterMap() {
+            Map<String, String[]> mergedParams = new LinkedHashMap<>(super.getParameterMap());
+            mergedParams.put(PROMOTION_TYPE_PARAM, new String[]{promotionType});
+            return Collections.unmodifiableMap(mergedParams);
         }
-    }
 
-    private <E extends Enum<E>> E safeEnum(Class<E> enumType, String s) {
-        try {
-            if (s == null || s.trim().isEmpty()) return null;
-            return Enum.valueOf(enumType, s.trim());
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Giá trị không hợp lệ: " + s);
+        @Override
+        public Enumeration<String> getParameterNames() {
+            Set<String> names = new LinkedHashSet<>();
+
+            Enumeration<String> originalNames = super.getParameterNames();
+            while (originalNames.hasMoreElements()) {
+                names.add(originalNames.nextElement());
+            }
+
+            names.add(PROMOTION_TYPE_PARAM);
+            return Collections.enumeration(names);
         }
     }
 }
