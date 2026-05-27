@@ -789,4 +789,23 @@ public class PromotionEventDAO {
 	private String safeText(String value) {
 		return value == null ? "" : value.trim();
 	}
+
+	public PromotionEvent findActiveEvent() {
+		String sql = "SELECT * FROM " + TABLE +
+				" WHERE is_active = 1 " +
+				" AND CURDATE() BETWEEN start_date AND end_date " +
+				" ORDER BY id DESC LIMIT 1";
+
+		try (Connection c = DBConnection.getConnection();
+		     PreparedStatement ps = c.prepareStatement(sql);
+		     ResultSet rs = ps.executeQuery()) {
+
+			if (rs.next()) {
+				return mapRow(rs);
+			}
+		} catch (SQLException ex) {
+			throw new RuntimeException("PromotionEventDAO.findActiveEvent error", ex);
+		}
+		return null;
+	}
 }
