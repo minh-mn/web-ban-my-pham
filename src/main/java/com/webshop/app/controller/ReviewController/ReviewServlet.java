@@ -1,16 +1,8 @@
 package com.webshop.app.controller.ReviewController;
 
-import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-
 import com.webshop.app.dao.ReviewDAO;
 import com.webshop.app.model.Review;
 import com.webshop.app.model.User;
-import com.webshop.app.utils.DBConnection;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -19,7 +11,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
-@WebServlet("/review")
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+
+@WebServlet(name = "ReviewServlet", urlPatterns = {"/orders/review/submit", "/review"})
 public class ReviewServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
@@ -27,221 +23,176 @@ public class ReviewServlet extends HttpServlet {
     private final ReviewDAO reviewDAO = new ReviewDAO();
 
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp)
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        req.setCharacterEncoding("UTF-8");
-        resp.setCharacterEncoding("UTF-8");
+        request.setCharacterEncoding("UTF-8");
+        response.setCharacterEncoding("UTF-8");
 
-        HttpSession session = req.getSession(false);
-        User user = (session != null) ? (User) session.getAttribute("user") : null;
+        HttpSession session = request.getSession(false);
+        User user = session != null ? (User) session.getAttribute("user") : null;
 
         if (user == null) {
-            resp.sendRedirect(req.getContextPath() + "/login");
+            response.sendRedirect(request.getContextPath() + "/login");
             return;
         }
 
-        // ===== READ PARAMS =====
-        String productIdRaw = req.getParameter("productId");
-        String slug = req.getParameter("slug");
-        String ratingRaw = req.getParameter("rating");
-        String comment = req.getParameter("comment");
+        int productId = parseInt(request.getParameter("productId"), -1);
+        int orderId = parseInt(request.getParameter("orderId"), -1);
+        int orderItemId = parseInt(request.getParameter("orderItemId"), -1);
+        int rating = parseInt(request.getParameter("rating"), 5);
 
-        int productId = parseIntOrDefault(productIdRaw, -1);
-        int rating = parseIntOrDefault(ratingRaw, 5);
+        String comment = safeTrim(request.getParameter("comment"));
+        String imageUrl = safeTrim(request.getParameter("imageUrl"));
+        String videoUrl = safeTrim(request.getParameter("videoUrl"));
+        String slug = safeTrim(request.getParameter("slug"));
+
+        rating = Math.max(1, Math.min(5, rating));
 
         if (productId <= 0) {
-            resp.sendRedirect(req.getContextPath() + "/products");
+            redirectWithError(request, response, "/products", "product_invalid");
             return;
         }
 
-        if (rating < 1) {
-            rating = 1;
+        if (comment == null || comment.length() < 5) {
+            redirectBack(request, response, orderId, productId, slug, "comment_required");
+            return;
         }
 
-        if (rating > 5) {
-            rating = 5;
-        }
-
-        if (comment == null) {
-            comment = "";
-        }
-
-        comment = comment.trim();
-
-        // =========================================================
-        // FIX:
-        // 1) Ưu tiên dùng authorId trong session: user.getId().
-        // 2) Không set lại session user id theo resolver để tránh nhảy nhầm user/admin.
-        // 3) Database hiện tại dùng bảng users, không dùng dbo.auth_user.
-        // =========================================================
-        int authorId = user.getId();
-
-        // Nếu id trong session hợp lệ và tồn tại trong bảng users thì dùng luôn
-        if (authorId > 0 && existsUserId(authorId)) {
-            // OK
-        } else {
-            // Fallback chỉ dùng để tránh lỗi khóa ngoại author_id
-            Integer resolved = resolveUserIdNoSessionOverwrite(user);
-
-            if (resolved == null || resolved <= 0) {
-                // Không resolve được user hợp lệ thì bắt đăng nhập lại
-                if (session != null) {
-                    session.removeAttribute("user");
-                }
-
-                resp.sendRedirect(req.getContextPath() + "/login");
-                return;
-            }
-
-            // Dùng resolved authorId cho lần review này
-            // Không update lại session user
-            authorId = resolved;
-        }
-
-        // ===== BUILD REVIEW =====
         Review review = new Review();
         review.setProductId(productId);
-        review.setAuthorId(authorId);
+        review.setAuthorId(user.getId());
         review.setRating(rating);
         review.setComment(comment);
+        review.setHasEmoji(containsEmoji(comment));
+        review.setSentiment(detectSimpleSentiment(comment));
 
-        review.setHasEmoji(false);
-        review.setSentiment(1);
+        boolean canReview;
+        try {
+            if (orderId > 0 && orderItemId > 0) {
+                canReview = reviewDAO.canUserReviewOrderItem(user.getId(), orderId, orderItemId, productId);
+                review.setOrderId(orderId);
+                review.setOrderItemId(orderItemId);
+            } else {
+                canReview = reviewDAO.canUserReviewProduct(user.getId(), productId);
+                if (orderId > 0) {
+                    review.setOrderId(orderId);
+                }
+            }
+        } catch (RuntimeException ex) {
+            throw new ServletException("Không thể kiểm tra điều kiện gửi đánh giá", ex);
+        }
 
-        // Chống duplicate: có thì UPDATE, chưa có thì INSERT
-        reviewDAO.createOrUpdate(review);
+        if (!canReview) {
+            redirectBack(request, response, orderId, productId, slug, "not_eligible");
+            return;
+        }
 
-        // Redirect về đúng trang chi tiết sản phẩm: /product/{slug}
+        try {
+            reviewDAO.createOrUpdate(review, imageUrl, videoUrl);
+        } catch (RuntimeException ex) {
+            throw new ServletException("Không thể lưu đánh giá sản phẩm", ex);
+        }
+
+        if (orderId > 0) {
+            response.sendRedirect(request.getContextPath()
+                    + "/orders/detail?id=" + orderId
+                    + "&success=review_pending");
+            return;
+        }
+
         if (slug != null && !slug.isBlank()) {
             String encodedSlug = URLEncoder.encode(slug, StandardCharsets.UTF_8.name());
-            resp.sendRedirect(req.getContextPath() + "/product/" + encodedSlug);
+            response.sendRedirect(request.getContextPath()
+                    + "/product/" + encodedSlug
+                    + "?success=review_pending#reviews");
         } else {
-            resp.sendRedirect(req.getContextPath() + "/products");
+            response.sendRedirect(request.getContextPath() + "/products?success=review_pending");
         }
     }
 
-    // =========================================================
-    // RESOLVE USER ID - NO SESSION OVERWRITE
-    // Chỉ dùng khi user.getId() không hợp lệ.
-    // Tuyệt đối không set lại session user tại đây.
-    // =========================================================
-    private Integer resolveUserIdNoSessionOverwrite(User user) {
-
-        // 1) Tìm theo username
-        String username = safeString(getUsernameSafe(user));
-
-        if (!username.isEmpty()) {
-            Integer found = findUserIdByUsername(username);
-
-            if (found != null && found > 0) {
-                return found;
-            }
+    private void redirectBack(HttpServletRequest request,
+                              HttpServletResponse response,
+                              int orderId,
+                              int productId,
+                              String slug,
+                              String error) throws IOException {
+        if (orderId > 0) {
+            response.sendRedirect(request.getContextPath()
+                    + "/orders/review?orderId=" + orderId
+                    + "&productId=" + productId
+                    + "&error=" + encode(error));
+            return;
         }
 
-        // 2) Tìm theo email
-        String email = safeString(getEmailSafe(user));
-
-        if (!email.isEmpty()) {
-            Integer found = findUserIdByEmail(email);
-
-            if (found != null && found > 0) {
-                return found;
-            }
+        if (slug != null && !slug.isBlank()) {
+            String encodedSlug = URLEncoder.encode(slug, StandardCharsets.UTF_8.name());
+            response.sendRedirect(request.getContextPath()
+                    + "/product/" + encodedSlug
+                    + "?error=" + encode(error)
+                    + "#reviews");
+        } else {
+            response.sendRedirect(request.getContextPath()
+                    + "/products?error=" + encode(error));
         }
-
-        return null;
     }
 
-    private boolean existsUserId(int id) {
-        String sql = "SELECT 1 FROM users WHERE id = ?";
+    private void redirectWithError(HttpServletRequest request,
+                                   HttpServletResponse response,
+                                   String path,
+                                   String error) throws IOException {
+        response.sendRedirect(request.getContextPath() + path + "?error=" + encode(error));
+    }
 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+    private String encode(String value) {
+        return URLEncoder.encode(value == null ? "" : value, StandardCharsets.UTF_8);
+    }
 
-            ps.setInt(1, id);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next();
+    private int parseInt(String value, int defaultValue) {
+        try {
+            if (value == null || value.trim().isEmpty()) {
+                return defaultValue;
             }
+            return Integer.parseInt(value.trim());
+        } catch (Exception ex) {
+            return defaultValue;
+        }
+    }
 
-        } catch (Exception e) {
+    private String safeTrim(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return null;
+        }
+        return value.trim();
+    }
+
+    private boolean containsEmoji(String text) {
+        if (text == null) {
             return false;
         }
+
+        return text.codePoints().anyMatch(cp ->
+                (cp >= 0x1F300 && cp <= 0x1FAFF)
+                        || (cp >= 0x2600 && cp <= 0x27BF)
+        );
     }
 
-    private Integer findUserIdByUsername(String username) {
-        String sql = "SELECT id FROM users WHERE username = ?";
+    private int detectSimpleSentiment(String comment) {
+        if (comment == null) {
+            return 1;
+        }
 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        String value = comment.toLowerCase();
+        String[] negativeWords = {
+                "tệ", "xấu", "kém", "không tốt", "thất vọng",
+                "lỗi", "hỏng", "dở", "khó chịu", "không hài lòng"
+        };
 
-            ps.setString(1, username);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) {
-                    return null;
-                }
-
-                return rs.getInt(1);
+        for (String word : negativeWords) {
+            if (value.contains(word)) {
+                return 0;
             }
-
-        } catch (Exception e) {
-            return null;
         }
-    }
-
-    private Integer findUserIdByEmail(String email) {
-        String sql = "SELECT id FROM users WHERE email = ?";
-
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setString(1, email);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) {
-                    return null;
-                }
-
-                return rs.getInt(1);
-            }
-
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    // ===== HELPERS =====
-    private int parseIntOrDefault(String s, int def) {
-        try {
-            if (s == null || s.isBlank()) {
-                return def;
-            }
-
-            return Integer.parseInt(s.trim());
-        } catch (Exception e) {
-            return def;
-        }
-    }
-
-    private String safeString(String s) {
-        return (s == null) ? "" : s.trim();
-    }
-
-    private String getUsernameSafe(User user) {
-        try {
-            return user.getUsername();
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    private String getEmailSafe(User user) {
-        try {
-            return user.getEmail();
-        } catch (Exception e) {
-            return null;
-        }
+        return 1;
     }
 }
