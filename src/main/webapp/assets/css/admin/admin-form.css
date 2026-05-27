@@ -477,3 +477,8 @@
     padding: 12px;
   }
 }
+.admin-btn--ok {
+  background: #16a34a !important;
+  color: #ffffff !important;
+  border-color: #16a34a !important;
+}
