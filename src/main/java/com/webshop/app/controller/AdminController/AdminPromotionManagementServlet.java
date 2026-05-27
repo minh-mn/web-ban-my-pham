@@ -2,7 +2,6 @@ package com.webshop.app.controller.AdminController;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.text.DecimalFormat;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -22,6 +21,8 @@ import com.webshop.app.model.Coupon;
 import com.webshop.app.model.DiscountType;
 import com.webshop.app.model.OrderDiscount;
 import com.webshop.app.model.PromotionEvent;
+import com.webshop.app.model.admin.AdminPromotionRow;
+import com.webshop.app.model.admin.AdminPromotionStats;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -43,6 +44,13 @@ public class AdminPromotionManagementServlet extends HttpServlet {
 
     private static final String DEFAULT_COUPON_TYPE = "DISCOUNT";
     private static final String DEFAULT_RANK_CODE = "MEMBER";
+
+    private static final String COUPON_SCOPE_ALL = "ALL";
+    private static final String COUPON_SCOPE_BRAND = "BRAND";
+    private static final String COUPON_SCOPE_PRODUCTS = "PRODUCTS";
+
+    private static final String BRAND_SCOPE_ALL_BRAND_PRODUCTS = "ALL_BRAND_PRODUCTS";
+    private static final String BRAND_SCOPE_SELECTED_PRODUCTS = "SELECTED_PRODUCTS";
 
     private static final Set<String> VALID_COUPON_TYPES = Set.of(
             "DISCOUNT",
@@ -147,7 +155,7 @@ public class AdminPromotionManagementServlet extends HttpServlet {
         String q = safe(req.getParameter("q"));
         String status = safe(req.getParameter("status")).toLowerCase(Locale.ROOT);
 
-        List<PromotionRow> rows = loadPromotionRows(promotionType);
+        List<AdminPromotionRow> rows = loadPromotionRows(promotionType);
 
         if (!q.isBlank()) {
             String keyword = q.toLowerCase(Locale.ROOT);
@@ -162,14 +170,14 @@ public class AdminPromotionManagementServlet extends HttpServlet {
                     .collect(Collectors.toList());
         }
 
-        rows.sort(Comparator.comparing(PromotionRow::getSortDate).reversed()
-                .thenComparing(PromotionRow::getId, Comparator.reverseOrder()));
+        rows.sort(Comparator.comparing(AdminPromotionRow::getSortDate).reversed()
+                .thenComparing(AdminPromotionRow::getId, Comparator.reverseOrder()));
 
         loadRefs(req);
 
         req.setAttribute("pageTitle", "ADMIN | Khuyến mãi & Mã giảm giá");
         req.setAttribute("activeMenu", "promotions");
-        req.setAttribute("pageCss", "/assets/css/admin/admin-promotion.css");
+        req.setAttribute("pageCss", "/assets/css/admin/admin-list.css");
 
         req.setAttribute("type", promotionType);
         req.setAttribute("promotionType", promotionType);
@@ -182,37 +190,37 @@ public class AdminPromotionManagementServlet extends HttpServlet {
         req.getRequestDispatcher(LIST_JSP).forward(req, resp);
     }
 
-    private List<PromotionRow> loadPromotionRows(String promotionType) {
-        List<PromotionRow> rows = new ArrayList<>();
+    private List<AdminPromotionRow> loadPromotionRows(String promotionType) {
+        List<AdminPromotionRow> rows = new ArrayList<>();
 
         if (TYPE_ALL.equals(promotionType) || TYPE_COUPON.equals(promotionType)) {
             for (Coupon coupon : couponDAO.findAll()) {
-                rows.add(PromotionRow.fromCoupon(coupon));
+                rows.add(AdminPromotionRow.fromCoupon(coupon));
             }
         }
 
         if (TYPE_ALL.equals(promotionType) || TYPE_BRAND.equals(promotionType)) {
             for (BrandDiscount discount : brandDiscountDAO.findAll(true)) {
-                rows.add(PromotionRow.fromBrandDiscount(discount));
+                rows.add(AdminPromotionRow.fromBrandDiscount(discount));
             }
         }
 
         if (TYPE_ALL.equals(promotionType) || TYPE_ORDER.equals(promotionType)) {
             for (OrderDiscount discount : orderDiscountDAO.findAll()) {
-                rows.add(PromotionRow.fromOrderDiscount(discount));
+                rows.add(AdminPromotionRow.fromOrderDiscount(discount));
             }
         }
 
         if (TYPE_ALL.equals(promotionType) || TYPE_EVENT.equals(promotionType)) {
             for (PromotionEvent event : promotionEventDAO.findAll(true)) {
-                rows.add(PromotionRow.fromPromotionEvent(event));
+                rows.add(AdminPromotionRow.fromPromotionEvent(event));
             }
         }
 
         return rows;
     }
 
-    private boolean matchesStatus(PromotionRow row, String status) {
+    private boolean matchesStatus(AdminPromotionRow row, String status) {
         return switch (status) {
             case "active" -> row.isActiveNow();
             case "inactive" -> !row.isActive();
@@ -222,25 +230,8 @@ public class AdminPromotionManagementServlet extends HttpServlet {
         };
     }
 
-    private PromotionStats buildStats(List<PromotionRow> rows) {
-        int active = 0;
-        int inactive = 0;
-        int expired = 0;
-        int upcoming = 0;
-
-        for (PromotionRow row : rows) {
-            if (row.isExpired()) {
-                expired++;
-            } else if (row.isUpcoming()) {
-                upcoming++;
-            } else if (row.isActive()) {
-                active++;
-            } else {
-                inactive++;
-            }
-        }
-
-        return new PromotionStats(rows.size(), active, inactive, expired, upcoming);
+    private AdminPromotionStats buildStats(List<AdminPromotionRow> rows) {
+        return AdminPromotionStats.fromRows(rows);
     }
 
     /* =========================================================
@@ -255,7 +246,7 @@ public class AdminPromotionManagementServlet extends HttpServlet {
         req.setAttribute("promotionType", promotionType);
         req.setAttribute("pageTitle", "ADMIN | Tạo khuyến mãi");
         req.setAttribute("activeMenu", "promotions");
-        req.setAttribute("pageCss", "/assets/css/admin/admin-promotion.css");
+        req.setAttribute("pageCss", "/assets/css/admin/admin-form.css");
 
         loadRefs(req);
         attachDefaultModel(req, promotionType);
@@ -282,7 +273,7 @@ public class AdminPromotionManagementServlet extends HttpServlet {
         req.setAttribute("promotionType", promotionType);
         req.setAttribute("pageTitle", "ADMIN | Sửa khuyến mãi");
         req.setAttribute("activeMenu", "promotions");
-        req.setAttribute("pageCss", "/assets/css/admin/admin-promotion.css");
+        req.setAttribute("pageCss", "/assets/css/admin/admin-form.css");
 
         loadRefs(req);
         req.getRequestDispatcher(FORM_JSP).forward(req, resp);
@@ -302,7 +293,7 @@ public class AdminPromotionManagementServlet extends HttpServlet {
         req.setAttribute("promotionType", promotionType);
         req.setAttribute("pageTitle", "ADMIN | Khuyến mãi");
         req.setAttribute("activeMenu", "promotions");
-        req.setAttribute("pageCss", "/assets/css/admin/admin-promotion.css");
+        req.setAttribute("pageCss", "/assets/css/admin/admin-form.css");
 
         loadRefs(req);
         attachModelFromRequest(req, promotionType);
@@ -317,9 +308,12 @@ public class AdminPromotionManagementServlet extends HttpServlet {
                 coupon.setActive(true);
                 coupon.setType(DEFAULT_COUPON_TYPE);
                 coupon.setDiscountPercent(1);
+                coupon.setDiscountType(DiscountType.PERCENT);
+                coupon.setDiscountValue(BigDecimal.ONE);
                 coupon.setMaxUses(1);
                 coupon.setMinOrderAmount(BigDecimal.ZERO);
                 coupon.setMinRankCode(DEFAULT_RANK_CODE);
+                coupon.setApplyScope(COUPON_SCOPE_ALL);
                 req.setAttribute("coupon", coupon);
                 break;
             }
@@ -328,6 +322,7 @@ public class AdminPromotionManagementServlet extends HttpServlet {
                 BrandDiscount discount = new BrandDiscount();
                 discount.setActive(true);
                 discount.setDiscountType(DiscountType.PERCENT);
+                discount.setApplyScope(BRAND_SCOPE_ALL_BRAND_PRODUCTS);
                 req.setAttribute("discount", discount);
                 req.setAttribute("brandDiscount", discount);
                 break;
@@ -638,7 +633,36 @@ public class AdminPromotionManagementServlet extends HttpServlet {
 
         coupon.setType(couponType);
         coupon.setDescription(safe(req.getParameter("description")));
-        coupon.setDiscountPercent(safeInt(req.getParameter("discountPercent"), 0));
+
+        DiscountType discountType = safeDiscountType(req.getParameter("discountType"));
+        if (discountType == null) {
+            discountType = DiscountType.PERCENT;
+        }
+        coupon.setDiscountType(discountType);
+
+        BigDecimal discountValue = parseBigDecimal(
+                req.getParameter("discountValue"),
+                null,
+                "Giá trị giảm không hợp lệ."
+        );
+
+        int discountPercent = safeInt(req.getParameter("discountPercent"), 0);
+        if (discountValue == null && discountPercent > 0) {
+            discountValue = BigDecimal.valueOf(discountPercent);
+        }
+
+        if (discountValue == null) {
+            discountValue = BigDecimal.ZERO;
+        }
+
+        coupon.setDiscountValue(discountValue);
+
+        if (discountType == DiscountType.PERCENT) {
+            coupon.setDiscountPercent(discountValue.intValue());
+        } else {
+            coupon.setDiscountPercent(0);
+        }
+
         coupon.setMaxUses(safeInt(req.getParameter("maxUses"), 1));
 
         coupon.setMinOrderAmount(parseBigDecimal(
@@ -655,6 +679,13 @@ public class AdminPromotionManagementServlet extends HttpServlet {
                 ? null
                 : parseBigDecimal(maxDiscountAmount, null, "Số tiền giảm tối đa không hợp lệ."));
 
+        String applyScope = normalizeCouponApplyScope(req.getParameter("applyScope"));
+        coupon.setApplyScope(applyScope);
+
+        int brandId = safeInt(req.getParameter("brandId"), -1);
+        coupon.setBrandId(COUPON_SCOPE_BRAND.equals(applyScope) && brandId > 0 ? brandId : 0);
+        coupon.setSelectedProductIds(parseSelectedProductIds(req));
+
         coupon.setStartDate(safeDate(req.getParameter("startDate")));
         coupon.setEndDate(safeDate(req.getParameter("endDate")));
         coupon.setActive(parseActive(req));
@@ -662,6 +693,10 @@ public class AdminPromotionManagementServlet extends HttpServlet {
 
     private void bindBrandDiscount(HttpServletRequest req, BrandDiscount discount) {
         discount.setBrandId(safeInt(req.getParameter("brandId"), -1));
+
+        String applyScope = normalizeBrandApplyScope(req.getParameter("applyScope"));
+        discount.setApplyScope(applyScope);
+
         discount.setDiscountType(safeDiscountType(req.getParameter("discountType")));
         discount.setDiscountValue(parseBigDecimal(
                 req.getParameter("discountValue"),
@@ -673,6 +708,8 @@ public class AdminPromotionManagementServlet extends HttpServlet {
         discount.setMaxDiscountAmount(isBlank(maxDiscountAmount)
                 ? null
                 : parseBigDecimal(maxDiscountAmount, null, "Số tiền giảm tối đa không hợp lệ."));
+
+        discount.setSelectedProductIds(parseSelectedProductIds(req));
 
         discount.setStartDate(safeDate(req.getParameter("startDate")));
         discount.setEndDate(safeDate(req.getParameter("endDate")));
@@ -730,6 +767,7 @@ public class AdminPromotionManagementServlet extends HttpServlet {
 
         event.setCategoryId(categoryId > 0 ? categoryId : null);
         event.setBrandId(brandId > 0 ? brandId : null);
+        event.setSelectedProductIds(parseSelectedProductIds(req));
 
         event.setStartDate(safeDate(req.getParameter("startDate")));
         event.setEndDate(safeDate(req.getParameter("endDate")));
@@ -757,7 +795,11 @@ public class AdminPromotionManagementServlet extends HttpServlet {
             throw new IllegalArgumentException("Loại coupon không hợp lệ.");
         }
 
-        if (coupon.getDiscountPercent() <= 0 || coupon.getDiscountPercent() > 100) {
+        validateDiscountTypeAndValue(coupon.getDiscountType(), coupon.getDiscountValue());
+
+        if (coupon.getDiscountType() == DiscountType.PERCENT
+                && (coupon.getDiscountValue().compareTo(BigDecimal.ZERO) <= 0
+                || coupon.getDiscountValue().compareTo(new BigDecimal("100")) > 0)) {
             throw new IllegalArgumentException("Phần trăm giảm giá phải nằm trong khoảng 1 đến 100.");
         }
 
@@ -772,6 +814,18 @@ public class AdminPromotionManagementServlet extends HttpServlet {
             throw new IllegalArgumentException("Rank tối thiểu không hợp lệ.");
         }
 
+        String applyScope = normalizeCouponApplyScope(coupon.getApplyScope());
+
+        if (COUPON_SCOPE_BRAND.equals(applyScope)
+                && (coupon.getBrandId() == null || coupon.getBrandId() <= 0)) {
+            throw new IllegalArgumentException("Coupon áp dụng theo thương hiệu cần chọn thương hiệu.");
+        }
+
+        if (COUPON_SCOPE_PRODUCTS.equals(applyScope)
+                && coupon.getSelectedProductIds().isEmpty()) {
+            throw new IllegalArgumentException("Coupon áp dụng theo sản phẩm cụ thể cần chọn ít nhất một sản phẩm.");
+        }
+
         validateDateRange(coupon.getStartDate(), coupon.getEndDate());
     }
 
@@ -783,6 +837,12 @@ public class AdminPromotionManagementServlet extends HttpServlet {
         validateDiscountTypeAndValue(discount.getDiscountType(), discount.getDiscountValue());
         validatePositiveIfPresent(discount.getMaxDiscountAmount(), "Số tiền giảm tối đa nếu nhập phải lớn hơn 0.");
         validateRequiredDateRange(discount.getStartDate(), discount.getEndDate());
+
+        String applyScope = normalizeBrandApplyScope(discount.getApplyScope());
+        if (BRAND_SCOPE_SELECTED_PRODUCTS.equals(applyScope)
+                && discount.getSelectedProductIds().isEmpty()) {
+            throw new IllegalArgumentException("Giảm giá thương hiệu theo sản phẩm cụ thể cần chọn ít nhất một sản phẩm.");
+        }
     }
 
     private void validateOrderDiscount(OrderDiscount discount) {
@@ -825,7 +885,13 @@ public class AdminPromotionManagementServlet extends HttpServlet {
             throw new IllegalArgumentException("Scope BRAND cần chọn thương hiệu.");
         }
 
-        if (event.getScope() == PromotionEvent.Scope.ALL) {
+        if (event.getScope() == PromotionEvent.Scope.PRODUCTS
+                && event.getSelectedProductIds().isEmpty()) {
+            throw new IllegalArgumentException("Scope PRODUCTS cần chọn ít nhất một sản phẩm.");
+        }
+
+        if (event.getScope() == PromotionEvent.Scope.ALL
+                || event.getScope() == PromotionEvent.Scope.PRODUCTS) {
             event.setCategoryId(null);
             event.setBrandId(null);
         }
@@ -992,6 +1058,60 @@ public class AdminPromotionManagementServlet extends HttpServlet {
         }
     }
 
+    private List<Integer> parseSelectedProductIds(HttpServletRequest req) {
+        List<Integer> productIds = new ArrayList<>();
+
+        appendProductIds(productIds, req.getParameterValues("selectedProductIds"));
+        appendProductIds(productIds, req.getParameterValues("productIds"));
+        appendProductIds(productIds, req.getParameterValues("selectedProducts"));
+
+        return productIds.stream()
+                .distinct()
+                .filter(id -> id != null && id > 0)
+                .collect(Collectors.toList());
+    }
+
+    private void appendProductIds(List<Integer> target, String[] rawValues) {
+        if (rawValues == null || rawValues.length == 0) {
+            return;
+        }
+
+        for (String rawValue : rawValues) {
+            if (rawValue == null || rawValue.isBlank()) {
+                continue;
+            }
+
+            String[] parts = rawValue.split(",");
+
+            for (String part : parts) {
+                int id = safeInt(part, -1);
+                if (id > 0) {
+                    target.add(id);
+                }
+            }
+        }
+    }
+
+
+    private String normalizeCouponApplyScope(String rawScope) {
+        String scope = safe(rawScope).toUpperCase(Locale.ROOT);
+
+        return switch (scope) {
+            case COUPON_SCOPE_BRAND -> COUPON_SCOPE_BRAND;
+            case COUPON_SCOPE_PRODUCTS, "PRODUCT", "SELECTED_PRODUCTS" -> COUPON_SCOPE_PRODUCTS;
+            default -> COUPON_SCOPE_ALL;
+        };
+    }
+
+    private String normalizeBrandApplyScope(String rawScope) {
+        String scope = safe(rawScope).toUpperCase(Locale.ROOT);
+
+        return switch (scope) {
+            case BRAND_SCOPE_SELECTED_PRODUCTS, "PRODUCTS", "PRODUCT" -> BRAND_SCOPE_SELECTED_PRODUCTS;
+            default -> BRAND_SCOPE_ALL_BRAND_PRODUCTS;
+        };
+    }
+
     private String normalizePromotionType(String rawType) {
         String type = safe(rawType).toUpperCase(Locale.ROOT);
 
@@ -1021,309 +1141,4 @@ public class AdminPromotionManagementServlet extends HttpServlet {
                 || TYPE_EVENT.equals(value);
     }
 
-    private static String money(BigDecimal value) {
-        if (value == null) {
-            return "";
-        }
-
-        DecimalFormat formatter = new DecimalFormat("#,##0.##");
-        return formatter.format(value) + " ₫";
-    }
-
-    private static String number(BigDecimal value) {
-        if (value == null) {
-            return "";
-        }
-
-        return value.stripTrailingZeros().toPlainString();
-    }
-
-    private static String dateRange(LocalDate startDate, LocalDate endDate) {
-        String start = startDate == null ? "Không giới hạn" : startDate.toString();
-        String end = endDate == null ? "Không giới hạn" : endDate.toString();
-
-        return start + " - " + end;
-    }
-
-    private static String discountLabel(DiscountType type, BigDecimal value) {
-        if (type == null || value == null) {
-            return "";
-        }
-
-        if (type == DiscountType.PERCENT) {
-            return number(value) + "%";
-        }
-
-        return money(value);
-    }
-
-    /* =========================================================
-       VIEW MODELS FOR JSP
-    ========================================================= */
-
-    public static class PromotionStats {
-        private final int total;
-        private final int active;
-        private final int inactive;
-        private final int expired;
-        private final int upcoming;
-
-        public PromotionStats(int total, int active, int inactive, int expired, int upcoming) {
-            this.total = total;
-            this.active = active;
-            this.inactive = inactive;
-            this.expired = expired;
-            this.upcoming = upcoming;
-        }
-
-        public int getTotal() {
-            return total;
-        }
-
-        public int getActive() {
-            return active;
-        }
-
-        public int getInactive() {
-            return inactive;
-        }
-
-        public int getExpired() {
-            return expired;
-        }
-
-        public int getUpcoming() {
-            return upcoming;
-        }
-    }
-
-    public static class PromotionRow {
-        private int id;
-        private String type;
-        private String typeLabel;
-        private String title;
-        private String code;
-        private String scopeLabel;
-        private String discountType;
-        private String discountValueLabel;
-        private String conditionLabel;
-        private String periodLabel;
-        private LocalDate startDate;
-        private LocalDate endDate;
-        private boolean active;
-
-        public static PromotionRow fromCoupon(Coupon coupon) {
-            PromotionRow row = new PromotionRow();
-
-            row.id = coupon.getId();
-            row.type = TYPE_COUPON;
-            row.typeLabel = "Mã giảm giá";
-            row.code = coupon.getCode();
-            row.title = coupon.getCode();
-            row.scopeLabel = "Theo mã coupon";
-            row.discountType = "PERCENT";
-            row.discountValueLabel = coupon.getDiscountPercent() + "%";
-            row.conditionLabel = "Đơn tối thiểu: " + money(coupon.getMinOrderAmount())
-                    + " | Rank: " + coupon.getMinRankCode()
-                    + " | Lượt dùng: " + coupon.getUsedCount() + "/" + coupon.getMaxUses();
-            row.periodLabel = dateRange(coupon.getStartDate(), coupon.getEndDate());
-            row.startDate = coupon.getStartDate();
-            row.endDate = coupon.getEndDate();
-            row.active = coupon.isActive();
-
-            return row;
-        }
-
-        public static PromotionRow fromBrandDiscount(BrandDiscount discount) {
-            PromotionRow row = new PromotionRow();
-
-            row.id = discount.getId();
-            row.type = TYPE_BRAND;
-            row.typeLabel = "Giảm giá thương hiệu";
-            row.title = !isEmpty(discount.getBrandName())
-                    ? "Thương hiệu: " + discount.getBrandName()
-                    : "Thương hiệu #" + discount.getBrandId();
-            row.code = "";
-            row.scopeLabel = !isEmpty(discount.getBrandName())
-                    ? discount.getBrandName()
-                    : "Brand #" + discount.getBrandId();
-            row.discountType = discount.getDiscountType() == null ? "" : discount.getDiscountType().name();
-            row.discountValueLabel = discountLabel(discount.getDiscountType(), discount.getDiscountValue());
-            row.conditionLabel = discount.getMaxDiscountAmount() == null
-                    ? "Không giới hạn giảm tối đa"
-                    : "Giảm tối đa: " + money(discount.getMaxDiscountAmount());
-            row.periodLabel = dateRange(discount.getStartDate(), discount.getEndDate());
-            row.startDate = discount.getStartDate();
-            row.endDate = discount.getEndDate();
-            row.active = discount.isActive();
-
-            return row;
-        }
-
-        public static PromotionRow fromOrderDiscount(OrderDiscount discount) {
-            PromotionRow row = new PromotionRow();
-
-            row.id = discount.getId();
-            row.type = TYPE_ORDER;
-            row.typeLabel = "Giảm theo đơn hàng";
-            row.title = isEmpty(discount.getName()) ? "Giảm giá theo giá trị đơn hàng" : discount.getName();
-            row.code = "";
-            row.scopeLabel = "Theo tổng giá trị đơn hàng";
-            row.discountType = "PERCENT";
-            row.discountValueLabel = number(discount.getDiscountPercent()) + "%";
-            row.conditionLabel = "Đơn từ: " + money(discount.getMinOrderValue())
-                    + (discount.getMaxDiscountAmount() == null
-                    ? ""
-                    : " | Giảm tối đa: " + money(discount.getMaxDiscountAmount()));
-            row.periodLabel = dateRange(discount.getStartDate(), discount.getEndDate());
-            row.startDate = discount.getStartDate();
-            row.endDate = discount.getEndDate();
-            row.active = discount.isActive();
-
-            return row;
-        }
-
-        public static PromotionRow fromPromotionEvent(PromotionEvent event) {
-            PromotionRow row = new PromotionRow();
-
-            row.id = event.getId();
-            row.type = TYPE_EVENT;
-            row.typeLabel = "Chương trình khuyến mãi";
-            row.title = event.getName();
-            row.code = "";
-            row.scopeLabel = buildEventScopeLabel(event);
-            row.discountType = event.getDiscountType() == null ? "" : event.getDiscountType().name();
-            row.discountValueLabel = discountLabel(event.getDiscountType(), event.getDiscountValue());
-            row.conditionLabel = event.getMaxDiscountAmount() == null
-                    ? "Không giới hạn giảm tối đa"
-                    : "Giảm tối đa: " + money(event.getMaxDiscountAmount());
-            row.periodLabel = dateRange(event.getStartDate(), event.getEndDate());
-            row.startDate = event.getStartDate();
-            row.endDate = event.getEndDate();
-            row.active = event.isActive();
-
-            return row;
-        }
-
-        private static String buildEventScopeLabel(PromotionEvent event) {
-            if (event.getScope() == null) {
-                return "";
-            }
-
-            return switch (event.getScope()) {
-                case ALL -> "Toàn cửa hàng";
-                case BRAND -> !isEmpty(event.getBrandName())
-                        ? "Thương hiệu: " + event.getBrandName()
-                        : "Brand #" + event.getBrandId();
-                case CATEGORY -> !isEmpty(event.getCategoryName())
-                        ? "Danh mục: " + event.getCategoryName()
-                        : "Category #" + event.getCategoryId();
-            };
-        }
-
-        private static boolean isEmpty(String value) {
-            return value == null || value.trim().isEmpty();
-        }
-
-        public String searchText() {
-            return (safeText(typeLabel) + " "
-                    + safeText(title) + " "
-                    + safeText(code) + " "
-                    + safeText(scopeLabel) + " "
-                    + safeText(discountValueLabel) + " "
-                    + safeText(conditionLabel)).toLowerCase(Locale.ROOT);
-        }
-
-        private String safeText(String value) {
-            return value == null ? "" : value;
-        }
-
-        public LocalDate getSortDate() {
-            if (startDate != null) {
-                return startDate;
-            }
-
-            return LocalDate.MIN;
-        }
-
-        public boolean isExpired() {
-            return endDate != null && endDate.isBefore(LocalDate.now());
-        }
-
-        public boolean isUpcoming() {
-            return startDate != null && startDate.isAfter(LocalDate.now());
-        }
-
-        public boolean isActiveNow() {
-            return active && !isExpired() && !isUpcoming();
-        }
-
-        public String getStatusLabel() {
-            if (!active) {
-                return "INACTIVE";
-            }
-
-            if (isExpired()) {
-                return "EXPIRED";
-            }
-
-            if (isUpcoming()) {
-                return "UPCOMING";
-            }
-
-            return "ACTIVE";
-        }
-
-        public int getId() {
-            return id;
-        }
-
-        public String getType() {
-            return type;
-        }
-
-        public String getTypeLabel() {
-            return typeLabel;
-        }
-
-        public String getTitle() {
-            return title;
-        }
-
-        public String getCode() {
-            return code;
-        }
-
-        public String getScopeLabel() {
-            return scopeLabel;
-        }
-
-        public String getDiscountType() {
-            return discountType;
-        }
-
-        public String getDiscountValueLabel() {
-            return discountValueLabel;
-        }
-
-        public String getConditionLabel() {
-            return conditionLabel;
-        }
-
-        public String getPeriodLabel() {
-            return periodLabel;
-        }
-
-        public LocalDate getStartDate() {
-            return startDate;
-        }
-
-        public LocalDate getEndDate() {
-            return endDate;
-        }
-
-        public boolean isActive() {
-            return active;
-        }
-    }
 }
