@@ -6,6 +6,7 @@ import java.util.List;
 import com.webshop.app.dao.OrderDAO;
 import com.webshop.app.dao.OrderItemDAO;
 import com.webshop.app.dao.ReturnRequestDAO;
+import com.webshop.app.dao.ReviewDAO;
 import com.webshop.app.model.Order;
 import com.webshop.app.model.OrderItem;
 import com.webshop.app.model.User;
@@ -24,6 +25,7 @@ public class OrderDetailServlet extends HttpServlet {
 	private final OrderDAO orderDAO = new OrderDAO();
 	private final OrderItemDAO itemDAO = new OrderItemDAO();
 	private final ReturnRequestDAO returnRequestDAO = new ReturnRequestDAO();
+	private final ReviewDAO reviewDAO = new ReviewDAO();
 
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -67,6 +69,7 @@ public class OrderDetailServlet extends HttpServlet {
 		req.setAttribute("order", order);
 		req.setAttribute("orderItems", items);
 		req.setAttribute("returnRequest", returnRequestDAO.findByOrderId(orderId));
+		req.setAttribute("reviewedOrderItemMap", reviewDAO.findReviewedOrderItemMap(user.getId(), orderId));
 		req.setAttribute("success", req.getParameter("success"));
 		req.setAttribute("error", req.getParameter("error"));
 
