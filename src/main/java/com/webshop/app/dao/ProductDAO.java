@@ -8,7 +8,9 @@ import com.webshop.app.utils.DBConnection;
 import java.math.BigDecimal;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 public class ProductDAO {
 
@@ -19,7 +21,7 @@ public class ProductDAO {
 	}
 
 	public List<Product> findProducts(String keyword, Integer categoryId, Integer brandId, String sort,
-									  String priceRange, Integer minRating) {
+	                                  String priceRange, Integer minRating) {
 
 		List<Product> list = new ArrayList<>();
 
@@ -31,7 +33,7 @@ public class ProductDAO {
 						"c.id AS c_id, c.name AS c_name, " +
 						"b.id AS b_id, b.name AS b_name " +
 						"FROM store_product p " +
-						"LEFT JOIN store_review r ON p.id = r.product_id AND r.status = 'APPROVED' AND COALESCE(r.is_hidden, 0) = 0 " +
+						"LEFT JOIN store_review r ON p.id = r.product_id " +
 						"LEFT JOIN store_category c ON p.category_id = c.id " +
 						"LEFT JOIN store_brand b ON p.brand_id = b.id " +
 						"WHERE p.is_active = 1 "
@@ -56,7 +58,7 @@ public class ProductDAO {
 		appendSort(sql, sort);
 
 		try (Connection c = DBConnection.getConnection();
-			 PreparedStatement ps = c.prepareStatement(sql.toString())) {
+		     PreparedStatement ps = c.prepareStatement(sql.toString())) {
 
 			bindProductFilters(ps, keyword, categoryId, brandId, minRating, 1);
 
@@ -74,13 +76,13 @@ public class ProductDAO {
 	}
 
 	public int countProducts(String keyword, Integer categoryId, Integer brandId, String priceRange,
-							 Integer minRating) {
+	                         Integer minRating) {
 
 		StringBuilder sql = new StringBuilder(
 				"SELECT COUNT(*) FROM ( " +
 						"SELECT p.id " +
 						"FROM store_product p " +
-						"LEFT JOIN store_review r ON p.id = r.product_id AND r.status = 'APPROVED' AND COALESCE(r.is_hidden, 0) = 0 " +
+						"LEFT JOIN store_review r ON p.id = r.product_id " +
 						"WHERE p.is_active = 1 "
 		);
 
@@ -101,7 +103,7 @@ public class ProductDAO {
 		sql.append(") x");
 
 		try (Connection c = DBConnection.getConnection();
-			 PreparedStatement ps = c.prepareStatement(sql.toString())) {
+		     PreparedStatement ps = c.prepareStatement(sql.toString())) {
 
 			bindProductFilters(ps, keyword, categoryId, brandId, minRating, 1);
 
@@ -116,7 +118,7 @@ public class ProductDAO {
 	}
 
 	public List<Product> findProductsPaged(String keyword, Integer categoryId, Integer brandId, String sort,
-										   String priceRange, Integer minRating, int page, int pageSize) {
+	                                       String priceRange, Integer minRating, int page, int pageSize) {
 
 		int safePage = Math.max(1, page);
 		int safeSize = Math.max(1, pageSize);
@@ -132,7 +134,7 @@ public class ProductDAO {
 						"c.id AS c_id, c.name AS c_name, " +
 						"b.id AS b_id, b.name AS b_name " +
 						"FROM store_product p " +
-						"LEFT JOIN store_review r ON p.id = r.product_id AND r.status = 'APPROVED' AND COALESCE(r.is_hidden, 0) = 0 " +
+						"LEFT JOIN store_review r ON p.id = r.product_id " +
 						"LEFT JOIN store_category c ON p.category_id = c.id " +
 						"LEFT JOIN store_brand b ON p.brand_id = b.id " +
 						"WHERE p.is_active = 1 "
@@ -159,7 +161,7 @@ public class ProductDAO {
 		sql.append("LIMIT ?, ?");
 
 		try (Connection c = DBConnection.getConnection();
-			 PreparedStatement ps = c.prepareStatement(sql.toString())) {
+		     PreparedStatement ps = c.prepareStatement(sql.toString())) {
 
 			int idx = bindProductFilters(ps, keyword, categoryId, brandId, minRating, 1);
 			ps.setInt(idx++, offset);
@@ -190,7 +192,7 @@ public class ProductDAO {
 						"c.id AS c_id, c.name AS c_name, " +
 						"b.id AS b_id, b.name AS b_name " +
 						"FROM store_product p " +
-						"LEFT JOIN store_review r ON p.id = r.product_id AND r.status = 'APPROVED' AND COALESCE(r.is_hidden, 0) = 0 " +
+						"LEFT JOIN store_review r ON p.id = r.product_id " +
 						"LEFT JOIN store_category c ON p.category_id = c.id " +
 						"LEFT JOIN store_brand b ON p.brand_id = b.id " +
 						"WHERE 1 = 1 "
@@ -209,7 +211,7 @@ public class ProductDAO {
 		appendSort(sql, sort);
 
 		try (Connection c = DBConnection.getConnection();
-			 PreparedStatement ps = c.prepareStatement(sql.toString())) {
+		     PreparedStatement ps = c.prepareStatement(sql.toString())) {
 
 			int idx = 1;
 
@@ -236,6 +238,13 @@ public class ProductDAO {
 		}
 
 		return list;
+	}
+
+	/**
+	 * Danh sách tất cả sản phẩm cho admin.
+	 */
+	public List<Product> findAll() {
+		return findProductsAdmin(null, null, null, "created_desc");
 	}
 
 	public Product findById(int productId) {
@@ -266,14 +275,14 @@ public class ProductDAO {
 
 	public Product findBySlug(String slug) {
 		String sql =
-				"SELECT p.id, p.title, p.slug, p.description, " +
-						"p.price, p.discount_percent, p.stock, p.image, p.is_active, p.created_at, " +
+				"SELECT p.id, p.title, p.slug, p.description, p.price, p.discount_percent, " +
+						"p.stock, p.image, p.is_active, p.created_at, " +
 						"COALESCE(AVG(r.rating), 0) AS avg_rating, " +
 						"COUNT(r.id) AS review_count, " +
 						"c.id AS c_id, c.name AS c_name, " +
 						"b.id AS b_id, b.name AS b_name " +
 						"FROM store_product p " +
-						"LEFT JOIN store_review r ON p.id = r.product_id AND r.status = 'APPROVED' AND COALESCE(r.is_hidden, 0) = 0 " +
+						"LEFT JOIN store_review r ON p.id = r.product_id " +
 						"LEFT JOIN store_category c ON p.category_id = c.id " +
 						"LEFT JOIN store_brand b ON p.brand_id = b.id " +
 						"WHERE p.slug = ? AND p.is_active = 1 " +
@@ -282,7 +291,7 @@ public class ProductDAO {
 						"c.id, c.name, b.id, b.name";
 
 		try (Connection c = DBConnection.getConnection();
-			 PreparedStatement ps = c.prepareStatement(sql)) {
+		     PreparedStatement ps = c.prepareStatement(sql)) {
 
 			ps.setString(1, slug);
 
@@ -316,7 +325,7 @@ public class ProductDAO {
 						"LIMIT 8";
 
 		try (Connection c = DBConnection.getConnection();
-			 PreparedStatement ps = c.prepareStatement(sql)) {
+		     PreparedStatement ps = c.prepareStatement(sql)) {
 
 			String keywordTrim = keyword == null ? "" : keyword.trim();
 			String like = "%" + keywordTrim + "%";
@@ -339,6 +348,162 @@ public class ProductDAO {
 		return list;
 	}
 
+    /* =========================================================
+       PROMOTION PRODUCT PICKER
+    ========================================================= */
+
+	/**
+	 * Lấy sản phẩm active cho giao diện chọn sản phẩm khuyến mãi.
+	 */
+	public List<Product> findForPromotionPicker(String keyword, Integer brandId, Integer categoryId) {
+		return findForPromotionPicker(keyword, brandId, categoryId, true, null);
+	}
+
+	/**
+	 * Lấy sản phẩm cho giao diện chọn sản phẩm khuyến mãi và đánh dấu sản phẩm đã chọn.
+	 */
+	public List<Product> findForPromotionPicker(
+			String keyword,
+			Integer brandId,
+			Integer categoryId,
+			List<Integer> selectedProductIds
+	) {
+		return findForPromotionPicker(keyword, brandId, categoryId, true, selectedProductIds);
+	}
+
+	/**
+	 * Lấy sản phẩm cho product picker:
+	 * - keyword: tìm theo tên/slug/mô tả.
+	 * - brandId: lọc theo thương hiệu.
+	 * - categoryId: lọc theo danh mục.
+	 * - activeOnly: chỉ lấy sản phẩm đang bán.
+	 * - selectedProductIds: danh sách id đang được chọn để set selectedForPromotion.
+	 */
+	public List<Product> findForPromotionPicker(
+			String keyword,
+			Integer brandId,
+			Integer categoryId,
+			boolean activeOnly,
+			List<Integer> selectedProductIds
+	) {
+		List<Product> products = new ArrayList<>();
+		Set<Integer> selectedSet = toIdSet(selectedProductIds);
+
+		StringBuilder sql = new StringBuilder(
+				"SELECT p.id, p.title, p.slug, p.description, " +
+						"p.price, p.discount_percent, p.stock, p.image, p.is_active, " +
+						"c.id AS c_id, c.name AS c_name, " +
+						"b.id AS b_id, b.name AS b_name " +
+						"FROM store_product p " +
+						"LEFT JOIN store_category c ON p.category_id = c.id " +
+						"LEFT JOIN store_brand b ON p.brand_id = b.id " +
+						"WHERE 1 = 1 "
+		);
+
+		if (activeOnly) {
+			sql.append("AND p.is_active = 1 ");
+		}
+
+		if (keyword != null && !keyword.isBlank()) {
+			sql.append("AND (p.title LIKE ? OR p.slug LIKE ? OR p.description LIKE ?) ");
+		}
+
+		if (brandId != null && brandId > 0) {
+			sql.append("AND p.brand_id = ? ");
+		}
+
+		if (categoryId != null && categoryId > 0) {
+			sql.append("AND p.category_id = ? ");
+		}
+
+		sql.append("ORDER BY p.title ASC, p.id DESC ");
+
+		try (Connection connection = DBConnection.getConnection();
+		     PreparedStatement statement = connection.prepareStatement(sql.toString())) {
+
+			int index = 1;
+
+			if (keyword != null && !keyword.isBlank()) {
+				String like = "%" + keyword.trim() + "%";
+				statement.setString(index++, like);
+				statement.setString(index++, like);
+				statement.setString(index++, like);
+			}
+
+			if (brandId != null && brandId > 0) {
+				statement.setInt(index++, brandId);
+			}
+
+			if (categoryId != null && categoryId > 0) {
+				statement.setInt(index, categoryId);
+			}
+
+			try (ResultSet resultSet = statement.executeQuery()) {
+				while (resultSet.next()) {
+					Product product = mapRowPromotionPicker(resultSet);
+					product.setSelectedForPromotion(selectedSet.contains(product.getId()));
+					products.add(product);
+				}
+			}
+
+		} catch (SQLException e) {
+			throw new RuntimeException("ProductDAO.findForPromotionPicker error", e);
+		}
+
+		return products;
+	}
+
+	public List<Product> findActiveByBrandId(int brandId) {
+		return findForPromotionPicker(null, brandId, null, true, null);
+	}
+
+	public List<Product> findActiveByCategoryId(int categoryId) {
+		return findForPromotionPicker(null, null, categoryId, true, null);
+	}
+
+	public List<Product> findByIds(List<Integer> productIds) {
+		List<Product> products = new ArrayList<>();
+		List<Integer> cleanedIds = normalizeProductIds(productIds);
+
+		if (cleanedIds.isEmpty()) {
+			return products;
+		}
+
+		String sql =
+				"SELECT p.id, p.title, p.slug, p.description, " +
+						"p.price, p.discount_percent, p.stock, p.image, p.is_active, " +
+						"c.id AS c_id, c.name AS c_name, " +
+						"b.id AS b_id, b.name AS b_name " +
+						"FROM store_product p " +
+						"LEFT JOIN store_category c ON p.category_id = c.id " +
+						"LEFT JOIN store_brand b ON p.brand_id = b.id " +
+						"WHERE p.id IN (" + placeholders(cleanedIds.size()) + ") " +
+						"ORDER BY p.title ASC, p.id DESC";
+
+		try (Connection connection = DBConnection.getConnection();
+		     PreparedStatement statement = connection.prepareStatement(sql)) {
+
+			for (int i = 0; i < cleanedIds.size(); i++) {
+				statement.setInt(i + 1, cleanedIds.get(i));
+			}
+
+			try (ResultSet resultSet = statement.executeQuery()) {
+				while (resultSet.next()) {
+					products.add(mapRowPromotionPicker(resultSet));
+				}
+			}
+
+		} catch (SQLException e) {
+			throw new RuntimeException("ProductDAO.findByIds error", e);
+		}
+
+		return products;
+	}
+
+    /* =========================================================
+       CREATE / UPDATE / DELETE
+    ========================================================= */
+
 	public int create(Product p) {
 		String sql =
 				"INSERT INTO store_product " +
@@ -347,7 +512,7 @@ public class ProductDAO {
 						"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
 
 		try (Connection c = DBConnection.getConnection();
-			 PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+		     PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
 			String title = p.getTitle();
 
@@ -381,7 +546,7 @@ public class ProductDAO {
 						"stock=?, image=?, is_active=?, category_id=?, brand_id=? WHERE id=?";
 
 		try (Connection c = DBConnection.getConnection();
-			 PreparedStatement ps = c.prepareStatement(sql)) {
+		     PreparedStatement ps = c.prepareStatement(sql)) {
 
 			String title = p.getTitle();
 
@@ -409,6 +574,7 @@ public class ProductDAO {
 	 * Xóa sản phẩm an toàn:
 	 * - Nếu sản phẩm đã có trong store_orderitem: chỉ ẩn sản phẩm bằng is_active = 0.
 	 * - Nếu sản phẩm chưa có đơn hàng: xóa cứng trong transaction.
+	 * - Khi hard delete, xóa thêm các target khuyến mãi để tránh dữ liệu phụ bị treo nếu DB chưa có cascade.
 	 */
 	public DeleteMode deleteOrDeactivateSafely(int productId) {
 		String checkProductSql = "SELECT id FROM store_product WHERE id = ?";
@@ -417,6 +583,9 @@ public class ProductDAO {
 		String softDeleteSql = "UPDATE store_product SET is_active = 0 WHERE id = ?";
 
 		String deleteCartItemsSql = "DELETE FROM cart_items WHERE product_id = ?";
+		String deleteCouponTargetsSql = "DELETE FROM store_coupon_product WHERE product_id = ?";
+		String deleteBrandDiscountTargetsSql = "DELETE FROM store_branddiscount_product WHERE product_id = ?";
+		String deletePromotionEventTargetsSql = "DELETE FROM store_promotionevent_product WHERE product_id = ?";
 		String deleteReviewsSql = "DELETE FROM store_review WHERE product_id = ?";
 		String deleteImagesSql = "DELETE FROM store_productimage WHERE product_id = ?";
 		String deleteProductDiscountSql = "DELETE FROM store_productdiscount WHERE product_id = ?";
@@ -461,30 +630,14 @@ public class ProductDAO {
 					return DeleteMode.SOFT_DELETED;
 				}
 
-				try (PreparedStatement ps = conn.prepareStatement(deleteCartItemsSql)) {
-					ps.setInt(1, productId);
-					ps.executeUpdate();
-				}
-
-				try (PreparedStatement ps = conn.prepareStatement(deleteReviewsSql)) {
-					ps.setInt(1, productId);
-					ps.executeUpdate();
-				}
-
-				try (PreparedStatement ps = conn.prepareStatement(deleteImagesSql)) {
-					ps.setInt(1, productId);
-					ps.executeUpdate();
-				}
-
-				try (PreparedStatement ps = conn.prepareStatement(deleteProductDiscountSql)) {
-					ps.setInt(1, productId);
-					ps.executeUpdate();
-				}
-
-				try (PreparedStatement ps = conn.prepareStatement(deleteProductSql)) {
-					ps.setInt(1, productId);
-					ps.executeUpdate();
-				}
+				executeDeleteByProductId(conn, deleteCartItemsSql, productId);
+				executeDeleteByProductId(conn, deleteCouponTargetsSql, productId);
+				executeDeleteByProductId(conn, deleteBrandDiscountTargetsSql, productId);
+				executeDeleteByProductId(conn, deletePromotionEventTargetsSql, productId);
+				executeDeleteByProductId(conn, deleteReviewsSql, productId);
+				executeDeleteByProductId(conn, deleteImagesSql, productId);
+				executeDeleteByProductId(conn, deleteProductDiscountSql, productId);
+				executeDeleteByProductId(conn, deleteProductSql, productId);
 
 				conn.commit();
 				return DeleteMode.HARD_DELETED;
@@ -505,7 +658,7 @@ public class ProductDAO {
 		String sql = "DELETE FROM store_product WHERE id = ?";
 
 		try (Connection c = DBConnection.getConnection();
-			 PreparedStatement ps = c.prepareStatement(sql)) {
+		     PreparedStatement ps = c.prepareStatement(sql)) {
 
 			ps.setInt(1, id);
 			return ps.executeUpdate() > 0;
@@ -522,7 +675,7 @@ public class ProductDAO {
 		String sql = "DELETE FROM store_review WHERE product_id = ?";
 
 		try (Connection c = DBConnection.getConnection();
-			 PreparedStatement ps = c.prepareStatement(sql)) {
+		     PreparedStatement ps = c.prepareStatement(sql)) {
 
 			ps.setInt(1, productId);
 			return ps.executeUpdate();
@@ -531,6 +684,10 @@ public class ProductDAO {
 			throw new RuntimeException("ProductDAO.deleteReviewsByProductId error", e);
 		}
 	}
+
+    /* =========================================================
+       HOME / FEATURED
+    ========================================================= */
 
 	public List<Product> findFeaturedTop12BestSellerDeepDiscount() {
 		List<Product> list = new ArrayList<>();
@@ -548,7 +705,7 @@ public class ProductDAO {
 						"LEFT JOIN store_brand b ON p.brand_id = b.id " +
 						"LEFT JOIN ( " +
 						"SELECT product_id, AVG(rating) AS avg_rating, COUNT(*) AS review_count " +
-						"FROM store_review WHERE status = 'APPROVED' AND COALESCE(is_hidden, 0) = 0 GROUP BY product_id " +
+						"FROM store_review GROUP BY product_id " +
 						") rv ON rv.product_id = p.id " +
 						"LEFT JOIN ( " +
 						"SELECT oi.product_id, SUM(oi.quantity) AS sold_qty " +
@@ -562,8 +719,8 @@ public class ProductDAO {
 						"LIMIT 12";
 
 		try (Connection c = DBConnection.getConnection();
-			 PreparedStatement ps = c.prepareStatement(sql);
-			 ResultSet rs = ps.executeQuery()) {
+		     PreparedStatement ps = c.prepareStatement(sql);
+		     ResultSet rs = ps.executeQuery()) {
 
 			while (rs.next()) {
 				list.add(mapRowList(rs));
@@ -587,7 +744,7 @@ public class ProductDAO {
 						"c.id AS c_id, c.name AS c_name, " +
 						"b.id AS b_id, b.name AS b_name " +
 						"FROM store_product p " +
-						"LEFT JOIN store_review r ON p.id = r.product_id AND r.status = 'APPROVED' AND COALESCE(r.is_hidden, 0) = 0 " +
+						"LEFT JOIN store_review r ON p.id = r.product_id " +
 						"LEFT JOIN store_category c ON p.category_id = c.id " +
 						"LEFT JOIN store_brand b ON p.brand_id = b.id " +
 						"WHERE p.is_active = 1 " +
@@ -598,8 +755,8 @@ public class ProductDAO {
 						"LIMIT 12";
 
 		try (Connection c = DBConnection.getConnection();
-			 PreparedStatement ps = c.prepareStatement(sql);
-			 ResultSet rs = ps.executeQuery()) {
+		     PreparedStatement ps = c.prepareStatement(sql);
+		     ResultSet rs = ps.executeQuery()) {
 
 			while (rs.next()) {
 				list.add(mapRowList(rs));
@@ -629,7 +786,7 @@ public class ProductDAO {
 						"LIMIT 8";
 
 		try (Connection c = DBConnection.getConnection();
-			 PreparedStatement ps = c.prepareStatement(sql)) {
+		     PreparedStatement ps = c.prepareStatement(sql)) {
 
 			String keywordTrim = keyword == null ? "" : keyword.trim();
 			String likeAll = "%" + keywordTrim + "%";
@@ -653,9 +810,13 @@ public class ProductDAO {
 		return list;
 	}
 
+    /* =========================================================
+       INTERNAL HELPERS
+    ========================================================= */
+
 	private Product findProductDetail(String sql, int productId, String errorMessage) {
 		try (Connection c = DBConnection.getConnection();
-			 PreparedStatement ps = c.prepareStatement(sql)) {
+		     PreparedStatement ps = c.prepareStatement(sql)) {
 
 			ps.setInt(1, productId);
 
@@ -670,7 +831,7 @@ public class ProductDAO {
 	}
 
 	private int bindProductFilters(PreparedStatement ps, String keyword, Integer categoryId,
-								   Integer brandId, Integer minRating, int idx) throws SQLException {
+	                               Integer brandId, Integer minRating, int idx) throws SQLException {
 
 		if (keyword != null && !keyword.isBlank()) {
 			String like = "%" + keyword.trim() + "%";
@@ -697,6 +858,8 @@ public class ProductDAO {
 				break;
 			case "gt1000":
 				sql.append("AND p.price > 1000000 ");
+				break;
+			default:
 				break;
 		}
 	}
@@ -726,20 +889,7 @@ public class ProductDAO {
 		p.setReviewCount(rs.getInt("review_count"));
 
 		applyFinalPrice(p);
-
-		if (rs.getObject("c_id") != null) {
-			Category cat = new Category();
-			cat.setId(rs.getInt("c_id"));
-			cat.setName(rs.getString("c_name"));
-			p.setCategory(cat);
-		}
-
-		if (rs.getObject("b_id") != null) {
-			Brand br = new Brand();
-			br.setId(rs.getInt("b_id"));
-			br.setName(rs.getString("b_name"));
-			p.setBrand(br);
-		}
+		attachCategoryAndBrand(rs, p);
 
 		return p;
 	}
@@ -758,20 +908,26 @@ public class ProductDAO {
 		p.setActive(rs.getBoolean("is_active"));
 
 		applyFinalPrice(p);
+		attachCategoryAndBrand(rs, p);
 
-		if (rs.getObject("c_id") != null) {
-			Category cat = new Category();
-			cat.setId(rs.getInt("c_id"));
-			cat.setName(rs.getString("c_name"));
-			p.setCategory(cat);
-		}
+		return p;
+	}
 
-		if (rs.getObject("b_id") != null) {
-			Brand br = new Brand();
-			br.setId(rs.getInt("b_id"));
-			br.setName(rs.getString("b_name"));
-			p.setBrand(br);
-		}
+	private Product mapRowPromotionPicker(ResultSet rs) throws SQLException {
+		Product p = new Product();
+
+		p.setId(rs.getInt("id"));
+		p.setTitle(rs.getString("title"));
+		p.setSlug(rs.getString("slug"));
+		p.setDescription(rs.getString("description"));
+		p.setPrice(rs.getBigDecimal("price"));
+		p.setDiscountPercent(rs.getInt("discount_percent"));
+		p.setStock(rs.getInt("stock"));
+		p.setImage(rs.getString("image"));
+		p.setActive(rs.getBoolean("is_active"));
+
+		applyFinalPrice(p);
+		attachCategoryAndBrand(rs, p);
 
 		return p;
 	}
@@ -786,6 +942,32 @@ public class ProductDAO {
 		p.setImage(rs.getString("image"));
 
 		return p;
+	}
+
+	private void attachCategoryAndBrand(ResultSet rs, Product p) throws SQLException {
+		if (rs.getObject("c_id") != null) {
+			int categoryId = rs.getInt("c_id");
+
+			Category cat = new Category();
+			cat.setId(categoryId);
+			cat.setName(rs.getString("c_name"));
+
+			p.setCategory(cat);
+			p.setCategoryId(categoryId);
+			p.setCategoryName(rs.getString("c_name"));
+		}
+
+		if (rs.getObject("b_id") != null) {
+			int brandId = rs.getInt("b_id");
+
+			Brand br = new Brand();
+			br.setId(brandId);
+			br.setName(rs.getString("b_name"));
+
+			p.setBrand(br);
+			p.setBrandId(brandId);
+			p.setBrandName(rs.getString("b_name"));
+		}
 	}
 
 	private void applyFinalPrice(Product p) {
@@ -805,28 +987,49 @@ public class ProductDAO {
 		p.setFinalPrice(finalPrice);
 	}
 
-	// Thêm vào trong class ProductDAO
-	public List<Product> findAll() {
-		List<Product> list = new ArrayList<>();
-		String sql = "SELECT * FROM store_product"; // Hãy đảm bảo tên bảng khớp với DB của bạn
-
-		try (Connection conn = DBConnection.getConnection();
-			 PreparedStatement ps = conn.prepareStatement(sql);
-			 ResultSet rs = ps.executeQuery()) {
-
-			while (rs.next()) {
-				Product p = new Product();
-				p.setId(rs.getInt("id"));
-				p.setTitle(rs.getString("title"));
-				p.setPrice(rs.getBigDecimal("price"));
-				// Set thêm các thuộc tính khác nếu cần hiển thị, ví dụ:
-				// p.setImage(rs.getString("image"));
-
-				list.add(p);
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
+	private void executeDeleteByProductId(Connection conn, String sql, int productId) throws SQLException {
+		try (PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, productId);
+			ps.executeUpdate();
 		}
-		return list;
+	}
+
+	private Set<Integer> toIdSet(List<Integer> ids) {
+		return new LinkedHashSet<>(normalizeProductIds(ids));
+	}
+
+	private List<Integer> normalizeProductIds(List<Integer> productIds) {
+		List<Integer> cleaned = new ArrayList<>();
+		Set<Integer> unique = new LinkedHashSet<>();
+
+		if (productIds == null) {
+			return cleaned;
+		}
+
+		for (Integer productId : productIds) {
+			if (productId != null && productId > 0) {
+				unique.add(productId);
+			}
+		}
+
+		cleaned.addAll(unique);
+		return cleaned;
+	}
+
+	private String placeholders(int size) {
+		if (size <= 0) {
+			return "";
+		}
+
+		StringBuilder builder = new StringBuilder();
+
+		for (int i = 0; i < size; i++) {
+			if (i > 0) {
+				builder.append(", ");
+			}
+			builder.append("?");
+		}
+
+		return builder.toString();
 	}
 }
