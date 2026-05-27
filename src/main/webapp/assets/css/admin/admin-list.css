@@ -70,14 +70,12 @@
   background: rgba(15, 23, 42, 0.02);
 }
 
-/* Dùng cho banner nếu muốn ảnh nhìn rộng hơn */
 .admin-thumb--banner {
   width: 140px;
   height: 72px;
   border-radius: 14px;
 }
 
-/* Dùng cho logo thương hiệu */
 .admin-thumb--logo {
   width: 76px;
   height: 56px;
@@ -87,7 +85,6 @@
   background: #fff;
 }
 
-/* Placeholder khi brand chưa có logo */
 .admin-thumb--empty {
   display: inline-flex;
   align-items: center;
@@ -137,19 +134,16 @@
    Text / path / long content
 ========================= */
 
-/* Path ảnh: không dùng break-all để tránh lỗi .p / ng */
 .admin-path {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 12px;
   color: var(--admin-muted);
   line-height: 1.45;
-
   word-break: normal;
   overflow-wrap: normal;
   white-space: normal;
 }
 
-/* Link hoặc chuỗi dài */
 .admin-break {
   overflow-wrap: anywhere;
   word-break: break-word;
@@ -171,11 +165,9 @@
   min-width: 76px;
   height: 24px;
   padding: 0 9px;
-
   border-radius: 999px;
   border: 1px solid var(--admin-border);
   background: rgba(15, 23, 42, 0.03);
-
   color: rgba(15, 23, 42, 0.72);
   font-size: 12px;
   font-weight: 800;
@@ -234,7 +226,6 @@
   white-space: nowrap;
 }
 
-/* Trường hợp td dùng trực tiếp class admin-actions */
 td.admin-actions {
   text-align: left;
   white-space: nowrap;
@@ -242,7 +233,6 @@ td.admin-actions {
   vertical-align: middle;
 }
 
-/* Nhóm nút thao tác dùng chung */
 .admin-actions {
   display: inline-flex;
   align-items: center;
@@ -260,7 +250,6 @@ td.admin-actions {
   border-radius: 12px;
 }
 
-/* Dùng nếu muốn bọc action bằng div riêng */
 .admin-action-group {
   display: inline-flex;
   align-items: center;
@@ -305,7 +294,6 @@ td.admin-actions {
 
 /* =========================
    Product actions
-   Giữ lại để không ảnh hưởng trang Product hiện tại
 ========================= */
 
 td.product-actions {
@@ -344,40 +332,39 @@ td.product-actions {
   white-space: nowrap;
 }
 
-/* DISCOUNT */
 .badge-blue {
   background: #3b82f6;
 }
 
-/* FREESHIP */
 .badge-green {
   background: #22c55e;
 }
 
-/* PRODUCT */
 .badge-purple {
   background: #a855f7;
 }
 
-/* fallback */
 .badge-gray {
   background: #6b7280;
 }
 
 /* =========================================================
-   Unified Promotion List - Wide Layout Fix
+   Unified Promotion List - Final Layout
    Scope: promotion_list.jsp
-   Chỉ dùng cho trang /admin/promotions
 ========================================================= */
 
 .admin-promo-page .admin-promo-container {
   width: 100%;
-  max-width: 1680px;
+  max-width: none;
   margin-left: auto;
   margin-right: auto;
-  padding-left: 18px;
-  padding-right: 18px;
+  padding-left: 22px;
+  padding-right: 22px;
 }
+
+/* =========================
+   Topbar
+========================= */
 
 .admin-promotion-topbar {
   display: grid;
@@ -447,10 +434,11 @@ td.product-actions {
 
 .admin-promo-list-card {
   width: 100%;
+  overflow: hidden;
 }
 
 .admin-promo-list-card .admin-card__body {
-  overflow: visible;
+  overflow: hidden;
 }
 
 /* =========================
@@ -469,21 +457,17 @@ td.product-actions {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-
   min-height: 38px;
   padding: 0 13px;
   border-radius: 999px;
   border: 1px solid var(--admin-border);
-
   background: #fff;
   color: rgba(15, 23, 42, 0.72);
   text-decoration: none;
-
   font-size: 13px;
   font-weight: 850;
   line-height: 1;
   white-space: nowrap;
-
   transition:
           background 0.14s ease,
           border-color 0.14s ease,
@@ -517,13 +501,14 @@ td.product-actions {
 
 .admin-promo-filter-form {
   display: grid;
-  grid-template-columns: minmax(340px, 1fr) 210px 72px auto;
+  grid-template-columns: minmax(420px, 1fr) 220px 76px auto;
   gap: 10px;
   align-items: center;
 }
 
 .admin-promo-search {
   width: 100%;
+  min-width: 360px;
 }
 
 .admin-promo-status-filter {
@@ -543,17 +528,20 @@ td.product-actions {
 .admin-promo-table-wrap {
   width: 100%;
   overflow-x: auto;
+  overflow-y: visible;
   border-radius: var(--admin-radius);
+  padding-bottom: 2px;
 }
 
 .admin-promo-table {
   width: 100%;
-  min-width: 1540px;
+  min-width: 1320px;
   table-layout: fixed;
 }
 
 .admin-promo-table th,
 .admin-promo-table td {
+  padding: 10px 8px;
   vertical-align: middle;
 }
 
@@ -562,44 +550,45 @@ td.product-actions {
   white-space: nowrap;
 }
 
+/* Cột bảng đã thu gọn để không cắt cột thao tác */
 .admin-promo-col-id {
-  width: 56px;
+  width: 52px;
 }
 
 .admin-promo-col-type {
-  width: 160px;
+  width: 148px;
 }
 
 .admin-promo-col-title {
-  width: 210px;
-}
-
-.admin-promo-col-scope {
-  width: 190px;
-}
-
-.admin-promo-col-discount-type {
-  width: 112px;
-}
-
-.admin-promo-col-value {
-  width: 96px;
-}
-
-.admin-promo-col-condition {
-  width: 250px;
-}
-
-.admin-promo-col-period {
   width: 178px;
 }
 
+.admin-promo-col-scope {
+  width: 164px;
+}
+
+.admin-promo-col-discount-type {
+  width: 102px;
+}
+
+.admin-promo-col-value {
+  width: 78px;
+}
+
+.admin-promo-col-condition {
+  width: 205px;
+}
+
+.admin-promo-col-period {
+  width: 156px;
+}
+
 .admin-promo-col-status {
-  width: 120px;
+  width: 106px;
 }
 
 .admin-promo-col-actions {
-  width: 220px;
+  width: 148px;
 }
 
 .admin-promo-id-cell {
@@ -632,7 +621,7 @@ td.product-actions {
   max-width: 100%;
   color: rgba(15, 23, 42, 0.74);
   font-size: 13px;
-  line-height: 1.45;
+  line-height: 1.42;
   overflow-wrap: anywhere;
 }
 
@@ -653,19 +642,19 @@ td.product-actions {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-
+  max-width: 100%;
   min-height: 26px;
   padding: 0 10px;
   border-radius: 999px;
   border: 1px solid var(--admin-border);
-
   background: rgba(15, 23, 42, 0.035);
   color: rgba(15, 23, 42, 0.72);
-
   font-size: 12px;
   font-weight: 900;
   line-height: 1;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .admin-promo-type--coupon {
@@ -697,19 +686,19 @@ td.product-actions {
 ========================= */
 
 .admin-promo-period-cell {
-  min-width: 178px;
+  min-width: 156px;
 }
 
 .admin-promo-period {
   display: grid;
   gap: 5px;
-  min-width: 154px;
+  min-width: 138px;
 }
 
 .admin-promo-period__row {
   display: grid;
-  grid-template-columns: 36px minmax(0, 1fr);
-  gap: 6px;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 5px;
   align-items: center;
 }
 
@@ -717,12 +706,12 @@ td.product-actions {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 22px;
-  padding: 0 6px;
+  min-height: 20px;
+  padding: 0 5px;
   border-radius: 999px;
   background: rgba(15, 23, 42, 0.05);
   color: var(--admin-muted);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 900;
   line-height: 1;
 }
@@ -740,18 +729,23 @@ td.product-actions {
 ========================= */
 
 .admin-promo-action-cell {
+  width: 148px;
+  min-width: 148px;
   white-space: nowrap;
+  overflow: visible;
 }
 
 .admin-promo-actions {
   display: grid;
-  grid-template-columns: repeat(3, 58px);
-  gap: 8px;
+  grid-template-columns: repeat(3, 42px);
+  gap: 6px;
   align-items: center;
   justify-content: start;
+  width: 138px;
 }
 
 .admin-promo-actions form {
+  width: 42px;
   margin: 0;
 }
 
@@ -761,12 +755,12 @@ td.product-actions {
 }
 
 .admin-promo-action-btn {
-  width: 58px;
-  min-width: 58px;
-  height: 34px;
-  padding: 0 8px;
+  width: 42px;
+  min-width: 42px;
+  height: 32px;
+  padding: 0;
   justify-content: center;
-  border-radius: 11px;
+  border-radius: 10px;
   font-size: 12px;
   font-weight: 850;
 }
@@ -776,16 +770,16 @@ td.product-actions {
 ========================= */
 
 @media (max-width: 1500px) {
-  .admin-promo-page .admin-promo-container {
-    max-width: 1480px;
-  }
-
   .admin-promotion-create {
     grid-template-columns: repeat(2, minmax(170px, 1fr));
   }
 
   .admin-promo-create-btn {
     width: 100%;
+  }
+
+  .admin-promo-table {
+    min-width: 1320px;
   }
 }
 
@@ -805,7 +799,7 @@ td.product-actions {
   }
 
   .admin-promo-filter-form {
-    grid-template-columns: 1fr 210px 72px auto;
+    grid-template-columns: 1fr 220px 76px auto;
   }
 }
 
@@ -815,7 +809,7 @@ td.product-actions {
   }
 
   .admin-promo-table {
-    min-width: 1540px;
+    min-width: 1320px;
   }
 
   .admin-card__body {
@@ -858,6 +852,10 @@ td.product-actions {
     width: 100%;
   }
 
+  .admin-promo-search {
+    min-width: 0;
+  }
+
   .admin-promo-stats {
     grid-template-columns: 1fr;
   }
@@ -893,7 +891,7 @@ td.product-actions {
   .admin-action-group .admin-btn,
   .product-actions-inner .admin-btn,
   .admin-promo-action-btn {
-    padding: 0 8px;
+    padding: 0;
     font-size: 12px;
   }
 }
