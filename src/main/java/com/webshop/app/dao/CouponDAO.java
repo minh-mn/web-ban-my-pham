@@ -406,28 +406,34 @@ public class CouponDAO {
     public List<Coupon> findActiveCouponsForHome() {
         List<Coupon> coupons = new ArrayList<>();
 
+        // Thêm LEFT JOIN store_brand b ON c.brand_id = b.id
         String sql = """
-                SELECT
-                """ + COUPON_SELECT_COLUMNS + """
-                FROM store_coupon c
-                LEFT JOIN store_brand b ON c.brand_id = b.id
-                WHERE c.is_active = 1
-                  AND (c.start_date IS NULL OR c.start_date <= CURDATE())
-                  AND (c.end_date IS NULL OR c.end_date >= CURDATE())
-                  AND (c.max_uses <= 0 OR c.used_count < c.max_uses)
-                ORDER BY c.discount_value DESC, c.discount_percent DESC, c.id DESC
-                LIMIT 6
-                """;
+            SELECT
+            c.id, c.code, c.discount_percent, c.discount_type, c.discount_value,
+            c.max_discount_amount, c.max_uses, c.used_count, c.is_active,
+            c.start_date, c.end_date, c.type, c.description, c.min_order_amount,
+            c.min_rank_code, c.apply_scope, c.brand_id,
+            b.name AS brand_name 
+            FROM store_coupon c
+            LEFT JOIN store_brand b ON c.brand_id = b.id
+            WHERE c.is_active = 1
+              AND (c.start_date IS NULL OR c.start_date <= CURDATE())
+              AND (c.end_date IS NULL OR c.end_date >= CURDATE())
+              AND (c.max_uses <= 0 OR c.used_count < c.max_uses)
+            ORDER BY c.discount_percent DESC, c.id DESC
+            LIMIT 6
+            """;
 
         try (Connection connection = DBConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql);
              ResultSet resultSet = statement.executeQuery()) {
 
             while (resultSet.next()) {
-                coupons.add(mapRow(resultSet));
+                Coupon coupon = mapRow(resultSet);
+                // Gán thêm brandName vào model nếu cần
+                coupon.setBrandName(resultSet.getString("brand_name"));
+                coupons.add(coupon);
             }
-
-            attachSelectedProductIds(coupons);
 
         } catch (SQLException e) {
             throw new RuntimeException("CouponDAO.findActiveCouponsForHome error", e);
