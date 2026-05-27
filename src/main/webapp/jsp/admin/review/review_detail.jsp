@@ -2,9 +2,9 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 
-<c:set var="pageTitle" value="ADMIN | Đánh giá" scope="request"/>
+<c:set var="pageTitle" value="ADMIN | Chi tiết đánh giá" scope="request"/>
 <c:set var="activeMenu" value="reviews" scope="request"/>
-<c:set var="pageCss" value="/assets/css/admin/admin-list.css" scope="request"/>
+<c:set var="pageCss" value="/assets/css/admin/admin-form.css" scope="request"/>
 
 <jsp:include page="/jsp/admin/layout/header.jsp"/>
 <jsp:include page="/jsp/admin/layout/sidebar.jsp"/>
@@ -14,115 +14,96 @@
 
     <div class="admin-topbar">
       <div>
-        <h1 class="admin-h1">Reviews</h1>
-        <p class="admin-subtext">Danh sách đánh giá sản phẩm (rating/comment/AI).</p>
+        <h1 class="admin-h1">Chi tiết đánh giá #${review.id}</h1>
+        <p class="admin-subtext">Kiểm duyệt nội dung, ẩn/hiện đánh giá và cấp voucher sau khi duyệt.</p>
       </div>
+      <a class="admin-btn" href="${pageContext.request.contextPath}/admin/reviews">Quay lại</a>
     </div>
 
     <div class="admin-card">
       <div class="admin-card__body">
 
-        <!-- TOOLBAR -->
-        <div class="admin-toolbar">
-          <form method="get"
-                action="${pageContext.request.contextPath}/admin/reviews"
-                class="admin-toolbar__form">
+        <div class="admin-form-grid">
+          <div class="admin-field">
+            <label>Trạng thái</label>
+            <div><span class="admin-pill ${review.statusCssClass}"><c:out value="${review.statusLabel}" /></span></div>
+          </div>
 
-            <input class="admin-input" type="number" name="rating" min="1" max="5"
-                   value="${param.rating}" placeholder="Rating (1-5)">
+          <div class="admin-field">
+            <label>Voucher</label>
+            <div>
+              <c:choose>
+                <c:when test="${review.voucherAwarded}"><span class="admin-pill admin-pill--ok">Đã cấp voucher</span></c:when>
+                <c:otherwise><span class="admin-pill admin-pill--warning">Chưa cấp</span></c:otherwise>
+              </c:choose>
+            </div>
+          </div>
 
-            <input class="admin-input" type="number" name="productId"
-                   value="${param.productId}" placeholder="Product ID">
+          <div class="admin-field">
+            <label>Sản phẩm</label>
+            <div><strong><c:out value="${review.productName}" /></strong> (#${review.productId})</div>
+          </div>
 
-            <input class="admin-input" type="number" name="authorId"
-                   value="${param.authorId}" placeholder="Author ID">
+          <div class="admin-field">
+            <label>Người đánh giá</label>
+            <div><c:out value="${review.authorName}" /> (#${review.authorId})</div>
+          </div>
 
-            <button class="admin-btn" type="submit">Lọc</button>
+          <div class="admin-field">
+            <label>Số sao</label>
+            <div><strong>${review.rating}★</strong></div>
+          </div>
 
-            <c:if test="${not empty param.rating || not empty param.productId || not empty param.authorId}">
-              <a class="admin-btn" href="${pageContext.request.contextPath}/admin/reviews">Xóa lọc</a>
-            </c:if>
-          </form>
+          <div class="admin-field">
+            <label>Thời gian gửi</label>
+            <div><fmt:formatDate value="${review.createdAtDate}" pattern="dd/MM/yyyy HH:mm" /></div>
+          </div>
+
+          <div class="admin-field admin-field--full">
+            <label>Bình luận</label>
+            <div class="admin-help" style="white-space: pre-wrap;"><c:out value="${review.comment}" /></div>
+          </div>
+
+          <c:if test="${review.hasImage || review.hasVideo}">
+            <div class="admin-field admin-field--full">
+              <label>Hình ảnh / video</label>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <c:if test="${review.hasImage && not empty review.imageUrl}">
+                  <a class="admin-btn" href="${review.imageUrl}" target="_blank" rel="noopener">Mở ảnh</a>
+                </c:if>
+                <c:if test="${review.hasVideo && not empty review.videoUrl}">
+                  <a class="admin-btn" href="${review.videoUrl}" target="_blank" rel="noopener">Mở video</a>
+                </c:if>
+              </div>
+            </div>
+          </c:if>
         </div>
 
-        <c:choose>
-          <c:when test="${empty reviews}">
-            <div class="admin-empty">Chưa có đánh giá.</div>
-          </c:when>
+        <hr style="border:none;border-top:1px solid #eef2f7;margin:22px 0;">
 
-          <c:otherwise>
-            <table class="admin-table">
-              <thead>
-                <tr>
-                  <th style="width:90px;">ID</th>
-                  <th style="width:110px;">Product</th>
-                  <th style="width:110px;">Author</th>
-                  <th style="width:120px;">Rating</th>
-                  <th>Bình luận</th>
-                  <th style="width:190px;">AI</th>
-                  <th style="width:190px;">Thời gian</th>
-                  <th style="width:240px;">Thao tác</th>
-                </tr>
-              </thead>
+        <form method="post" action="${pageContext.request.contextPath}/admin/reviews" class="admin-form">
+          <%@ include file="/jsp/common/csrf.jspf" %>
+          <input type="hidden" name="id" value="${review.id}" />
 
-              <tbody>
-                <c:forEach var="r" items="${reviews}">
-                  <tr>
-                    <td>#${r.id}</td>
-                    <td>${r.productId}</td>
-                    <td>${r.authorId}</td>
-                    <td><strong>${r.rating}★</strong></td>
+          <div class="admin-field">
+            <label for="adminNote">Ghi chú kiểm duyệt</label>
+            <textarea id="adminNote" name="adminNote" class="admin-textarea" rows="4" placeholder="Nhập lý do duyệt/từ chối nếu cần..."><c:out value="${review.adminNote}" /></textarea>
+          </div>
 
-                    <td>
-                      <div class="admin-break">
-                        <c:out value="${r.comment}"/>
-                      </div>
-                    </td>
-
-                    <td>
-                      <c:choose>
-                        <c:when test="${r.sentiment == 1}">
-                          <span class="admin-pill admin-pill--ok">POS</span>
-                        </c:when>
-                        <c:otherwise>
-                          <span class="admin-pill admin-pill--danger">NEG</span>
-                        </c:otherwise>
-                      </c:choose>
-
-                      <c:if test="${r.hasEmoji}">
-                        <span class="admin-pill" style="margin-left:6px;">EMOJI</span>
-                      </c:if>
-                    </td>
-
-                    <td class="admin-muted">
-                      <fmt:formatDate value="${r.createdAtDate}" pattern="dd/MM/yyyy HH:mm"/>
-                    </td>
-
-                    <td class="admin-actions">
-                      <a class="admin-btn"
-                         href="${pageContext.request.contextPath}/admin/reviews?action=detail&id=${r.id}">
-                        Xem
-                      </a>
-
-                      <form method="post"
-                            action="${pageContext.request.contextPath}/admin/reviews"
-                            class="admin-inline"
-                            onsubmit="return confirm('Xóa review này?');">
-
-                        <!-- ✅ CSRF (STATIC INCLUDE - KHÔNG VỠ UI) -->
-                        <%@ include file="/jsp/common/csrf.jspf" %>
-
-                        <input type="hidden" name="action" value="delete"/>
-                        <input type="hidden" name="id" value="${r.id}"/>
-                        <button class="admin-btn admin-btn--danger" type="submit">Xóa</button>
-                      </form>
-                    </td>
-                  </tr>
-                </c:forEach>
-              </tbody>
-            </table>
-          </c:otherwise>
-        </c:choose>
+          <div class="admin-actions">
+            <button class="admin-btn admin-btn--ok" type="submit" name="action" value="approve">Duyệt và cấp voucher</button>
+            <button class="admin-btn admin-btn--danger" type="submit" name="action" value="reject" onclick="return confirm('Từ chối đánh giá này?');">Từ chối</button>
+            <c:choose>
+              <c:when test="${review.hidden}">
+                <button class="admin-btn" type="submit" name="action" value="unhide">Hiện lại</button>
+              </c:when>
+              <c:otherwise>
+                <button class="admin-btn" type="submit" name="action" value="hide">Ẩn đánh giá</button>
+              </c:otherwise>
+            </c:choose>
+            <button class="admin-btn admin-btn--danger" type="submit" name="action" value="delete" onclick="return confirm('Xóa vĩnh viễn đánh giá này?');">Xóa</button>
+          </div>
+        </form>
 
       </div>
     </div>
