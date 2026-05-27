@@ -1,26 +1,52 @@
 package com.webshop.app.controller.ReviewController;
 
-import com.webshop.app.dao.ReviewDAO;
-import com.webshop.app.model.Review;
+import com.webshop.app.dao.ReviewSubmitDAO;
+import com.webshop.app.model.ReviewMedia;
 import com.webshop.app.model.User;
 
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.Part;
 
 import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.text.Normalizer;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Locale;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @WebServlet(name = "ReviewServlet", urlPatterns = {"/orders/review/submit", "/review"})
+@MultipartConfig(
+        fileSizeThreshold = 1024 * 1024,
+        maxFileSize = 50L * 1024 * 1024,
+        maxRequestSize = 90L * 1024 * 1024
+)
 public class ReviewServlet extends HttpServlet {
 
-    private static final long serialVersionUID = 1L;
+    private static final int MAX_IMAGES = 5;
+    private static final long MAX_IMAGE_SIZE = 5L * 1024 * 1024;
+    private static final long MAX_VIDEO_SIZE = 50L * 1024 * 1024;
 
-    private final ReviewDAO reviewDAO = new ReviewDAO();
+    private static final String[] ALLOWED_IMAGE_TYPES = {
+            "image/jpeg", "image/png", "image/webp"
+    };
+
+    private static final String[] ALLOWED_VIDEO_TYPES = {
+            "video/mp4", "video/webm"
+    };
+
+    private final ReviewSubmitDAO reviewSubmitDAO = new ReviewSubmitDAO();
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
@@ -29,170 +55,295 @@ public class ReviewServlet extends HttpServlet {
         request.setCharacterEncoding("UTF-8");
         response.setCharacterEncoding("UTF-8");
 
-        HttpSession session = request.getSession(false);
-        User user = session != null ? (User) session.getAttribute("user") : null;
-
+        User user = (User) request.getSession().getAttribute("user");
         if (user == null) {
             response.sendRedirect(request.getContextPath() + "/login");
             return;
         }
 
-        int productId = parseInt(request.getParameter("productId"), -1);
-        int orderId = parseInt(request.getParameter("orderId"), -1);
-        int orderItemId = parseInt(request.getParameter("orderItemId"), -1);
+        long orderId = parseLong(request.getParameter("orderId"), 0L);
+        long productId = parseLong(request.getParameter("productId"), 0L);
+        Long orderItemId = parseNullableLong(request.getParameter("orderItemId"));
+
         int rating = parseInt(request.getParameter("rating"), 5);
-
-        String comment = safeTrim(request.getParameter("comment"));
-        String imageUrl = safeTrim(request.getParameter("imageUrl"));
-        String videoUrl = safeTrim(request.getParameter("videoUrl"));
-        String slug = safeTrim(request.getParameter("slug"));
-
         rating = Math.max(1, Math.min(5, rating));
 
-        if (productId <= 0) {
-            redirectWithError(request, response, "/products", "product_invalid");
+        String comment = clean(request.getParameter("comment"));
+        boolean anonymous = "1".equals(request.getParameter("anonymous")) || "on".equalsIgnoreCase(request.getParameter("anonymous"));
+
+        int sellerServiceRating = clampRating(parseInt(request.getParameter("sellerServiceRating"), 5));
+        int deliverySpeedRating = clampRating(parseInt(request.getParameter("deliverySpeedRating"), 5));
+        int shipperRating = clampRating(parseInt(request.getParameter("shipperRating"), 5));
+        String serviceComment = clean(request.getParameter("serviceComment"));
+        String serviceTags = joinParameterValues(request.getParameterValues("serviceTags"));
+
+        String backToForm = request.getContextPath() + "/orders/review?orderId=" + orderId + "&productId=" + productId;
+        if (orderItemId != null) {
+            backToForm += "&orderItemId=" + orderItemId;
+        }
+
+        if (orderId <= 0 || productId <= 0) {
+            redirectWithError(response, backToForm, "Thiếu thông tin đơn hàng hoặc sản phẩm.");
             return;
         }
 
-        if (comment == null || comment.length() < 5) {
-            redirectBack(request, response, orderId, productId, slug, "comment_required");
+        if (comment.length() < 10) {
+            redirectWithError(response, backToForm, "Vui lòng nhập nội dung đánh giá ít nhất 10 ký tự.");
             return;
         }
 
-        Review review = new Review();
-        review.setProductId(productId);
-        review.setAuthorId(user.getId());
-        review.setRating(rating);
-        review.setComment(comment);
-        review.setHasEmoji(containsEmoji(comment));
-        review.setSentiment(detectSimpleSentiment(comment));
+        if (!reviewSubmitDAO.canReview(user.getId(), orderId, productId, orderItemId)) {
+            redirectWithError(response, request.getContextPath() + "/orders/detail?id=" + orderId,
+                    "Bạn chỉ có thể đánh giá sản phẩm trong đơn hàng đã giao thành công.");
+            return;
+        }
 
-        boolean canReview;
+        if (reviewSubmitDAO.hasReviewedOrderItem(user.getId(), orderId, productId, orderItemId)) {
+            redirectWithError(response, request.getContextPath() + "/orders/detail?id=" + orderId,
+                    "Bạn đã đánh giá sản phẩm này trong đơn hàng rồi.");
+            return;
+        }
+
+        List<ReviewMedia> mediaList;
         try {
-            if (orderId > 0 && orderItemId > 0) {
-                canReview = reviewDAO.canUserReviewOrderItem(user.getId(), orderId, orderItemId, productId);
-                review.setOrderId(orderId);
-                review.setOrderItemId(orderItemId);
-            } else {
-                canReview = reviewDAO.canUserReviewProduct(user.getId(), productId);
-                if (orderId > 0) {
-                    review.setOrderId(orderId);
-                }
-            }
-        } catch (RuntimeException ex) {
-            throw new ServletException("Không thể kiểm tra điều kiện gửi đánh giá", ex);
-        }
-
-        if (!canReview) {
-            redirectBack(request, response, orderId, productId, slug, "not_eligible");
+            mediaList = saveReviewMedia(request);
+        } catch (IllegalArgumentException e) {
+            redirectWithError(response, backToForm, e.getMessage());
             return;
         }
 
-        try {
-            reviewDAO.createOrUpdate(review, imageUrl, videoUrl);
-        } catch (RuntimeException ex) {
-            throw new ServletException("Không thể lưu đánh giá sản phẩm", ex);
+        String firstImageUrl = mediaList.stream()
+                .filter(ReviewMedia::isImage)
+                .map(ReviewMedia::getMediaUrl)
+                .findFirst()
+                .orElse(null);
+
+        String firstVideoUrl = mediaList.stream()
+                .filter(ReviewMedia::isVideo)
+                .map(ReviewMedia::getMediaUrl)
+                .findFirst()
+                .orElse(null);
+
+        int rewardPoints = calculatePotentialRewardPoints(comment, !mediaList.isEmpty());
+
+        ReviewSubmitDAO.CreateReviewRequest createRequest = new ReviewSubmitDAO.CreateReviewRequest(
+                user.getId(),
+                orderId,
+                productId,
+                orderItemId,
+                rating,
+                comment,
+                anonymous,
+                rewardPoints,
+                sellerServiceRating,
+                deliverySpeedRating,
+                shipperRating,
+                serviceTags,
+                serviceComment,
+                firstImageUrl,
+                firstVideoUrl,
+                mediaList
+        );
+
+        reviewSubmitDAO.createReview(createRequest);
+
+        request.getSession().setAttribute("successMessage",
+                "Đánh giá của bạn đã được gửi và đang chờ quản trị viên duyệt. Xu sẽ được cộng sau khi đánh giá được duyệt.");
+        response.sendRedirect(request.getContextPath() + "/orders/detail?id=" + orderId);
+    }
+
+    private List<ReviewMedia> saveReviewMedia(HttpServletRequest request) throws IOException, ServletException {
+        List<ReviewMedia> result = new ArrayList<>();
+
+        Collection<Part> imageParts = request.getParts()
+                .stream()
+                .filter(part -> "reviewImages".equals(part.getName()) && part.getSize() > 0)
+                .toList();
+
+        if (imageParts.size() > MAX_IMAGES) {
+            throw new IllegalArgumentException("Bạn chỉ được upload tối đa 5 ảnh cho mỗi đánh giá.");
         }
 
-        if (orderId > 0) {
-            response.sendRedirect(request.getContextPath()
-                    + "/orders/detail?id=" + orderId
-                    + "&success=review_pending");
-            return;
+        for (Part part : imageParts) {
+            validatePart(part, ALLOWED_IMAGE_TYPES, MAX_IMAGE_SIZE, "Ảnh", "JPG, PNG hoặc WEBP");
+            result.add(savePart(part, "IMAGE"));
         }
 
-        if (slug != null && !slug.isBlank()) {
-            String encodedSlug = URLEncoder.encode(slug, StandardCharsets.UTF_8.name());
-            response.sendRedirect(request.getContextPath()
-                    + "/product/" + encodedSlug
-                    + "?success=review_pending#reviews");
+        Part videoPart = getPartQuietly(request, "reviewVideo");
+        if (videoPart != null && videoPart.getSize() > 0) {
+            validatePart(videoPart, ALLOWED_VIDEO_TYPES, MAX_VIDEO_SIZE, "Video", "MP4 hoặc WEBM");
+            result.add(savePart(videoPart, "VIDEO"));
+        }
+
+        return result;
+    }
+
+    private ReviewMedia savePart(Part part, String mediaType) throws IOException {
+        String originalName = extractFileName(part);
+        String extension = getExtension(originalName);
+        String safeName = System.currentTimeMillis() + "_" + UUID.randomUUID().toString().replace("-", "") + extension;
+
+        Path targetDir = getUploadDir(mediaType);
+        Files.createDirectories(targetDir);
+
+        Path targetFile = targetDir.resolve(safeName);
+        try (InputStream inputStream = part.getInputStream()) {
+            Files.copy(inputStream, targetFile, StandardCopyOption.REPLACE_EXISTING);
+        }
+
+        ReviewMedia media = new ReviewMedia();
+        media.setMediaType(mediaType);
+        media.setMediaUrl("/uploads/review/" + ("IMAGE".equals(mediaType) ? "image" : "video") + "/" + safeName);
+        media.setOriginalName(originalName);
+        media.setFileSize(part.getSize());
+        media.setMimeType(part.getContentType());
+        return media;
+    }
+
+    private Path getUploadDir(String mediaType) {
+        String configuredDir = System.getProperty("mycosmetic.upload.dir");
+
+        Path baseDir;
+        if (configuredDir != null && !configuredDir.isBlank()) {
+            baseDir = Paths.get(configuredDir.trim());
         } else {
-            response.sendRedirect(request.getContextPath() + "/products?success=review_pending");
-        }
-    }
-
-    private void redirectBack(HttpServletRequest request,
-                              HttpServletResponse response,
-                              int orderId,
-                              int productId,
-                              String slug,
-                              String error) throws IOException {
-        if (orderId > 0) {
-            response.sendRedirect(request.getContextPath()
-                    + "/orders/review?orderId=" + orderId
-                    + "&productId=" + productId
-                    + "&error=" + encode(error));
-            return;
+            baseDir = Paths.get(System.getProperty("user.home"), "MyCosmeticShopUploads");
         }
 
-        if (slug != null && !slug.isBlank()) {
-            String encodedSlug = URLEncoder.encode(slug, StandardCharsets.UTF_8.name());
-            response.sendRedirect(request.getContextPath()
-                    + "/product/" + encodedSlug
-                    + "?error=" + encode(error)
-                    + "#reviews");
-        } else {
-            response.sendRedirect(request.getContextPath()
-                    + "/products?error=" + encode(error));
+        if ("IMAGE".equals(mediaType)) {
+            return baseDir.resolve("review").resolve("image");
         }
+        return baseDir.resolve("review").resolve("video");
     }
 
-    private void redirectWithError(HttpServletRequest request,
-                                   HttpServletResponse response,
-                                   String path,
-                                   String error) throws IOException {
-        response.sendRedirect(request.getContextPath() + path + "?error=" + encode(error));
-    }
+    private void validatePart(Part part,
+                              String[] allowedTypes,
+                              long maxSize,
+                              String label,
+                              String allowedText) {
+        String contentType = part.getContentType();
+        boolean typeOk = false;
 
-    private String encode(String value) {
-        return URLEncoder.encode(value == null ? "" : value, StandardCharsets.UTF_8);
-    }
-
-    private int parseInt(String value, int defaultValue) {
-        try {
-            if (value == null || value.trim().isEmpty()) {
-                return defaultValue;
+        for (String allowedType : allowedTypes) {
+            if (allowedType.equalsIgnoreCase(contentType)) {
+                typeOk = true;
+                break;
             }
-            return Integer.parseInt(value.trim());
-        } catch (Exception ex) {
+        }
+
+        if (!typeOk) {
+            throw new IllegalArgumentException(label + " chỉ hỗ trợ định dạng " + allowedText + ".");
+        }
+
+        if (part.getSize() > maxSize) {
+            throw new IllegalArgumentException(label + " vượt quá dung lượng cho phép. Dung lượng tối đa là " + formatSize(maxSize) + ".");
+        }
+    }
+
+    private Part getPartQuietly(HttpServletRequest request, String name) throws IOException, ServletException {
+        try {
+            return request.getPart(name);
+        } catch (IllegalStateException e) {
+            throw e;
+        }
+    }
+
+    private int calculatePotentialRewardPoints(String comment, boolean hasMedia) {
+        int points = 0;
+
+        if (comment != null && comment.trim().length() >= 50) {
+            points += 200;
+        }
+
+        if (hasMedia) {
+            points += 200;
+        }
+
+        // 200 xu chỉ được cộng thực tế khi admin duyệt, nhưng lưu vào reward_points để thể hiện tổng có thể nhận.
+        points += 200;
+
+        return Math.min(points, 600);
+    }
+
+    private static String extractFileName(Part part) {
+        String submittedFileName = part.getSubmittedFileName();
+        if (submittedFileName == null || submittedFileName.isBlank()) {
+            return "upload";
+        }
+        return Paths.get(submittedFileName).getFileName().toString();
+    }
+
+    private static String getExtension(String fileName) {
+        if (fileName == null) {
+            return "";
+        }
+
+        String normalized = Normalizer.normalize(fileName, Normalizer.Form.NFD)
+                .replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
+                .toLowerCase(Locale.ROOT);
+
+        int dot = normalized.lastIndexOf('.');
+        if (dot < 0) {
+            return "";
+        }
+
+        String extension = normalized.substring(dot);
+        return extension.replaceAll("[^a-z0-9.]", "");
+    }
+
+    private static int clampRating(int value) {
+        return Math.max(1, Math.min(5, value));
+    }
+
+    private static long parseLong(String value, long defaultValue) {
+        try {
+            return Long.parseLong(value);
+        } catch (Exception e) {
             return defaultValue;
         }
     }
 
-    private String safeTrim(String value) {
-        if (value == null || value.trim().isEmpty()) {
+    private static Long parseNullableLong(String value) {
+        if (value == null || value.isBlank()) {
             return null;
+        }
+        try {
+            return Long.parseLong(value);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static int parseInt(String value, int defaultValue) {
+        try {
+            return Integer.parseInt(value);
+        } catch (Exception e) {
+            return defaultValue;
+        }
+    }
+
+    private static String clean(String value) {
+        if (value == null) {
+            return "";
         }
         return value.trim();
     }
 
-    private boolean containsEmoji(String text) {
-        if (text == null) {
-            return false;
+    private static String joinParameterValues(String[] values) {
+        if (values == null || values.length == 0) {
+            return null;
         }
-
-        return text.codePoints().anyMatch(cp ->
-                (cp >= 0x1F300 && cp <= 0x1FAFF)
-                        || (cp >= 0x2600 && cp <= 0x27BF)
-        );
+        return java.util.Arrays.stream(values)
+                .filter(v -> v != null && !v.isBlank())
+                .map(String::trim)
+                .collect(Collectors.joining(", "));
     }
 
-    private int detectSimpleSentiment(String comment) {
-        if (comment == null) {
-            return 1;
-        }
+    private static String formatSize(long bytes) {
+        return String.format(Locale.US, "%.1fMB", bytes / 1024.0 / 1024.0);
+    }
 
-        String value = comment.toLowerCase();
-        String[] negativeWords = {
-                "tệ", "xấu", "kém", "không tốt", "thất vọng",
-                "lỗi", "hỏng", "dở", "khó chịu", "không hài lòng"
-        };
-
-        for (String word : negativeWords) {
-            if (value.contains(word)) {
-                return 0;
-            }
-        }
-        return 1;
+    private void redirectWithError(HttpServletResponse response, String url, String message) throws IOException {
+        response.sendRedirect(url + (url.contains("?") ? "&" : "?") + "error=" + java.net.URLEncoder.encode(message, java.nio.charset.StandardCharsets.UTF_8));
     }
 }
