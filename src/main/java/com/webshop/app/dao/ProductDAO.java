@@ -1032,4 +1032,98 @@ public class ProductDAO {
 
 		return builder.toString();
 	}
+
+	/**
+	 * Lấy danh sách sản phẩm thuộc phạm vi chương trình khuyến mãi (ALL, CATEGORY, BRAND)
+	 * và tự động tính toán lại giá khuyến mãi gán vào trường finalPrice của sản phẩm.
+	 */
+	public List<Product> findProductsByPromotion(com.webshop.app.model.PromotionEvent event) {
+		List<Product> list = new ArrayList<>();
+		if (event == null) return list;
+
+		// 1. Xây dựng câu lệnh SQL lấy các trường cơ bản từ bảng store_product
+		StringBuilder sql = new StringBuilder(
+				"SELECT id, title, slug, description, price, discount_percent, stock, image " +
+						"FROM store_product " +
+						"WHERE 1=1"
+		);
+
+		// Lọc động theo Scope của Sự kiện
+		if (event.getScope() == com.webshop.app.model.PromotionEvent.Scope.CATEGORY) {
+			sql.append(" AND category_id = ?");
+		} else if (event.getScope() == com.webshop.app.model.PromotionEvent.Scope.BRAND) {
+			sql.append(" AND brand_id = ?");
+		}
+
+		sql.append(" ORDER BY id DESC");
+
+		try (Connection conn = DBConnection.getConnection();
+		     PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+
+			// Gán tham số tương ứng với Scope
+			if (event.getScope() == com.webshop.app.model.PromotionEvent.Scope.CATEGORY) {
+				ps.setInt(1, event.getCategoryId());
+			} else if (event.getScope() == com.webshop.app.model.PromotionEvent.Scope.BRAND) {
+				ps.setInt(1, event.getBrandId());
+			}
+
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					// 2. TỰ MAP DỮ LIỆU ĐỂ SỬA LỖI CHƯA CÓ HÀM mapRow
+					Product p = new Product();
+					p.setId(rs.getInt("id"));
+					p.setTitle(rs.getString("title"));
+					p.setSlug(rs.getString("slug"));
+					p.setDescription(rs.getString("description"));
+					p.setPrice(rs.getBigDecimal("price"));
+					p.setDiscountPercent(rs.getInt("discount_percent"));
+					p.setStock(rs.getInt("stock"));
+					p.setImage(rs.getString("image"));
+
+					// 3. LOGIC TÍNH GIÁ KHUYẾN MÃI (Dùng chuỗi .name() để xử lý lỗi AMOUNT)
+					if (p.getPrice() != null) {
+						BigDecimal originalPrice = p.getPrice();
+						BigDecimal finalPrice = originalPrice; // Mặc định giữ nguyên nếu không khớp loại giảm giá
+
+						if (event.getDiscountType() != null) {
+							String typeName = event.getDiscountType().name(); // Lấy tên Enum dạng String
+
+							if ("PERCENT".equals(typeName)) {
+								// Tính số tiền được giảm theo %: gốc * (giá trị giảm / 100)
+								BigDecimal hundred = new BigDecimal("100");
+								BigDecimal discountAmount = originalPrice.multiply(event.getDiscountValue())
+										.divide(hundred, 2, java.math.RoundingMode.HALF_UP);
+
+								// Kiểm tra số tiền giảm tối đa (max_discount_amount) nếu có cấu hình
+								if (event.getMaxDiscountAmount() != null) {
+									if (discountAmount.compareTo(event.getMaxDiscountAmount()) > 0) {
+										discountAmount = event.getMaxDiscountAmount();
+									}
+								}
+								finalPrice = originalPrice.subtract(discountAmount);
+
+							} else if ("AMOUNT".equals(typeName) || "FIXED".equals(typeName) || "CASH".equals(typeName)) {
+								// Giảm thẳng số tiền cố định (Hỗ trợ linh hoạt bất kể tên Enum của bạn là gì)
+								finalPrice = originalPrice.subtract(event.getDiscountValue());
+							}
+						}
+
+						// Đảm bảo giá sau giảm không bị âm dưới 0đ
+						if (finalPrice.compareTo(BigDecimal.ZERO) < 0) {
+							finalPrice = BigDecimal.ZERO;
+						}
+
+						// Gán giá sau khi xử lý khuyến mãi vào finalPrice để mang ra hiển thị ở promotions.jsp
+						p.setFinalPrice(finalPrice);
+					}
+
+					list.add(p);
+				}
+			}
+		} catch (SQLException ex) {
+			throw new RuntimeException("ProductDAO.findProductsByPromotion error", ex);
+		}
+
+		return list;
+	}
 }
