@@ -3,9 +3,10 @@
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
-<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/base.css">
+<c:set var="ctx" value="${pageContext.request.contextPath}" />
 
-<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/product-list.css">
+<link rel="stylesheet" href="${ctx}/assets/css/base.css">
+<link rel="stylesheet" href="${ctx}/assets/css/product-list.css">
 
 <!-- ================= PAGE HEADER ================= -->
 <section class="section">
@@ -26,15 +27,120 @@
   <div class="container">
     <div class="product-page">
 
-      <!-- ===== SIDEBAR ===== -->
+      <!-- ================= SIDEBAR FILTER ================= -->
       <aside class="filter-sidebar">
         <jsp:include page="/jsp/product/category_filter.jsp" />
       </aside>
 
-      <!-- ===== MAIN ===== -->
+      <!-- ================= MAIN CONTENT ================= -->
       <div class="product-main">
 
-        <!-- ===== GRID ===== -->
+        <!-- ================= FILTER SUMMARY ================= -->
+        <div class="product-list-head">
+          <div>
+            <h3 class="product-list-title">Danh sách sản phẩm</h3>
+
+            <p class="product-list-desc">
+              Lọc sản phẩm theo danh mục, thương hiệu, mức giá và đánh giá để tìm sản phẩm phù hợp hơn.
+            </p>
+          </div>
+
+          <div class="product-list-count">
+            <c:choose>
+              <c:when test="${not empty products}">
+                ${fn:length(products)} sản phẩm
+              </c:when>
+              <c:otherwise>
+                0 sản phẩm
+              </c:otherwise>
+            </c:choose>
+          </div>
+        </div>
+
+        <!-- ================= ACTIVE FILTER TAGS ================= -->
+        <c:if test="${not empty param.q
+                    || not empty param.category
+                    || not empty param.brand
+                    || not empty param.priceRange
+                    || not empty param.rating
+                    || not empty param.sort}">
+          <div class="product-filter-tags">
+
+            <span class="product-filter-tags__label">Đang lọc:</span>
+
+            <c:if test="${not empty param.q}">
+              <span class="product-filter-tag">
+                Từ khóa:
+                <strong>
+                  <c:out value="${param.q}" />
+                </strong>
+              </span>
+            </c:if>
+
+            <c:if test="${not empty param.category}">
+              <span class="product-filter-tag">
+                Danh mục:
+                <strong>
+                  <c:out value="${param.category}" />
+                </strong>
+              </span>
+            </c:if>
+
+            <c:if test="${not empty param.brand}">
+              <span class="product-filter-tag">
+                Thương hiệu:
+                <strong>
+                  <c:out value="${param.brand}" />
+                </strong>
+              </span>
+            </c:if>
+
+            <c:if test="${not empty param.priceRange}">
+              <span class="product-filter-tag">
+                Giá:
+                <strong>
+                  <c:choose>
+                    <c:when test="${param.priceRange eq 'under-200'}">Dưới 200.000đ</c:when>
+                    <c:when test="${param.priceRange eq '200-500'}">200.000đ - 500.000đ</c:when>
+                    <c:when test="${param.priceRange eq '500-1000'}">500.000đ - 1.000.000đ</c:when>
+                    <c:when test="${param.priceRange eq 'over-1000'}">Trên 1.000.000đ</c:when>
+                    <c:otherwise><c:out value="${param.priceRange}" /></c:otherwise>
+                  </c:choose>
+                </strong>
+              </span>
+            </c:if>
+
+            <c:if test="${not empty param.rating}">
+              <span class="product-filter-tag">
+                Đánh giá:
+                <strong>
+                  Từ <c:out value="${param.rating}" /> sao
+                </strong>
+              </span>
+            </c:if>
+
+            <c:if test="${not empty param.sort}">
+              <span class="product-filter-tag">
+                Sắp xếp:
+                <strong>
+                  <c:choose>
+                    <c:when test="${param.sort eq 'price_asc'}">Giá tăng dần</c:when>
+                    <c:when test="${param.sort eq 'price_desc'}">Giá giảm dần</c:when>
+                    <c:when test="${param.sort eq 'rating_desc'}">Đánh giá cao</c:when>
+                    <c:when test="${param.sort eq 'newest'}">Mới nhất</c:when>
+                    <c:otherwise><c:out value="${param.sort}" /></c:otherwise>
+                  </c:choose>
+                </strong>
+              </span>
+            </c:if>
+
+            <a class="product-filter-clear" href="${ctx}/products">
+              Xóa bộ lọc
+            </a>
+          </div>
+        </c:if>
+
+        <!-- ================= PRODUCT GRID ================= -->
         <div class="product-grid">
           <c:choose>
 
@@ -55,21 +161,32 @@
                   </c:if>
 
                   <!-- IMAGE -->
-                  <div class="product-img-box">
-                    <c:choose>
-                      <c:when test="${not empty product.imageUrl}">
-                        <img
-                          src="${pageContext.request.contextPath}${product.imageUrl}"
-                          alt="${fn:escapeXml(product.title)}">
-                      </c:when>
-                      <c:otherwise>
-                        <div class="no-image">No image</div>
-                      </c:otherwise>
-                    </c:choose>
-                  </div>
+                  <a class="product-img-link"
+                     href="${ctx}/product/${product.slug}"
+                     aria-label="Xem chi tiết ${fn:escapeXml(product.title)}">
+
+                    <div class="product-img-box">
+                      <c:choose>
+                        <c:when test="${not empty product.imageUrl}">
+                          <img
+                                  src="${ctx}${product.imageUrl}"
+                                  alt="${fn:escapeXml(product.title)}">
+                        </c:when>
+
+                        <c:otherwise>
+                          <div class="no-image">No image</div>
+                        </c:otherwise>
+                      </c:choose>
+                    </div>
+                  </a>
 
                   <!-- TITLE -->
-                  <h3><c:out value="${product.title}"/></h3>
+                  <h3>
+                    <a class="product-title-link"
+                       href="${ctx}/product/${product.slug}">
+                      <c:out value="${product.title}" />
+                    </a>
+                  </h3>
 
                   <!-- RATING -->
                   <div class="rating-wrap">
@@ -81,6 +198,7 @@
                               <path d="M12 17.3l6.2 3.7-1.6-7 5.4-4.7-7.1-.6L12 2 9.1 8.7l-7.1.6 5.4 4.7-1.6 7z"/>
                             </svg>
                           </c:when>
+
                           <c:otherwise>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="#e0e0e0" aria-hidden="true">
                               <path d="M12 17.3l6.2 3.7-1.6-7 5.4-4.7-7.1-.6L12 2 9.1 8.7l-7.1.6 5.4 4.7-1.6 7z"/>
@@ -90,7 +208,9 @@
                       </c:forEach>
                     </div>
 
-                    <span class="rating-count">(<c:out value="${product.reviewCount}"/> đánh giá)</span>
+                    <span class="rating-count">
+                      (<c:out value="${product.reviewCount}" /> đánh giá)
+                    </span>
                   </div>
 
                   <!-- PRICE -->
@@ -100,11 +220,13 @@
                         <span class="old-price">
                           <fmt:formatNumber value="${product.price}" type="number" groupingUsed="true"/> ₫
                         </span>
+
                         <span class="sale-price">
                           <fmt:formatNumber value="${product.finalPrice}" type="number" groupingUsed="true"/> ₫
                         </span>
                       </p>
                     </c:when>
+
                     <c:otherwise>
                       <p class="price">
                         <fmt:formatNumber value="${product.price}" type="number" groupingUsed="true"/> ₫
@@ -117,16 +239,18 @@
                     <c:when test="${product.stock == 0}">
                       <div class="badge-out">Hết hàng</div>
                     </c:when>
+
                     <c:when test="${product.stock <= 5}">
                       <div class="badge-low">Sắp hết</div>
                     </c:when>
+
                     <c:otherwise>
                       <div class="stock-ok">Còn hàng</div>
                     </c:otherwise>
                   </c:choose>
 
                   <!-- DETAIL -->
-                  <a href="${pageContext.request.contextPath}/product/${product.slug}" class="btn-outline">
+                  <a href="${ctx}/product/${product.slug}" class="btn-outline">
                     Xem chi tiết
                   </a>
 
@@ -135,7 +259,17 @@
             </c:when>
 
             <c:otherwise>
-              <p style="text-align:center; color:#888;">Chưa có sản phẩm nào.</p>
+              <div class="product-empty">
+                <div class="product-empty__title">Không tìm thấy sản phẩm phù hợp</div>
+
+                <div class="product-empty__text">
+                  Hãy thử chọn danh mục khác, bỏ bớt bộ lọc hoặc quay lại danh sách tất cả sản phẩm.
+                </div>
+
+                <a class="btn-outline" href="${ctx}/products">
+                  Xem tất cả sản phẩm
+                </a>
+              </div>
             </c:otherwise>
 
           </c:choose>
@@ -145,14 +279,60 @@
         <c:if test="${totalPages != null && totalPages > 1}">
           <div class="pagination">
 
+            <!-- Prev URL -->
+            <c:url var="prevPageUrl" value="/products">
+              <c:param name="page" value="${page - 1}" />
+              <c:if test="${not empty param.q}">
+                <c:param name="q" value="${param.q}" />
+              </c:if>
+              <c:if test="${not empty param.sort}">
+                <c:param name="sort" value="${param.sort}" />
+              </c:if>
+              <c:if test="${not empty param.priceRange}">
+                <c:param name="priceRange" value="${param.priceRange}" />
+              </c:if>
+              <c:if test="${not empty param.category}">
+                <c:param name="category" value="${param.category}" />
+              </c:if>
+              <c:if test="${not empty param.brand}">
+                <c:param name="brand" value="${param.brand}" />
+              </c:if>
+              <c:if test="${not empty param.rating}">
+                <c:param name="rating" value="${param.rating}" />
+              </c:if>
+            </c:url>
+
+            <!-- Next URL -->
+            <c:url var="nextPageUrl" value="/products">
+              <c:param name="page" value="${page + 1}" />
+              <c:if test="${not empty param.q}">
+                <c:param name="q" value="${param.q}" />
+              </c:if>
+              <c:if test="${not empty param.sort}">
+                <c:param name="sort" value="${param.sort}" />
+              </c:if>
+              <c:if test="${not empty param.priceRange}">
+                <c:param name="priceRange" value="${param.priceRange}" />
+              </c:if>
+              <c:if test="${not empty param.category}">
+                <c:param name="category" value="${param.category}" />
+              </c:if>
+              <c:if test="${not empty param.brand}">
+                <c:param name="brand" value="${param.brand}" />
+              </c:if>
+              <c:if test="${not empty param.rating}">
+                <c:param name="rating" value="${param.rating}" />
+              </c:if>
+            </c:url>
+
             <!-- Prev -->
             <c:choose>
               <c:when test="${page != null && page > 1}">
-                <a class="pg-btn"
-                   href="${pageContext.request.contextPath}/products?page=${page-1}&q=${fn:escapeXml(param.q)}&sort=${param.sort}&priceRange=${param.priceRange}&category=${param.category}&brand=${param.brand}&rating=${param.rating}">
+                <a class="pg-btn" href="${prevPageUrl}">
                   ‹
                 </a>
               </c:when>
+
               <c:otherwise>
                 <span class="pg-btn disabled">‹</span>
               </c:otherwise>
@@ -164,10 +344,32 @@
                 <c:when test="${p == page}">
                   <span class="pg-num active">${p}</span>
                 </c:when>
+
                 <c:otherwise>
-                  <a class="pg-num"
-                     href="${pageContext.request.contextPath}/products?page=${p}&q=${fn:escapeXml(param.q)}&sort=${param.sort}&priceRange=${param.priceRange}&category=${param.category}&brand=${param.brand}&rating=${param.rating}">
-                    ${p}
+                  <c:url var="pageUrl" value="/products">
+                    <c:param name="page" value="${p}" />
+                    <c:if test="${not empty param.q}">
+                      <c:param name="q" value="${param.q}" />
+                    </c:if>
+                    <c:if test="${not empty param.sort}">
+                      <c:param name="sort" value="${param.sort}" />
+                    </c:if>
+                    <c:if test="${not empty param.priceRange}">
+                      <c:param name="priceRange" value="${param.priceRange}" />
+                    </c:if>
+                    <c:if test="${not empty param.category}">
+                      <c:param name="category" value="${param.category}" />
+                    </c:if>
+                    <c:if test="${not empty param.brand}">
+                      <c:param name="brand" value="${param.brand}" />
+                    </c:if>
+                    <c:if test="${not empty param.rating}">
+                      <c:param name="rating" value="${param.rating}" />
+                    </c:if>
+                  </c:url>
+
+                  <a class="pg-num" href="${pageUrl}">
+                      ${p}
                   </a>
                 </c:otherwise>
               </c:choose>
@@ -176,11 +378,11 @@
             <!-- Next -->
             <c:choose>
               <c:when test="${page != null && page < totalPages}">
-                <a class="pg-btn"
-                   href="${pageContext.request.contextPath}/products?page=${page+1}&q=${fn:escapeXml(param.q)}&sort=${param.sort}&priceRange=${param.priceRange}&category=${param.category}&brand=${param.brand}&rating=${param.rating}">
+                <a class="pg-btn" href="${nextPageUrl}">
                   ›
                 </a>
               </c:when>
+
               <c:otherwise>
                 <span class="pg-btn disabled">›</span>
               </c:otherwise>
@@ -189,8 +391,7 @@
           </div>
         </c:if>
 
-      </div> <!-- /.product-main -->
-
+      </div>
     </div>
   </div>
 </section>
