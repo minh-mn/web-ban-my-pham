@@ -190,15 +190,28 @@
       </div>
     </div>
 
-    <section class="pd-review-section">
+    <section class="pd-review-section" id="reviews">
       <h2>Đánh giá từ khách hàng</h2>
 
+      <c:if test="${param.success == 'review_pending'}">
+        <div class="review-note" style="background:#ecfdf5;color:#166534;border:1px solid #bbf7d0;padding:12px 14px;border-radius:14px;margin-bottom:14px;">
+          Đánh giá của bạn đã được gửi và đang chờ quản trị viên duyệt. Sau khi duyệt, voucher cảm ơn sẽ được lưu vào tài khoản.
+        </div>
+      </c:if>
+
+      <c:if test="${param.error == 'not_eligible'}">
+        <div class="review-note" style="background:#fff1f2;color:#be123c;border:1px solid #fecdd3;padding:12px 14px;border-radius:14px;margin-bottom:14px;">
+          Bạn chỉ có thể đánh giá sản phẩm đã mua, đã thanh toán và đã giao thành công.
+        </div>
+      </c:if>
+
       <c:choose>
-        <c:when test="${not empty sessionScope.user}">
+        <c:when test="${not empty sessionScope.user && canReviewProduct}">
           <form method="post"
                 action="${pageContext.request.contextPath}/review"
                 class="review-form">
 
+            <input type="hidden" name="csrf_token" value="${sessionScope.CSRF_TOKEN}" />
             <input type="hidden" name="productId" value="${product.id}">
             <input type="hidden" name="slug" value="${product.slug}">
 
@@ -212,10 +225,27 @@
 
             <textarea name="comment"
                       placeholder="Chia sẻ cảm nhận của bạn về sản phẩm..."
+                      minlength="5"
                       required></textarea>
 
-            <button type="submit" class="btn-review">Gửi đánh giá</button>
+            <input type="url"
+                   name="imageUrl"
+                   class="review-media-input"
+                   placeholder="URL ảnh đánh giá nếu có">
+
+            <input type="url"
+                   name="videoUrl"
+                   class="review-media-input"
+                   placeholder="URL video đánh giá nếu có">
+
+            <button type="submit" class="btn-review">Gửi đánh giá chờ duyệt</button>
           </form>
+        </c:when>
+
+        <c:when test="${not empty sessionScope.user && !canReviewProduct}">
+          <p class="review-note">
+            Bạn có thể đánh giá sản phẩm này sau khi đơn hàng đã được giao thành công.
+          </p>
         </c:when>
 
         <c:otherwise>
@@ -224,6 +254,35 @@
           </p>
         </c:otherwise>
       </c:choose>
+
+      <form method="get" action="${pageContext.request.contextPath}/product/${product.slug}#reviews" class="review-filter-form">
+        <select name="reviewSort">
+          <option value="newest" ${reviewSort == 'newest' || empty reviewSort ? 'selected' : ''}>Gần nhất</option>
+          <option value="oldest" ${reviewSort == 'oldest' ? 'selected' : ''}>Cũ nhất</option>
+          <option value="highest" ${reviewSort == 'highest' ? 'selected' : ''}>Sao cao nhất</option>
+          <option value="lowest" ${reviewSort == 'lowest' ? 'selected' : ''}>Sao thấp nhất</option>
+          <option value="media" ${reviewSort == 'media' ? 'selected' : ''}>Có ảnh/video trước</option>
+        </select>
+
+        <select name="reviewRating">
+          <option value="" ${empty reviewRating ? 'selected' : ''}>Tất cả số sao</option>
+          <option value="5" ${reviewRating == 5 ? 'selected' : ''}>5 sao</option>
+          <option value="4" ${reviewRating == 4 ? 'selected' : ''}>4 sao</option>
+          <option value="3" ${reviewRating == 3 ? 'selected' : ''}>3 sao</option>
+          <option value="2" ${reviewRating == 2 ? 'selected' : ''}>2 sao</option>
+          <option value="1" ${reviewRating == 1 ? 'selected' : ''}>1 sao</option>
+        </select>
+
+        <select name="reviewMedia">
+          <option value="" ${empty reviewMedia ? 'selected' : ''}>Tất cả đánh giá</option>
+          <option value="IMAGE" ${reviewMedia == 'IMAGE' ? 'selected' : ''}>Có hình ảnh</option>
+          <option value="VIDEO" ${reviewMedia == 'VIDEO' ? 'selected' : ''}>Có video</option>
+          <option value="MEDIA" ${reviewMedia == 'MEDIA' ? 'selected' : ''}>Có ảnh hoặc video</option>
+        </select>
+
+        <button type="submit" class="btn-review-filter">Lọc</button>
+        <a href="${pageContext.request.contextPath}/product/${product.slug}#reviews" class="btn-review-filter clear">Xóa lọc</a>
+      </form>
 
       <c:choose>
         <c:when test="${not empty reviews}">
@@ -245,6 +304,17 @@
 
                 <p><c:out value="${r.comment}" /></p>
 
+                <c:if test="${r.hasImage || r.hasVideo}">
+                  <div class="review-media-preview">
+                    <c:if test="${r.hasImage && not empty r.imageUrl}">
+                      <a href="${r.imageUrl}" target="_blank" rel="noopener">Xem ảnh</a>
+                    </c:if>
+                    <c:if test="${r.hasVideo && not empty r.videoUrl}">
+                      <a href="${r.videoUrl}" target="_blank" rel="noopener">Xem video</a>
+                    </c:if>
+                  </div>
+                </c:if>
+
                 <span>
                   <fmt:formatDate value="${r.createdAtDate}" pattern="dd/MM/yyyy" />
                 </span>
@@ -254,11 +324,10 @@
         </c:when>
 
         <c:otherwise>
-          <p class="no-review">Chưa có đánh giá nào cho sản phẩm này.</p>
+          <p class="no-review">Chưa có đánh giá phù hợp với bộ lọc hiện tại.</p>
         </c:otherwise>
       </c:choose>
     </section>
-
   </div>
 </section>
 
