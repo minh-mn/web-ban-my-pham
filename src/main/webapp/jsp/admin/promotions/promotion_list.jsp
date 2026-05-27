@@ -8,12 +8,12 @@
 <jsp:include page="/jsp/admin/layout/header.jsp"/>
 <jsp:include page="/jsp/admin/layout/sidebar.jsp"/>
 
-<main class="admin-main">
-    <div class="admin-container">
+<main class="admin-main admin-promo-page">
+    <div class="admin-container admin-promo-container">
 
         <!-- TOPBAR -->
         <div class="admin-topbar admin-promotion-topbar">
-            <div>
+            <div class="admin-promotion-heading">
                 <h1 class="admin-h1">Khuyến mãi &amp; Mã giảm giá</h1>
                 <p class="admin-subtext">
                     Quản lý tập trung mã giảm giá, giảm giá thương hiệu, giảm theo giá trị đơn hàng
@@ -22,22 +22,22 @@
             </div>
 
             <div class="admin-promotion-create">
-                <a class="admin-btn admin-btn--primary"
+                <a class="admin-btn admin-btn--primary admin-promo-create-btn"
                    href="${pageContext.request.contextPath}/admin/promotions?action=new&type=COUPON">
                     + Tạo mã giảm giá
                 </a>
 
-                <a class="admin-btn"
+                <a class="admin-btn admin-promo-create-btn"
                    href="${pageContext.request.contextPath}/admin/promotions?action=new&type=BRAND">
                     + Giảm giá thương hiệu
                 </a>
 
-                <a class="admin-btn"
+                <a class="admin-btn admin-promo-create-btn"
                    href="${pageContext.request.contextPath}/admin/promotions?action=new&type=ORDER">
                     + Giảm theo đơn hàng
                 </a>
 
-                <a class="admin-btn"
+                <a class="admin-btn admin-promo-create-btn"
                    href="${pageContext.request.contextPath}/admin/promotions?action=new&type=EVENT">
                     + Chương trình khuyến mãi
                 </a>
@@ -73,7 +73,7 @@
         </div>
 
         <!-- MAIN CARD -->
-        <div class="admin-card">
+        <div class="admin-card admin-promo-list-card">
             <div class="admin-card__body">
 
                 <!-- TYPE TABS -->
@@ -119,7 +119,7 @@
                                value="${q}"
                                placeholder="Tìm theo mã, tên, thương hiệu, điều kiện...">
 
-                        <select class="admin-select" name="status">
+                        <select class="admin-select admin-promo-status-filter" name="status">
                             <option value="" ${empty status ? 'selected' : ''}>Tất cả trạng thái</option>
                             <option value="active" ${status == 'active' ? 'selected' : ''}>ACTIVE</option>
                             <option value="inactive" ${status == 'inactive' ? 'selected' : ''}>INACTIVE</option>
@@ -127,10 +127,10 @@
                             <option value="expired" ${status == 'expired' ? 'selected' : ''}>EXPIRED</option>
                         </select>
 
-                        <button class="admin-btn" type="submit">Lọc</button>
+                        <button class="admin-btn admin-promo-filter-btn" type="submit">Lọc</button>
 
                         <c:if test="${not empty q || not empty status}">
-                            <a class="admin-btn"
+                            <a class="admin-btn admin-promo-filter-btn"
                                href="${pageContext.request.contextPath}/admin/promotions?type=${promotionType}">
                                 Xóa lọc
                             </a>
@@ -151,16 +151,16 @@
                             <table class="admin-table admin-promo-table">
                                 <thead>
                                 <tr>
-                                    <th style="width:80px;">ID</th>
-                                    <th style="width:170px;">Loại</th>
-                                    <th style="min-width:230px;">Tên / Mã</th>
-                                    <th style="min-width:210px;">Phạm vi áp dụng</th>
-                                    <th style="width:150px;">Kiểu giảm</th>
-                                    <th style="width:150px;">Giá trị</th>
-                                    <th style="min-width:260px;">Điều kiện</th>
-                                    <th style="width:220px;">Thời gian</th>
-                                    <th style="width:140px;">Trạng thái</th>
-                                    <th style="width:240px;">Thao tác</th>
+                                    <th class="admin-promo-col-id">ID</th>
+                                    <th class="admin-promo-col-type">Loại</th>
+                                    <th class="admin-promo-col-title">Tên / Mã</th>
+                                    <th class="admin-promo-col-scope">Phạm vi áp dụng</th>
+                                    <th class="admin-promo-col-discount-type">Kiểu giảm</th>
+                                    <th class="admin-promo-col-value">Giá trị</th>
+                                    <th class="admin-promo-col-condition">Điều kiện</th>
+                                    <th class="admin-promo-col-period">Thời gian</th>
+                                    <th class="admin-promo-col-status">Trạng thái</th>
+                                    <th class="admin-promo-col-actions">Thao tác</th>
                                 </tr>
                                 </thead>
 
@@ -168,7 +168,7 @@
                                 <c:forEach var="row" items="${promotions}">
                                     <tr>
                                         <!-- ID -->
-                                        <td>
+                                        <td class="admin-promo-id-cell">
                                             <span class="admin-muted">#${row.id}</span>
                                         </td>
 
@@ -176,33 +176,33 @@
                                         <td>
                                             <c:choose>
                                                 <c:when test="${row.type == 'COUPON'}">
-                            <span class="admin-promo-type admin-promo-type--coupon">
-                                    ${row.typeLabel}
-                            </span>
+                          <span class="admin-promo-type admin-promo-type--coupon">
+                                  ${row.typeLabel}
+                          </span>
                                                 </c:when>
 
                                                 <c:when test="${row.type == 'BRAND'}">
-                            <span class="admin-promo-type admin-promo-type--brand">
-                                    ${row.typeLabel}
-                            </span>
+                          <span class="admin-promo-type admin-promo-type--brand">
+                                  ${row.typeLabel}
+                          </span>
                                                 </c:when>
 
                                                 <c:when test="${row.type == 'ORDER'}">
-                            <span class="admin-promo-type admin-promo-type--order">
-                                    ${row.typeLabel}
-                            </span>
+                          <span class="admin-promo-type admin-promo-type--order">
+                                  ${row.typeLabel}
+                          </span>
                                                 </c:when>
 
                                                 <c:when test="${row.type == 'EVENT'}">
-                            <span class="admin-promo-type admin-promo-type--event">
-                                    ${row.typeLabel}
-                            </span>
+                          <span class="admin-promo-type admin-promo-type--event">
+                                  ${row.typeLabel}
+                          </span>
                                                 </c:when>
 
                                                 <c:otherwise>
-                            <span class="admin-promo-type">
-                              <c:out value="${row.typeLabel}"/>
-                            </span>
+                          <span class="admin-promo-type">
+                            <c:out value="${row.typeLabel}"/>
+                          </span>
                                                 </c:otherwise>
                                             </c:choose>
                                         </td>
@@ -239,15 +239,15 @@
                                                 </c:when>
 
                                                 <c:otherwise>
-                            <span class="admin-muted">
-                              <c:out value="${empty row.discountType ? '—' : row.discountType}"/>
-                            </span>
+                          <span class="admin-muted">
+                            <c:out value="${empty row.discountType ? '—' : row.discountType}"/>
+                          </span>
                                                 </c:otherwise>
                                             </c:choose>
                                         </td>
 
                                         <!-- DISCOUNT VALUE -->
-                                        <td>
+                                        <td class="admin-promo-value-cell">
                                             <strong>
                                                 <c:out value="${row.discountValueLabel}"/>
                                             </strong>
@@ -261,9 +261,27 @@
                                         </td>
 
                                         <!-- PERIOD -->
-                                        <td>
-                                            <div class="admin-muted">
-                                                <c:out value="${row.periodLabel}"/>
+                                        <td class="admin-promo-period-cell">
+                                            <div class="admin-promo-period">
+                                                <div class="admin-promo-period__row">
+                                                    <span class="admin-promo-period__label">Từ</span>
+                                                    <span class="admin-promo-period__date">
+                            <c:choose>
+                                <c:when test="${empty row.startDate}">Không giới hạn</c:when>
+                                <c:otherwise><c:out value="${row.startDate}"/></c:otherwise>
+                            </c:choose>
+                          </span>
+                                                </div>
+
+                                                <div class="admin-promo-period__row">
+                                                    <span class="admin-promo-period__label">Đến</span>
+                                                    <span class="admin-promo-period__date">
+                            <c:choose>
+                                <c:when test="${empty row.endDate}">Không giới hạn</c:when>
+                                <c:otherwise><c:out value="${row.endDate}"/></c:otherwise>
+                            </c:choose>
+                          </span>
+                                                </div>
                                             </div>
                                         </td>
 
@@ -283,57 +301,59 @@
                                                 </c:when>
 
                                                 <c:when test="${row.statusLabel == 'UPCOMING'}">
-                                                    <span class="admin-pill">UPCOMING</span>
+                                                    <span class="admin-pill admin-pill--warning">UPCOMING</span>
                                                 </c:when>
 
                                                 <c:otherwise>
-                            <span class="admin-pill">
-                              <c:out value="${row.statusLabel}"/>
-                            </span>
+                          <span class="admin-pill">
+                            <c:out value="${row.statusLabel}"/>
+                          </span>
                                                 </c:otherwise>
                                             </c:choose>
                                         </td>
 
                                         <!-- ACTIONS -->
-                                        <td class="admin-actions admin-promo-actions">
-                                            <a class="admin-btn"
-                                               href="${pageContext.request.contextPath}/admin/promotions?action=edit&type=${row.type}&id=${row.id}">
-                                                Sửa
-                                            </a>
+                                        <td class="admin-promo-action-cell">
+                                            <div class="admin-promo-actions">
+                                                <a class="admin-btn admin-promo-action-btn"
+                                                   href="${pageContext.request.contextPath}/admin/promotions?action=edit&type=${row.type}&id=${row.id}">
+                                                    Sửa
+                                                </a>
 
-                                            <form method="post"
-                                                  action="${pageContext.request.contextPath}/admin/promotions"
-                                                  class="admin-inline">
+                                                <form method="post"
+                                                      action="${pageContext.request.contextPath}/admin/promotions"
+                                                      class="admin-inline">
 
-                                                <%@ include file="/jsp/common/csrf.jspf" %>
+                                                    <%@ include file="/jsp/common/csrf.jspf" %>
 
-                                                <input type="hidden" name="action" value="toggle"/>
-                                                <input type="hidden" name="type" value="${row.type}"/>
-                                                <input type="hidden" name="id" value="${row.id}"/>
+                                                    <input type="hidden" name="action" value="toggle"/>
+                                                    <input type="hidden" name="type" value="${row.type}"/>
+                                                    <input type="hidden" name="id" value="${row.id}"/>
 
-                                                <button class="admin-btn" type="submit">
-                                                    <c:choose>
-                                                        <c:when test="${row.active}">Tắt</c:when>
-                                                        <c:otherwise>Bật</c:otherwise>
-                                                    </c:choose>
-                                                </button>
-                                            </form>
+                                                    <button class="admin-btn admin-promo-action-btn" type="submit">
+                                                        <c:choose>
+                                                            <c:when test="${row.active}">Tắt</c:when>
+                                                            <c:otherwise>Bật</c:otherwise>
+                                                        </c:choose>
+                                                    </button>
+                                                </form>
 
-                                            <form method="post"
-                                                  action="${pageContext.request.contextPath}/admin/promotions"
-                                                  class="admin-inline"
-                                                  onsubmit="return confirm('Bạn có chắc muốn xóa hoặc vô hiệu hóa khuyến mãi này?');">
+                                                <form method="post"
+                                                      action="${pageContext.request.contextPath}/admin/promotions"
+                                                      class="admin-inline"
+                                                      onsubmit="return confirm('Bạn có chắc muốn xóa hoặc vô hiệu hóa khuyến mãi này?');">
 
-                                                <%@ include file="/jsp/common/csrf.jspf" %>
+                                                    <%@ include file="/jsp/common/csrf.jspf" %>
 
-                                                <input type="hidden" name="action" value="delete"/>
-                                                <input type="hidden" name="type" value="${row.type}"/>
-                                                <input type="hidden" name="id" value="${row.id}"/>
+                                                    <input type="hidden" name="action" value="delete"/>
+                                                    <input type="hidden" name="type" value="${row.type}"/>
+                                                    <input type="hidden" name="id" value="${row.id}"/>
 
-                                                <button class="admin-btn admin-btn--danger" type="submit">
-                                                    Xóa
-                                                </button>
-                                            </form>
+                                                    <button class="admin-btn admin-btn--danger admin-promo-action-btn" type="submit">
+                                                        Xóa
+                                                    </button>
+                                                </form>
+                                            </div>
                                         </td>
                                     </tr>
                                 </c:forEach>
