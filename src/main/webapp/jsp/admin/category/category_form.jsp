@@ -43,20 +43,6 @@
 
     <!-- ===================== FORM CARD ===================== -->
     <div class="admin-card">
-      <div class="admin-card__head">
-        <div>
-          <h2 class="admin-card__title">
-            <c:choose>
-              <c:when test="${isEdit}">Thông tin danh mục</c:when>
-              <c:otherwise>Thông tin danh mục mới</c:otherwise>
-            </c:choose>
-          </h2>
-
-          <p class="admin-card__desc">
-            Danh mục cha dùng để nhóm sản phẩm, danh mục con dùng để lọc và hiển thị chi tiết hơn.
-          </p>
-        </div>
-      </div>
 
       <div class="admin-card__body">
 
