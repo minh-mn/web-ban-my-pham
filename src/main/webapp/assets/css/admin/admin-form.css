@@ -714,3 +714,167 @@
   color: #ffffff !important;
   border-color: #16a34a !important;
 }
+
+/* =========================================================
+   Promotion Product Picker
+   Scope: product_picker.jspf inside promotion_form.jsp
+========================================================= */
+
+.admin-promo-products-section {
+  margin-top: 14px;
+}
+
+.admin-promo-product-picker {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-promo-product-picker__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.admin-promo-product-picker__title {
+  font-size: 14px;
+  font-weight: 900;
+  color: var(--admin-text);
+  line-height: 1.35;
+}
+
+.admin-promo-product-picker__hint {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--admin-muted);
+  line-height: 1.45;
+}
+
+.admin-promo-product-picker__counter {
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--admin-border);
+  background: rgba(255, 95, 162, 0.08);
+  color: #be185d;
+  font-size: 12px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.admin-promo-product-picker__toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.admin-promo-product-picker__toolbar .admin-input {
+  max-width: 360px;
+}
+
+.admin-promo-product-list {
+  max-height: 360px;
+  overflow: auto;
+  display: grid;
+  gap: 10px;
+  padding-right: 4px;
+}
+
+.admin-promo-product-card {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--admin-border);
+  border-radius: 14px;
+  background: #fff;
+  cursor: pointer;
+  transition:
+          border-color 0.16s ease,
+          box-shadow 0.16s ease,
+          background 0.16s ease,
+          transform 0.16s ease;
+}
+
+.admin-promo-product-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 95, 162, 0.35);
+  box-shadow: var(--admin-shadow-sm);
+}
+
+.admin-promo-product-card:has(.admin-promo-product-card__check:checked) {
+  border-color: rgba(255, 95, 162, 0.45);
+  background: rgba(255, 95, 162, 0.055);
+}
+
+.admin-promo-product-card__check {
+  margin-top: 3px;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--admin-brand, #ff5fa2);
+}
+
+.admin-promo-product-card__body {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.admin-promo-product-card__title {
+  color: var(--admin-text);
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.admin-promo-product-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  color: var(--admin-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.admin-promo-product-card__meta span {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.admin-promo-product-card__price {
+  color: #be185d;
+  font-weight: 900;
+}
+
+.admin-promo-product-empty {
+  padding: 14px;
+  border: 1px dashed var(--admin-border);
+  border-radius: var(--admin-radius);
+  background: rgba(15, 23, 42, 0.02);
+  color: var(--admin-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+@media (max-width: 720px) {
+  .admin-promo-product-picker__head,
+  .admin-promo-product-picker__toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-promo-product-picker__toolbar .admin-input,
+  .admin-promo-product-picker__toolbar .admin-btn {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .admin-promo-product-list {
+    max-height: 420px;
+  }
+}
