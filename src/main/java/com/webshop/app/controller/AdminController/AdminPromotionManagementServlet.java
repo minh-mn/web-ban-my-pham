@@ -16,11 +16,13 @@ import com.webshop.app.dao.CategoryDAO;
 import com.webshop.app.dao.CouponDAO;
 import com.webshop.app.dao.OrderDiscountDAO;
 import com.webshop.app.dao.PromotionEventDAO;
+import com.webshop.app.dao.ProductDAO;
 import com.webshop.app.model.BrandDiscount;
 import com.webshop.app.model.Coupon;
 import com.webshop.app.model.DiscountType;
 import com.webshop.app.model.OrderDiscount;
 import com.webshop.app.model.PromotionEvent;
+import com.webshop.app.model.Product;
 import com.webshop.app.model.admin.AdminPromotionRow;
 import com.webshop.app.model.admin.AdminPromotionStats;
 
@@ -73,6 +75,7 @@ public class AdminPromotionManagementServlet extends HttpServlet {
     private final PromotionEventDAO promotionEventDAO = new PromotionEventDAO();
     private final BrandDAO brandDAO = new BrandDAO();
     private final CategoryDAO categoryDAO = new CategoryDAO();
+    private final ProductDAO productDAO = new ProductDAO();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
@@ -248,8 +251,8 @@ public class AdminPromotionManagementServlet extends HttpServlet {
         req.setAttribute("activeMenu", "promotions");
         req.setAttribute("pageCss", "/assets/css/admin/admin-form.css");
 
-        loadRefs(req);
         attachDefaultModel(req, promotionType);
+        loadRefs(req, promotionType);
 
         req.getRequestDispatcher(FORM_JSP).forward(req, resp);
     }
@@ -275,7 +278,7 @@ public class AdminPromotionManagementServlet extends HttpServlet {
         req.setAttribute("activeMenu", "promotions");
         req.setAttribute("pageCss", "/assets/css/admin/admin-form.css");
 
-        loadRefs(req);
+        loadRefs(req, promotionType);
         req.getRequestDispatcher(FORM_JSP).forward(req, resp);
     }
 
@@ -295,8 +298,8 @@ public class AdminPromotionManagementServlet extends HttpServlet {
         req.setAttribute("activeMenu", "promotions");
         req.setAttribute("pageCss", "/assets/css/admin/admin-form.css");
 
-        loadRefs(req);
         attachModelFromRequest(req, promotionType);
+        loadRefs(req, promotionType);
 
         req.getRequestDispatcher(FORM_JSP).forward(req, resp);
     }
@@ -438,6 +441,49 @@ public class AdminPromotionManagementServlet extends HttpServlet {
     private void loadRefs(HttpServletRequest req) {
         req.setAttribute("brands", brandDAO.findAll());
         req.setAttribute("categories", categoryDAO.findParents());
+    }
+
+    private void loadRefs(HttpServletRequest req, String promotionType) {
+        req.setAttribute("brands", brandDAO.findAll());
+        req.setAttribute("categories", categoryDAO.findParents());
+
+        List<Integer> selectedProductIds = resolveSelectedProductIds(req, promotionType);
+
+        List<Product> products = productDAO.findForPromotionPicker(
+                "",
+                null,
+                null,
+                true,
+                selectedProductIds
+        );
+
+        req.setAttribute("products", products);
+        req.setAttribute("selectedProductIds", selectedProductIds);
+    }
+
+    private List<Integer> resolveSelectedProductIds(HttpServletRequest req, String promotionType) {
+        if (TYPE_COUPON.equals(promotionType)) {
+            Object model = req.getAttribute("coupon");
+            if (model instanceof Coupon coupon) {
+                return coupon.getSelectedProductIds();
+            }
+        }
+
+        if (TYPE_BRAND.equals(promotionType)) {
+            Object model = req.getAttribute("discount");
+            if (model instanceof BrandDiscount discount) {
+                return discount.getSelectedProductIds();
+            }
+        }
+
+        if (TYPE_EVENT.equals(promotionType)) {
+            Object model = req.getAttribute("event");
+            if (model instanceof PromotionEvent event) {
+                return event.getSelectedProductIds();
+            }
+        }
+
+        return parseSelectedProductIds(req);
     }
 
     /* =========================================================
