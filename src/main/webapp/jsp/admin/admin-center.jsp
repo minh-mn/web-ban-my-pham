@@ -148,6 +148,12 @@
             <span class="admin-chip">/admin/flash-sale</span>
           </a>
 
+          <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/events">
+            <div class="admin-menu-card__title">News / Blogs</div>
+            <p class="admin-menu-card__desc">Quản lý bài viết tin tức, sự kiện và hình ảnh hiển thị trên trang chủ.</p>
+            <span class="admin-chip">CMS / blogs</span>
+          </a>
+
         </div>
       </div>
     </div>
