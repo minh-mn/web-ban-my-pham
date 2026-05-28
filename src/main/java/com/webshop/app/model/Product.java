@@ -18,7 +18,7 @@ public class Product {
 	private BigDecimal finalPrice;
 
 	private int stock;
-	private String image; // DB column: ảnh đại diện
+	private String image;
 	private boolean active;
 
 	// ===== GALLERY =====
@@ -35,20 +35,9 @@ public class Product {
 	private long categoryId;
 	private long brandId;
 
-	/*
-	 * View fields dùng cho admin product picker.
-	 * Các field này có thể được ProductDAO set khi JOIN brand/category.
-	 */
 	private String categoryName;
 	private String brandName;
 
-	/*
-	 * Dùng cho màn hình chọn sản phẩm áp dụng khuyến mãi.
-	 * true nếu sản phẩm đang nằm trong bảng target:
-	 * - store_coupon_product
-	 * - store_branddiscount_product
-	 * - store_promotionevent_product
-	 */
 	private boolean selectedForPromotion;
 
 	// ================= GETTER / SETTER =================
@@ -61,7 +50,6 @@ public class Product {
 		this.id = id;
 	}
 
-
 	public String getTitle() {
 		return title;
 	}
@@ -69,7 +57,6 @@ public class Product {
 	public void setTitle(String title) {
 		this.title = title == null ? null : title.trim();
 	}
-
 
 	public String getSlug() {
 		return slug;
@@ -79,7 +66,6 @@ public class Product {
 		this.slug = slug == null ? null : slug.trim();
 	}
 
-
 	public String getDescription() {
 		return description;
 	}
@@ -87,7 +73,6 @@ public class Product {
 	public void setDescription(String description) {
 		this.description = description == null ? null : description.trim();
 	}
-
 
 	public BigDecimal getPrice() {
 		return price == null ? BigDecimal.ZERO : price;
@@ -97,7 +82,6 @@ public class Product {
 		this.price = price == null ? BigDecimal.ZERO : price;
 	}
 
-
 	public int getDiscountPercent() {
 		return discountPercent;
 	}
@@ -106,19 +90,16 @@ public class Product {
 		this.discountPercent = Math.max(discountPercent, 0);
 	}
 
-
 	public BigDecimal getFinalPrice() {
 		if (finalPrice != null) {
 			return finalPrice;
 		}
-
 		return getPrice();
 	}
 
 	public void setFinalPrice(BigDecimal finalPrice) {
 		this.finalPrice = finalPrice;
 	}
-
 
 	public int getStock() {
 		return stock;
@@ -128,10 +109,6 @@ public class Product {
 		this.stock = Math.max(stock, 0);
 	}
 
-
-	/**
-	 * Ảnh đại diện.
-	 */
 	public String getImage() {
 		return image;
 	}
@@ -140,24 +117,14 @@ public class Product {
 		this.image = image == null ? null : image.trim();
 	}
 
-
-	/**
-	 * JSP helper: ${product.imageUrl}
-	 */
 	public String getImageUrl() {
 		return image;
 	}
 
-
-	/**
-	 * Gallery ảnh con.
-	 * JSP: ${product.images}
-	 */
 	public List<ProductImage> getImages() {
 		if (images == null) {
 			return Collections.emptyList();
 		}
-
 		return images;
 	}
 
@@ -169,14 +136,10 @@ public class Product {
 		}
 	}
 
-
 	public boolean isActive() {
 		return active;
 	}
 
-	/**
-	 * JSP helper: ${product.active}
-	 */
 	public boolean getActive() {
 		return active;
 	}
@@ -184,7 +147,6 @@ public class Product {
 	public void setActive(boolean active) {
 		this.active = active;
 	}
-
 
 	// ===== RATING =====
 
@@ -196,7 +158,6 @@ public class Product {
 		this.avgRating = avgRating;
 	}
 
-
 	public int getReviewCount() {
 		return reviewCount;
 	}
@@ -204,7 +165,6 @@ public class Product {
 	public void setReviewCount(int reviewCount) {
 		this.reviewCount = Math.max(reviewCount, 0);
 	}
-
 
 	// ===== RELATION OBJECTS =====
 
@@ -216,7 +176,6 @@ public class Product {
 		this.category = category;
 	}
 
-
 	public Brand getBrand() {
 		return brand;
 	}
@@ -224,7 +183,6 @@ public class Product {
 	public void setBrand(Brand brand) {
 		this.brand = brand;
 	}
-
 
 	// ===== RELATION IDS =====
 
@@ -236,7 +194,6 @@ public class Product {
 		this.categoryId = Math.max(categoryId, 0);
 	}
 
-
 	public long getBrandId() {
 		return brandId;
 	}
@@ -244,7 +201,6 @@ public class Product {
 	public void setBrandId(long brandId) {
 		this.brandId = Math.max(brandId, 0);
 	}
-
 
 	// ===== VIEW FIELDS FOR PRODUCT PICKER =====
 
@@ -256,7 +212,6 @@ public class Product {
 		this.categoryName = categoryName == null ? null : categoryName.trim();
 	}
 
-
 	public String getBrandName() {
 		return brandName;
 	}
@@ -265,14 +220,10 @@ public class Product {
 		this.brandName = brandName == null ? null : brandName.trim();
 	}
 
-
 	public boolean isSelectedForPromotion() {
 		return selectedForPromotion;
 	}
 
-	/**
-	 * JSP helper: ${product.selectedForPromotion}
-	 */
 	public boolean getSelectedForPromotion() {
 		return selectedForPromotion;
 	}
@@ -280,7 +231,6 @@ public class Product {
 	public void setSelectedForPromotion(boolean selectedForPromotion) {
 		this.selectedForPromotion = selectedForPromotion;
 	}
-
 
 	// ===== HELPER FOR JSP / BUSINESS =====
 
@@ -291,79 +241,58 @@ public class Product {
 				&& finalPrice.compareTo(getPrice()) < 0;
 	}
 
-	/**
-	 * JSP helper: ${product.hasDiscount}
-	 */
 	public boolean getHasDiscount() {
 		return isHasDiscount();
 	}
-
 
 	public boolean isOutOfStock() {
 		return stock <= 0;
 	}
 
-	/**
-	 * JSP helper: ${product.outOfStock}
-	 */
 	public boolean getOutOfStock() {
 		return isOutOfStock();
 	}
-
 
 	public boolean isLowStock() {
 		return stock > 0 && stock <= 5;
 	}
 
-	/**
-	 * JSP helper: ${product.lowStock}
-	 */
 	public boolean getLowStock() {
 		return isLowStock();
 	}
-
 
 	public BigDecimal getEffectivePrice() {
 		return getFinalPrice();
 	}
 
-
 	public String getStockStatusLabel() {
 		if (isOutOfStock()) {
 			return "Hết hàng";
 		}
-
 		if (isLowStock()) {
 			return "Sắp hết";
 		}
-
 		return "Còn hàng";
 	}
-
 
 	public String getDisplayTitle() {
 		if (title == null || title.isBlank()) {
 			return "Sản phẩm #" + id;
 		}
-
 		return title;
 	}
-
 
 	public boolean belongsToBrand(long targetBrandId) {
 		return targetBrandId > 0 && this.brandId == targetBrandId;
 	}
 
-
 	public boolean belongsToCategory(long targetCategoryId) {
 		return targetCategoryId > 0 && this.categoryId == targetCategoryId;
 	}
 
-
 	public boolean isAvailableForPromotion() {
 		return active && stock > 0;
 	}
-
 
 	@Override
 	public String toString() {
