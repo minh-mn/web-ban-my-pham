@@ -398,3 +398,10 @@
   border: 1.5px solid #43a047 !important;
   background: #f1fff3 !important;
 }
+
+/* Ẩn hoàn toàn icon mắt mặc định của Microsoft Edge và Chrome */
+input::-ms-reveal,
+input::-ms-clear {
+  display: none !important;
+}
+
