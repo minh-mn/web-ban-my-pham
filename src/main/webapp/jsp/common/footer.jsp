@@ -206,7 +206,7 @@
 
                     <li><a href="${pageContext.request.contextPath}/blog">TIN TỨC</a></li>
 
-                    <li><a href="${pageContext.request.contextPath}/contact">LIÊN HỆ</a></li>
+                    <li><a href="${pageContext.request.contextPath}/lien-he">LIÊN HỆ</a></li>
                 </ul>
             </div>
 
