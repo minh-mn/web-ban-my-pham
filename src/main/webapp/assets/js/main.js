@@ -239,10 +239,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
       if (inp.type === "password") {
         inp.type = "text";
-        this.textContent = "🙈";
+        this.textContent = "👁️";
       } else {
         inp.type = "password";
-        this.textContent = "👁️";
+        this.textContent = "🙈";
       }
     });
   }
