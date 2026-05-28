@@ -21,10 +21,18 @@ document.addEventListener("DOMContentLoaded", function () {
         .replace(/'/g, "&#039;");
   }
 
+  function escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
   function highlight(text, keyword) {
     if (!keyword) return escapeHtml(text);
+
     var safeText = escapeHtml(text);
-    var re = new RegExp("(" + keyword + ")", "ig");
+    var safeKeyword = escapeRegExp(keyword);
+
+    var re = new RegExp("(" + safeKeyword + ")", "ig");
+
     return safeText.replace(re, "<b>$1</b>");
   }
 
@@ -103,7 +111,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
     input.addEventListener("input", function () {
 
-      var keyword = this.value.trim();
+      var keyword = this.value
+          .toLowerCase()
+          .replace(/\s+/g, "")
+          .trim();
 
       clearTimeout(debounceTimer);
 
