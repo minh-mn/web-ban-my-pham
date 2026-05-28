@@ -1,8 +1,10 @@
 package com.webshop.app.controller.ProductController;
 
-// ===== Java core =====
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import com.webshop.app.dao.BrandDAO;
 import com.webshop.app.dao.CategoryDAO;
@@ -33,43 +35,56 @@ public class ProductListServlet extends HttpServlet {
 		req.setCharacterEncoding("UTF-8");
 		resp.setCharacterEncoding("UTF-8");
 
-		// READ PARAMS
+		// ===== 1. ĐỌC THAM SỐ DẠNG LIST ĐỂ HỖ TRỢ MULTI-FILTER =====
 		String keyword = req.getParameter("q");
 		String sort = req.getParameter("sort");
-		String priceRange = req.getParameter("priceRange");
 
-		Integer categoryId = parseInt(req.getParameter("category"));
-		Integer brandId = parseInt(req.getParameter("brand"));
+		List<String> priceRangeList = parseStringList(req.getParameterValues("priceRange"));
+		List<Integer> selectedCategoryList = parseIntegerList(req.getParameterValues("category"));
+		List<Integer> selectedBrandList = parseIntegerList(req.getParameterValues("brand"));
+
 		Integer minRating = parseInt(req.getParameter("rating"));
 
-		// PAGINATION 
+		// ===== 2. PHÂN TRANG =====
 		int pageSize = 18;
 		int page = parseIntOrDefault(req.getParameter("page"), 1);
 		if (page < 1)
 			page = 1;
 
-		int total = productDAO.countProducts(keyword, categoryId, brandId, priceRange, minRating);
+		// Gọi hàm đếm sản phẩm với tham số dạng dữ liệu đầu vào mới (List)
+		int total = productDAO.countProducts(keyword, selectedCategoryList, selectedBrandList, priceRangeList, minRating);
 		int totalPages = (int) Math.ceil(total / (double) pageSize);
 		if (totalPages < 1)
 			totalPages = 1;
 		if (page > totalPages)
 			page = totalPages;
 
-		// LOAD PRODUCTS (PAGED) 
-		List<Product> products = productDAO.findProductsPaged(keyword, categoryId, brandId, sort, priceRange, minRating,
-				page, pageSize);
+		// ===== 3. TẢI DANH SÁCH SẢN PHẨM =====
+		List<Product> products = productDAO.findProductsPaged(
+				keyword,
+				selectedCategoryList,
+				selectedBrandList,
+				sort,
+				priceRangeList,
+				minRating,
+				page,
+				pageSize
+		);
 
-		// final price
+		// Tính giá khuyến mãi cuối cùng
 		products.forEach(p -> p.setFinalPrice(pricingFacade.getFinalPrice(p)));
 
-		// ===== SIDEBAR DATA =====
+		// ===== 4. DỮ LIỆU THANH SIDEBAR =====
 		req.setAttribute("categories", categoryDAO.findParents());
 		req.setAttribute("brands", brandDAO.findWithProductCount());
 
-		req.setAttribute("priceRange", priceRange);
-		req.setAttribute("selectedBrand", brandId);
+		// Giữ lại trạng thái các bộ lọc đã tick chọn trên giao diện
+		req.setAttribute("priceRangeList", priceRangeList);
+		req.setAttribute("selectedCategoryList", selectedCategoryList);
+		req.setAttribute("selectedBrandList", selectedBrandList);
+		req.setAttribute("minRating", minRating);
 
-		// ===== PAGE DATA =====
+		// ===== 5. DỮ LIỆU PHÂN TRANG & HIỂN THỊ =====
 		req.setAttribute("products", products);
 		req.setAttribute("page", page);
 		req.setAttribute("totalPages", totalPages);
@@ -77,12 +92,10 @@ public class ProductListServlet extends HttpServlet {
 		req.setAttribute("pageSize", pageSize);
 
 		req.setAttribute("pageTitle", "MyCosmetic | Sản phẩm");
-
 		req.setAttribute("pageCss", "product-list.css");
-
 		req.setAttribute("pageContent", "/jsp/product/list.jsp");
 
-		//RENDER 
+		// ===== 6. RENDER =====
 		req.getRequestDispatcher("/jsp/common/base.jsp").forward(req, resp);
 	}
 
@@ -100,5 +113,32 @@ public class ProductListServlet extends HttpServlet {
 		} catch (Exception e) {
 			return def;
 		}
+	}
+
+	// Hàm ép kiểu an toàn: Tự động loại bỏ chuỗi "all" và các chuỗi lỗi
+	private List<Integer> parseIntegerList(String[] values) {
+		if (values == null || values.length == 0) {
+			return Collections.emptyList();
+		}
+		return Arrays.stream(values)
+				.filter(v -> v != null && !v.isBlank() && !v.equalsIgnoreCase("all")) // Bỏ qua chữ "all"
+				.map(v -> {
+					try {
+						return Integer.parseInt(v);
+					} catch (NumberFormatException e) {
+						return null; // Tránh quăng lỗi 500 nếu gặp chuỗi lạ không phải số
+					}
+				})
+				.filter(v -> v != null)
+				.collect(Collectors.toList());
+	}
+
+	private List<String> parseStringList(String[] values) {
+		if (values == null || values.length == 0) {
+			return Collections.emptyList();
+		}
+		return Arrays.stream(values)
+				.filter(v -> v != null && !v.isBlank())
+				.collect(Collectors.toList());
 	}
 }
