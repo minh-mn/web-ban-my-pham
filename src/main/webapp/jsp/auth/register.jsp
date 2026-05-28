@@ -2,6 +2,7 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 
 <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/register.css?v=999">
+<script src="${pageContext.request.contextPath}/assets/js/main.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -86,18 +87,20 @@
 
         <div class="form-group">
           <label>Mật khẩu</label>
-          <div class="input-group">
+          <div class="input-group" style="position: relative; display: flex; align-items: center;">
             <span class="input-icon">🔒</span>
-            <input type="password" name="password" id="passInput" placeholder="Tối thiểu 8 ký tự">
+            <input type="password" name="password" id="passInput" placeholder="Tối thiểu 8 ký tự" style="width: 100%; padding-right: 40px;">
+            <span class="toggle-password" style="position: absolute; right: 15px; cursor: pointer; user-select: none; font-size: 18px; z-index: 10;">🙈</span>
           </div>
           <small id="pass-error" class="error-msg"></small>
         </div>
 
         <div class="form-group">
           <label>Xác nhận mật khẩu</label>
-          <div class="input-group">
+          <div class="input-group" style="position: relative; display: flex; align-items: center;">
             <span class="input-icon">🛡️</span>
-            <input type="password" name="confirmPassword" id="confirmPassInput" placeholder="Nhập lại mật khẩu">
+            <input type="password" name="confirmPassword" id="confirmPassInput" placeholder="Nhập lại mật khẩu" style="width: 100%; padding-right: 40px;">
+            <span class="toggle-password" style="position: absolute; right: 15px; cursor: pointer; user-select: none; font-size: 18px; z-index: 10;">🙈</span>
           </div>
           <small id="password-error" class="error-msg"></small>
         </div>
@@ -163,6 +166,22 @@
   }
   .swal2-container {
     z-index: 99999 !important;
+  }
+
+  @keyframes fadeInModal {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  #otp_input:focus {
+    border-color: #d81b60 !important;
+  }
+  .swal2-container {
+    z-index: 99999 !important;
+  }
+  /* BỔ SUNG VÀO ĐÂY */
+  input::-ms-reveal,
+  input::-ms-clear {
+    display: none !important;
   }
 </style>
 
