@@ -2,7 +2,7 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 
 <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/login.css">
-
+<script src="${pageContext.request.contextPath}/assets/js/main.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -11,7 +11,10 @@
 		<h2 class="auth-title">Đăng nhập vào MyCosmetic</h2>
 
 		<div class="social-login-stack" style="display: flex; flex-direction: column; gap: 12px; margin-top: 10px;">
-			<div id="googleRegisterBtn" style="margin-top:20px"></div>
+			<a href="javascript:void(0)" id="btn-google" class="social-btn" style="border: 1px solid #d9dadc; border-radius: 500px; padding: 12px 24px; text-decoration: none; color: #121212; font-weight: 700; display: flex; align-items: center;">
+				<img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google" style="width: 20px; margin-right: 12px;">
+				<span style="flex: 1; text-align: center;">Tiếp tục bằng Google</span>
+			</a>
 
 			<a href="javascript:void(0)" id="btn-facebook" class="social-btn" style="border: 1px solid #d9dadc; border-radius: 500px; padding: 12px 24px; text-decoration: none; color: #121212; font-weight: 700; display: flex; align-items: center;">
 				<img src="https://upload.wikimedia.org/wikipedia/commons/0/05/Facebook_Logo_%282019%29.png" alt="Facebook" style="width: 20px; margin-right: 12px;">
@@ -29,7 +32,11 @@
 			</div>
 			<div class="form-group">
 				<label>Mật khẩu</label>
-				<input type="password" name="password" placeholder="Mật khẩu" required style="width: 100%; height: 48px; padding: 0 15px; border-radius: 4px; border: 1px solid #727272;">
+				<div class="input-group" style="position: relative; display: flex; align-items: center;">
+					<input type="password" name="password" placeholder="Mật khẩu" required
+					       style="width: 100%; height: 48px; padding: 0 40px 0 15px; border-radius: 4px; border: 1px solid #727272;">
+					<span class="toggle-password" style="position: absolute; right: 15px; cursor: pointer; user-select: none; font-size: 18px; z-index: 10;">🙈</span>
+				</div>
 			</div>
 			<button type="submit" class="btn-auth">Đăng nhập</button>
 		</form>
