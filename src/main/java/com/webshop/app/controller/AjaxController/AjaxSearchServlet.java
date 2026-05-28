@@ -1,24 +1,19 @@
 package com.webshop.app.controller.AjaxController;
 
-// ===== Java core =====
-import java.io.IOException;
-import java.util.List;
-
-// ===== Project =====
 import com.webshop.app.dao.ProductDAO;
 import com.webshop.app.model.Product;
-
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-@WebServlet("/ajax/search")
+import java.io.IOException;
+import java.util.List;
+
+@WebServlet("/ajax-search")
 public class AjaxSearchServlet extends HttpServlet {
 
-    private static final long serialVersionUID = 1L;
-
-    private final ProductDAO productDAO = new ProductDAO();
+    private ProductDAO productDAO = new ProductDAO();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
@@ -26,38 +21,34 @@ public class AjaxSearchServlet extends HttpServlet {
 
         String q = req.getParameter("q");
 
-        resp.setContentType("application/json;charset=UTF-8");
+        resp.setContentType("application/json");
+        resp.setCharacterEncoding("UTF-8");
 
-        // Nếu chưa đủ ký tự → trả mảng rỗng
-        if (q == null || q.trim().length() < 2) {
-            resp.getWriter().write("[]");
+        if (q == null || q.trim().isEmpty()) {
+            resp.getWriter().write("{\"results\":[]}");
             return;
         }
 
-        List<Product> products = productDAO.findProducts(
-            q,          // keyword
-            null,       // category
-            null,       // brand
-            null,       // sort
-            null,       // priceRange
-            null        // minRating
-        );
+        List<Product> list = productDAO.searchSuggestions(q.trim());
 
-        // Build JSON thủ công (đủ dùng, không cần thư viện)
-        StringBuilder json = new StringBuilder("[");
-        for (Product p : products) {
+        StringBuilder json = new StringBuilder();
+        json.append("{\"results\":[");
+
+        for (int i = 0; i < list.size(); i++) {
+            Product p = list.get(i);
+
             json.append("{")
-                .append("\"id\":").append(p.getId()).append(",")
-                .append("\"title\":\"")
-                .append(p.getTitle().replace("\"", "\\\""))
-                .append("\"")
-                .append("},");
+                    .append("\"id\":").append(p.getId()).append(",")
+                    .append("\"title\":\"").append(p.getTitle().replace("\"","")).append("\",")
+                    .append("\"slug\":\"").append(p.getSlug()).append("\",")
+                    .append("\"price\":").append(p.getPrice()).append(",")
+                    .append("\"image\":\"").append(p.getImage()).append("\"")
+                    .append("}");
+
+            if (i < list.size() - 1) json.append(",");
         }
 
-        if (json.length() > 1) {
-            json.setLength(json.length() - 1); // bỏ dấu ,
-        }
-        json.append("]");
+        json.append("]}");
 
         resp.getWriter().write(json.toString());
     }
