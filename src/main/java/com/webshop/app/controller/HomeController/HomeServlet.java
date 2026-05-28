@@ -4,16 +4,14 @@ import java.io.IOException;
 import java.util.List;
 
 import com.webshop.app.dao.*;
-import com.webshop.app.model.Banner;
-import com.webshop.app.model.Coupon;
-import com.webshop.app.model.FlashSale;
-import com.webshop.app.model.Product;
+import com.webshop.app.model.*;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
 @WebServlet("/home")
 public class HomeServlet extends HttpServlet {
 
@@ -24,6 +22,7 @@ public class HomeServlet extends HttpServlet {
     private final CouponDAO couponDAO = new CouponDAO();
     private final FlashSaleDAO flashSaleDAO = new FlashSaleDAO();
     private final FlashSaleItemDAO flashSaleItemDAO = new FlashSaleItemDAO();
+    private final EventDAO eventDAO = new EventDAO();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
@@ -52,11 +51,18 @@ public class HomeServlet extends HttpServlet {
 
         req.setAttribute("products", featuredProducts);
 
+        // Trong HomeServlet.java, tại phương thức doGet()
         FlashSale activeFS = flashSaleDAO.findActiveFlashSale();
+
         if (activeFS != null) {
+            List<FlashSaleItem> fsItems = flashSaleItemDAO.findByFlashSale(activeFS.getId());
+
             req.setAttribute("activeFlashSale", activeFS);
-            req.setAttribute("fsItems", flashSaleItemDAO.findByFlashSale(activeFS.getId()));
+            req.setAttribute("fsItems", fsItems);
         }
+
+        List<Event> recentEvents = eventDAO.getRecentEvents(2);
+        req.setAttribute("recentEvents", recentEvents);
 
         //  META 
         req.setAttribute("pageTitle", "MyCosmetic | Trang chủ");
