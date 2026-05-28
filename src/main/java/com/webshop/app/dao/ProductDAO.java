@@ -20,8 +20,8 @@ public class ProductDAO {
 		NOT_FOUND
 	}
 
-	public List<Product> findProducts(String keyword, Integer categoryId, Integer brandId, String sort,
-	                                  String priceRange, Integer minRating) {
+	public List<Product> findProducts(String keyword, List<Integer> categoryIds, List<Integer> brandIds, String sort,
+	                                  List<String> priceRanges, Integer minRating) {
 
 		List<Product> list = new ArrayList<>();
 
@@ -42,10 +42,14 @@ public class ProductDAO {
 		if (keyword != null && !keyword.isBlank()) {
 			sql.append("AND (p.title LIKE ? OR p.description LIKE ?) ");
 		}
-		if (categoryId != null) sql.append("AND p.category_id = ? ");
-		if (brandId != null) sql.append("AND p.brand_id = ? ");
+		if (categoryIds != null && !categoryIds.isEmpty()) {
+			sql.append("AND p.category_id IN (").append(placeholders(categoryIds.size())).append(") ");
+		}
+		if (brandIds != null && !brandIds.isEmpty()) {
+			sql.append("AND p.brand_id IN (").append(placeholders(brandIds.size())).append(") ");
+		}
 
-		appendPriceRange(sql, priceRange);
+		appendPriceRange(sql, priceRanges);
 
 		sql.append("GROUP BY p.id, p.title, p.slug, p.description, ")
 				.append("p.price, p.discount_percent, p.stock, p.image, p.created_at, ")
@@ -60,7 +64,7 @@ public class ProductDAO {
 		try (Connection c = DBConnection.getConnection();
 		     PreparedStatement ps = c.prepareStatement(sql.toString())) {
 
-			bindProductFilters(ps, keyword, categoryId, brandId, minRating, 1);
+			bindProductFilters(ps, keyword, categoryIds, brandIds, minRating, 1);
 
 			try (ResultSet rs = ps.executeQuery()) {
 				while (rs.next()) {
@@ -75,7 +79,7 @@ public class ProductDAO {
 		return list;
 	}
 
-	public int countProducts(String keyword, Integer categoryId, Integer brandId, String priceRange,
+	public int countProducts(String keyword, List<Integer> categoryIds, List<Integer> brandIds, List<String> priceRanges,
 	                         Integer minRating) {
 
 		StringBuilder sql = new StringBuilder(
@@ -89,10 +93,14 @@ public class ProductDAO {
 		if (keyword != null && !keyword.isBlank()) {
 			sql.append("AND (p.title LIKE ? OR p.description LIKE ?) ");
 		}
-		if (categoryId != null) sql.append("AND p.category_id = ? ");
-		if (brandId != null) sql.append("AND p.brand_id = ? ");
+		if (categoryIds != null && !categoryIds.isEmpty()) {
+			sql.append("AND p.category_id IN (").append(placeholders(categoryIds.size())).append(") ");
+		}
+		if (brandIds != null && !brandIds.isEmpty()) {
+			sql.append("AND p.brand_id IN (").append(placeholders(brandIds.size())).append(") ");
+		}
 
-		appendPriceRange(sql, priceRange);
+		appendPriceRange(sql, priceRanges);
 
 		sql.append("GROUP BY p.id ");
 
@@ -105,7 +113,7 @@ public class ProductDAO {
 		try (Connection c = DBConnection.getConnection();
 		     PreparedStatement ps = c.prepareStatement(sql.toString())) {
 
-			bindProductFilters(ps, keyword, categoryId, brandId, minRating, 1);
+			bindProductFilters(ps, keyword, categoryIds, brandIds, minRating, 1);
 
 			try (ResultSet rs = ps.executeQuery()) {
 				rs.next();
@@ -117,8 +125,8 @@ public class ProductDAO {
 		}
 	}
 
-	public List<Product> findProductsPaged(String keyword, Integer categoryId, Integer brandId, String sort,
-	                                       String priceRange, Integer minRating, int page, int pageSize) {
+	public List<Product> findProductsPaged(String keyword, List<Integer> categoryIds, List<Integer> brandIds, String sort,
+	                                       List<String> priceRanges, Integer minRating, int page, int pageSize) {
 
 		int safePage = Math.max(1, page);
 		int safeSize = Math.max(1, pageSize);
@@ -143,10 +151,14 @@ public class ProductDAO {
 		if (keyword != null && !keyword.isBlank()) {
 			sql.append("AND (p.title LIKE ? OR p.description LIKE ?) ");
 		}
-		if (categoryId != null) sql.append("AND p.category_id = ? ");
-		if (brandId != null) sql.append("AND p.brand_id = ? ");
+		if (categoryIds != null && !categoryIds.isEmpty()) {
+			sql.append("AND p.category_id IN (").append(placeholders(categoryIds.size())).append(") ");
+		}
+		if (brandIds != null && !brandIds.isEmpty()) {
+			sql.append("AND p.brand_id IN (").append(placeholders(brandIds.size())).append(") ");
+		}
 
-		appendPriceRange(sql, priceRange);
+		appendPriceRange(sql, priceRanges);
 
 		sql.append("GROUP BY p.id, p.title, p.slug, p.description, ")
 				.append("p.price, p.discount_percent, p.stock, p.image, p.created_at, ")
@@ -163,7 +175,7 @@ public class ProductDAO {
 		try (Connection c = DBConnection.getConnection();
 		     PreparedStatement ps = c.prepareStatement(sql.toString())) {
 
-			int idx = bindProductFilters(ps, keyword, categoryId, brandId, minRating, 1);
+			int idx = bindProductFilters(ps, keyword, categoryIds, brandIds, minRating, 1);
 			ps.setInt(idx++, offset);
 			ps.setInt(idx, safeSize);
 
@@ -240,9 +252,6 @@ public class ProductDAO {
 		return list;
 	}
 
-	/**
-	 * Danh sách tất cả sản phẩm cho admin.
-	 */
 	public List<Product> findAll() {
 		return findProductsAdmin(null, null, null, "created_desc");
 	}
@@ -348,20 +357,10 @@ public class ProductDAO {
 		return list;
 	}
 
-    /* =========================================================
-       PROMOTION PRODUCT PICKER
-    ========================================================= */
-
-	/**
-	 * Lấy sản phẩm active cho giao diện chọn sản phẩm khuyến mãi.
-	 */
 	public List<Product> findForPromotionPicker(String keyword, Integer brandId, Integer categoryId) {
 		return findForPromotionPicker(keyword, brandId, categoryId, true, null);
 	}
 
-	/**
-	 * Lấy sản phẩm cho giao diện chọn sản phẩm khuyến mãi và đánh dấu sản phẩm đã chọn.
-	 */
 	public List<Product> findForPromotionPicker(
 			String keyword,
 			Integer brandId,
@@ -371,14 +370,6 @@ public class ProductDAO {
 		return findForPromotionPicker(keyword, brandId, categoryId, true, selectedProductIds);
 	}
 
-	/**
-	 * Lấy sản phẩm cho product picker:
-	 * - keyword: tìm theo tên/slug/mô tả.
-	 * - brandId: lọc theo thương hiệu.
-	 * - categoryId: lọc theo danh mục.
-	 * - activeOnly: chỉ lấy sản phẩm đang bán.
-	 * - selectedProductIds: danh sách id đang được chọn để set selectedForPromotion.
-	 */
 	public List<Product> findForPromotionPicker(
 			String keyword,
 			Integer brandId,
@@ -500,10 +491,6 @@ public class ProductDAO {
 		return products;
 	}
 
-    /* =========================================================
-       CREATE / UPDATE / DELETE
-    ========================================================= */
-
 	public int create(Product p) {
 		String sql =
 				"INSERT INTO store_product " +
@@ -570,12 +557,6 @@ public class ProductDAO {
 		}
 	}
 
-	/*
-	 * Xóa sản phẩm an toàn:
-	 * - Nếu sản phẩm đã có trong store_orderitem: chỉ ẩn sản phẩm bằng is_active = 0.
-	 * - Nếu sản phẩm chưa có đơn hàng: xóa cứng trong transaction.
-	 * - Khi hard delete, xóa thêm các target khuyến mãi để tránh dữ liệu phụ bị treo nếu DB chưa có cascade.
-	 */
 	public DeleteMode deleteOrDeactivateSafely(int productId) {
 		String checkProductSql = "SELECT id FROM store_product WHERE id = ?";
 		String checkOrderItemSql = "SELECT 1 FROM store_orderitem WHERE product_id = ? LIMIT 1";
@@ -684,10 +665,6 @@ public class ProductDAO {
 			throw new RuntimeException("ProductDAO.deleteReviewsByProductId error", e);
 		}
 	}
-
-    /* =========================================================
-       HOME / FEATURED
-    ========================================================= */
 
 	public List<Product> findFeaturedTop12BestSellerDeepDiscount() {
 		List<Product> list = new ArrayList<>();
@@ -810,10 +787,6 @@ public class ProductDAO {
 		return list;
 	}
 
-    /* =========================================================
-       INTERNAL HELPERS
-    ========================================================= */
-
 	private Product findProductDetail(String sql, int productId, String errorMessage) {
 		try (Connection c = DBConnection.getConnection();
 		     PreparedStatement ps = c.prepareStatement(sql)) {
@@ -830,8 +803,8 @@ public class ProductDAO {
 		}
 	}
 
-	private int bindProductFilters(PreparedStatement ps, String keyword, Integer categoryId,
-	                               Integer brandId, Integer minRating, int idx) throws SQLException {
+	private int bindProductFilters(PreparedStatement ps, String keyword, List<Integer> categoryIds,
+	                               List<Integer> brandIds, Integer minRating, int idx) throws SQLException {
 
 		if (keyword != null && !keyword.isBlank()) {
 			String like = "%" + keyword.trim() + "%";
@@ -839,28 +812,39 @@ public class ProductDAO {
 			ps.setString(idx++, like);
 		}
 
-		if (categoryId != null) ps.setInt(idx++, categoryId);
-		if (brandId != null) ps.setInt(idx++, brandId);
+		if (categoryIds != null && !categoryIds.isEmpty()) {
+			for (Integer cid : categoryIds) {
+				ps.setInt(idx++, cid);
+			}
+		}
+
+		if (brandIds != null && !brandIds.isEmpty()) {
+			for (Integer bid : brandIds) {
+				ps.setInt(idx++, bid);
+			}
+		}
+
 		if (minRating != null) ps.setInt(idx++, minRating);
 
 		return idx;
 	}
 
-	private void appendPriceRange(StringBuilder sql, String priceRange) {
-		if (priceRange == null) return;
+	private void appendPriceRange(StringBuilder sql, List<String> priceRanges) {
+		if (priceRanges == null || priceRanges.isEmpty()) return;
 
-		switch (priceRange) {
-			case "lt500":
-				sql.append("AND p.price < 500000 ");
-				break;
-			case "500_1000":
-				sql.append("AND p.price BETWEEN 500000 AND 1000000 ");
-				break;
-			case "gt1000":
-				sql.append("AND p.price > 1000000 ");
-				break;
-			default:
-				break;
+		List<String> clauses = new ArrayList<>();
+		for (String pr : priceRanges) {
+			if ("lt500".equals(pr)) {
+				clauses.add("p.price < 500000");
+			} else if ("500_1000".equals(pr)) {
+				clauses.add("p.price BETWEEN 500000 AND 1000000");
+			} else if ("gt1000".equals(pr)) {
+				clauses.add("p.price > 1000000");
+			}
+		}
+
+		if (!clauses.isEmpty()) {
+			sql.append("AND (").append(String.join(" OR ", clauses)).append(") ");
 		}
 	}
 
@@ -1033,22 +1017,16 @@ public class ProductDAO {
 		return builder.toString();
 	}
 
-	/**
-	 * Lấy danh sách sản phẩm thuộc phạm vi chương trình khuyến mãi (ALL, CATEGORY, BRAND)
-	 * và tự động tính toán lại giá khuyến mãi gán vào trường finalPrice của sản phẩm.
-	 */
 	public List<Product> findProductsByPromotion(com.webshop.app.model.PromotionEvent event) {
 		List<Product> list = new ArrayList<>();
 		if (event == null) return list;
 
-		// 1. Xây dựng câu lệnh SQL lấy các trường cơ bản từ bảng store_product
 		StringBuilder sql = new StringBuilder(
 				"SELECT id, title, slug, description, price, discount_percent, stock, image " +
 						"FROM store_product " +
 						"WHERE 1=1"
 		);
 
-		// Lọc động theo Scope của Sự kiện
 		if (event.getScope() == com.webshop.app.model.PromotionEvent.Scope.CATEGORY) {
 			sql.append(" AND category_id = ?");
 		} else if (event.getScope() == com.webshop.app.model.PromotionEvent.Scope.BRAND) {
@@ -1060,7 +1038,6 @@ public class ProductDAO {
 		try (Connection conn = DBConnection.getConnection();
 		     PreparedStatement ps = conn.prepareStatement(sql.toString())) {
 
-			// Gán tham số tương ứng với Scope
 			if (event.getScope() == com.webshop.app.model.PromotionEvent.Scope.CATEGORY) {
 				ps.setInt(1, event.getCategoryId());
 			} else if (event.getScope() == com.webshop.app.model.PromotionEvent.Scope.BRAND) {
@@ -1069,7 +1046,6 @@ public class ProductDAO {
 
 			try (ResultSet rs = ps.executeQuery()) {
 				while (rs.next()) {
-					// 2. TỰ MAP DỮ LIỆU ĐỂ SỬA LỖI CHƯA CÓ HÀM mapRow
 					Product p = new Product();
 					p.setId(rs.getInt("id"));
 					p.setTitle(rs.getString("title"));
@@ -1080,21 +1056,18 @@ public class ProductDAO {
 					p.setStock(rs.getInt("stock"));
 					p.setImage(rs.getString("image"));
 
-					// 3. LOGIC TÍNH GIÁ KHUYẾN MÃI (Dùng chuỗi .name() để xử lý lỗi AMOUNT)
 					if (p.getPrice() != null) {
 						BigDecimal originalPrice = p.getPrice();
-						BigDecimal finalPrice = originalPrice; // Mặc định giữ nguyên nếu không khớp loại giảm giá
+						BigDecimal finalPrice = originalPrice;
 
 						if (event.getDiscountType() != null) {
-							String typeName = event.getDiscountType().name(); // Lấy tên Enum dạng String
+							String typeName = event.getDiscountType().name();
 
 							if ("PERCENT".equals(typeName)) {
-								// Tính số tiền được giảm theo %: gốc * (giá trị giảm / 100)
 								BigDecimal hundred = new BigDecimal("100");
 								BigDecimal discountAmount = originalPrice.multiply(event.getDiscountValue())
 										.divide(hundred, 2, java.math.RoundingMode.HALF_UP);
 
-								// Kiểm tra số tiền giảm tối đa (max_discount_amount) nếu có cấu hình
 								if (event.getMaxDiscountAmount() != null) {
 									if (discountAmount.compareTo(event.getMaxDiscountAmount()) > 0) {
 										discountAmount = event.getMaxDiscountAmount();
@@ -1103,17 +1076,14 @@ public class ProductDAO {
 								finalPrice = originalPrice.subtract(discountAmount);
 
 							} else if ("AMOUNT".equals(typeName) || "FIXED".equals(typeName) || "CASH".equals(typeName)) {
-								// Giảm thẳng số tiền cố định (Hỗ trợ linh hoạt bất kể tên Enum của bạn là gì)
 								finalPrice = originalPrice.subtract(event.getDiscountValue());
 							}
 						}
 
-						// Đảm bảo giá sau giảm không bị âm dưới 0đ
 						if (finalPrice.compareTo(BigDecimal.ZERO) < 0) {
 							finalPrice = BigDecimal.ZERO;
 						}
 
-						// Gán giá sau khi xử lý khuyến mãi vào finalPrice để mang ra hiển thị ở promotions.jsp
 						p.setFinalPrice(finalPrice);
 					}
 
