@@ -862,6 +862,56 @@
 }
 
 /* =========================================================
+   Active Filter Tags With Remove Button
+   Scope: list.jsp
+========================================================= */
+
+.product-filter-tag--removable {
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	padding-right: 6px;
+}
+
+.product-filter-tag--removable strong {
+	display: inline-flex;
+	align-items: center;
+	line-height: 1.25;
+}
+
+.product-filter-tag__remove {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 18px;
+	height: 18px;
+	border-radius: 999px;
+	background: rgba(219, 39, 119, 0.12);
+	color: var(--pink-dark, #db2777);
+	text-decoration: none;
+	font-size: 15px;
+	font-weight: 900;
+	line-height: 1;
+	transition: all 0.18s ease;
+}
+
+.product-filter-tag__remove:hover {
+	background: var(--pink-dark, #db2777);
+	color: #ffffff;
+	transform: scale(1.05);
+}
+
+.product-filter-tag--muted {
+	border-color: rgba(15, 23, 42, 0.10);
+	background: rgba(15, 23, 42, 0.035);
+	color: var(--text-muted, #666);
+}
+
+.product-filter-tag--muted strong {
+	color: var(--text-muted, #666);
+}
+
+/* =========================================================
    RESPONSIVE
 ========================================================= */
 @media (max-width: 992px) {
@@ -944,6 +994,16 @@
 	.product-filter-tag {
 		width: 100%;
 		justify-content: space-between;
+	}
+
+	.product-filter-tag--removable {
+		width: 100%;
+		justify-content: space-between;
+		padding-right: 8px;
+	}
+
+	.product-filter-tag__remove {
+		flex: 0 0 auto;
 	}
 
 	.pg-btn,
