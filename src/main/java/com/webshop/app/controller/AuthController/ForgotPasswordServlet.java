@@ -52,7 +52,7 @@ public class ForgotPasswordServlet extends HttpServlet {
         try {
             forgotPasswordService.requestReset(email);
             session.setAttribute("flash_message",
-                    "Nếu email tồn tại trong hệ thống, chúng tôi đã gửi hướng dẫn đặt lại mật khẩu.");
+                    "Chúng tôi đã gửi email hướng dẫn đặt lại mật khẩu cho bạn.");
         } catch (Exception e) {
             e.printStackTrace();
             session.setAttribute("flash_error", "Không thể gửi email lúc này. Vui lòng thử lại sau.");
