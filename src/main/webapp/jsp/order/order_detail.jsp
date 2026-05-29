@@ -554,6 +554,10 @@
         gap: 16px;
     }
 
+    .order-action-box.full {
+        grid-column: 1 / -1;
+    }
+
     .order-action-box {
         padding: 16px;
         border-radius: 18px;
@@ -614,6 +618,10 @@
 
     .order-action-btn.return {
         background: #2563eb;
+    }
+
+    .order-action-btn.receive {
+        background: #059669;
     }
 
     .order-action-btn:hover {
@@ -756,28 +764,40 @@
         </c:if>
 
         <div class="order-card">
-            <h2 class="order-card-title">Hủy đơn / Hoàn hàng</h2>
+            <h2 class="order-card-title">Hủy đơn / Hoàn hàng / Xác nhận nhận hàng</h2>
 
             <div class="order-action-grid">
                 <div class="order-action-box">
-                    <h3>Hủy đơn hàng</h3>
-                    <p>Chỉ có thể hủy khi đơn đang chờ xác nhận hoặc đã xác nhận nhưng chưa bắt đầu giao hàng.</p>
+                    <h3>Yêu cầu hủy đơn hàng</h3>
+                    <p>Khách hàng gửi yêu cầu hủy khi đơn chưa bắt đầu giao hàng. ADMIN sẽ duyệt hoặc từ chối yêu cầu.</p>
 
                     <c:choose>
+                        <c:when test="${not empty cancelRequest}">
+                            <div class="return-request-summary">
+                                <span class="order-pill ${cancelRequest.statusCssClass}">
+                                    <c:out value="${cancelRequest.statusLabel}" />
+                                </span>
+                                <p><strong>Lý do:</strong> <c:out value="${cancelRequest.reason}" /></p>
+                                <p><strong>Số tiền hoàn dự kiến:</strong> <c:out value="${cancelRequest.refundAmountVnd}" /> ₫</p>
+                                <c:if test="${not empty cancelRequest.adminNote}">
+                                    <p><strong>Phản hồi shop:</strong> <c:out value="${cancelRequest.adminNote}" /></p>
+                                </c:if>
+                            </div>
+                        </c:when>
                         <c:when test="${order.cancelable}">
                             <form method="post" action="${pageContext.request.contextPath}/orders/cancel">
                                 <input type="hidden" name="csrf_token" value="${sessionScope.CSRF_TOKEN}" />
                                 <input type="hidden" name="orderId" value="${order.id}" />
                                 <textarea name="reason" required minlength="5" maxlength="500"
-                                          placeholder="Nhập lý do hủy đơn..."></textarea>
+                                          placeholder="Nhập lý do hủy đơn để ADMIN xác nhận..."></textarea>
                                 <button type="submit" class="order-action-btn cancel"
-                                        onclick="return confirm('Bạn chắc chắn muốn hủy đơn hàng này?');">
-                                    Hủy đơn
+                                        onclick="return confirm('Gửi yêu cầu hủy đơn hàng này cho ADMIN?');">
+                                    Gửi yêu cầu hủy
                                 </button>
                             </form>
                         </c:when>
                         <c:otherwise>
-                            <p class="order-muted">Đơn hàng hiện không đủ điều kiện hủy.</p>
+                            <p class="order-muted">Đơn hàng hiện không đủ điều kiện gửi yêu cầu hủy.</p>
                             <c:if test="${not empty order.cancelReason}">
                                 <p><strong>Lý do đã hủy:</strong> <c:out value="${order.cancelReason}" /></p>
                             </c:if>
@@ -824,6 +844,38 @@
                                 <p><strong>Phản hồi shop:</strong> <c:out value="${returnRequest.adminNote}" /></p>
                             </c:if>
                         </div>
+                    </c:if>
+                </div>
+
+                <div class="order-action-box full">
+                    <h3>Xác nhận đã nhận hàng</h3>
+                    <p>Khách hàng xác nhận khi đã nhận đúng hàng. Nếu sau 7 ngày kể từ khi giao thành công khách không xác nhận, hệ thống sẽ tự động đánh dấu đã nhận.</p>
+
+                    <div class="return-request-summary">
+                        <span class="order-pill ${customerReceivedConfirmed ? 'ok' : (order.delivered ? 'warning' : 'muted')}">
+                            <c:out value="${receiveStatusLabel}" />
+                        </span>
+                        <c:if test="${not empty order.customerReceivedAtDate}">
+                            <p><strong>Thời gian xác nhận:</strong>
+                                <fmt:formatDate value="${customerReceivedAtDate}" pattern="dd/MM/yyyy HH:mm" />
+                            </p>
+                        </c:if>
+                        <c:if test="${not empty order.receiveConfirmNote}">
+                            <p><strong>Ghi chú:</strong> <c:out value="${receiveConfirmNote}" /></p>
+                        </c:if>
+                    </div>
+
+                    <c:if test="${receiveConfirmable}">
+                        <form method="post" action="${pageContext.request.contextPath}/orders/confirm-received" style="margin-top:12px;">
+                            <input type="hidden" name="csrf_token" value="${sessionScope.CSRF_TOKEN}" />
+                            <input type="hidden" name="orderId" value="${order.id}" />
+                            <input type="text" name="note" maxlength="500"
+                                   placeholder="Ghi chú nếu cần, ví dụ: đã nhận đủ hàng" />
+                            <button type="submit" class="order-action-btn receive"
+                                    onclick="return confirm('Xác nhận bạn đã nhận hàng thành công?');">
+                                Tôi đã nhận hàng
+                            </button>
+                        </form>
                     </c:if>
                 </div>
             </div>
