@@ -398,50 +398,50 @@
       const tr = document.createElement('tr');
       tr.className = 'category-tag-row';
 
-      tr.innerHTML = `
-        <td>
-          <input class="admin-input category-tag-name"
-                 type="text"
-                 name="tagNames"
-                 value=""
-                 maxlength="100"
-                 placeholder="VD: Da dầu">
-        </td>
+      const orderValue = nextOrder();
 
-        <td>
-          <input class="admin-input category-tag-slug"
-                 type="text"
-                 name="tagSlugs"
-                 value=""
-                 maxlength="120"
-                 pattern="[a-z0-9]+(-[a-z0-9]+)*"
-                 placeholder="VD: da-dau">
-        </td>
+      tr.innerHTML =
+              '<td>' +
+              '<input class="admin-input category-tag-name" ' +
+              'type="text" ' +
+              'name="tagNames" ' +
+              'value="" ' +
+              'maxlength="100" ' +
+              'placeholder="VD: Da dầu">' +
+              '</td>' +
 
-        <td>
-          <input class="admin-input category-tag-order"
-                 type="number"
-                 name="tagOrders"
-                 value="${nextOrder()}"
-                 min="1"
-                 step="1">
-        </td>
+              '<td>' +
+              '<input class="admin-input category-tag-slug" ' +
+              'type="text" ' +
+              'name="tagSlugs" ' +
+              'value="" ' +
+              'maxlength="120" ' +
+              'pattern="[a-z0-9]+(-[a-z0-9]+)*" ' +
+              'placeholder="VD: da-dau">' +
+              '</td>' +
 
-        <td>
-          <select class="admin-select category-tag-active"
-                  name="tagActives">
-            <option value="1" selected>ACTIVE</option>
-            <option value="0">INACTIVE</option>
-          </select>
-        </td>
+              '<td>' +
+              '<input class="admin-input category-tag-order" ' +
+              'type="number" ' +
+              'name="tagOrders" ' +
+              'value="' + orderValue + '" ' +
+              'min="1" ' +
+              'step="1">' +
+              '</td>' +
 
-        <td>
-          <button type="button"
-                  class="admin-btn admin-btn--danger category-tag-remove">
-            Xóa
-          </button>
-        </td>
-      `;
+              '<td>' +
+              '<select class="admin-select category-tag-active" name="tagActives">' +
+              '<option value="1" selected>ACTIVE</option>' +
+              '<option value="0">INACTIVE</option>' +
+              '</select>' +
+              '</td>' +
+
+              '<td>' +
+              '<button type="button" ' +
+              'class="admin-btn admin-btn--danger category-tag-remove">' +
+              'Xóa' +
+              '</button>' +
+              '</td>';
 
       return tr;
     }
