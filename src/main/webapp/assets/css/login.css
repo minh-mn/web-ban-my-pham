@@ -385,3 +385,48 @@ input::-ms-reveal,
 input::-ms-clear {
     display: none !important;
 }
+
+/* Container card */
+.auth-card {
+    background: #fff;
+    padding: 2.5rem;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+    max-width: 400px;
+    margin: 2rem auto;
+}
+
+/* Tiêu đề và mô tả */
+.auth-title { font-size: 1.5rem; margin-bottom: 0.5rem; color: #333; }
+.auth-desc { color: #666; margin-bottom: 1.5rem; font-size: 0.9rem; }
+
+/* Input field */
+.form-group { margin-bottom: 1.5rem; }
+.auth-label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: #444; }
+.auth-input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-sizing: border-box; /* Quan trọng để input không bị tràn */
+}
+
+/* Nút Submit */
+.auth-submit-btn {
+    width: 100%;
+    padding: 12px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.3s;
+}
+.auth-submit-btn:hover { background-color: #0056b3; }
+
+/* Link phụ */
+.auth-footer { text-align: center; margin-top: 1rem; }
+.auth-link { color: #007bff; text-decoration: none; font-size: 0.9rem; }
+.auth-link:hover { text-decoration: underline; }
+
