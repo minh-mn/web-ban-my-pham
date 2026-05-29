@@ -1,6 +1,7 @@
 package com.webshop.app.controller.ProductController;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -13,6 +14,8 @@ import com.webshop.app.dao.BrandDAO;
 import com.webshop.app.dao.CategoryDAO;
 import com.webshop.app.dao.CategoryTagDAO;
 import com.webshop.app.dao.ProductDAO;
+import com.webshop.app.model.Brand;
+import com.webshop.app.model.Category;
 import com.webshop.app.model.CategoryTag;
 import com.webshop.app.model.Product;
 import com.webshop.app.service.ProductPricingFacade;
@@ -90,7 +93,6 @@ public class ProductListServlet extends HttpServlet {
                 pageSize
         );
 
-        // Tính giá khuyến mãi cuối cùng
         products.forEach(product ->
                 product.setFinalPrice(pricingFacade.getFinalPrice(product))
         );
@@ -98,23 +100,56 @@ public class ProductListServlet extends HttpServlet {
         /*
          * ===== 4. LOAD THẺ DANH MỤC CHO DANH SÁCH SẢN PHẨM =====
          * Không sửa ProductDAO để tránh ảnh hưởng luồng /products đang chạy ổn.
-         * JSP có thể lấy tag theo categoryId:
-         * ${categoryTagsByCategoryId[product.category.id]}
          */
         Map<Integer, List<CategoryTag>> categoryTagsByCategoryId =
                 loadCategoryTagsByProductCategories(products);
 
         // ===== 5. DỮ LIỆU THANH SIDEBAR =====
-        req.setAttribute("categories", categoryDAO.findParents());
-        req.setAttribute("brands", brandDAO.findWithProductCount());
+        List<Category> categories = categoryDAO.findParents();
+        List<Brand> brands = brandDAO.findWithProductCount();
 
-        // Giữ lại trạng thái các bộ lọc đã tick chọn trên giao diện
+        req.setAttribute("categories", categories);
+        req.setAttribute("brands", brands);
+
+        // ===== 6. GIỮ LẠI TRẠNG THÁI FILTER =====
         req.setAttribute("priceRangeList", priceRangeList);
         req.setAttribute("selectedCategoryList", selectedCategoryList);
         req.setAttribute("selectedBrandList", selectedBrandList);
         req.setAttribute("minRating", minRating);
 
-        // ===== 6. DỮ LIỆU PHÂN TRANG & HIỂN THỊ =====
+        /*
+         * ===== 7. LABEL HIỂN THỊ CHO PHẦN "ĐANG LỌC" =====
+         * Giúp JSP hiển thị đúng tên thay vì ID:
+         * category=4 -> Serum/Essence (Tinh Chất Dưỡng)
+         * brand=1 -> Mary & May
+         * priceRange=500_1000 -> 500.000 - 1.000.000đ
+         */
+        req.setAttribute(
+                "selectedCategoryNames",
+                resolveSelectedCategoryNames(categories, selectedCategoryList)
+        );
+
+        req.setAttribute(
+                "selectedBrandNames",
+                resolveSelectedBrandNames(brands, selectedBrandList)
+        );
+
+        req.setAttribute(
+                "selectedPriceRangeLabels",
+                resolveSelectedPriceRangeLabels(priceRangeList)
+        );
+
+        req.setAttribute(
+                "selectedRatingLabel",
+                resolveRatingLabel(minRating)
+        );
+
+        req.setAttribute(
+                "selectedSortLabel",
+                resolveSortLabel(sort)
+        );
+
+        // ===== 8. DỮ LIỆU PHÂN TRANG & HIỂN THỊ =====
         req.setAttribute("products", products);
         req.setAttribute("categoryTagsByCategoryId", categoryTagsByCategoryId);
 
@@ -127,7 +162,7 @@ public class ProductListServlet extends HttpServlet {
         req.setAttribute("pageCss", "product-list.css");
         req.setAttribute("pageContent", "/jsp/product/list.jsp");
 
-        // ===== 7. RENDER =====
+        // ===== 9. RENDER =====
         req.getRequestDispatcher("/jsp/common/base.jsp").forward(req, resp);
     }
 
@@ -167,7 +202,181 @@ public class ProductListServlet extends HttpServlet {
             }
         }
 
-        return categoryIds.stream().collect(Collectors.toList());
+        return new ArrayList<>(categoryIds);
+    }
+
+    /* =====================================================
+       ACTIVE FILTER LABELS
+    ===================================================== */
+
+    private List<String> resolveSelectedCategoryNames(
+            List<Category> categories,
+            List<Integer> selectedCategoryIds
+    ) {
+        List<String> names = new ArrayList<>();
+
+        if (categories == null || categories.isEmpty()
+                || selectedCategoryIds == null || selectedCategoryIds.isEmpty()) {
+            return names;
+        }
+
+        for (Integer selectedId : selectedCategoryIds) {
+            String name = findCategoryNameById(categories, selectedId);
+
+            if (name != null && !name.isBlank()) {
+                names.add(name);
+            } else {
+                names.add("Danh mục #" + selectedId);
+            }
+        }
+
+        return names;
+    }
+
+    private String findCategoryNameById(List<Category> categories, Integer id) {
+        if (id == null || id <= 0 || categories == null || categories.isEmpty()) {
+            return null;
+        }
+
+        for (Category category : categories) {
+            if (category == null) {
+                continue;
+            }
+
+            if (category.getId() == id) {
+                return category.getName();
+            }
+
+            String childName = findCategoryNameById(category.getChildren(), id);
+
+            if (childName != null) {
+                return childName;
+            }
+        }
+
+        return null;
+    }
+
+    private List<String> resolveSelectedBrandNames(
+            List<Brand> brands,
+            List<Integer> selectedBrandIds
+    ) {
+        List<String> names = new ArrayList<>();
+
+        if (brands == null || brands.isEmpty()
+                || selectedBrandIds == null || selectedBrandIds.isEmpty()) {
+            return names;
+        }
+
+        for (Integer selectedId : selectedBrandIds) {
+            String name = findBrandNameById(brands, selectedId);
+
+            if (name != null && !name.isBlank()) {
+                names.add(name);
+            } else {
+                names.add("Thương hiệu #" + selectedId);
+            }
+        }
+
+        return names;
+    }
+
+    private String findBrandNameById(List<Brand> brands, Integer id) {
+        if (id == null || id <= 0 || brands == null || brands.isEmpty()) {
+            return null;
+        }
+
+        for (Brand brand : brands) {
+            if (brand != null && brand.getId() == id) {
+                return brand.getName();
+            }
+        }
+
+        return null;
+    }
+
+    private List<String> resolveSelectedPriceRangeLabels(List<String> priceRangeList) {
+        List<String> labels = new ArrayList<>();
+
+        if (priceRangeList == null || priceRangeList.isEmpty()) {
+            return labels;
+        }
+
+        for (String priceRange : priceRangeList) {
+            if (priceRange == null || priceRange.isBlank()) {
+                continue;
+            }
+
+            switch (priceRange.trim()) {
+                case "lt500":
+                case "0_500":
+                case "under_500":
+                    labels.add("0 - 500.000đ");
+                    break;
+
+                case "500_1000":
+                    labels.add("500.000 - 1.000.000đ");
+                    break;
+
+                case "gt1000":
+                case "over_1000":
+                    labels.add("Trên 1.000.000đ");
+                    break;
+
+                case "under-200":
+                    labels.add("Dưới 200.000đ");
+                    break;
+
+                case "200-500":
+                    labels.add("200.000 - 500.000đ");
+                    break;
+
+                case "500-1000":
+                    labels.add("500.000 - 1.000.000đ");
+                    break;
+
+                case "over-1000":
+                    labels.add("Trên 1.000.000đ");
+                    break;
+
+                default:
+                    labels.add(priceRange.trim());
+                    break;
+            }
+        }
+
+        return labels;
+    }
+
+    private String resolveRatingLabel(Integer minRating) {
+        if (minRating == null || minRating <= 0) {
+            return "";
+        }
+
+        return "Từ " + minRating + " sao";
+    }
+
+    private String resolveSortLabel(String sort) {
+        if (sort == null || sort.isBlank()) {
+            return "";
+        }
+
+        switch (sort.trim()) {
+            case "price_asc":
+                return "Giá tăng dần";
+
+            case "price_desc":
+                return "Giá giảm dần";
+
+            case "rating_desc":
+                return "Đánh giá cao";
+
+            case "newest":
+                return "Mới nhất";
+
+            default:
+                return sort.trim();
+        }
     }
 
     /* =====================================================
