@@ -1,7 +1,7 @@
 package com.webshop.app.controller.AdminController;
 
-import com.webshop.app.dao.ReturnRequestDAO;
-import com.webshop.app.model.ReturnRequest;
+import com.webshop.app.dao.CancelRequestDAO;
+import com.webshop.app.model.CancelRequest;
 import com.webshop.app.model.User;
 import com.webshop.app.service.OrderNotificationService;
 
@@ -18,14 +18,13 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
-@WebServlet("/admin/returns")
-public class AdminReturnRequestServlet extends HttpServlet {
+@WebServlet("/admin/cancel-requests")
+public class AdminCancelRequestServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
+    private static final String VIEW_LIST = "/jsp/admin/cancel/cancel_request_list.jsp";
 
-    private static final String VIEW_LIST = "/jsp/admin/return/return_list.jsp";
-
-    private final ReturnRequestDAO returnRequestDAO = new ReturnRequestDAO();
+    private final CancelRequestDAO cancelRequestDAO = new CancelRequestDAO();
     private final OrderNotificationService notificationService = new OrderNotificationService();
 
     @Override
@@ -35,11 +34,11 @@ public class AdminReturnRequestServlet extends HttpServlet {
         request.setCharacterEncoding("UTF-8");
         response.setCharacterEncoding("UTF-8");
 
-        List<ReturnRequest> requests = returnRequestDAO.findAll();
+        List<CancelRequest> requests = cancelRequestDAO.findAll();
 
-        request.setAttribute("returnRequests", requests);
-        request.setAttribute("pageTitle", "Admin - Yêu cầu hoàn hàng");
-        request.setAttribute("activeMenu", "returns");
+        request.setAttribute("cancelRequests", requests);
+        request.setAttribute("pageTitle", "Admin - Yêu cầu hủy đơn");
+        request.setAttribute("activeMenu", "cancelRequests");
         request.setAttribute("pageCss", "/assets/css/admin/admin-return.css");
         request.setAttribute("success", request.getParameter("success"));
         request.setAttribute("error", request.getParameter("error"));
@@ -69,15 +68,19 @@ public class AdminReturnRequestServlet extends HttpServlet {
         BigDecimal refundAmount = parseMoney(request.getParameter("refundAmount"));
 
         if (id <= 0) {
-            redirect(request, response, "error", "Mã yêu cầu hoàn hàng không hợp lệ.");
+            redirect(request, response, "error", "Mã yêu cầu hủy không hợp lệ.");
+            return;
+        }
+
+        CancelRequest current = cancelRequestDAO.findById(id);
+        if (current == null) {
+            redirect(request, response, "error", "Không tìm thấy yêu cầu hủy cần xử lý.");
             return;
         }
 
         String nextStatus = switch (action) {
             case "approve" -> "APPROVED";
             case "reject" -> "REJECTED";
-            case "returned" -> "RETURNED";
-            case "refunded" -> "REFUNDED";
             default -> null;
         };
 
@@ -86,13 +89,7 @@ public class AdminReturnRequestServlet extends HttpServlet {
             return;
         }
 
-        ReturnRequest current = returnRequestDAO.findById(id);
-        if (current == null) {
-            redirect(request, response, "error", "Không tìm thấy yêu cầu hoàn hàng cần cập nhật.");
-            return;
-        }
-
-        boolean updated = returnRequestDAO.updateStatus(
+        boolean updated = cancelRequestDAO.updateStatus(
                 id,
                 nextStatus,
                 adminNote,
@@ -102,15 +99,15 @@ public class AdminReturnRequestServlet extends HttpServlet {
         );
 
         if (updated) {
-            notificationService.notifyReturnProcessedSafely(
+            notificationService.notifyCancelProcessedSafely(
                     (int) current.getOrderId(),
                     current.getUserId(),
                     nextStatus,
                     adminNote
             );
-            redirect(request, response, "success", "Cập nhật yêu cầu hoàn hàng thành công.");
+            redirect(request, response, "success", "Cập nhật yêu cầu hủy đơn thành công.");
         } else {
-            redirect(request, response, "error", "Không tìm thấy yêu cầu hoàn hàng cần cập nhật.");
+            redirect(request, response, "error", "Không tìm thấy yêu cầu hủy cần cập nhật.");
         }
     }
 
@@ -118,7 +115,6 @@ public class AdminReturnRequestServlet extends HttpServlet {
         if (raw == null || raw.isBlank()) {
             return defaultValue;
         }
-
         try {
             return Long.parseLong(raw.trim());
         } catch (NumberFormatException e) {
@@ -130,11 +126,7 @@ public class AdminReturnRequestServlet extends HttpServlet {
         if (raw == null || raw.isBlank()) {
             return null;
         }
-
-        String value = raw.replace(".", "")
-                .replace(",", "")
-                .trim();
-
+        String value = raw.replace(".", "").replace(",", "").trim();
         try {
             BigDecimal amount = new BigDecimal(value);
             return amount.compareTo(BigDecimal.ZERO) < 0 ? BigDecimal.ZERO : amount;
@@ -147,7 +139,6 @@ public class AdminReturnRequestServlet extends HttpServlet {
         if (raw == null || raw.trim().isEmpty()) {
             return "";
         }
-
         return raw.trim().toLowerCase();
     }
 
@@ -155,9 +146,7 @@ public class AdminReturnRequestServlet extends HttpServlet {
         if (raw == null || raw.trim().isEmpty()) {
             return null;
         }
-
         String value = raw.trim().toUpperCase();
-
         return switch (value) {
             case "VNPAY", "BANK_TRANSFER", "CASH", "STORE_CREDIT", "MANUAL" -> value;
             default -> "MANUAL";
@@ -168,7 +157,6 @@ public class AdminReturnRequestServlet extends HttpServlet {
         if (raw == null || raw.trim().isEmpty()) {
             return null;
         }
-
         String value = raw.trim();
         return value.length() > 1000 ? value.substring(0, 1000) : value;
     }
@@ -178,6 +166,6 @@ public class AdminReturnRequestServlet extends HttpServlet {
                           String type,
                           String message) throws IOException {
         String encoded = URLEncoder.encode(message, StandardCharsets.UTF_8);
-        response.sendRedirect(request.getContextPath() + "/admin/returns?" + type + "=" + encoded);
+        response.sendRedirect(request.getContextPath() + "/admin/cancel-requests?" + type + "=" + encoded);
     }
 }
