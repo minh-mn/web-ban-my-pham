@@ -58,6 +58,12 @@ public class PolicyUploadServlet extends HttpServlet {
         request.setCharacterEncoding("UTF-8");
         response.setCharacterEncoding("UTF-8");
 
+        /*
+         * Nếu file đã được copy vào MyCosmeticShopUploads/policy
+         * nhưng insert SQL bị lỗi, dùng biến này để xóa lại file rác.
+         */
+        String savedFileNameForRollback = null;
+
         try {
             String title = trim(request.getParameter("title"));
             String slug = trim(request.getParameter("slug"));
@@ -107,6 +113,12 @@ public class PolicyUploadServlet extends HttpServlet {
                 Files.copy(inputStream, destination, StandardCopyOption.REPLACE_EXISTING);
             }
 
+            /*
+             * Từ thời điểm này, file đã tồn tại vật lý.
+             * Nếu insert SQL lỗi thì cần xóa lại file này.
+             */
+            savedFileNameForRollback = savedFileName;
+
             Policy policy = new Policy();
             policy.setTitle(title);
             policy.setSlug(slug);
@@ -122,15 +134,41 @@ public class PolicyUploadServlet extends HttpServlet {
              */
             policy.setFileName(savedFileName);
 
+            /*
+             * Insert SQL.
+             * Nếu lỗi ở đây, catch sẽ xóa file vật lý vừa upload.
+             */
             policyDAO.insert(policy);
 
+            /*
+             * SQL thành công thì không rollback file nữa.
+             */
+            savedFileNameForRollback = null;
+
             response.sendRedirect(request.getContextPath() + "/admin/policy/list");
+
         } catch (IllegalArgumentException ex) {
+            rollbackPolicyUpload(savedFileNameForRollback);
+
             String error = URLEncoder.encode(ex.getMessage(), StandardCharsets.UTF_8);
             response.sendRedirect(request.getContextPath() + "/admin/policy/list?error=" + error);
+
         } catch (Exception ex) {
+            rollbackPolicyUpload(savedFileNameForRollback);
+
             throw new ServletException("PolicyUploadServlet upload error", ex);
         }
+    }
+
+    private void rollbackPolicyUpload(String savedFileName) {
+        if (savedFileName == null || savedFileName.isBlank()) {
+            return;
+        }
+
+        /*
+         * Chỉ xóa trong MyCosmeticShopUploads/policy.
+         */
+        UploadConfig.deletePolicyFile(savedFileName);
     }
 
     private static String trim(String value) {
