@@ -38,6 +38,13 @@
 					<span class="toggle-password" style="position: absolute; right: 15px; cursor: pointer; user-select: none; font-size: 18px; z-index: 10;">🙈</span>
 				</div>
 			</div>
+
+			<div class="auth-footer" style="text-align: right; margin-top: 10px;">
+				<a href="${pageContext.request.contextPath}/forgot-password" style="text-decoration: none; color: #555; font-size: 14px;">
+					Quên mật khẩu?
+				</a>
+			</div>
+
 			<button type="submit" class="btn-auth">Đăng nhập</button>
 		</form>
 
