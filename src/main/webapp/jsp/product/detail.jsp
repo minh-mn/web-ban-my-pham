@@ -215,10 +215,6 @@
 
       <c:set var="displayProductMedia" value="${productMediaList}" />
 
-      <c:if test="${empty displayProductMedia && not empty product && not empty product.productMediaList}">
-        <c:set var="displayProductMedia" value="${product.productMediaList}" />
-      </c:if>
-
       <section class="pd-product-media-section">
         <div class="pd-product-media-head">
           <div>
@@ -259,10 +255,6 @@
                     <div class="pd-product-media-type">
                       <c:out value="${media.displayTypeLabel}" />
                     </div>
-
-                    <div class="pd-product-media-url">
-                      <c:out value="${media.mediaUrl}" />
-                    </div>
                   </div>
                 </div>
               </c:forEach>
@@ -279,17 +271,20 @@
 
     </section>
 
+    <!-- REVIEW SECTION -->
     <section class="pd-review-section" id="reviews">
       <h2>Đánh giá từ khách hàng</h2>
 
       <c:if test="${param.success == 'review_pending'}">
-        <div class="review-note" style="background:#ecfdf5;color:#166534;border:1px solid #bbf7d0;padding:12px 14px;border-radius:14px;margin-bottom:14px;">
+        <div class="review-note"
+             style="background:#ecfdf5;color:#166534;border:1px solid #bbf7d0;padding:12px 14px;border-radius:14px;margin-bottom:14px;">
           Đánh giá của bạn đã được gửi và đang chờ quản trị viên duyệt. Sau khi duyệt, voucher cảm ơn sẽ được lưu vào tài khoản.
         </div>
       </c:if>
 
       <c:if test="${param.error == 'not_eligible'}">
-        <div class="review-note" style="background:#fff1f2;color:#be123c;border:1px solid #fecdd3;padding:12px 14px;border-radius:14px;margin-bottom:14px;">
+        <div class="review-note"
+             style="background:#fff1f2;color:#be123c;border:1px solid #fecdd3;padding:12px 14px;border-radius:14px;margin-bottom:14px;">
           Bạn chỉ có thể đánh giá sản phẩm đã mua, đã thanh toán và đã giao thành công.
         </div>
       </c:if>
