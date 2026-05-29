@@ -6,6 +6,7 @@ import com.webshop.app.utils.DBConnection;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.Normalizer;
@@ -29,7 +30,7 @@ public class CategoryTagDAO {
         }
 
         String sql = """
-                SELECT id, category_id, name, slug, display_order, is_active, created_at, updated_at
+                SELECT id, category_id, name, slug, display_order, is_active
                 FROM store_category_tag
                 WHERE category_id = ?
                 ORDER BY display_order ASC, id ASC
@@ -61,7 +62,7 @@ public class CategoryTagDAO {
         }
 
         String sql = """
-                SELECT id, category_id, name, slug, display_order, is_active, created_at, updated_at
+                SELECT id, category_id, name, slug, display_order, is_active
                 FROM store_category_tag
                 WHERE category_id = ?
                   AND is_active = 1
@@ -90,6 +91,7 @@ public class CategoryTagDAO {
         Map<Integer, List<CategoryTag>> result = new LinkedHashMap<>();
 
         List<Integer> cleanedIds = cleanCategoryIds(categoryIds);
+
         if (cleanedIds.isEmpty()) {
             return result;
         }
@@ -98,20 +100,18 @@ public class CategoryTagDAO {
             result.put(categoryId, new ArrayList<>());
         }
 
-        String sql = """
-                SELECT id, category_id, name, slug, display_order, is_active, created_at, updated_at
-                FROM store_category_tag
-                WHERE is_active = 1
-                  AND category_id IN (
-                """ + placeholders(cleanedIds.size()) + """
-                )
-                ORDER BY category_id ASC, display_order ASC, id ASC
-                """;
+        String sql =
+                "SELECT id, category_id, name, slug, display_order, is_active " +
+                        "FROM store_category_tag " +
+                        "WHERE is_active = 1 " +
+                        "AND category_id IN (" + placeholders(cleanedIds.size()) + ") " +
+                        "ORDER BY category_id ASC, display_order ASC, id ASC";
 
         try (Connection connection = DBConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
 
             int index = 1;
+
             for (Integer categoryId : cleanedIds) {
                 statement.setInt(index++, categoryId);
             }
@@ -352,10 +352,34 @@ public class CategoryTagDAO {
         tag.setSlug(resultSet.getString("slug"));
         tag.setDisplayOrder(resultSet.getInt("display_order"));
         tag.setActive(resultSet.getBoolean("is_active"));
-        tag.setCreatedAt(resultSet.getTimestamp("created_at"));
-        tag.setUpdatedAt(resultSet.getTimestamp("updated_at"));
+
+        /*
+         * Không bắt buộc SELECT created_at / updated_at.
+         * Nếu database hoặc query có 2 cột này thì set thêm,
+         * nếu không có thì bỏ qua để tránh lỗi trang trắng.
+         */
+        if (hasColumn(resultSet, "created_at")) {
+            tag.setCreatedAt(resultSet.getTimestamp("created_at"));
+        }
+
+        if (hasColumn(resultSet, "updated_at")) {
+            tag.setUpdatedAt(resultSet.getTimestamp("updated_at"));
+        }
 
         return tag;
+    }
+
+    private boolean hasColumn(ResultSet resultSet, String columnName) throws SQLException {
+        ResultSetMetaData metaData = resultSet.getMetaData();
+        int columnCount = metaData.getColumnCount();
+
+        for (int i = 1; i <= columnCount; i++) {
+            if (columnName.equalsIgnoreCase(metaData.getColumnLabel(i))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /* =====================================================
@@ -398,6 +422,8 @@ public class CategoryTagDAO {
 
             if (isBlank(tag.getSlug())) {
                 tag.setSlug(toSlug(tag.getName()));
+            } else {
+                tag.setSlug(toSlug(tag.getSlug()));
             }
 
             result.add(tag);
@@ -424,6 +450,10 @@ public class CategoryTagDAO {
     }
 
     private String placeholders(int size) {
+        if (size <= 0) {
+            return "";
+        }
+
         return String.join(",", java.util.Collections.nCopies(size, "?"));
     }
 
