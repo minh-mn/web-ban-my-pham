@@ -80,6 +80,13 @@ public class Order {
 	private LocalDateTime shippedAt;
 	private LocalDateTime deliveredAt;
 
+	// ================= CUSTOMER RECEIVE CONFIRMATION =================
+
+	private boolean customerReceivedConfirmed;
+	private LocalDateTime customerReceivedAt;
+	private LocalDateTime autoCompletedAt;
+	private String receiveConfirmNote;
+
 	// ================= BASIC GET / SET =================
 
 	public int getId() {
@@ -351,6 +358,42 @@ public class Order {
 		this.deliveredAt = deliveredAt;
 	}
 
+	public boolean isCustomerReceivedConfirmed() {
+		return customerReceivedConfirmed;
+	}
+
+	public boolean getCustomerReceivedConfirmed() {
+		return customerReceivedConfirmed;
+	}
+
+	public void setCustomerReceivedConfirmed(boolean customerReceivedConfirmed) {
+		this.customerReceivedConfirmed = customerReceivedConfirmed;
+	}
+
+	public LocalDateTime getCustomerReceivedAt() {
+		return customerReceivedAt;
+	}
+
+	public void setCustomerReceivedAt(LocalDateTime customerReceivedAt) {
+		this.customerReceivedAt = customerReceivedAt;
+	}
+
+	public LocalDateTime getAutoCompletedAt() {
+		return autoCompletedAt;
+	}
+
+	public void setAutoCompletedAt(LocalDateTime autoCompletedAt) {
+		this.autoCompletedAt = autoCompletedAt;
+	}
+
+	public String getReceiveConfirmNote() {
+		return receiveConfirmNote;
+	}
+
+	public void setReceiveConfirmNote(String receiveConfirmNote) {
+		this.receiveConfirmNote = normalizeNullable(receiveConfirmNote);
+	}
+
 	// =========================================================
 	// VIEW PROPERTIES FOR JSP
 	// =========================================================
@@ -486,6 +529,40 @@ public class Order {
 
 	public boolean getReturnable() {
 		return isReturnable();
+	}
+
+
+	/** JSP gọi: ${order.receiveConfirmable} */
+	public boolean isReceiveConfirmable() {
+		return isDelivered() && !customerReceivedConfirmed && !isShippingCanceled();
+	}
+
+	public boolean getReceiveConfirmable() {
+		return isReceiveConfirmable();
+	}
+
+	/** JSP gọi: ${order.receiveStatusLabel} */
+	public String getReceiveStatusLabel() {
+		if (customerReceivedConfirmed) {
+			if (autoCompletedAt != null) {
+				return "Hệ thống đã tự động xác nhận đã nhận hàng";
+			}
+			return "Khách hàng đã xác nhận đã nhận hàng";
+		}
+
+		if (isDelivered()) {
+			return "Chờ khách hàng xác nhận đã nhận hàng";
+		}
+
+		return "Chưa giao thành công";
+	}
+
+	public Date getCustomerReceivedAtDate() {
+		return toDate(customerReceivedAt);
+	}
+
+	public Date getAutoCompletedAtDate() {
+		return toDate(autoCompletedAt);
 	}
 
 	/** JSP gọi: ${order.returnDeadlineText} */
