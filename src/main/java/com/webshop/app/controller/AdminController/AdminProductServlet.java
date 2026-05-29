@@ -5,6 +5,7 @@ import com.webshop.app.dao.BrandDAO;
 import com.webshop.app.dao.CategoryDAO;
 import com.webshop.app.dao.ProductDAO;
 import com.webshop.app.dao.ProductImageDAO;
+import com.webshop.app.dao.ProductMediaDAO;
 import com.webshop.app.model.Brand;
 import com.webshop.app.model.Category;
 import com.webshop.app.model.Product;
@@ -33,8 +34,8 @@ import jakarta.servlet.http.Part;
 
 @MultipartConfig(
 		fileSizeThreshold = 1024 * 1024,
-		maxFileSize = 10 * 1024 * 1024,
-		maxRequestSize = 60 * 1024 * 1024
+		maxFileSize = 50 * 1024 * 1024,
+		maxRequestSize = 220 * 1024 * 1024
 )
 @WebServlet("/admin/products")
 public class AdminProductServlet extends HttpServlet {
@@ -43,6 +44,9 @@ public class AdminProductServlet extends HttpServlet {
 
 	private final ProductDAO productDAO = new ProductDAO();
 	private final ProductImageDAO productImageDAO = new ProductImageDAO();
+
+	// Issue 123: DAO quản lý media chi tiết sản phẩm: ảnh/video
+	private final ProductMediaDAO productMediaDAO = new ProductMediaDAO();
 
 	private final CategoryDAO categoryDAO = new CategoryDAO();
 	private final BrandDAO brandDAO = new BrandDAO();
@@ -58,6 +62,7 @@ public class AdminProductServlet extends HttpServlet {
 		 * Đảm bảo các thư mục upload tồn tại:
 		 * - MyCosmeticShopUploads/product
 		 * - MyCosmeticShopUploads/product/gallery
+		 * - MyCosmeticShopUploads/product/media
 		 */
 		UploadConfig.ensureUploadDirectories();
 	}
@@ -98,7 +103,11 @@ public class AdminProductServlet extends HttpServlet {
 				}
 
 				product.setImages(productImageDAO.findByProductId(product.getId()));
+
 				req.setAttribute("product", product);
+
+				// Issue 123: load media chi tiết ảnh/video để hiển thị ở form sửa
+				req.setAttribute("productMediaList", productMediaDAO.findByProductId(product.getId()));
 
 				loadDropdowns(req);
 				req.getRequestDispatcher(JSP_FORM).forward(req, resp);
@@ -146,6 +155,10 @@ public class AdminProductServlet extends HttpServlet {
 
 					int newId = productDAO.create(product);
 
+					/*
+					 * Gallery ảnh cũ của sản phẩm.
+					 * Input name bên JSP: imageGallery
+					 */
 					List<String> gallery = saveMultiIfPresent(req, "imageGallery", true);
 
 					if (!gallery.isEmpty()) {
@@ -153,6 +166,21 @@ public class AdminProductServlet extends HttpServlet {
 
 						for (String imagePath : gallery) {
 							productImageDAO.insert(newId, imagePath, order++);
+						}
+					}
+
+					/*
+					 * Issue 123:
+					 * Media chi tiết sản phẩm gồm nhiều ảnh/video.
+					 * Input name bên JSP: productMedia
+					 */
+					List<MediaUploadResult> mediaFiles = saveProductMediaIfPresent(req, "productMedia");
+
+					if (!mediaFiles.isEmpty()) {
+						int order = 0;
+
+						for (MediaUploadResult media : mediaFiles) {
+							productMediaDAO.insert(newId, media.url, media.mediaType, order++);
 						}
 					}
 
@@ -187,15 +215,38 @@ public class AdminProductServlet extends HttpServlet {
 
 					productDAO.update(product);
 
+					/*
+					 * Gallery ảnh sản phẩm.
+					 * Bản cũ khi upload gallery mới sẽ xóa toàn bộ gallery cũ.
+					 * Bản này chuyển sang append để đúng yêu cầu "thêm được nhiều ảnh hơn".
+					 */
 					List<String> gallery = saveMultiIfPresent(req, "imageGallery", true);
 
 					if (!gallery.isEmpty()) {
-						productImageDAO.deleteByProductId(id);
-
-						int order = 0;
+						int order = productImageDAO.findByProductId(id).size();
 
 						for (String imagePath : gallery) {
 							productImageDAO.insert(id, imagePath, order++);
+						}
+					}
+
+					/*
+					 * Issue 123:
+					 * Xóa media chi tiết đã chọn, nếu JSP có checkbox name="deleteMediaIds".
+					 */
+					deleteSelectedProductMedia(req, id);
+
+					/*
+					 * Issue 123:
+					 * Thêm mới nhiều ảnh/video chi tiết sản phẩm.
+					 */
+					List<MediaUploadResult> mediaFiles = saveProductMediaIfPresent(req, "productMedia");
+
+					if (!mediaFiles.isEmpty()) {
+						int order = productMediaDAO.findByProductId(id).size();
+
+						for (MediaUploadResult media : mediaFiles) {
+							productMediaDAO.insert(id, media.url, media.mediaType, order++);
 						}
 					}
 
@@ -246,6 +297,7 @@ public class AdminProductServlet extends HttpServlet {
 
 				if (id > 0) {
 					product.setImages(productImageDAO.findByProductId(id));
+					req.setAttribute("productMediaList", productMediaDAO.findByProductId(id));
 				}
 			}
 
@@ -274,6 +326,12 @@ public class AdminProductServlet extends HttpServlet {
 
 		product.setTitle(title);
 		product.setSlug(slug);
+
+		/*
+		 * Issue 123:
+		 * description có thể nhập HTML đơn giản từ form để mô tả chi tiết hơn.
+		 * Phần hiển thị ngoài detail.jsp sẽ quyết định escape hay render HTML.
+		 */
 		product.setDescription(req.getParameter("description"));
 
 		product.setPrice(parseBigDecimal(req.getParameter("price"), BigDecimal.ZERO));
@@ -365,7 +423,7 @@ public class AdminProductServlet extends HttpServlet {
 		return product;
 	}
 
-	/* ===================== UPLOAD HELPERS ===================== */
+	/* ===================== UPLOAD IMAGE HELPERS ===================== */
 
 	private String saveIfPresent(HttpServletRequest req, String partName, boolean gallery)
 			throws Exception {
@@ -388,7 +446,7 @@ public class AdminProductServlet extends HttpServlet {
 			return null;
 		}
 
-		return savePartToUploadFolder(part, gallery);
+		return saveImagePartToUploadFolder(part, gallery);
 	}
 
 	private List<String> saveMultiIfPresent(HttpServletRequest req, String partName, boolean gallery)
@@ -419,13 +477,13 @@ public class AdminProductServlet extends HttpServlet {
 				continue;
 			}
 
-			result.add(savePartToUploadFolder(part, gallery));
+			result.add(saveImagePartToUploadFolder(part, gallery));
 		}
 
 		return result;
 	}
 
-	private String savePartToUploadFolder(Part part, boolean gallery)
+	private String saveImagePartToUploadFolder(Part part, boolean gallery)
 			throws Exception {
 
 		String submitted = getSubmittedFileName(part);
@@ -478,6 +536,134 @@ public class AdminProductServlet extends HttpServlet {
 		return UploadConfig.toProductUrl(newName);
 	}
 
+	/* ===================== ISSUE 123 - PRODUCT MEDIA HELPERS ===================== */
+
+	private List<MediaUploadResult> saveProductMediaIfPresent(HttpServletRequest req, String partName)
+			throws Exception {
+
+		Collection<Part> parts;
+
+		try {
+			parts = req.getParts();
+		} catch (IllegalStateException ex) {
+			throw new IllegalArgumentException("File upload quá lớn.");
+		}
+
+		List<MediaUploadResult> result = new ArrayList<>();
+
+		for (Part part : parts) {
+			if (!partName.equals(part.getName())) {
+				continue;
+			}
+
+			if (part.getSize() <= 0) {
+				continue;
+			}
+
+			String submitted = getSubmittedFileName(part);
+
+			if (submitted == null || submitted.isBlank()) {
+				continue;
+			}
+
+			result.add(saveProductMediaPartToUploadFolder(part));
+		}
+
+		return result;
+	}
+
+	private MediaUploadResult saveProductMediaPartToUploadFolder(Part part)
+			throws Exception {
+
+		String submitted = getSubmittedFileName(part);
+
+		if (submitted == null || submitted.isBlank()) {
+			return null;
+		}
+
+		String ext = getExtensionLower(submitted);
+
+		boolean imageExt = isAllowedImageExtension(ext);
+		boolean videoExt = isAllowedVideoExtension(ext);
+
+		if (!imageExt && !videoExt) {
+			throw new IllegalArgumentException(
+					"Định dạng media không hỗ trợ. Chỉ chấp nhận ảnh: png, jpg, jpeg, webp, gif hoặc video: mp4, webm, mov, m4v."
+			);
+		}
+
+		String contentType = part.getContentType();
+		String lowerContentType = contentType == null
+				? ""
+				: contentType.toLowerCase(Locale.ROOT);
+
+		String mediaType;
+
+		if (imageExt) {
+			if (lowerContentType.startsWith("video/")) {
+				throw new IllegalArgumentException("File media không hợp lệ: phần mở rộng ảnh nhưng nội dung là video.");
+			}
+
+			mediaType = "IMAGE";
+		} else {
+			if (lowerContentType.startsWith("image/")) {
+				throw new IllegalArgumentException("File media không hợp lệ: phần mở rộng video nhưng nội dung là ảnh.");
+			}
+
+			mediaType = "VIDEO";
+		}
+
+		Path uploadDir = UploadConfig.PRODUCT_MEDIA_DIR.toAbsolutePath().normalize();
+		Files.createDirectories(uploadDir);
+
+		String newName = UUID.randomUUID().toString().replace("-", "") + "." + ext;
+		Path destination = UploadConfig.resolveProductMediaFile(newName).toAbsolutePath().normalize();
+
+		if (!destination.startsWith(uploadDir)) {
+			throw new IllegalArgumentException("Đường dẫn upload media không hợp lệ.");
+		}
+
+		try (InputStream inputStream = part.getInputStream()) {
+			Files.copy(inputStream, destination, StandardCopyOption.REPLACE_EXISTING);
+		}
+
+		/*
+		 * Database chỉ lưu URL public:
+		 * - /uploads/product/media/{fileName}
+		 */
+		String publicUrl = UploadConfig.toProductMediaUrl(newName);
+
+		return new MediaUploadResult(publicUrl, mediaType);
+	}
+
+	private void deleteSelectedProductMedia(HttpServletRequest req, int productId) {
+		String[] deleteIds = req.getParameterValues("deleteMediaIds");
+
+		if (deleteIds == null || deleteIds.length == 0) {
+			return;
+		}
+
+		for (String rawId : deleteIds) {
+			int mediaId = parseInt(rawId, -1);
+
+			if (mediaId > 0) {
+				productMediaDAO.deleteByIdAndProductId(mediaId, productId);
+			}
+		}
+	}
+
+	private static final class MediaUploadResult {
+		private final String url;
+		private final String mediaType;
+
+		private MediaUploadResult(String url, String mediaType) {
+			this.url = url;
+			this.mediaType = mediaType;
+		}
+	}
+
+	/* ===================== FILE HELPERS ===================== */
+
 	private String getSubmittedFileName(Part part) {
 		if (part == null) {
 			return null;
@@ -514,6 +700,13 @@ public class AdminProductServlet extends HttpServlet {
 				|| "jpeg".equals(ext)
 				|| "webp".equals(ext)
 				|| "gif".equals(ext);
+	}
+
+	private boolean isAllowedVideoExtension(String ext) {
+		return "mp4".equals(ext)
+				|| "webm".equals(ext)
+				|| "mov".equals(ext)
+				|| "m4v".equals(ext);
 	}
 
 	/* ===================== PARSE HELPERS ===================== */
