@@ -6,6 +6,7 @@
    - Coupon form
    - User edit form
    - Brand / Category form
+   - Promotion form
 ========================================================= */
 
 /* =========================
@@ -167,7 +168,6 @@
   display: none;
 }
 
-/* Dùng riêng cho logo thương hiệu */
 .admin-preview__img--logo {
   max-width: 360px;
   min-height: 160px;
@@ -177,7 +177,6 @@
   background: #fff;
 }
 
-/* Dùng nếu muốn bọc preview trong một khung riêng */
 .admin-preview__box {
   display: grid;
   gap: 10px;
@@ -222,6 +221,51 @@
 }
 
 /* =========================
+   Section / Info box
+========================= */
+
+.admin-form-section {
+  padding: 16px;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-lg, 18px);
+  background: rgba(15, 23, 42, 0.018);
+}
+
+.admin-form-section__title {
+  margin: 0 0 14px;
+  color: var(--admin-text);
+  font-size: 15px;
+  line-height: 1.25;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+
+.admin-info-box {
+  padding: 13px 14px;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius, 14px);
+  background: rgba(15, 23, 42, 0.025);
+}
+
+.admin-info-box__title {
+  color: var(--admin-text);
+  font-size: 13px;
+  font-weight: 900;
+  margin-bottom: 5px;
+}
+
+.admin-info-box__text {
+  color: var(--admin-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.admin-info-box__text strong {
+  color: var(--admin-text);
+  font-weight: 900;
+}
+
+/* =========================
    Actions bar chuẩn cho form
 ========================= */
 
@@ -239,36 +283,106 @@
    Dùng cho: /jsp/admin/category/category_form.jsp
 ========================================================= */
 
-.admin-info-box {
-  padding: 13px 14px;
-  border: 1px solid rgba(59, 130, 246, 0.22);
+.category-form {
+  width: 100%;
+}
+
+.category-tag-section {
+  display: grid;
+  gap: 14px;
+}
+
+.category-tag-section__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.category-tag-section__head .admin-form-section__title {
+  margin-bottom: 6px;
+}
+
+.category-tag-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--admin-border);
   border-radius: var(--admin-radius, 14px);
-  background: rgba(59, 130, 246, 0.06);
+  background: #fff;
 }
 
-.admin-info-box__title {
-  margin-bottom: 5px;
-  color: #1d4ed8;
-  font-size: 13px;
+.category-tag-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+}
+
+.category-tag-table th,
+.category-tag-table td {
+  padding: 10px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  vertical-align: middle;
+}
+
+.category-tag-table th {
+  background: rgba(15, 23, 42, 0.025);
+  color: rgba(15, 23, 42, 0.68);
+  font-size: 12px;
   font-weight: 900;
-  line-height: 1.35;
+  text-align: left;
+  white-space: nowrap;
 }
 
-.admin-info-box__text {
-  color: rgba(15, 23, 42, 0.74);
-  font-size: 13px;
-  line-height: 1.5;
+.category-tag-table tbody tr:last-child td {
+  border-bottom: 0;
 }
 
-.admin-info-box__text strong {
-  color: var(--admin-text);
-  font-weight: 900;
+.category-tag-row {
+  transition: background 0.15s ease;
+}
+
+.category-tag-row:hover {
+  background: rgba(255, 95, 162, 0.025);
+}
+
+.category-tag-name {
+  min-width: 190px;
+}
+
+.category-tag-slug {
+  min-width: 180px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+}
+
+.category-tag-order {
+  min-width: 90px;
+  max-width: 110px;
+}
+
+.category-tag-active {
+  min-width: 125px;
+}
+
+.category-tag-remove {
+  min-width: 58px;
+  height: 36px;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.category-tag-note {
+  margin-top: -2px;
+  padding: 10px 12px;
+  border: 1px dashed var(--admin-border);
+  border-radius: var(--admin-radius, 14px);
+  background: rgba(15, 23, 42, 0.02);
 }
 
 /* =========================================================
    USER EDIT FORM
    Dùng cho: /jsp/admin/user/user_form.jsp
-   Giữ lại để không ảnh hưởng trang chỉnh sửa user hiện tại
 ========================================================= */
 
 .user-edit-page {
@@ -470,7 +584,6 @@
 /* =========================================================
    Unified Promotion Form
    Scope: promotion_form.jsp
-   Chỉ dùng cho trang /admin/promotions?action=new|edit
 ========================================================= */
 
 .admin-promotion-topbar {
@@ -515,21 +628,17 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-
   min-height: 38px;
   padding: 0 13px;
   border-radius: 999px;
   border: 1px solid var(--admin-border);
-
   background: #fff;
   color: rgba(15, 23, 42, 0.72);
   text-decoration: none;
-
   font-size: 13px;
   font-weight: 850;
   line-height: 1;
   white-space: nowrap;
-
   transition:
           background 0.14s ease,
           border-color 0.14s ease,
@@ -558,22 +667,6 @@
   margin-bottom: 0;
 }
 
-.admin-form-section {
-  padding: 16px;
-  border: 1px solid var(--admin-border);
-  border-radius: var(--admin-radius-lg, 18px);
-  background: rgba(15, 23, 42, 0.018);
-}
-
-.admin-form-section__title {
-  margin: 0 0 14px;
-  color: var(--admin-text);
-  font-size: 15px;
-  line-height: 1.25;
-  font-weight: 900;
-  letter-spacing: -0.01em;
-}
-
 .admin-form-grid {
   display: grid;
   gap: 14px;
@@ -588,191 +681,8 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.admin-field--full {
-  grid-column: 1 / -1;
-}
-
-.admin-promo-form .admin-field > span {
-  color: #374151;
-  font-size: 13px;
-  font-weight: 850;
-  line-height: 1.3;
-}
-
-.admin-promo-form .admin-field > span b {
-  color: #be185d;
-}
-
-.admin-promo-form .admin-input,
-.admin-promo-form .admin-select {
-  min-height: 42px;
-}
-
-.admin-promo-form .admin-textarea {
-  min-height: 110px;
-  resize: vertical;
-  line-height: 1.5;
-}
-
-.admin-promo-form .admin-input::placeholder,
-.admin-promo-form .admin-textarea::placeholder {
-  color: rgba(15, 23, 42, 0.36);
-}
-
-.admin-switch-field {
-  justify-content: flex-start;
-}
-
-.admin-switch {
-  min-height: 42px;
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-
-  padding: 0 12px;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  background: #fff;
-
-  color: rgba(15, 23, 42, 0.74);
-  font-size: 13px;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.admin-switch input {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--admin-brand, #ff5fa2);
-}
-
-.admin-form-actions,
-.admin-promo-form-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
-
-  padding-top: 16px;
-  border-top: 1px solid var(--admin-border);
-}
-
-.admin-promo-scope-field {
-  transition: opacity 0.15s ease;
-}
-
-/* =========================
-   Responsive
-========================= */
-
-@media (max-width: 1180px) {
-  .user-edit-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .user-summary-card {
-    position: static;
-  }
-}
-
-@media (max-width: 900px) {
-  .admin-grid-2 {
-    grid-template-columns: 1fr;
-  }
-
-  .admin-form-grid--2,
-  .admin-form-grid--3 {
-    grid-template-columns: 1fr;
-  }
-
-  .admin-field--full {
-    grid-column: auto;
-  }
-
-  .admin-preview__img {
-    max-width: 100%;
-    max-height: 280px;
-  }
-
-  .admin-preview__img--logo {
-    max-width: 360px;
-    max-height: 220px;
-  }
-}
-
-@media (max-width: 720px) {
-  .user-form-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .user-password-input-row {
-    grid-template-columns: 1fr;
-  }
-
-  .user-form-actions,
-  .admin-actions,
-  .admin-form-actions,
-  .admin-promo-form-actions {
-    justify-content: flex-start;
-    flex-wrap: wrap;
-  }
-
-  .user-summary-item {
-    grid-template-columns: 1fr;
-    gap: 4px;
-  }
-
-  .user-summary-value {
-    text-align: left;
-  }
-
-  .admin-promotion-topbar {
-    flex-direction: column;
-  }
-
-  .admin-promotion-create {
-    width: 100%;
-    justify-content: flex-start;
-    align-items: stretch;
-  }
-
-  .admin-promotion-create .admin-btn {
-    width: 100%;
-  }
-
-  .admin-promo-tabs {
-    align-items: stretch;
-  }
-
-  .admin-promo-tab {
-    width: 100%;
-  }
-}
-
-@media (max-width: 560px) {
-  .admin-actions .admin-btn,
-  .admin-actions button,
-  .admin-form-actions .admin-btn,
-  .admin-form-actions button,
-  .admin-promo-form-actions .admin-btn,
-  .admin-promo-form-actions button {
-    width: 100%;
-  }
-
-  .admin-preview__img {
-    min-height: 140px;
-  }
-
-  .admin-preview__img--logo {
-    min-height: 130px;
-    padding: 12px;
-  }
-}
-
-.admin-btn--ok {
-  background: #16a34a !important;
-  color: #ffffff !important;
-  border-color: #16a34a !important;
+.admin-promo-hidden {
+  display: none !important;
 }
 
 /* =========================================================
@@ -921,7 +831,56 @@
   line-height: 1.5;
 }
 
-@media (max-width: 720px) {
+/* =========================
+   Responsive
+========================= */
+
+@media (max-width: 1180px) {
+  .user-edit-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .user-summary-card {
+    position: static;
+  }
+
+  .admin-form-grid--3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .admin-grid-2,
+  .admin-form-grid--2,
+  .admin-form-grid--3 {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-preview__img {
+    max-width: 100%;
+    max-height: 280px;
+  }
+
+  .admin-preview__img--logo {
+    max-width: 360px;
+    max-height: 220px;
+  }
+}
+
+@media (max-width: 760px) {
+  .category-tag-section__head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .category-tag-section__head .admin-btn {
+    width: 100%;
+  }
+
+  .category-tag-table {
+    min-width: 720px;
+  }
+
   .admin-promo-product-picker__head,
   .admin-promo-product-picker__toolbar {
     flex-direction: column;
@@ -936,5 +895,50 @@
 
   .admin-promo-product-list {
     max-height: 420px;
+  }
+}
+
+@media (max-width: 720px) {
+  .user-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .user-password-input-row {
+    grid-template-columns: 1fr;
+  }
+
+  .user-form-actions,
+  .admin-actions {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .user-summary-item {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .user-summary-value {
+    text-align: left;
+  }
+}
+
+@media (max-width: 560px) {
+  .admin-actions .admin-btn,
+  .admin-actions button {
+    width: 100%;
+  }
+
+  .admin-preview__img {
+    min-height: 140px;
+  }
+
+  .admin-preview__img--logo {
+    min-height: 130px;
+    padding: 12px;
+  }
+
+  .admin-form-section {
+    padding: 13px;
   }
 }
