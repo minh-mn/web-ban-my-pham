@@ -63,11 +63,17 @@
                     || not empty param.brand
                     || not empty param.priceRange
                     || not empty param.rating
-                    || not empty param.sort}">
+                    || not empty param.sort
+                    || not empty selectedCategoryNames
+                    || not empty selectedBrandNames
+                    || not empty selectedPriceRangeLabels
+                    || not empty selectedRatingLabel
+                    || not empty selectedSortLabel}">
           <div class="product-filter-tags">
 
             <span class="product-filter-tags__label">Đang lọc:</span>
 
+            <!-- TỪ KHÓA -->
             <c:if test="${not empty param.q}">
               <span class="product-filter-tag">
                 Từ khóa:
@@ -77,66 +83,157 @@
               </span>
             </c:if>
 
-            <c:if test="${not empty param.category}">
-              <span class="product-filter-tag">
-                Danh mục:
-                <strong>
-                  <c:out value="${param.category}" />
-                </strong>
-              </span>
-            </c:if>
+            <!-- DANH MỤC: ưu tiên tên từ servlet, fallback về ID nếu chưa có label -->
+            <c:choose>
+              <c:when test="${not empty selectedCategoryNames}">
+                <c:forEach var="categoryName" items="${selectedCategoryNames}">
+                  <span class="product-filter-tag">
+                    Danh mục:
+                    <strong>
+                      <c:out value="${categoryName}" />
+                    </strong>
+                  </span>
+                </c:forEach>
+              </c:when>
 
-            <c:if test="${not empty param.brand}">
-              <span class="product-filter-tag">
-                Thương hiệu:
-                <strong>
-                  <c:out value="${param.brand}" />
-                </strong>
-              </span>
-            </c:if>
+              <c:when test="${not empty paramValues.category}">
+                <c:forEach var="categoryId" items="${paramValues.category}">
+                  <span class="product-filter-tag">
+                    Danh mục:
+                    <strong>
+                      #<c:out value="${categoryId}" />
+                    </strong>
+                  </span>
+                </c:forEach>
+              </c:when>
+            </c:choose>
 
-            <c:if test="${not empty param.priceRange}">
-              <span class="product-filter-tag">
-                Giá:
-                <strong>
-                  <c:choose>
-                    <c:when test="${param.priceRange eq 'under-200'}">Dưới 200.000đ</c:when>
-                    <c:when test="${param.priceRange eq '200-500'}">200.000đ - 500.000đ</c:when>
-                    <c:when test="${param.priceRange eq '500-1000'}">500.000đ - 1.000.000đ</c:when>
-                    <c:when test="${param.priceRange eq 'over-1000'}">Trên 1.000.000đ</c:when>
-                    <c:otherwise><c:out value="${param.priceRange}" /></c:otherwise>
-                  </c:choose>
-                </strong>
-              </span>
-            </c:if>
+            <!-- THƯƠNG HIỆU: ưu tiên tên từ servlet, fallback về ID nếu chưa có label -->
+            <c:choose>
+              <c:when test="${not empty selectedBrandNames}">
+                <c:forEach var="brandName" items="${selectedBrandNames}">
+                  <span class="product-filter-tag">
+                    Thương hiệu:
+                    <strong>
+                      <c:out value="${brandName}" />
+                    </strong>
+                  </span>
+                </c:forEach>
+              </c:when>
 
-            <c:if test="${not empty param.rating}">
-              <span class="product-filter-tag">
-                Đánh giá:
-                <strong>
-                  Từ <c:out value="${param.rating}" /> sao
-                </strong>
-              </span>
-            </c:if>
+              <c:when test="${not empty paramValues.brand}">
+                <c:forEach var="brandId" items="${paramValues.brand}">
+                  <span class="product-filter-tag">
+                    Thương hiệu:
+                    <strong>
+                      #<c:out value="${brandId}" />
+                    </strong>
+                  </span>
+                </c:forEach>
+              </c:when>
+            </c:choose>
 
-            <c:if test="${not empty param.sort}">
-              <span class="product-filter-tag">
-                Sắp xếp:
-                <strong>
-                  <c:choose>
-                    <c:when test="${param.sort eq 'price_asc'}">Giá tăng dần</c:when>
-                    <c:when test="${param.sort eq 'price_desc'}">Giá giảm dần</c:when>
-                    <c:when test="${param.sort eq 'rating_desc'}">Đánh giá cao</c:when>
-                    <c:when test="${param.sort eq 'newest'}">Mới nhất</c:when>
-                    <c:otherwise><c:out value="${param.sort}" /></c:otherwise>
-                  </c:choose>
-                </strong>
-              </span>
-            </c:if>
+            <!-- KHOẢNG GIÁ: ưu tiên label từ servlet, fallback tự map trong JSP -->
+            <c:choose>
+              <c:when test="${not empty selectedPriceRangeLabels}">
+                <c:forEach var="priceLabel" items="${selectedPriceRangeLabels}">
+                  <span class="product-filter-tag">
+                    Giá:
+                    <strong>
+                      <c:out value="${priceLabel}" />
+                    </strong>
+                  </span>
+                </c:forEach>
+              </c:when>
+
+              <c:when test="${not empty paramValues.priceRange}">
+                <c:forEach var="priceRangeItem" items="${paramValues.priceRange}">
+                  <span class="product-filter-tag">
+                    Giá:
+                    <strong>
+                      <c:choose>
+                        <c:when test="${priceRangeItem eq 'lt500' || priceRangeItem eq '0_500' || priceRangeItem eq 'under_500'}">
+                          0 - 500.000đ
+                        </c:when>
+
+                        <c:when test="${priceRangeItem eq '500_1000' || priceRangeItem eq '500-1000'}">
+                          500.000 - 1.000.000đ
+                        </c:when>
+
+                        <c:when test="${priceRangeItem eq 'gt1000' || priceRangeItem eq 'over_1000' || priceRangeItem eq 'over-1000'}">
+                          Trên 1.000.000đ
+                        </c:when>
+
+                        <c:when test="${priceRangeItem eq 'under-200'}">
+                          Dưới 200.000đ
+                        </c:when>
+
+                        <c:when test="${priceRangeItem eq '200-500'}">
+                          200.000 - 500.000đ
+                        </c:when>
+
+                        <c:otherwise>
+                          <c:out value="${priceRangeItem}" />
+                        </c:otherwise>
+                      </c:choose>
+                    </strong>
+                  </span>
+                </c:forEach>
+              </c:when>
+            </c:choose>
+
+            <!-- ĐÁNH GIÁ -->
+            <c:choose>
+              <c:when test="${not empty selectedRatingLabel}">
+                <span class="product-filter-tag">
+                  Đánh giá:
+                  <strong>
+                    <c:out value="${selectedRatingLabel}" />
+                  </strong>
+                </span>
+              </c:when>
+
+              <c:when test="${not empty param.rating}">
+                <span class="product-filter-tag">
+                  Đánh giá:
+                  <strong>
+                    Từ <c:out value="${param.rating}" /> sao
+                  </strong>
+                </span>
+              </c:when>
+            </c:choose>
+
+            <!-- SẮP XẾP -->
+            <c:choose>
+              <c:when test="${not empty selectedSortLabel}">
+                <span class="product-filter-tag">
+                  Sắp xếp:
+                  <strong>
+                    <c:out value="${selectedSortLabel}" />
+                  </strong>
+                </span>
+              </c:when>
+
+              <c:when test="${not empty param.sort}">
+                <span class="product-filter-tag">
+                  Sắp xếp:
+                  <strong>
+                    <c:choose>
+                      <c:when test="${param.sort eq 'price_asc'}">Giá tăng dần</c:when>
+                      <c:when test="${param.sort eq 'price_desc'}">Giá giảm dần</c:when>
+                      <c:when test="${param.sort eq 'rating_desc'}">Đánh giá cao</c:when>
+                      <c:when test="${param.sort eq 'newest'}">Mới nhất</c:when>
+                      <c:otherwise><c:out value="${param.sort}" /></c:otherwise>
+                    </c:choose>
+                  </strong>
+                </span>
+              </c:when>
+            </c:choose>
 
             <a class="product-filter-clear" href="${ctx}/products">
               Xóa bộ lọc
             </a>
+
           </div>
         </c:if>
 
