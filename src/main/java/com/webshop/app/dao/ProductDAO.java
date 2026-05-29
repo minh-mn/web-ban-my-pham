@@ -545,6 +545,9 @@ public class ProductDAO {
 	 * Xóa sản phẩm an toàn:
 	 * - Nếu sản phẩm đã có trong store_orderitem: chỉ ẩn sản phẩm bằng is_active = 0.
 	 * - Nếu sản phẩm chưa có đơn hàng: xóa cứng trong transaction.
+	 *
+	 * Issue 123:
+	 * - Khi xóa cứng sản phẩm, xóa thêm store_productmedia để tránh lỗi khóa ngoại.
 	 */
 	public DeleteMode deleteOrDeactivateSafely(int productId) {
 		String checkProductSql = "SELECT id FROM store_product WHERE id = ?";
@@ -555,6 +558,10 @@ public class ProductDAO {
 		String deleteCartItemsSql = "DELETE FROM cart_items WHERE product_id = ?";
 		String deleteReviewsSql = "DELETE FROM store_review WHERE product_id = ?";
 		String deleteImagesSql = "DELETE FROM store_productimage WHERE product_id = ?";
+
+		// Issue 123: xóa media chi tiết ảnh/video của sản phẩm
+		String deleteProductMediaSql = "DELETE FROM store_productmedia WHERE product_id = ?";
+
 		String deleteProductDiscountSql = "DELETE FROM store_productdiscount WHERE product_id = ?";
 
 		/*
@@ -609,6 +616,10 @@ public class ProductDAO {
 				executeDeleteByProductId(conn, deleteCartItemsSql, productId);
 				executeDeleteByProductId(conn, deleteReviewsSql, productId);
 				executeDeleteByProductId(conn, deleteImagesSql, productId);
+
+				// Issue 123: xóa media ảnh/video trước khi xóa sản phẩm
+				executeDeleteByProductId(conn, deleteProductMediaSql, productId);
+
 				executeDeleteByProductId(conn, deleteProductDiscountSql, productId);
 
 				executeDeleteByProductId(conn, deleteCouponProductSql, productId);
