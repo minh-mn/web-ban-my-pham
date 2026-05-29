@@ -159,11 +159,75 @@ public class BrandDAO {
     }
 
     /*
+     * Lấy logo URL trước khi update/delete.
+     * Servlet dùng URL này để xóa file vật lý trong MyCosmeticShopUploads/brand
+     * sau khi SQL update/delete thành công.
+     */
+    public String findImageUrlById(int id) {
+        validateId(id);
+
+        try (Connection connection = DBConnection.getConnection()) {
+            boolean hasImageColumn = hasBrandImageColumn(connection);
+
+            if (!hasImageColumn) {
+                return null;
+            }
+
+            String sql = """
+                    SELECT image
+                    FROM store_brand
+                    WHERE id = ?
+                    """;
+
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setInt(1, id);
+
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    if (resultSet.next()) {
+                        return resultSet.getString("image");
+                    }
+                }
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("BrandDAO.findImageUrlById error", e);
+        }
+
+        return null;
+    }
+
+    public boolean existsById(int id) {
+        if (id <= 0) {
+            return false;
+        }
+
+        String sql = """
+                SELECT 1
+                FROM store_brand
+                WHERE id = ?
+                LIMIT 1
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setInt(1, id);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                return resultSet.next();
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("BrandDAO.existsById error", e);
+        }
+    }
+
+    /*
      * Tương thích code cũ:
      * brandDAO.create(name)
      */
-    public void create(String name) {
-        create(name, null);
+    public boolean create(String name) {
+        return create(name, null);
     }
 
     /*
@@ -171,7 +235,7 @@ public class BrandDAO {
      * Nếu database có cột image thì lưu logo.
      * Nếu database chưa có cột image thì vẫn thêm được brand, không lỗi SQL.
      */
-    public void create(String name, String image) {
+    public boolean create(String name, String image) {
         validateName(name);
 
         try (Connection connection = DBConnection.getConnection()) {
@@ -194,7 +258,7 @@ public class BrandDAO {
                     statement.setString(2, normalizeImage(image));
                 }
 
-                statement.executeUpdate();
+                return statement.executeUpdate() > 0;
             }
 
         } catch (SQLException e) {
@@ -212,14 +276,14 @@ public class BrandDAO {
      *
      * Khi chỉ sửa tên, giữ lại logo cũ.
      */
-    public void update(int id, String name) {
+    public boolean update(int id, String name) {
         validateId(id);
         validateName(name);
 
         Brand currentBrand = findById(id);
         String currentImage = currentBrand != null ? currentBrand.getImage() : null;
 
-        update(id, name, currentImage);
+        return update(id, name, currentImage);
     }
 
     /*
@@ -227,7 +291,7 @@ public class BrandDAO {
      * Nếu database có cột image thì cập nhật cả name và logo.
      * Nếu database chưa có cột image thì chỉ cập nhật name.
      */
-    public void update(int id, String name, String image) {
+    public boolean update(int id, String name, String image) {
         validateId(id);
         validateName(name);
 
@@ -257,7 +321,7 @@ public class BrandDAO {
                     statement.setInt(2, id);
                 }
 
-                statement.executeUpdate();
+                return statement.executeUpdate() > 0;
             }
 
         } catch (SQLException e) {
@@ -269,7 +333,7 @@ public class BrandDAO {
         }
     }
 
-    public void delete(int id) {
+    public boolean delete(int id) {
         validateId(id);
 
         String sql = """
@@ -281,7 +345,8 @@ public class BrandDAO {
              PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setInt(1, id);
-            statement.executeUpdate();
+
+            return statement.executeUpdate() > 0;
 
         } catch (SQLException e) {
             if (e.getErrorCode() == MYSQL_FOREIGN_KEY_CONSTRAINT_ERROR) {
