@@ -88,7 +88,9 @@
 	<jsp:param name="limit" value="4" />
 </jsp:include>
 
-<jsp:include page="/jsp/common/store-events.jsp" />
+<jsp:include page="/jsp/common/store-events.jsp">
+	<jsp:param name="limit" value="3" />
+</jsp:include>
 
 <section class="section">
 	<div class="container">
