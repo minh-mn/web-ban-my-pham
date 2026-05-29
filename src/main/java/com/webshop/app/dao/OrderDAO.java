@@ -68,6 +68,10 @@ public class OrderDAO {
             shipping_status,
             shipped_at,
             delivered_at,
+            customer_received_confirmed,
+            customer_received_at,
+            auto_completed_at,
+            receive_confirm_note,
             created_at
             """;
 
@@ -1130,6 +1134,70 @@ public class OrderDAO {
         return orderOpen && shippingNotStarted;
     }
 
+
+    public boolean confirmReceivedByUser(int orderId, int userId, String note) {
+        if (orderId <= 0 || userId <= 0) {
+            return false;
+        }
+
+        String sql = """
+                UPDATE store_order
+                SET customer_received_confirmed = 1,
+                    customer_received_at = NOW(),
+                    receive_confirm_note = ?,
+                    delivered_at = COALESCE(delivered_at, NOW()),
+                    shipping_status = 'DELIVERED',
+                    status = 'completed',
+                    payment_status = CASE
+                        WHEN UPPER(COALESCE(payment_method, 'COD')) = 'COD' THEN 'PAID'
+                        ELSE payment_status
+                    END
+                WHERE id = ?
+                  AND user_id = ?
+                  AND UPPER(COALESCE(shipping_status, '')) = 'DELIVERED'
+                  AND customer_received_confirmed = 0
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, trimToNull(note));
+            statement.setInt(2, orderId);
+            statement.setInt(3, userId);
+            return statement.executeUpdate() > 0;
+        } catch (SQLException e) {
+            throw new RuntimeException("OrderDAO.confirmReceivedByUser error", e);
+        }
+    }
+
+    public int autoCompleteUnconfirmedDeliveredOrders(int daysAfterDelivered) {
+        int safeDays = Math.max(daysAfterDelivered, 1);
+        String sql = """
+                UPDATE store_order
+                SET customer_received_confirmed = 1,
+                    customer_received_at = COALESCE(customer_received_at, DATE_ADD(delivered_at, INTERVAL ? DAY)),
+                    auto_completed_at = NOW(),
+                    receive_confirm_note = COALESCE(receive_confirm_note, 'Hệ thống tự động xác nhận đã nhận hàng sau 7 ngày kể từ khi giao thành công.'),
+                    status = 'completed',
+                    payment_status = CASE
+                        WHEN UPPER(COALESCE(payment_method, 'COD')) = 'COD' THEN 'PAID'
+                        ELSE payment_status
+                    END
+                WHERE UPPER(COALESCE(shipping_status, '')) = 'DELIVERED'
+                  AND delivered_at IS NOT NULL
+                  AND customer_received_confirmed = 0
+                  AND delivered_at <= DATE_SUB(NOW(), INTERVAL ? DAY)
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, safeDays);
+            statement.setInt(2, safeDays);
+            return statement.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("OrderDAO.autoCompleteUnconfirmedDeliveredOrders error", e);
+        }
+    }
+
     /* =========================================================
        VNPAY
     ========================================================= */
@@ -1487,6 +1555,20 @@ public class OrderDAO {
         if (deliveredAt != null) {
             order.setDeliveredAt(deliveredAt.toLocalDateTime());
         }
+
+        order.setCustomerReceivedConfirmed(resultSet.getBoolean("customer_received_confirmed"));
+
+        Timestamp customerReceivedAt = resultSet.getTimestamp("customer_received_at");
+        if (customerReceivedAt != null) {
+            order.setCustomerReceivedAt(customerReceivedAt.toLocalDateTime());
+        }
+
+        Timestamp autoCompletedAt = resultSet.getTimestamp("auto_completed_at");
+        if (autoCompletedAt != null) {
+            order.setAutoCompletedAt(autoCompletedAt.toLocalDateTime());
+        }
+
+        order.setReceiveConfirmNote(resultSet.getString("receive_confirm_note"));
 
         Timestamp createdAt = resultSet.getTimestamp("created_at");
         if (createdAt != null) {
