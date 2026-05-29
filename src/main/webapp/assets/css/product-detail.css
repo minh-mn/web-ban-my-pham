@@ -1,3 +1,8 @@
+/* =========================================================
+   product-detail.css
+   Trang chi tiết sản phẩm
+========================================================= */
+
 .pd-page,
 .pd-page * {
   font-family: "Inter", "Segoe UI", Roboto, Arial, sans-serif;
@@ -144,6 +149,26 @@
 
 .pd-tag.yellow {
   background: #fff3cd;
+}
+
+/* =========================================================
+   Category Tags
+   Dùng cho tag lấy từ store_category_tag
+========================================================= */
+
+.pd-tag.category-tag {
+  border: 1px solid rgba(214, 51, 132, 0.22);
+  background: linear-gradient(135deg, #fff0f7, #fdf2ff);
+  color: #b4235f;
+  font-weight: 800;
+  box-shadow: 0 8px 18px rgba(214, 51, 132, 0.08);
+}
+
+.pd-tag.category-tag::before {
+  content: "#";
+  margin-right: 3px;
+  color: #d63384;
+  font-weight: 900;
 }
 
 .pd-rating-row {
@@ -494,11 +519,17 @@
     font-size: 28px;
   }
 
+  .pd-tag {
+    padding: 7px 12px;
+    font-size: 12.5px;
+  }
+
   .pd-quantity-row {
     align-items: flex-start;
     flex-direction: column;
   }
 }
+
 /* ===== PRODUCT DETAIL ACTION ROW FIX ===== */
 
 .pd-action-row {
@@ -603,6 +634,7 @@
     min-width: 100%;
   }
 }
+
 /* ===== FIX PRODUCT DETAIL ACTION SIZE ===== */
 
 .pd-action-row {
@@ -694,7 +726,9 @@
     min-width: 0;
   }
 }
+
 /* ===== Review filters and media input ===== */
+
 .review-media-input {
   width: 100%;
   min-height: 42px;
