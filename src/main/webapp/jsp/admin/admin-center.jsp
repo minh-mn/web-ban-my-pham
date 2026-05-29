@@ -22,51 +22,59 @@
       <div class="admin-card__body">
         <div class="admin-grid admin-grid--3">
 
-          <!-- ✅ HOME -->
+          <!-- HOME -->
           <a class="admin-menu-card" href="${pageContext.request.contextPath}/">
             <div class="admin-menu-card__title">Trang chủ</div>
-            <p class="admin-menu-card__desc">Quay về trang người dùng (Home).</p>
+            <p class="admin-menu-card__desc">Quay về trang người dùng.</p>
             <span class="admin-chip">/</span>
           </a>
 
+          <!-- DASHBOARD -->
           <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/dashboard">
             <div class="admin-menu-card__title">Dashboard</div>
-            <p class="admin-menu-card__desc">Tổng quan nhanh hệ thống (đơn hàng, doanh thu, KPI).</p>
+            <p class="admin-menu-card__desc">Tổng quan nhanh hệ thống: đơn hàng, doanh thu, KPI.</p>
             <span class="admin-chip">/admin/dashboard</span>
           </a>
 
+          <!-- BANNERS -->
           <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/banners">
             <div class="admin-menu-card__title">Banners</div>
-            <p class="admin-menu-card__desc">Quản lý banner slider trang chủ.</p>
+            <p class="admin-menu-card__desc">Quản lý banner slider hiển thị ở trang chủ.</p>
             <span class="admin-chip">/admin/banners</span>
           </a>
 
+          <!-- BRANDS -->
           <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/brands">
             <div class="admin-menu-card__title">Brands</div>
             <p class="admin-menu-card__desc">Quản lý thương hiệu sản phẩm.</p>
             <span class="admin-chip">/admin/brands</span>
           </a>
 
-          <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/brand-discounts">
-            <div class="admin-menu-card__title">Brand Discounts</div>
-            <p class="admin-menu-card__desc">Giảm giá theo thương hiệu theo thời gian.</p>
-            <span class="admin-chip">/admin/brand-discounts</span>
-          </a>
-
+          <!-- CATEGORIES -->
           <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/categories">
             <div class="admin-menu-card__title">Categories</div>
             <p class="admin-menu-card__desc">Quản lý danh mục sản phẩm và cây danh mục.</p>
             <span class="admin-chip">/admin/categories</span>
           </a>
 
-          <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/coupons">
-            <div class="admin-menu-card__title">Coupons</div>
-            <p class="admin-menu-card__desc">
-              Quản lý mã giảm giá, điều kiện đơn tối thiểu và rank khách hàng được áp dụng.
-            </p>
-            <span class="admin-chip">/admin/coupons</span>
+          <!-- PRODUCTS -->
+          <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/products">
+            <div class="admin-menu-card__title">Products</div>
+            <p class="admin-menu-card__desc">Quản lý sản phẩm, hình ảnh, giá bán, tồn kho và trạng thái.</p>
+            <span class="admin-chip">/admin/products</span>
           </a>
 
+          <!-- UNIFIED PROMOTIONS -->
+          <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/promotions">
+            <div class="admin-menu-card__title">Khuyến mãi & Mã giảm giá</div>
+            <p class="admin-menu-card__desc">
+              Quản lý tập trung mã giảm giá, giảm giá thương hiệu, giảm theo đơn hàng
+              và chương trình khuyến mãi cửa hàng.
+            </p>
+            <span class="admin-chip">/admin/promotions</span>
+          </a>
+
+          <!-- USER RANKS -->
           <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/ranks">
             <div class="admin-menu-card__title">User Ranks</div>
             <p class="admin-menu-card__desc">
@@ -75,65 +83,55 @@
             <span class="admin-chip">/admin/ranks</span>
           </a>
 
+          <!-- ORDERS -->
           <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/orders">
             <div class="admin-menu-card__title">Orders</div>
             <p class="admin-menu-card__desc">Danh sách đơn hàng, xem chi tiết và cập nhật trạng thái.</p>
             <span class="admin-chip">/admin/orders</span>
           </a>
 
-          <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/order-discounts">
-            <div class="admin-menu-card__title">Order Discounts</div>
-            <p class="admin-menu-card__desc">Quản lý chương trình giảm giá theo giá trị đơn hàng.</p>
-            <span class="admin-chip">/admin/order-discounts</span>
-          </a>
-
-          <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/products">
-            <div class="admin-menu-card__title">Products</div>
-            <p class="admin-menu-card__desc">Quản lý sản phẩm, hình ảnh, giá bán, tồn kho và trạng thái.</p>
-            <span class="admin-chip">/admin/products</span>
-          </a>
-
-          <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/promotion-events">
-            <div class="admin-menu-card__title">Promotion Events</div>
-            <p class="admin-menu-card__desc">Quản lý chương trình khuyến mãi theo sự kiện.</p>
-            <span class="admin-chip">/admin/promotion-events</span>
-          </a>
-
+          <!-- REVIEWS -->
           <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/reviews">
             <div class="admin-menu-card__title">Reviews</div>
             <p class="admin-menu-card__desc">Quản lý đánh giá và phản hồi của khách hàng.</p>
             <span class="admin-chip">/admin/reviews</span>
           </a>
 
+          <!-- USERS -->
           <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/users">
             <div class="admin-menu-card__title">Users</div>
             <p class="admin-menu-card__desc">Quản lý tài khoản người dùng, vai trò và trạng thái hoạt động.</p>
             <span class="admin-chip">/admin/users</span>
           </a>
 
-          <!-- ================= CMS SYSTEM ================= -->
+          <!-- FLASH SALE -->
           <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/flash-sale">
             <div class="admin-menu-card__title">Flash Sale</div>
-            <p class="admin-menu-card__desc">Quản lý danh sách, thời gian và sản phẩm tham gia Flash Sale.</p>
+            <p class="admin-menu-card__desc">
+              Thiết lập chương trình Flash Sale, quản lý thời gian, sản phẩm và giá giảm sốc.
+            </p>
             <span class="admin-chip">/admin/flash-sale</span>
           </a>
 
+          <!-- SETTINGS -->
           <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/settings">
-            <div class="admin-menu-card__title">Website Settings (Footer)</div>
+            <div class="admin-menu-card__title">Website Settings</div>
             <p class="admin-menu-card__desc">
-              Quản lý hotline, email, địa chỉ, social, copyright...
+              Quản lý hotline, email, địa chỉ, social, copyright và thông tin footer.
             </p>
             <span class="admin-chip">CMS / settings</span>
           </a>
 
+          <!-- PAGES CMS -->
           <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/pages">
             <div class="admin-menu-card__title">Pages CMS</div>
             <p class="admin-menu-card__desc">
-              Quản lý chính sách, điều khoản, nội dung trang động.
+              Quản lý chính sách, điều khoản và nội dung trang động.
             </p>
             <span class="admin-chip">CMS / pages</span>
           </a>
 
+          <!-- CONTACT MESSAGES -->
           <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/contact-messages">
             <div class="admin-menu-card__title">Contact Messages</div>
             <p class="admin-menu-card__desc">
@@ -142,15 +140,12 @@
             <span class="admin-chip">CMS / contact</span>
           </a>
 
-          <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/flash-sale">
-            <div class="admin-menu-card__title">Flash Sale</div>
-            <p class="admin-menu-card__desc">Thiết lập chương trình Flash Sale giờ vàng, quản lý sản phẩm và giá giảm sốc.</p>
-            <span class="admin-chip">/admin/flash-sale</span>
-          </a>
-
+          <!-- NEWS / BLOGS -->
           <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/events">
             <div class="admin-menu-card__title">News / Blogs</div>
-            <p class="admin-menu-card__desc">Quản lý bài viết tin tức, sự kiện và hình ảnh hiển thị trên trang chủ.</p>
+            <p class="admin-menu-card__desc">
+              Quản lý bài viết tin tức, sự kiện và hình ảnh hiển thị trên trang chủ.
+            </p>
             <span class="admin-chip">CMS / blogs</span>
           </a>
 
