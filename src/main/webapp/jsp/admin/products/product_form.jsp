@@ -10,7 +10,7 @@
 <jsp:include page="/jsp/admin/layout/sidebar.jsp"/>
 
 <main class="admin-main">
-  <div class="admin-container">
+  <div class="admin-container product-form-page">
 
     <div class="admin-topbar">
       <div>
@@ -22,7 +22,9 @@
         </h1>
 
         <p class="admin-subtext">
-          Nhập thông tin sản phẩm. Ảnh upload sẽ lưu trong MyCosmeticShopUploads và database lưu đường dẫn /uploads/product/.
+          Nhập thông tin sản phẩm. Ảnh/video upload sẽ lưu trong
+          <b>MyCosmeticShopUploads</b> và database lưu đường dẫn dạng
+          <b>/uploads/product/...</b>.
         </p>
       </div>
 
@@ -49,7 +51,7 @@
         <form method="post"
               action="${pageContext.request.contextPath}/admin/products"
               enctype="multipart/form-data"
-              class="admin-form">
+              class="admin-form product-form-layout">
 
           <%@ include file="/jsp/common/csrf.jspf" %>
 
@@ -57,266 +59,467 @@
 
           <c:if test="${not empty product}">
             <input type="hidden" name="id" value="${product.id}"/>
-
-            <%--
-              existingImage giữ lại ảnh cũ nếu admin không chọn ảnh đại diện mới.
-              Dùng product.image để khớp với ProductDAO và Product model.
-            --%>
             <input type="hidden" name="existingImage" value="${product.image}"/>
           </c:if>
 
-          <div class="admin-grid-2">
+          <!-- =====================================================
+               THÔNG TIN CƠ BẢN
+          ====================================================== -->
+          <section class="admin-form-section product-form-section">
+            <h2 class="admin-form-section__title">Thông tin cơ bản</h2>
 
-            <div class="admin-field" style="grid-column: 1 / -1;">
-              <div class="admin-label">Tên sản phẩm</div>
-              <input class="admin-input"
-                     type="text"
-                     name="title"
-                     value="${not empty product ? fn:escapeXml(product.title) : ''}"
-                     placeholder="Ví dụ: Kem dưỡng ẩm..."
-                     maxlength="255"
-                     required />
-            </div>
+            <div class="admin-grid-2">
 
-            <div class="admin-field">
-              <div class="admin-label">Slug</div>
-              <input class="admin-input"
-                     type="text"
-                     name="slug"
-                     value="${not empty product ? fn:escapeXml(product.slug) : ''}"
-                     placeholder="vi-du-kem-duong-am"
-                     maxlength="255"
-                     required />
-              <div class="admin-help">
-                Không dấu, dùng dấu gạch ngang. Ví dụ: kem-duong-am-cocoon.
-              </div>
-            </div>
-
-            <div class="admin-field">
-              <div class="admin-label">Trạng thái</div>
-              <select class="admin-select" name="active">
-                <option value="1" ${empty product || product.active ? "selected" : ""}>
-                  ACTIVE
-                </option>
-                <option value="0" ${not empty product && !product.active ? "selected" : ""}>
-                  INACTIVE
-                </option>
-              </select>
-              <div class="admin-help">
-                INACTIVE: ẩn khỏi trang người dùng, admin vẫn xem được.
-              </div>
-            </div>
-
-            <div class="admin-field">
-              <div class="admin-label">Danh mục</div>
-              <select class="admin-select" name="categoryId" required>
-                <option value="">-- Chọn danh mục --</option>
-
-                <c:forEach var="cat" items="${categories}">
-                  <option value="${cat.id}"
-                          <c:if test="${not empty product && not empty product.category && product.category.id == cat.id}">
-                            selected
-                          </c:if>>
-                    <c:if test="${cat.parentId != null}">↳ </c:if>
-                    <c:out value="${cat.name}"/>
-                    <c:if test="${cat.parentId == null}"> (Cha)</c:if>
-                  </option>
-                </c:forEach>
-              </select>
-              <div class="admin-help">
-                Chọn danh mục cha hoặc danh mục con.
-              </div>
-            </div>
-
-            <div class="admin-field">
-              <div class="admin-label">Thương hiệu</div>
-              <select class="admin-select" name="brandId" required>
-                <option value="">-- Chọn thương hiệu --</option>
-
-                <c:forEach var="b" items="${brands}">
-                  <option value="${b.id}"
-                          <c:if test="${not empty product && not empty product.brand && product.brand.id == b.id}">
-                            selected
-                          </c:if>>
-                    <c:out value="${b.name}"/>
-                  </option>
-                </c:forEach>
-              </select>
-              <div class="admin-help">
-                Chọn thương hiệu của sản phẩm.
-              </div>
-            </div>
-
-            <div class="admin-field" style="grid-column: 1 / -1;">
-              <div class="admin-label">Mô tả</div>
-              <textarea class="admin-textarea"
-                        name="description"
-                        rows="5"
-                        placeholder="Mô tả ngắn về sản phẩm...">${not empty product ? fn:escapeXml(product.description) : ''}</textarea>
-            </div>
-
-            <div class="admin-field">
-              <div class="admin-label">Giá (VND)</div>
-              <input class="admin-input"
-                     type="number"
-                     name="price"
-                     value="${not empty product && not empty product.price ? product.price : ''}"
-                     min="0"
-                     step="1"
-                     required />
-            </div>
-
-            <div class="admin-field">
-              <div class="admin-label">Giảm giá (%)</div>
-              <input class="admin-input"
-                     type="number"
-                     name="discountPercent"
-                     value="${not empty product ? product.discountPercent : 0}"
-                     min="0"
-                     max="100"
-                     step="1" />
-            </div>
-
-            <div class="admin-field">
-              <div class="admin-label">Tồn kho</div>
-              <input class="admin-input"
-                     type="number"
-                     name="stock"
-                     value="${not empty product ? product.stock : 0}"
-                     min="0"
-                     step="1"
-                     required />
-              <div class="admin-help">
-                Nếu sản phẩm có variant, tồn kho tổng nên đồng bộ với tổng tồn kho các variant.
-              </div>
-            </div>
-
-            <div class="admin-field"></div>
-
-            <div class="admin-field">
-              <div class="admin-label">Ảnh đại diện</div>
-              <input class="admin-input"
-                     type="file"
-                     name="imageMain"
-                     accept=".jpg,.jpeg,.png,.webp,.gif,image/jpeg,image/png,image/webp,image/gif">
-
-              <div class="admin-help">
-                Ảnh upload sẽ lưu vật lý tại
-                <b>MyCosmeticShopUploads/product/</b>
-                và database lưu dạng
-                <b>/uploads/product/tên-file</b>.
-                Nếu sửa sản phẩm mà không chọn ảnh mới, hệ thống giữ ảnh cũ.
-              </div>
-            </div>
-
-            <div class="admin-field">
-              <div class="admin-label">Ảnh mô tả (Gallery)</div>
-              <input class="admin-input"
-                     type="file"
-                     name="imageGallery"
-                     accept=".jpg,.jpeg,.png,.webp,.gif,image/jpeg,image/png,image/webp,image/gif"
-                     multiple>
-
-              <div class="admin-help">
-                Ảnh gallery sẽ lưu vật lý tại
-                <b>MyCosmeticShopUploads/product/gallery/</b>
-                và database lưu dạng
-                <b>/uploads/product/gallery/tên-file</b>.
-                Nếu chọn gallery mới khi sửa sản phẩm, hệ thống sẽ thay gallery cũ bằng gallery mới.
-              </div>
-            </div>
-
-          </div>
-
-          <c:if test="${not empty product && not empty product.image}">
-            <hr class="admin-divider"/>
-
-            <div class="admin-field">
-              <div class="admin-label">Ảnh đại diện hiện tại</div>
-
-              <div class="admin-preview">
-                <img class="admin-preview__img"
-                     src="${pageContext.request.contextPath}${product.image}"
-                     alt="${not empty product.title ? product.title : 'product'}">
-
-                <div class="admin-help admin-break">
-                  Đường dẫn hiện tại:
-                  <c:out value="${product.image}"/>
+              <div class="admin-field" style="grid-column: 1 / -1;">
+                <div class="admin-label">
+                  Tên sản phẩm <span class="admin-required">*</span>
                 </div>
 
-                <c:choose>
-                  <c:when test="${fn:startsWith(product.image, '/uploads/product/')}">
-                    <div class="admin-help">
-                      Ảnh này đã đúng chuẩn upload.
-                    </div>
-                  </c:when>
-                  <c:otherwise>
-                    <div class="admin-help" style="color:#b45309;">
-                      Ảnh này có thể đang dùng đường dẫn cũ. Khi upload ảnh mới, hệ thống sẽ chuyển sang /uploads/product/.
-                    </div>
-                  </c:otherwise>
-                </c:choose>
+                <input class="admin-input"
+                       type="text"
+                       name="title"
+                       value="${not empty product ? fn:escapeXml(product.title) : ''}"
+                       placeholder="Ví dụ: Kem dưỡng ẩm..."
+                       maxlength="255"
+                       required />
               </div>
+
+              <div class="admin-field">
+                <div class="admin-label">
+                  Slug <span class="admin-required">*</span>
+                </div>
+
+                <input class="admin-input"
+                       type="text"
+                       name="slug"
+                       value="${not empty product ? fn:escapeXml(product.slug) : ''}"
+                       placeholder="vi-du-kem-duong-am"
+                       maxlength="255"
+                       required />
+
+                <div class="admin-help">
+                  Không dấu, dùng dấu gạch ngang. Ví dụ: <b>kem-duong-am-cocoon</b>.
+                </div>
+              </div>
+
+              <div class="admin-field">
+                <div class="admin-label">Trạng thái</div>
+
+                <select class="admin-select" name="active">
+                  <option value="1" ${empty product || product.active ? "selected" : ""}>
+                    ACTIVE
+                  </option>
+                  <option value="0" ${not empty product && !product.active ? "selected" : ""}>
+                    INACTIVE
+                  </option>
+                </select>
+
+                <div class="admin-help">
+                  INACTIVE: ẩn khỏi trang người dùng, admin vẫn xem được.
+                </div>
+              </div>
+
+              <div class="admin-field">
+                <div class="admin-label">
+                  Danh mục <span class="admin-required">*</span>
+                </div>
+
+                <select class="admin-select" name="categoryId" required>
+                  <option value="">-- Chọn danh mục --</option>
+
+                  <c:forEach var="cat" items="${categories}">
+                    <option value="${cat.id}"
+                            <c:if test="${not empty product && not empty product.category && product.category.id == cat.id}">
+                              selected
+                            </c:if>>
+                      <c:if test="${cat.parentId != null}">↳ </c:if>
+                      <c:out value="${cat.name}"/>
+                      <c:if test="${cat.parentId == null}"> (Cha)</c:if>
+                    </option>
+                  </c:forEach>
+                </select>
+
+                <div class="admin-help">
+                  Chọn danh mục cha hoặc danh mục con.
+                </div>
+              </div>
+
+              <div class="admin-field">
+                <div class="admin-label">
+                  Thương hiệu <span class="admin-required">*</span>
+                </div>
+
+                <select class="admin-select" name="brandId" required>
+                  <option value="">-- Chọn thương hiệu --</option>
+
+                  <c:forEach var="b" items="${brands}">
+                    <option value="${b.id}"
+                            <c:if test="${not empty product && not empty product.brand && product.brand.id == b.id}">
+                              selected
+                            </c:if>>
+                      <c:out value="${b.name}"/>
+                    </option>
+                  </c:forEach>
+                </select>
+
+                <div class="admin-help">
+                  Chọn thương hiệu của sản phẩm.
+                </div>
+              </div>
+
             </div>
-          </c:if>
+          </section>
 
-          <%--
-            Hiển thị gallery hiện tại.
+          <!-- =====================================================
+               GIÁ VÀ TỒN KHO
+          ====================================================== -->
+          <section class="admin-form-section product-form-section">
+            <h2 class="admin-form-section__title">Giá bán và tồn kho</h2>
 
-            AdminProductServlet khi edit đang gọi:
-            product.setImages(productImageDAO.findByProductId(product.getId()));
+            <div class="admin-grid-2">
+              <div class="admin-field">
+                <div class="admin-label">
+                  Giá gốc (VND) <span class="admin-required">*</span>
+                </div>
 
-            Vì vậy ưu tiên đọc product.images.
-            Vẫn giữ fallback productImages/galleryImages nếu servlet khác có truyền.
-          --%>
-          <c:set var="displayGallery" value="${not empty product ? product.images : null}" />
+                <input class="admin-input"
+                       type="number"
+                       name="price"
+                       value="${not empty product && not empty product.price ? product.price : ''}"
+                       min="0"
+                       step="1"
+                       required />
+              </div>
 
-          <c:if test="${empty displayGallery && not empty productImages}">
-            <c:set var="displayGallery" value="${productImages}" />
-          </c:if>
+              <div class="admin-field">
+                <div class="admin-label">Giảm giá (%)</div>
 
-          <c:if test="${empty displayGallery && not empty galleryImages}">
-            <c:set var="displayGallery" value="${galleryImages}" />
-          </c:if>
+                <input class="admin-input"
+                       type="number"
+                       name="discountPercent"
+                       value="${not empty product ? product.discountPercent : 0}"
+                       min="0"
+                       max="100"
+                       step="1" />
 
-          <c:if test="${not empty displayGallery}">
-            <hr class="admin-divider"/>
+                <div class="admin-help">
+                  Nhập từ <b>0</b> đến <b>100</b>.
+                </div>
+              </div>
 
-            <div class="admin-field" style="grid-column: 1 / -1;">
-              <div class="admin-label">Gallery hiện tại</div>
+              <div class="admin-field">
+                <div class="admin-label">
+                  Tồn kho <span class="admin-required">*</span>
+                </div>
 
-              <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 14px;">
-                <c:forEach var="img" items="${displayGallery}">
-                  <div style="border: 1px solid #eee; border-radius: 12px; padding: 8px; background: #fff;">
-                    <img src="${pageContext.request.contextPath}${img.image}"
-                         alt="gallery"
-                         style="width: 100%; height: 90px; object-fit: cover; border-radius: 10px;">
+                <input class="admin-input"
+                       type="number"
+                       name="stock"
+                       value="${not empty product ? product.stock : 0}"
+                       min="0"
+                       step="1"
+                       required />
 
-                    <div class="admin-help admin-break" style="margin-top: 6px;">
-                      <c:out value="${img.image}"/>
-                    </div>
+                <div class="admin-help">
+                  Nếu sản phẩm có variant, tồn kho tổng nên đồng bộ với tổng tồn kho các variant.
+                </div>
+              </div>
 
-                    <c:choose>
-                      <c:when test="${fn:startsWith(img.image, '/uploads/product/gallery/')}">
-                        <div class="admin-help">
-                          Ảnh gallery đã đúng chuẩn upload.
-                        </div>
-                      </c:when>
-                      <c:otherwise>
-                        <div class="admin-help" style="color:#b45309;">
-                          Path cũ
-                        </div>
-                      </c:otherwise>
-                    </c:choose>
+              <div class="admin-field">
+                <div class="admin-label">Ghi chú</div>
+
+                <div class="admin-info-box">
+                  <div class="admin-info-box__title">Quy tắc hiển thị</div>
+                  <div class="admin-info-box__text">
+                    Sản phẩm <strong>ACTIVE</strong> và còn hàng sẽ được hiển thị cho khách hàng.
                   </div>
-                </c:forEach>
+                </div>
               </div>
             </div>
-          </c:if>
+          </section>
+
+          <!-- =====================================================
+               MÔ TẢ CHI TIẾT
+          ====================================================== -->
+          <section class="admin-form-section product-form-section">
+            <h2 class="admin-form-section__title">Mô tả chi tiết sản phẩm</h2>
+
+            <div class="admin-field">
+              <div class="admin-label">Mô tả</div>
+
+              <div class="product-description-tools">
+                <button type="button" class="product-description-tool" data-insert="<h3>Tiêu đề</h3>">
+                  Tiêu đề
+                </button>
+
+                <button type="button" class="product-description-tool" data-insert="<p>Nội dung đoạn văn...</p>">
+                  Đoạn văn
+                </button>
+
+                <button type="button" class="product-description-tool" data-insert="<strong>Chữ đậm</strong>">
+                  Đậm
+                </button>
+
+                <button type="button" class="product-description-tool" data-insert="<ul>&#10;  <li>Ý 1</li>&#10;  <li>Ý 2</li>&#10;</ul>">
+                  Danh sách
+                </button>
+
+                <button type="button" class="product-description-tool" data-insert="<blockquote>Ghi chú nổi bật...</blockquote>">
+                  Ghi chú
+                </button>
+
+                <button type="button" class="product-description-tool" data-insert="<img src=&quot;/uploads/product/media/ten-file.jpg&quot; alt=&quot;Mô tả ảnh&quot;>">
+                  Ảnh trong mô tả
+                </button>
+
+                <button type="button" class="product-description-tool" data-insert="<video controls src=&quot;/uploads/product/media/ten-file.mp4&quot;></video>">
+                  Video trong mô tả
+                </button>
+              </div>
+
+              <textarea id="productDescription"
+                        class="admin-textarea product-description-editor"
+                        name="description"
+                        rows="12"
+                        placeholder="Nhập mô tả chi tiết. Có thể dùng HTML cơ bản như <h3>, <p>, <ul>, <strong>, <img>, <video>...">${not empty product ? fn:escapeXml(product.description) : ''}</textarea>
+
+              <div class="admin-help">
+                Có thể nhập mô tả dài hơn bằng HTML cơ bản:
+                <b>&lt;h3&gt;</b>, <b>&lt;p&gt;</b>, <b>&lt;ul&gt;</b>,
+                <b>&lt;strong&gt;</b>, <b>&lt;img&gt;</b>, <b>&lt;video&gt;</b>.
+              </div>
+            </div>
+          </section>
+
+          <!-- =====================================================
+               ẢNH ĐẠI DIỆN + GALLERY
+          ====================================================== -->
+          <section class="admin-form-section product-form-section">
+            <h2 class="admin-form-section__title">Ảnh sản phẩm</h2>
+
+            <div class="admin-grid-2">
+              <div class="admin-field">
+                <div class="admin-label">Ảnh đại diện</div>
+
+                <input class="admin-input"
+                       type="file"
+                       name="imageMain"
+                       accept=".jpg,.jpeg,.png,.webp,.gif,image/jpeg,image/png,image/webp,image/gif">
+
+                <div class="admin-help">
+                  Ảnh upload sẽ lưu vật lý tại
+                  <b>MyCosmeticShopUploads/product/</b>
+                  và database lưu dạng
+                  <b>/uploads/product/tên-file</b>.
+                  Nếu sửa sản phẩm mà không chọn ảnh mới, hệ thống giữ ảnh cũ.
+                </div>
+              </div>
+
+              <div class="admin-field">
+                <div class="admin-label">Ảnh mô tả / Gallery</div>
+
+                <input class="admin-input"
+                       type="file"
+                       name="imageGallery"
+                       accept=".jpg,.jpeg,.png,.webp,.gif,image/jpeg,image/png,image/webp,image/gif"
+                       multiple>
+
+                <div class="admin-help">
+                  Ảnh gallery sẽ lưu vật lý tại
+                  <b>MyCosmeticShopUploads/product/gallery/</b>
+                  và database lưu dạng
+                  <b>/uploads/product/gallery/tên-file</b>.
+                  Khi sửa sản phẩm, ảnh mới sẽ được <b>thêm vào gallery hiện có</b>.
+                </div>
+              </div>
+            </div>
+
+            <c:if test="${not empty product && not empty product.image}">
+              <hr class="admin-divider"/>
+
+              <div class="admin-field">
+                <div class="admin-label">Ảnh đại diện hiện tại</div>
+
+                <div class="admin-preview">
+                  <img class="admin-preview__img"
+                       src="${pageContext.request.contextPath}${product.image}"
+                       alt="${not empty product.title ? product.title : 'product'}">
+
+                  <div class="admin-help admin-break">
+                    Đường dẫn hiện tại:
+                    <c:out value="${product.image}"/>
+                  </div>
+
+                  <c:choose>
+                    <c:when test="${fn:startsWith(product.image, '/uploads/product/')}">
+                      <div class="admin-help">
+                        Ảnh này đã đúng chuẩn upload.
+                      </div>
+                    </c:when>
+                    <c:otherwise>
+                      <div class="admin-help" style="color:#b45309;">
+                        Ảnh này có thể đang dùng đường dẫn cũ. Khi upload ảnh mới, hệ thống sẽ chuyển sang /uploads/product/.
+                      </div>
+                    </c:otherwise>
+                  </c:choose>
+                </div>
+              </div>
+            </c:if>
+
+            <%--
+              Hiển thị gallery hiện tại.
+
+              AdminProductServlet khi edit đang gọi:
+              product.setImages(productImageDAO.findByProductId(product.getId()));
+
+              Vì vậy ưu tiên đọc product.images.
+              Vẫn giữ fallback productImages/galleryImages nếu servlet khác có truyền.
+            --%>
+            <c:set var="displayGallery" value="${not empty product ? product.images : null}" />
+
+            <c:if test="${empty displayGallery && not empty productImages}">
+              <c:set var="displayGallery" value="${productImages}" />
+            </c:if>
+
+            <c:if test="${empty displayGallery && not empty galleryImages}">
+              <c:set var="displayGallery" value="${galleryImages}" />
+            </c:if>
+
+            <c:if test="${not empty displayGallery}">
+              <hr class="admin-divider"/>
+
+              <div class="product-gallery-current">
+                <div class="admin-label">Gallery hiện tại</div>
+
+                <div class="product-gallery-grid">
+                  <c:forEach var="img" items="${displayGallery}">
+                    <div class="product-gallery-item">
+                      <img src="${pageContext.request.contextPath}${img.image}"
+                           alt="gallery">
+
+                      <div class="admin-help admin-break" style="padding: 8px;">
+                        <c:out value="${img.image}"/>
+                      </div>
+
+                      <c:choose>
+                        <c:when test="${fn:startsWith(img.image, '/uploads/product/gallery/')}">
+                          <div class="admin-help" style="padding: 0 8px 8px;">
+                            Ảnh gallery đã đúng chuẩn upload.
+                          </div>
+                        </c:when>
+                        <c:otherwise>
+                          <div class="admin-help" style="padding: 0 8px 8px; color:#b45309;">
+                            Path cũ
+                          </div>
+                        </c:otherwise>
+                      </c:choose>
+                    </div>
+                  </c:forEach>
+                </div>
+              </div>
+            </c:if>
+          </section>
+
+          <!-- =====================================================
+               ISSUE 123: MEDIA CHI TIẾT ẢNH / VIDEO
+          ====================================================== -->
+          <section class="admin-form-section product-form-section">
+            <h2 class="admin-form-section__title">Media chi tiết sản phẩm</h2>
+
+            <div class="product-media-uploader">
+              <div class="product-media-upload-box">
+                <div class="admin-field" style="margin-bottom: 0;">
+                  <div class="admin-label">Thêm nhiều ảnh/video</div>
+
+                  <input class="admin-input"
+                         type="file"
+                         name="productMedia"
+                         accept=".jpg,.jpeg,.png,.webp,.gif,.mp4,.webm,.mov,.m4v,image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime"
+                         multiple>
+
+                  <div class="product-media-hint">
+                    <div>
+                      <strong>Ảnh:</strong> png, jpg, jpeg, webp, gif.
+                    </div>
+                    <div>
+                      <strong>Video:</strong> mp4, webm, mov, m4v.
+                    </div>
+                    <div>
+                      File sẽ lưu tại <b>MyCosmeticShopUploads/product/media/</b>
+                      và database lưu dạng <b>/uploads/product/media/tên-file</b>.
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <c:set var="displayProductMedia" value="${productMediaList}" />
+
+              <c:if test="${empty displayProductMedia && not empty product && not empty product.productMediaList}">
+                <c:set var="displayProductMedia" value="${product.productMediaList}" />
+              </c:if>
+
+              <c:choose>
+                <c:when test="${not empty displayProductMedia}">
+                  <div class="product-media-current">
+                    <h3 class="product-media-current__title">Media hiện tại</h3>
+
+                    <div class="product-media-grid">
+                      <c:forEach var="media" items="${displayProductMedia}">
+                        <div class="product-media-card">
+                          <div class="product-media-card__preview">
+                            <span class="product-media-card__badge">
+                              <c:out value="${media.displayTypeLabel}"/>
+                            </span>
+
+                            <c:choose>
+                              <c:when test="${media.video}">
+                                <video controls muted preload="metadata">
+                                  <source src="${pageContext.request.contextPath}${media.mediaUrl}">
+                                  Trình duyệt không hỗ trợ video.
+                                </video>
+                              </c:when>
+
+                              <c:otherwise>
+                                <img src="${pageContext.request.contextPath}${media.mediaUrl}"
+                                     alt="product media">
+                              </c:otherwise>
+                            </c:choose>
+                          </div>
+
+                          <div class="product-media-card__body">
+                            <div class="product-media-card__url">
+                              <c:out value="${media.mediaUrl}"/>
+                            </div>
+
+                            <label class="product-media-card__delete">
+                              <input type="checkbox"
+                                     name="deleteMediaIds"
+                                     value="${media.id}">
+                              Xóa media này khi lưu
+                            </label>
+                          </div>
+                        </div>
+                      </c:forEach>
+                    </div>
+
+                    <div class="admin-help">
+                      Tick vào media cần xóa, sau đó bấm <b>Lưu thay đổi</b>.
+                    </div>
+                  </div>
+                </c:when>
+
+                <c:otherwise>
+                  <div class="product-media-empty">
+                    Chưa có media chi tiết. Bạn có thể upload nhiều ảnh/video để hiển thị ở trang chi tiết sản phẩm.
+                  </div>
+                </c:otherwise>
+              </c:choose>
+            </div>
+          </section>
 
           <hr class="admin-divider"/>
 
-          <div class="admin-actions">
+          <div class="admin-actions product-form-actions">
             <button type="submit" class="admin-btn admin-btn--primary">
               <c:choose>
                 <c:when test="${empty product}">Tạo mới</c:when>
@@ -336,5 +539,39 @@
 
   </div>
 </main>
+
+<script>
+  (function () {
+    const textarea = document.getElementById("productDescription");
+    const buttons = document.querySelectorAll(".product-description-tool[data-insert]");
+
+    if (!textarea || !buttons.length) {
+      return;
+    }
+
+    buttons.forEach(function (button) {
+      button.addEventListener("click", function () {
+        const text = button.getAttribute("data-insert") || "";
+        insertAtCursor(textarea, text);
+      });
+    });
+
+    function insertAtCursor(field, text) {
+      const start = field.selectionStart || 0;
+      const end = field.selectionEnd || 0;
+      const before = field.value.substring(0, start);
+      const after = field.value.substring(end);
+
+      const prefix = before && !before.endsWith("\n") ? "\n" : "";
+      const suffix = after && !after.startsWith("\n") ? "\n" : "";
+
+      field.value = before + prefix + text + suffix + after;
+      field.focus();
+
+      const cursor = (before + prefix + text).length;
+      field.setSelectionRange(cursor, cursor);
+    }
+  })();
+</script>
 
 <jsp:include page="/jsp/admin/layout/footer.jsp"/>
