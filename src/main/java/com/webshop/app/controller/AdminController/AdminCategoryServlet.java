@@ -1,7 +1,9 @@
 package com.webshop.app.controller.AdminController;
 
 import com.webshop.app.dao.CategoryDAO;
+import com.webshop.app.dao.CategoryTagDAO;
 import com.webshop.app.model.Category;
+import com.webshop.app.model.CategoryTag;
 
 import java.io.IOException;
 import java.text.Normalizer;
@@ -22,6 +24,7 @@ import jakarta.servlet.http.HttpSession;
 public class AdminCategoryServlet extends HttpServlet {
 
     private final CategoryDAO categoryDAO = new CategoryDAO();
+    private final CategoryTagDAO categoryTagDAO = new CategoryTagDAO();
 
     // ===== JSP PATH =====
     private static final String JSP_LIST = "/jsp/admin/category/category_list.jsp";
@@ -53,7 +56,6 @@ public class AdminCategoryServlet extends HttpServlet {
         }
 
         switch (action) {
-
             case ACT_NEW:
                 showCreateForm(req, resp);
                 break;
@@ -82,7 +84,6 @@ public class AdminCategoryServlet extends HttpServlet {
 
         try {
             switch (action) {
-
                 case ACT_CREATE:
                     handleCreate(req);
                     setFlash(req, FLASH_SUCCESS, "Thêm danh mục thành công.");
@@ -126,8 +127,12 @@ public class AdminCategoryServlet extends HttpServlet {
     private void showCreateForm(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
+        Category category = new Category();
+        category.setActive(true);
+        category.setTags(new ArrayList<>());
+
         req.setAttribute("mode", "create");
-        req.setAttribute("category", new Category());
+        req.setAttribute("category", category);
         req.setAttribute("parentCategories", categoryDAO.findAllParents());
 
         req.getRequestDispatcher(JSP_FORM).forward(req, resp);
@@ -152,6 +157,14 @@ public class AdminCategoryServlet extends HttpServlet {
             return;
         }
 
+        /*
+         * CategoryDAO.findById đã load tags nếu dùng bản DAO mới.
+         * Dòng dưới dùng để an toàn nếu DAO cũ chưa set tags.
+         */
+        if (category.getTags().isEmpty()) {
+            category.setTags(categoryTagDAO.findAllByCategoryId(category.getId()));
+        }
+
         req.setAttribute("mode", "edit");
         req.setAttribute("category", category);
         req.setAttribute("parentCategories", getAvailableParentCategories(id));
@@ -170,7 +183,6 @@ public class AdminCategoryServlet extends HttpServlet {
         List<Category> parents = new ArrayList<>();
 
         for (Category category : allCategories) {
-
             if (category.getParentId() == null) {
                 parents.add(category);
             } else {
@@ -203,17 +215,24 @@ public class AdminCategoryServlet extends HttpServlet {
     ===================================================== */
 
     private void handleCreate(HttpServletRequest req) {
-
         Category category = new Category();
 
         bind(req, category);
-        validate(category, false);
+        category.setTags(parseCategoryTags(req, 0));
 
-        categoryDAO.create(category);
+        validate(category, false);
+        validateTags(category.getTags());
+
+        int categoryId = categoryDAO.createAndReturnId(category);
+
+        if (categoryId <= 0) {
+            throw new RuntimeException("Không thể tạo danh mục. Vui lòng thử lại.");
+        }
+
+        categoryTagDAO.replaceByCategoryId(categoryId, category.getTags());
     }
 
     private void handleUpdate(HttpServletRequest req) {
-
         int id = safeInt(req.getParameter("id"), -1);
 
         if (id <= 0) {
@@ -224,19 +243,26 @@ public class AdminCategoryServlet extends HttpServlet {
 
         category.setId(id);
         bind(req, category);
+        category.setTags(parseCategoryTags(req, id));
+
         validate(category, true);
+        validateTags(category.getTags());
 
         categoryDAO.update(category);
+        categoryTagDAO.replaceByCategoryId(id, category.getTags());
     }
 
     private void handleDelete(HttpServletRequest req) {
-
         int id = safeInt(req.getParameter("id"), -1);
 
         if (id <= 0) {
             throw new IllegalArgumentException("ID danh mục không hợp lệ.");
         }
 
+        /*
+         * store_category_tag đã ON DELETE CASCADE,
+         * nên khi danh mục được xóa thì tag sẽ tự xóa theo.
+         */
         categoryDAO.delete(id);
     }
 
@@ -266,8 +292,11 @@ public class AdminCategoryServlet extends HttpServlet {
 
         try {
             bind(req, category);
+            category.setTags(parseCategoryTags(req, category.getId()));
         } catch (Exception ignored) {
-            // Nếu dữ liệu form lỗi nặng thì vẫn forward form với message phía trên.
+            /*
+             * Nếu dữ liệu form lỗi nặng thì vẫn forward form với message phía trên.
+             */
         }
 
         req.setAttribute("category", category);
@@ -303,7 +332,6 @@ public class AdminCategoryServlet extends HttpServlet {
     ===================================================== */
 
     private void bind(HttpServletRequest req, Category category) {
-
         String name = safe(req.getParameter("name"));
         String slug = safe(req.getParameter("slug"));
 
@@ -314,7 +342,6 @@ public class AdminCategoryServlet extends HttpServlet {
         }
 
         Integer parentId = parseParentId(req.getParameter("parentId"));
-
         boolean active = isChecked(req.getParameter("active"));
 
         category.setName(name);
@@ -324,7 +351,6 @@ public class AdminCategoryServlet extends HttpServlet {
     }
 
     private void validate(Category category, boolean updating) {
-
         if (category == null) {
             throw new IllegalArgumentException("Dữ liệu danh mục không hợp lệ.");
         }
@@ -361,17 +387,187 @@ public class AdminCategoryServlet extends HttpServlet {
         }
     }
 
+    private void validateTags(List<CategoryTag> tags) {
+        if (tags == null || tags.isEmpty()) {
+            return;
+        }
+
+        for (CategoryTag tag : tags) {
+            if (tag == null || isBlank(tag.getName())) {
+                continue;
+            }
+
+            if (tag.getName().length() > 100) {
+                throw new IllegalArgumentException("Tên tag không được vượt quá 100 ký tự.");
+            }
+
+            if (!isBlank(tag.getSlug()) && tag.getSlug().length() > 120) {
+                throw new IllegalArgumentException("Slug tag không được vượt quá 120 ký tự.");
+            }
+
+            if (!isBlank(tag.getSlug())
+                    && !tag.getSlug().matches("^[a-z0-9]+(?:-[a-z0-9]+)*$")) {
+                throw new IllegalArgumentException("Slug tag chỉ được chứa chữ thường, số và dấu gạch ngang.");
+            }
+        }
+    }
+
+    /* =====================================================
+       CATEGORY TAG PARSER
+    ===================================================== */
+
+    private List<CategoryTag> parseCategoryTags(HttpServletRequest req, int categoryId) {
+        List<CategoryTag> tags = new ArrayList<>();
+
+        String[] names = firstParameterValues(
+                req,
+                "tagNames",
+                "tagName",
+                "tagNames[]",
+                "categoryTagNames",
+                "categoryTagName"
+        );
+
+        String[] slugs = firstParameterValues(
+                req,
+                "tagSlugs",
+                "tagSlug",
+                "tagSlugs[]",
+                "categoryTagSlugs",
+                "categoryTagSlug"
+        );
+
+        String[] orders = firstParameterValues(
+                req,
+                "tagOrders",
+                "tagOrder",
+                "tagOrders[]",
+                "categoryTagOrders",
+                "categoryTagOrder"
+        );
+
+        String[] activeValues = firstParameterValues(
+                req,
+                "tagActives",
+                "tagActiveValues",
+                "tagActiveList",
+                "tagActives[]"
+        );
+
+        int rowCount = maxLength(names, slugs, orders, activeValues);
+
+        for (int index = 0; index < rowCount; index++) {
+            String name = valueAt(names, index);
+            String slug = valueAt(slugs, index);
+
+            if (isBlank(name)) {
+                continue;
+            }
+
+            CategoryTag tag = new CategoryTag();
+
+            tag.setCategoryId(categoryId);
+            tag.setName(name);
+            tag.setSlug(isBlank(slug) ? toSlug(name) : toSlug(slug));
+            tag.setDisplayOrder(parseDisplayOrder(valueAt(orders, index), index + 1));
+            tag.setActive(parseTagActive(req, activeValues, index));
+
+            tags.add(tag);
+        }
+
+        return tags;
+    }
+
+    private boolean parseTagActive(HttpServletRequest req, String[] activeValues, int index) {
+        /*
+         * Cách ưu tiên nhất: form gửi đủ mảng tagActives/tagActiveValues,
+         * mỗi dòng có một giá trị 1/0 hoặc on/off.
+         */
+        if (activeValues != null && activeValues.length > index) {
+            return isChecked(activeValues[index]);
+        }
+
+        /*
+         * Cách thứ hai: form gửi name riêng theo index.
+         * Ví dụ: tagActive_0=on, tagActive_1=on.
+         */
+        String indexedValue = req.getParameter("tagActive_" + index);
+        if (indexedValue != null) {
+            return isChecked(indexedValue);
+        }
+
+        /*
+         * Cách thứ ba: checkbox cùng name="tagActive" value="0|1|2".
+         */
+        String[] checkedIndexes = req.getParameterValues("tagActive");
+        if (checkedIndexes != null) {
+            String currentIndex = String.valueOf(index);
+
+            for (String checkedIndex : checkedIndexes) {
+                if (currentIndex.equals(safe(checkedIndex))) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /*
+         * Nếu form chưa có checkbox active cho tag thì mặc định bật.
+         */
+        return true;
+    }
+
+    private String[] firstParameterValues(HttpServletRequest req, String... names) {
+        for (String name : names) {
+            String[] values = req.getParameterValues(name);
+
+            if (values != null && values.length > 0) {
+                return values;
+            }
+        }
+
+        return new String[0];
+    }
+
+    private String valueAt(String[] values, int index) {
+        if (values == null || index < 0 || index >= values.length) {
+            return "";
+        }
+
+        return safe(values[index]);
+    }
+
+    private int maxLength(String[]... arrays) {
+        int max = 0;
+
+        if (arrays == null) {
+            return max;
+        }
+
+        for (String[] array : arrays) {
+            if (array != null && array.length > max) {
+                max = array.length;
+            }
+        }
+
+        return max;
+    }
+
+    private int parseDisplayOrder(String value, int defaultValue) {
+        int order = safeInt(value, defaultValue);
+        return order > 0 ? order : defaultValue;
+    }
+
     /* =====================================================
        CATEGORY HELPER
     ===================================================== */
 
     private List<Category> getAvailableParentCategories(int currentCategoryId) {
-
         List<Category> parentCategories = categoryDAO.findAllParents();
         List<Category> availableParents = new ArrayList<>();
 
         for (Category parent : parentCategories) {
-
             if (parent.getId() != currentCategoryId) {
                 availableParents.add(parent);
             }
@@ -381,7 +577,6 @@ public class AdminCategoryServlet extends HttpServlet {
     }
 
     private Integer parseParentId(String value) {
-
         if (isBlank(value)) {
             return null;
         }
@@ -396,14 +591,11 @@ public class AdminCategoryServlet extends HttpServlet {
     ===================================================== */
 
     private void setFlash(HttpServletRequest req, String key, String message) {
-
         HttpSession session = req.getSession();
-
         session.setAttribute(key, message);
     }
 
     private void pullFlash(HttpServletRequest req) {
-
         HttpSession session = req.getSession(false);
 
         if (session == null) {
@@ -443,13 +635,18 @@ public class AdminCategoryServlet extends HttpServlet {
     }
 
     private int safeInt(String value, int defaultValue) {
-
         try {
             if (value == null) {
                 return defaultValue;
             }
 
-            return Integer.parseInt(value.trim());
+            String trimmed = value.trim();
+
+            if (trimmed.isEmpty()) {
+                return defaultValue;
+            }
+
+            return Integer.parseInt(trimmed);
 
         } catch (Exception e) {
             return defaultValue;
@@ -465,7 +662,6 @@ public class AdminCategoryServlet extends HttpServlet {
     }
 
     private boolean isChecked(String value) {
-
         if (value == null) {
             return false;
         }
@@ -479,17 +675,17 @@ public class AdminCategoryServlet extends HttpServlet {
     }
 
     private String toSlug(String input) {
-
         if (input == null) {
             return "";
         }
 
         String slug = input.trim().toLowerCase();
 
+        slug = slug.replace("đ", "d").replace("Đ", "D");
+
         slug = Normalizer.normalize(slug, Normalizer.Form.NFD)
                 .replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
 
-        slug = slug.replace("đ", "d");
         slug = slug.replaceAll("[^a-z0-9\\s-]", "");
         slug = slug.replaceAll("\\s+", "-");
         slug = slug.replaceAll("-{2,}", "-");
