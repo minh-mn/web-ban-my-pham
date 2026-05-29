@@ -6,7 +6,12 @@ import com.webshop.app.model.Product;
 import com.webshop.app.utils.DBConnection;
 
 import java.math.BigDecimal;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -20,9 +25,19 @@ public class ProductDAO {
 		NOT_FOUND
 	}
 
-	public List<Product> findProducts(String keyword, List<Integer> categoryIds, List<Integer> brandIds, String sort,
-	                                  List<String> priceRanges, Integer minRating) {
+    /* =========================================================
+       FRONTEND PRODUCT LIST
+       Giữ nguyên luồng chính: /products lần đầu vẫn load tất cả sản phẩm active
+    ========================================================= */
 
+	public List<Product> findProducts(
+			String keyword,
+			List<Integer> categoryIds,
+			List<Integer> brandIds,
+			String sort,
+			List<String> priceRanges,
+			Integer minRating
+	) {
 		List<Product> list = new ArrayList<>();
 
 		StringBuilder sql = new StringBuilder(
@@ -42,14 +57,20 @@ public class ProductDAO {
 		if (keyword != null && !keyword.isBlank()) {
 			sql.append("AND (p.title LIKE ? OR p.description LIKE ?) ");
 		}
+
 		if (categoryIds != null && !categoryIds.isEmpty()) {
-			sql.append("AND p.category_id IN (").append(placeholders(categoryIds.size())).append(") ");
-		}
-		if (brandIds != null && !brandIds.isEmpty()) {
-			sql.append("AND p.brand_id IN (").append(placeholders(brandIds.size())).append(") ");
+			sql.append("AND p.category_id IN (")
+					.append(placeholders(categoryIds.size()))
+					.append(") ");
 		}
 
-		appendPriceRange(sql, priceRanges);
+		if (brandIds != null && !brandIds.isEmpty()) {
+			sql.append("AND p.brand_id IN (")
+					.append(placeholders(brandIds.size()))
+					.append(") ");
+		}
+
+		appendPriceRanges(sql, priceRanges);
 
 		sql.append("GROUP BY p.id, p.title, p.slug, p.description, ")
 				.append("p.price, p.discount_percent, p.stock, p.image, p.created_at, ")
@@ -79,9 +100,13 @@ public class ProductDAO {
 		return list;
 	}
 
-	public int countProducts(String keyword, List<Integer> categoryIds, List<Integer> brandIds, List<String> priceRanges,
-	                         Integer minRating) {
-
+	public int countProducts(
+			String keyword,
+			List<Integer> categoryIds,
+			List<Integer> brandIds,
+			List<String> priceRanges,
+			Integer minRating
+	) {
 		StringBuilder sql = new StringBuilder(
 				"SELECT COUNT(*) FROM ( " +
 						"SELECT p.id " +
@@ -93,14 +118,20 @@ public class ProductDAO {
 		if (keyword != null && !keyword.isBlank()) {
 			sql.append("AND (p.title LIKE ? OR p.description LIKE ?) ");
 		}
+
 		if (categoryIds != null && !categoryIds.isEmpty()) {
-			sql.append("AND p.category_id IN (").append(placeholders(categoryIds.size())).append(") ");
-		}
-		if (brandIds != null && !brandIds.isEmpty()) {
-			sql.append("AND p.brand_id IN (").append(placeholders(brandIds.size())).append(") ");
+			sql.append("AND p.category_id IN (")
+					.append(placeholders(categoryIds.size()))
+					.append(") ");
 		}
 
-		appendPriceRange(sql, priceRanges);
+		if (brandIds != null && !brandIds.isEmpty()) {
+			sql.append("AND p.brand_id IN (")
+					.append(placeholders(brandIds.size()))
+					.append(") ");
+		}
+
+		appendPriceRanges(sql, priceRanges);
 
 		sql.append("GROUP BY p.id ");
 
@@ -125,9 +156,16 @@ public class ProductDAO {
 		}
 	}
 
-	public List<Product> findProductsPaged(String keyword, List<Integer> categoryIds, List<Integer> brandIds, String sort,
-	                                       List<String> priceRanges, Integer minRating, int page, int pageSize) {
-
+	public List<Product> findProductsPaged(
+			String keyword,
+			List<Integer> categoryIds,
+			List<Integer> brandIds,
+			String sort,
+			List<String> priceRanges,
+			Integer minRating,
+			int page,
+			int pageSize
+	) {
 		int safePage = Math.max(1, page);
 		int safeSize = Math.max(1, pageSize);
 		int offset = (safePage - 1) * safeSize;
@@ -151,14 +189,20 @@ public class ProductDAO {
 		if (keyword != null && !keyword.isBlank()) {
 			sql.append("AND (p.title LIKE ? OR p.description LIKE ?) ");
 		}
+
 		if (categoryIds != null && !categoryIds.isEmpty()) {
-			sql.append("AND p.category_id IN (").append(placeholders(categoryIds.size())).append(") ");
-		}
-		if (brandIds != null && !brandIds.isEmpty()) {
-			sql.append("AND p.brand_id IN (").append(placeholders(brandIds.size())).append(") ");
+			sql.append("AND p.category_id IN (")
+					.append(placeholders(categoryIds.size()))
+					.append(") ");
 		}
 
-		appendPriceRange(sql, priceRanges);
+		if (brandIds != null && !brandIds.isEmpty()) {
+			sql.append("AND p.brand_id IN (")
+					.append(placeholders(brandIds.size()))
+					.append(") ");
+		}
+
+		appendPriceRanges(sql, priceRanges);
 
 		sql.append("GROUP BY p.id, p.title, p.slug, p.description, ")
 				.append("p.price, p.discount_percent, p.stock, p.image, p.created_at, ")
@@ -192,8 +236,11 @@ public class ProductDAO {
 		return list;
 	}
 
-	public List<Product> findProductsAdmin(String keyword, Integer categoryId, Integer brandId, String sort) {
+    /* =========================================================
+       ADMIN PRODUCT LIST
+    ========================================================= */
 
+	public List<Product> findProductsAdmin(String keyword, Integer categoryId, Integer brandId, String sort) {
 		List<Product> list = new ArrayList<>();
 
 		StringBuilder sql = new StringBuilder(
@@ -213,8 +260,14 @@ public class ProductDAO {
 		if (keyword != null && !keyword.isBlank()) {
 			sql.append("AND (p.title LIKE ? OR p.slug LIKE ? OR p.description LIKE ?) ");
 		}
-		if (categoryId != null) sql.append("AND p.category_id = ? ");
-		if (brandId != null) sql.append("AND p.brand_id = ? ");
+
+		if (categoryId != null && categoryId > 0) {
+			sql.append("AND p.category_id = ? ");
+		}
+
+		if (brandId != null && brandId > 0) {
+			sql.append("AND p.brand_id = ? ");
+		}
 
 		sql.append("GROUP BY p.id, p.title, p.slug, p.description, ")
 				.append("p.price, p.discount_percent, p.stock, p.image, p.created_at, p.is_active, ")
@@ -234,8 +287,13 @@ public class ProductDAO {
 				ps.setString(idx++, like);
 			}
 
-			if (categoryId != null) ps.setInt(idx++, categoryId);
-			if (brandId != null) ps.setInt(idx, brandId);
+			if (categoryId != null && categoryId > 0) {
+				ps.setInt(idx++, categoryId);
+			}
+
+			if (brandId != null && brandId > 0) {
+				ps.setInt(idx, brandId);
+			}
 
 			try (ResultSet rs = ps.executeQuery()) {
 				while (rs.next()) {
@@ -255,6 +313,10 @@ public class ProductDAO {
 	public List<Product> findAll() {
 		return findProductsAdmin(null, null, null, "created_desc");
 	}
+
+    /* =========================================================
+       PRODUCT DETAIL
+    ========================================================= */
 
 	public Product findById(int productId) {
 		String sql =
@@ -284,8 +346,8 @@ public class ProductDAO {
 
 	public Product findBySlug(String slug) {
 		String sql =
-				"SELECT p.id, p.title, p.slug, p.description, p.price, p.discount_percent, " +
-						"p.stock, p.image, p.is_active, p.created_at, " +
+				"SELECT p.id, p.title, p.slug, p.description, " +
+						"p.price, p.discount_percent, p.stock, p.image, p.is_active, p.created_at, " +
 						"COALESCE(AVG(r.rating), 0) AS avg_rating, " +
 						"COUNT(r.id) AS review_count, " +
 						"c.id AS c_id, c.name AS c_name, " +
@@ -305,7 +367,9 @@ public class ProductDAO {
 			ps.setString(1, slug);
 
 			try (ResultSet rs = ps.executeQuery()) {
-				if (!rs.next()) return null;
+				if (!rs.next()) {
+					return null;
+				}
 
 				Product p = mapRowList(rs);
 				p.setActive(rs.getBoolean("is_active"));
@@ -316,6 +380,10 @@ public class ProductDAO {
 			throw new RuntimeException("ProductDAO.findBySlug error", e);
 		}
 	}
+
+    /* =========================================================
+       SEARCH / SUGGESTION
+    ========================================================= */
 
 	public List<Product> searchByKeyword(String keyword) {
 		List<Product> list = new ArrayList<>();
@@ -357,139 +425,50 @@ public class ProductDAO {
 		return list;
 	}
 
-	public List<Product> findForPromotionPicker(String keyword, Integer brandId, Integer categoryId) {
-		return findForPromotionPicker(keyword, brandId, categoryId, true, null);
-	}
-
-	public List<Product> findForPromotionPicker(
-			String keyword,
-			Integer brandId,
-			Integer categoryId,
-			List<Integer> selectedProductIds
-	) {
-		return findForPromotionPicker(keyword, brandId, categoryId, true, selectedProductIds);
-	}
-
-	public List<Product> findForPromotionPicker(
-			String keyword,
-			Integer brandId,
-			Integer categoryId,
-			boolean activeOnly,
-			List<Integer> selectedProductIds
-	) {
-		List<Product> products = new ArrayList<>();
-		Set<Integer> selectedSet = toIdSet(selectedProductIds);
-
-		StringBuilder sql = new StringBuilder(
-				"SELECT p.id, p.title, p.slug, p.description, " +
-						"p.price, p.discount_percent, p.stock, p.image, p.is_active, " +
-						"c.id AS c_id, c.name AS c_name, " +
-						"b.id AS b_id, b.name AS b_name " +
-						"FROM store_product p " +
-						"LEFT JOIN store_category c ON p.category_id = c.id " +
-						"LEFT JOIN store_brand b ON p.brand_id = b.id " +
-						"WHERE 1 = 1 "
-		);
-
-		if (activeOnly) {
-			sql.append("AND p.is_active = 1 ");
-		}
-
-		if (keyword != null && !keyword.isBlank()) {
-			sql.append("AND (p.title LIKE ? OR p.slug LIKE ? OR p.description LIKE ?) ");
-		}
-
-		if (brandId != null && brandId > 0) {
-			sql.append("AND p.brand_id = ? ");
-		}
-
-		if (categoryId != null && categoryId > 0) {
-			sql.append("AND p.category_id = ? ");
-		}
-
-		sql.append("ORDER BY p.title ASC, p.id DESC ");
-
-		try (Connection connection = DBConnection.getConnection();
-		     PreparedStatement statement = connection.prepareStatement(sql.toString())) {
-
-			int index = 1;
-
-			if (keyword != null && !keyword.isBlank()) {
-				String like = "%" + keyword.trim() + "%";
-				statement.setString(index++, like);
-				statement.setString(index++, like);
-				statement.setString(index++, like);
-			}
-
-			if (brandId != null && brandId > 0) {
-				statement.setInt(index++, brandId);
-			}
-
-			if (categoryId != null && categoryId > 0) {
-				statement.setInt(index, categoryId);
-			}
-
-			try (ResultSet resultSet = statement.executeQuery()) {
-				while (resultSet.next()) {
-					Product product = mapRowPromotionPicker(resultSet);
-					product.setSelectedForPromotion(selectedSet.contains(product.getId()));
-					products.add(product);
-				}
-			}
-
-		} catch (SQLException e) {
-			throw new RuntimeException("ProductDAO.findForPromotionPicker error", e);
-		}
-
-		return products;
-	}
-
-	public List<Product> findActiveByBrandId(int brandId) {
-		return findForPromotionPicker(null, brandId, null, true, null);
-	}
-
-	public List<Product> findActiveByCategoryId(int categoryId) {
-		return findForPromotionPicker(null, null, categoryId, true, null);
-	}
-
-	public List<Product> findByIds(List<Integer> productIds) {
-		List<Product> products = new ArrayList<>();
-		List<Integer> cleanedIds = normalizeProductIds(productIds);
-
-		if (cleanedIds.isEmpty()) {
-			return products;
-		}
+	public List<Product> searchSuggestions(String keyword) {
+		List<Product> list = new ArrayList<>();
 
 		String sql =
-				"SELECT p.id, p.title, p.slug, p.description, " +
-						"p.price, p.discount_percent, p.stock, p.image, p.is_active, " +
-						"c.id AS c_id, c.name AS c_name, " +
-						"b.id AS b_id, b.name AS b_name " +
-						"FROM store_product p " +
-						"LEFT JOIN store_category c ON p.category_id = c.id " +
-						"LEFT JOIN store_brand b ON p.brand_id = b.id " +
-						"WHERE p.id IN (" + placeholders(cleanedIds.size()) + ") " +
-						"ORDER BY p.title ASC, p.id DESC";
+				"SELECT id, title, slug, price, image, " +
+						"CASE " +
+						"WHEN title LIKE ? THEN 0 " +
+						"WHEN title LIKE ? THEN 1 " +
+						"ELSE 2 " +
+						"END AS score " +
+						"FROM store_product " +
+						"WHERE is_active = 1 " +
+						"AND (title LIKE ? OR description LIKE ?) " +
+						"ORDER BY score ASC, id DESC " +
+						"LIMIT 8";
 
-		try (Connection connection = DBConnection.getConnection();
-		     PreparedStatement statement = connection.prepareStatement(sql)) {
+		try (Connection c = DBConnection.getConnection();
+		     PreparedStatement ps = c.prepareStatement(sql)) {
 
-			for (int i = 0; i < cleanedIds.size(); i++) {
-				statement.setInt(i + 1, cleanedIds.get(i));
-			}
+			String keywordTrim = keyword == null ? "" : keyword.trim();
+			String likeAll = "%" + keywordTrim + "%";
+			String likeStart = keywordTrim + "%";
 
-			try (ResultSet resultSet = statement.executeQuery()) {
-				while (resultSet.next()) {
-					products.add(mapRowPromotionPicker(resultSet));
+			ps.setString(1, likeStart);
+			ps.setString(2, likeAll);
+			ps.setString(3, likeAll);
+			ps.setString(4, likeAll);
+
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					list.add(mapRowSuggestion(rs));
 				}
 			}
 
 		} catch (SQLException e) {
-			throw new RuntimeException("ProductDAO.findByIds error", e);
+			throw new RuntimeException("ProductDAO.searchSuggestions error", e);
 		}
 
-		return products;
+		return list;
 	}
+
+    /* =========================================================
+       CREATE / UPDATE / DELETE
+    ========================================================= */
 
 	public int create(Product p) {
 		String sql =
@@ -518,7 +497,10 @@ public class ProductDAO {
 			ps.executeUpdate();
 
 			try (ResultSet rs = ps.getGeneratedKeys()) {
-				if (rs.next()) return rs.getInt(1);
+				if (rs.next()) {
+					return rs.getInt(1);
+				}
+
 				return 0;
 			}
 
@@ -557,6 +539,11 @@ public class ProductDAO {
 		}
 	}
 
+	/*
+	 * Xóa sản phẩm an toàn:
+	 * - Nếu sản phẩm đã có trong store_orderitem: chỉ ẩn sản phẩm bằng is_active = 0.
+	 * - Nếu sản phẩm chưa có đơn hàng: xóa cứng trong transaction.
+	 */
 	public DeleteMode deleteOrDeactivateSafely(int productId) {
 		String checkProductSql = "SELECT id FROM store_product WHERE id = ?";
 		String checkOrderItemSql = "SELECT 1 FROM store_orderitem WHERE product_id = ? LIMIT 1";
@@ -564,12 +551,18 @@ public class ProductDAO {
 		String softDeleteSql = "UPDATE store_product SET is_active = 0 WHERE id = ?";
 
 		String deleteCartItemsSql = "DELETE FROM cart_items WHERE product_id = ?";
-		String deleteCouponTargetsSql = "DELETE FROM store_coupon_product WHERE product_id = ?";
-		String deleteBrandDiscountTargetsSql = "DELETE FROM store_branddiscount_product WHERE product_id = ?";
-		String deletePromotionEventTargetsSql = "DELETE FROM store_promotionevent_product WHERE product_id = ?";
 		String deleteReviewsSql = "DELETE FROM store_review WHERE product_id = ?";
 		String deleteImagesSql = "DELETE FROM store_productimage WHERE product_id = ?";
 		String deleteProductDiscountSql = "DELETE FROM store_productdiscount WHERE product_id = ?";
+
+		/*
+		 * Các bảng target khuyến mãi mới.
+		 * Xóa trước product để tránh lỗi khóa ngoại khi hard delete.
+		 */
+		String deleteCouponProductSql = "DELETE FROM store_coupon_product WHERE product_id = ?";
+		String deleteBrandDiscountProductSql = "DELETE FROM store_branddiscount_product WHERE product_id = ?";
+		String deletePromotionEventProductSql = "DELETE FROM store_promotionevent_product WHERE product_id = ?";
+
 		String deleteProductSql = "DELETE FROM store_product WHERE id = ?";
 
 		try (Connection conn = DBConnection.getConnection()) {
@@ -612,13 +605,18 @@ public class ProductDAO {
 				}
 
 				executeDeleteByProductId(conn, deleteCartItemsSql, productId);
-				executeDeleteByProductId(conn, deleteCouponTargetsSql, productId);
-				executeDeleteByProductId(conn, deleteBrandDiscountTargetsSql, productId);
-				executeDeleteByProductId(conn, deletePromotionEventTargetsSql, productId);
 				executeDeleteByProductId(conn, deleteReviewsSql, productId);
 				executeDeleteByProductId(conn, deleteImagesSql, productId);
 				executeDeleteByProductId(conn, deleteProductDiscountSql, productId);
-				executeDeleteByProductId(conn, deleteProductSql, productId);
+
+				executeDeleteByProductId(conn, deleteCouponProductSql, productId);
+				executeDeleteByProductId(conn, deleteBrandDiscountProductSql, productId);
+				executeDeleteByProductId(conn, deletePromotionEventProductSql, productId);
+
+				try (PreparedStatement ps = conn.prepareStatement(deleteProductSql)) {
+					ps.setInt(1, productId);
+					ps.executeUpdate();
+				}
 
 				conn.commit();
 				return DeleteMode.HARD_DELETED;
@@ -626,6 +624,7 @@ public class ProductDAO {
 			} catch (Exception e) {
 				conn.rollback();
 				throw e;
+
 			} finally {
 				conn.setAutoCommit(true);
 			}
@@ -648,6 +647,7 @@ public class ProductDAO {
 			if (e.getErrorCode() == 1451) {
 				throw new RuntimeException("Không thể xóa sản phẩm vì đang được tham chiếu.", e);
 			}
+
 			throw new RuntimeException("ProductDAO.delete error", e);
 		}
 	}
@@ -665,6 +665,17 @@ public class ProductDAO {
 			throw new RuntimeException("ProductDAO.deleteReviewsByProductId error", e);
 		}
 	}
+
+	private void executeDeleteByProductId(Connection conn, String sql, int productId) throws SQLException {
+		try (PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, productId);
+			ps.executeUpdate();
+		}
+	}
+
+    /* =========================================================
+       HOME FEATURED PRODUCTS
+    ========================================================= */
 
 	public List<Product> findFeaturedTop12BestSellerDeepDiscount() {
 		List<Product> list = new ArrayList<>();
@@ -746,46 +757,168 @@ public class ProductDAO {
 		return list;
 	}
 
-	public List<Product> searchSuggestions(String keyword) {
-		List<Product> list = new ArrayList<>();
+    /* =========================================================
+       PROMOTION PRODUCT PICKER
+       Chỉ dùng cho admin/promotions, không ảnh hưởng /products
+    ========================================================= */
 
-		String sql =
-				"SELECT id, title, slug, price, image, " +
-						"CASE " +
-						"WHEN title LIKE ? THEN 0 " +
-						"WHEN title LIKE ? THEN 1 " +
-						"ELSE 2 " +
-						"END AS score " +
-						"FROM store_product " +
-						"WHERE is_active = 1 " +
-						"AND (title LIKE ? OR description LIKE ?) " +
-						"ORDER BY score ASC, id DESC " +
-						"LIMIT 8";
+	public List<Product> findForPromotionPicker(String keyword, Integer brandId, Integer categoryId) {
+		return findForPromotionPicker(keyword, brandId, categoryId, true, new ArrayList<>());
+	}
 
-		try (Connection c = DBConnection.getConnection();
-		     PreparedStatement ps = c.prepareStatement(sql)) {
+	public List<Product> findForPromotionPicker(
+			String keyword,
+			Integer brandId,
+			Integer categoryId,
+			List<Integer> selectedProductIds
+	) {
+		return findForPromotionPicker(keyword, brandId, categoryId, true, selectedProductIds);
+	}
 
-			String keywordTrim = keyword == null ? "" : keyword.trim();
-			String likeAll = "%" + keywordTrim + "%";
-			String likeStart = keywordTrim + "%";
+	public List<Product> findForPromotionPicker(
+			String keyword,
+			Integer brandId,
+			Integer categoryId,
+			boolean activeOnly,
+			List<Integer> selectedProductIds
+	) {
+		List<Product> products = new ArrayList<>();
+		Set<Integer> selectedIds = new LinkedHashSet<>();
 
-			ps.setString(1, likeStart);
-			ps.setString(2, likeAll);
-			ps.setString(3, likeAll);
-			ps.setString(4, likeAll);
+		if (selectedProductIds != null) {
+			selectedIds.addAll(selectedProductIds);
+		}
+
+		StringBuilder sql = new StringBuilder(
+				"SELECT p.id, p.title, p.slug, p.description, " +
+						"p.price, p.discount_percent, p.stock, p.image, p.created_at, p.is_active, " +
+						"0 AS avg_rating, " +
+						"0 AS review_count, " +
+						"c.id AS c_id, c.name AS c_name, " +
+						"b.id AS b_id, b.name AS b_name " +
+						"FROM store_product p " +
+						"LEFT JOIN store_category c ON p.category_id = c.id " +
+						"LEFT JOIN store_brand b ON p.brand_id = b.id " +
+						"WHERE 1 = 1 "
+		);
+
+		if (activeOnly) {
+			sql.append("AND p.is_active = 1 ");
+		}
+
+		if (keyword != null && !keyword.isBlank()) {
+			sql.append("AND (p.title LIKE ? OR p.slug LIKE ? OR p.description LIKE ?) ");
+		}
+
+		if (brandId != null && brandId > 0) {
+			sql.append("AND p.brand_id = ? ");
+		}
+
+		if (categoryId != null && categoryId > 0) {
+			sql.append("AND p.category_id = ? ");
+		}
+
+		sql.append("ORDER BY p.title ASC, p.id DESC");
+
+		try (Connection conn = DBConnection.getConnection();
+		     PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+
+			int idx = 1;
+
+			if (keyword != null && !keyword.isBlank()) {
+				String like = "%" + keyword.trim() + "%";
+				ps.setString(idx++, like);
+				ps.setString(idx++, like);
+				ps.setString(idx++, like);
+			}
+
+			if (brandId != null && brandId > 0) {
+				ps.setInt(idx++, brandId);
+			}
+
+			if (categoryId != null && categoryId > 0) {
+				ps.setInt(idx, categoryId);
+			}
 
 			try (ResultSet rs = ps.executeQuery()) {
 				while (rs.next()) {
-					list.add(mapRowSuggestion(rs));
+					Product product = mapRowList(rs);
+					product.setActive(rs.getBoolean("is_active"));
+					product.setSelectedForPromotion(selectedIds.contains(product.getId()));
+					products.add(product);
 				}
 			}
 
 		} catch (SQLException e) {
-			throw new RuntimeException("ProductDAO.searchSuggestions error", e);
+			throw new RuntimeException("ProductDAO.findForPromotionPicker error", e);
 		}
 
-		return list;
+		return products;
 	}
+
+	public List<Product> findByIds(List<Integer> productIds) {
+		List<Product> products = new ArrayList<>();
+		List<Integer> cleanedIds = normalizeProductIds(productIds);
+
+		if (cleanedIds.isEmpty()) {
+			return products;
+		}
+
+		String sql =
+				"SELECT p.id, p.title, p.slug, p.description, " +
+						"p.price, p.discount_percent, p.stock, p.image, p.created_at, p.is_active, " +
+						"0 AS avg_rating, " +
+						"0 AS review_count, " +
+						"c.id AS c_id, c.name AS c_name, " +
+						"b.id AS b_id, b.name AS b_name " +
+						"FROM store_product p " +
+						"LEFT JOIN store_category c ON p.category_id = c.id " +
+						"LEFT JOIN store_brand b ON p.brand_id = b.id " +
+						"WHERE p.id IN (" + placeholders(cleanedIds.size()) + ") " +
+						"ORDER BY p.title ASC, p.id DESC";
+
+		try (Connection conn = DBConnection.getConnection();
+		     PreparedStatement ps = conn.prepareStatement(sql)) {
+
+			int idx = 1;
+			for (Integer productId : cleanedIds) {
+				ps.setInt(idx++, productId);
+			}
+
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					Product product = mapRowList(rs);
+					product.setActive(rs.getBoolean("is_active"));
+					products.add(product);
+				}
+			}
+
+		} catch (SQLException e) {
+			throw new RuntimeException("ProductDAO.findByIds error", e);
+		}
+
+		return products;
+	}
+
+	public List<Product> findActiveByBrandId(int brandId) {
+		if (brandId <= 0) {
+			return new ArrayList<>();
+		}
+
+		return findForPromotionPicker(null, brandId, null, true, new ArrayList<>());
+	}
+
+	public List<Product> findActiveByCategoryId(int categoryId) {
+		if (categoryId <= 0) {
+			return new ArrayList<>();
+		}
+
+		return findForPromotionPicker(null, null, categoryId, true, new ArrayList<>());
+	}
+
+    /* =========================================================
+       PRIVATE QUERY HELPERS
+    ========================================================= */
 
 	private Product findProductDetail(String sql, int productId, String errorMessage) {
 		try (Connection c = DBConnection.getConnection();
@@ -794,7 +927,10 @@ public class ProductDAO {
 			ps.setInt(1, productId);
 
 			try (ResultSet rs = ps.executeQuery()) {
-				if (!rs.next()) return null;
+				if (!rs.next()) {
+					return null;
+				}
+
 				return mapRowDetail(rs);
 			}
 
@@ -803,8 +939,14 @@ public class ProductDAO {
 		}
 	}
 
-	private int bindProductFilters(PreparedStatement ps, String keyword, List<Integer> categoryIds,
-	                               List<Integer> brandIds, Integer minRating, int idx) throws SQLException {
+	private int bindProductFilters(
+			PreparedStatement ps,
+			String keyword,
+			List<Integer> categoryIds,
+			List<Integer> brandIds,
+			Integer minRating,
+			int idx
+	) throws SQLException {
 
 		if (keyword != null && !keyword.isBlank()) {
 			String like = "%" + keyword.trim() + "%";
@@ -813,38 +955,62 @@ public class ProductDAO {
 		}
 
 		if (categoryIds != null && !categoryIds.isEmpty()) {
-			for (Integer cid : categoryIds) {
-				ps.setInt(idx++, cid);
+			for (Integer categoryId : categoryIds) {
+				if (categoryId != null) {
+					ps.setInt(idx++, categoryId);
+				}
 			}
 		}
 
 		if (brandIds != null && !brandIds.isEmpty()) {
-			for (Integer bid : brandIds) {
-				ps.setInt(idx++, bid);
+			for (Integer brandId : brandIds) {
+				if (brandId != null) {
+					ps.setInt(idx++, brandId);
+				}
 			}
 		}
 
-		if (minRating != null) ps.setInt(idx++, minRating);
+		if (minRating != null) {
+			ps.setInt(idx++, minRating);
+		}
 
 		return idx;
 	}
 
-	private void appendPriceRange(StringBuilder sql, List<String> priceRanges) {
-		if (priceRanges == null || priceRanges.isEmpty()) return;
+	private void appendPriceRanges(StringBuilder sql, List<String> priceRanges) {
+		if (priceRanges == null || priceRanges.isEmpty()) {
+			return;
+		}
 
-		List<String> clauses = new ArrayList<>();
-		for (String pr : priceRanges) {
-			if ("lt500".equals(pr)) {
-				clauses.add("p.price < 500000");
-			} else if ("500_1000".equals(pr)) {
-				clauses.add("p.price BETWEEN 500000 AND 1000000");
-			} else if ("gt1000".equals(pr)) {
-				clauses.add("p.price > 1000000");
+		List<String> conditions = new ArrayList<>();
+
+		for (String priceRange : priceRanges) {
+			if (priceRange == null || priceRange.isBlank()) {
+				continue;
+			}
+
+			switch (priceRange.trim()) {
+				case "lt500":
+					conditions.add("p.price < 500000");
+					break;
+
+				case "500_1000":
+					conditions.add("p.price BETWEEN 500000 AND 1000000");
+					break;
+
+				case "gt1000":
+					conditions.add("p.price > 1000000");
+					break;
+
+				default:
+					break;
 			}
 		}
 
-		if (!clauses.isEmpty()) {
-			sql.append("AND (").append(String.join(" OR ", clauses)).append(") ");
+		if (!conditions.isEmpty()) {
+			sql.append("AND (")
+					.append(String.join(" OR ", conditions))
+					.append(") ");
 		}
 	}
 
@@ -858,6 +1024,18 @@ public class ProductDAO {
 		}
 	}
 
+	private String placeholders(int size) {
+		if (size <= 0) {
+			return "";
+		}
+
+		return String.join(",", java.util.Collections.nCopies(size, "?"));
+	}
+
+    /* =========================================================
+       MAPPERS
+    ========================================================= */
+
 	private Product mapRowList(ResultSet rs) throws SQLException {
 		Product p = new Product();
 
@@ -869,11 +1047,40 @@ public class ProductDAO {
 		p.setDiscountPercent(rs.getInt("discount_percent"));
 		p.setStock(rs.getInt("stock"));
 		p.setImage(rs.getString("image"));
-		p.setAvgRating(rs.getDouble("avg_rating"));
-		p.setReviewCount(rs.getInt("review_count"));
+
+		if (hasColumn(rs, "is_active")) {
+			p.setActive(rs.getBoolean("is_active"));
+		} else {
+			p.setActive(true);
+		}
+
+		if (hasColumn(rs, "avg_rating")) {
+			p.setAvgRating(rs.getDouble("avg_rating"));
+		}
+
+		if (hasColumn(rs, "review_count")) {
+			p.setReviewCount(rs.getInt("review_count"));
+		}
 
 		applyFinalPrice(p);
-		attachCategoryAndBrand(rs, p);
+
+		if (rs.getObject("c_id") != null) {
+			Category cat = new Category();
+			cat.setId(rs.getInt("c_id"));
+			cat.setName(rs.getString("c_name"));
+			p.setCategory(cat);
+			p.setCategoryId(rs.getInt("c_id"));
+			p.setCategoryName(rs.getString("c_name"));
+		}
+
+		if (rs.getObject("b_id") != null) {
+			Brand br = new Brand();
+			br.setId(rs.getInt("b_id"));
+			br.setName(rs.getString("b_name"));
+			p.setBrand(br);
+			p.setBrandId(rs.getInt("b_id"));
+			p.setBrandName(rs.getString("b_name"));
+		}
 
 		return p;
 	}
@@ -892,26 +1099,24 @@ public class ProductDAO {
 		p.setActive(rs.getBoolean("is_active"));
 
 		applyFinalPrice(p);
-		attachCategoryAndBrand(rs, p);
 
-		return p;
-	}
+		if (rs.getObject("c_id") != null) {
+			Category cat = new Category();
+			cat.setId(rs.getInt("c_id"));
+			cat.setName(rs.getString("c_name"));
+			p.setCategory(cat);
+			p.setCategoryId(rs.getInt("c_id"));
+			p.setCategoryName(rs.getString("c_name"));
+		}
 
-	private Product mapRowPromotionPicker(ResultSet rs) throws SQLException {
-		Product p = new Product();
-
-		p.setId(rs.getInt("id"));
-		p.setTitle(rs.getString("title"));
-		p.setSlug(rs.getString("slug"));
-		p.setDescription(rs.getString("description"));
-		p.setPrice(rs.getBigDecimal("price"));
-		p.setDiscountPercent(rs.getInt("discount_percent"));
-		p.setStock(rs.getInt("stock"));
-		p.setImage(rs.getString("image"));
-		p.setActive(rs.getBoolean("is_active"));
-
-		applyFinalPrice(p);
-		attachCategoryAndBrand(rs, p);
+		if (rs.getObject("b_id") != null) {
+			Brand br = new Brand();
+			br.setId(rs.getInt("b_id"));
+			br.setName(rs.getString("b_name"));
+			p.setBrand(br);
+			p.setBrandId(rs.getInt("b_id"));
+			p.setBrandName(rs.getString("b_name"));
+		}
 
 		return p;
 	}
@@ -928,34 +1133,10 @@ public class ProductDAO {
 		return p;
 	}
 
-	private void attachCategoryAndBrand(ResultSet rs, Product p) throws SQLException {
-		if (rs.getObject("c_id") != null) {
-			int categoryId = rs.getInt("c_id");
-
-			Category cat = new Category();
-			cat.setId(categoryId);
-			cat.setName(rs.getString("c_name"));
-
-			p.setCategory(cat);
-			p.setCategoryId(categoryId);
-			p.setCategoryName(rs.getString("c_name"));
-		}
-
-		if (rs.getObject("b_id") != null) {
-			int brandId = rs.getInt("b_id");
-
-			Brand br = new Brand();
-			br.setId(brandId);
-			br.setName(rs.getString("b_name"));
-
-			p.setBrand(br);
-			p.setBrandId(brandId);
-			p.setBrandName(rs.getString("b_name"));
-		}
-	}
-
 	private void applyFinalPrice(Product p) {
-		if (p == null || p.getPrice() == null) return;
+		if (p == null || p.getPrice() == null) {
+			return;
+		}
 
 		int discountPercent = p.getDiscountPercent();
 
@@ -971,129 +1152,32 @@ public class ProductDAO {
 		p.setFinalPrice(finalPrice);
 	}
 
-	private void executeDeleteByProductId(Connection conn, String sql, int productId) throws SQLException {
-		try (PreparedStatement ps = conn.prepareStatement(sql)) {
-			ps.setInt(1, productId);
-			ps.executeUpdate();
-		}
-	}
+	private boolean hasColumn(ResultSet rs, String columnName) throws SQLException {
+		ResultSetMetaData metaData = rs.getMetaData();
+		int columnCount = metaData.getColumnCount();
 
-	private Set<Integer> toIdSet(List<Integer> ids) {
-		return new LinkedHashSet<>(normalizeProductIds(ids));
+		for (int i = 1; i <= columnCount; i++) {
+			if (columnName.equalsIgnoreCase(metaData.getColumnLabel(i))) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	private List<Integer> normalizeProductIds(List<Integer> productIds) {
-		List<Integer> cleaned = new ArrayList<>();
-		Set<Integer> unique = new LinkedHashSet<>();
+		Set<Integer> uniqueIds = new LinkedHashSet<>();
 
 		if (productIds == null) {
-			return cleaned;
+			return new ArrayList<>();
 		}
 
 		for (Integer productId : productIds) {
 			if (productId != null && productId > 0) {
-				unique.add(productId);
+				uniqueIds.add(productId);
 			}
 		}
 
-		cleaned.addAll(unique);
-		return cleaned;
-	}
-
-	private String placeholders(int size) {
-		if (size <= 0) {
-			return "";
-		}
-
-		StringBuilder builder = new StringBuilder();
-
-		for (int i = 0; i < size; i++) {
-			if (i > 0) {
-				builder.append(", ");
-			}
-			builder.append("?");
-		}
-
-		return builder.toString();
-	}
-
-	public List<Product> findProductsByPromotion(com.webshop.app.model.PromotionEvent event) {
-		List<Product> list = new ArrayList<>();
-		if (event == null) return list;
-
-		StringBuilder sql = new StringBuilder(
-				"SELECT id, title, slug, description, price, discount_percent, stock, image " +
-						"FROM store_product " +
-						"WHERE 1=1"
-		);
-
-		if (event.getScope() == com.webshop.app.model.PromotionEvent.Scope.CATEGORY) {
-			sql.append(" AND category_id = ?");
-		} else if (event.getScope() == com.webshop.app.model.PromotionEvent.Scope.BRAND) {
-			sql.append(" AND brand_id = ?");
-		}
-
-		sql.append(" ORDER BY id DESC");
-
-		try (Connection conn = DBConnection.getConnection();
-		     PreparedStatement ps = conn.prepareStatement(sql.toString())) {
-
-			if (event.getScope() == com.webshop.app.model.PromotionEvent.Scope.CATEGORY) {
-				ps.setInt(1, event.getCategoryId());
-			} else if (event.getScope() == com.webshop.app.model.PromotionEvent.Scope.BRAND) {
-				ps.setInt(1, event.getBrandId());
-			}
-
-			try (ResultSet rs = ps.executeQuery()) {
-				while (rs.next()) {
-					Product p = new Product();
-					p.setId(rs.getInt("id"));
-					p.setTitle(rs.getString("title"));
-					p.setSlug(rs.getString("slug"));
-					p.setDescription(rs.getString("description"));
-					p.setPrice(rs.getBigDecimal("price"));
-					p.setDiscountPercent(rs.getInt("discount_percent"));
-					p.setStock(rs.getInt("stock"));
-					p.setImage(rs.getString("image"));
-
-					if (p.getPrice() != null) {
-						BigDecimal originalPrice = p.getPrice();
-						BigDecimal finalPrice = originalPrice;
-
-						if (event.getDiscountType() != null) {
-							String typeName = event.getDiscountType().name();
-
-							if ("PERCENT".equals(typeName)) {
-								BigDecimal hundred = new BigDecimal("100");
-								BigDecimal discountAmount = originalPrice.multiply(event.getDiscountValue())
-										.divide(hundred, 2, java.math.RoundingMode.HALF_UP);
-
-								if (event.getMaxDiscountAmount() != null) {
-									if (discountAmount.compareTo(event.getMaxDiscountAmount()) > 0) {
-										discountAmount = event.getMaxDiscountAmount();
-									}
-								}
-								finalPrice = originalPrice.subtract(discountAmount);
-
-							} else if ("AMOUNT".equals(typeName) || "FIXED".equals(typeName) || "CASH".equals(typeName)) {
-								finalPrice = originalPrice.subtract(event.getDiscountValue());
-							}
-						}
-
-						if (finalPrice.compareTo(BigDecimal.ZERO) < 0) {
-							finalPrice = BigDecimal.ZERO;
-						}
-
-						p.setFinalPrice(finalPrice);
-					}
-
-					list.add(p);
-				}
-			}
-		} catch (SQLException ex) {
-			throw new RuntimeException("ProductDAO.findProductsByPromotion error", ex);
-		}
-
-		return list;
+		return new ArrayList<>(uniqueIds);
 	}
 }
