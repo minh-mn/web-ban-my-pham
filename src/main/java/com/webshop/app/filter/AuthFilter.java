@@ -26,6 +26,8 @@ public class AuthFilter implements Filter {
             uri.equals("/register") ||
                 uri.equals("/send-otp") ||
                 uri.equals("/verify-otp") ||
+				uri.equals("/forgot-password") || 
+                uri.equals("/reset-password") ||
                 uri.equals("/css") ||
                 uri.equals("/js") ||
                 uri.equals("/images")) {
