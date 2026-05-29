@@ -21,8 +21,11 @@ public class Product {
 	private String image;
 	private boolean active;
 
-	// ===== GALLERY =====
+	// ===== GALLERY IMAGE =====
 	private List<ProductImage> images = new ArrayList<>();
+
+	// ===== ISSUE 123: PRODUCT MEDIA IMAGE / VIDEO =====
+	private List<ProductMedia> mediaList = new ArrayList<>();
 
 	// ===== RATING =====
 	private Double avgRating;
@@ -94,6 +97,7 @@ public class Product {
 		if (finalPrice != null) {
 			return finalPrice;
 		}
+
 		return getPrice();
 	}
 
@@ -121,10 +125,13 @@ public class Product {
 		return image;
 	}
 
+	// ===== GALLERY IMAGE =====
+
 	public List<ProductImage> getImages() {
 		if (images == null) {
 			return Collections.emptyList();
 		}
+
 		return images;
 	}
 
@@ -135,6 +142,100 @@ public class Product {
 			this.images = new ArrayList<>(images);
 		}
 	}
+
+	public boolean isHasImages() {
+		return images != null && !images.isEmpty();
+	}
+
+	public boolean getHasImages() {
+		return isHasImages();
+	}
+
+	// ===== ISSUE 123: PRODUCT MEDIA IMAGE / VIDEO =====
+
+	public List<ProductMedia> getMediaList() {
+		if (mediaList == null) {
+			return Collections.emptyList();
+		}
+
+		return mediaList;
+	}
+
+	public void setMediaList(List<ProductMedia> mediaList) {
+		if (mediaList == null) {
+			this.mediaList = new ArrayList<>();
+		} else {
+			this.mediaList = new ArrayList<>(mediaList);
+		}
+	}
+
+	/*
+	 * Alias cho JSP nếu muốn gọi product.productMediaList.
+	 */
+	public List<ProductMedia> getProductMediaList() {
+		return getMediaList();
+	}
+
+	public void setProductMediaList(List<ProductMedia> productMediaList) {
+		setMediaList(productMediaList);
+	}
+
+	/*
+	 * Alias ngắn nếu sau này muốn gọi product.media.
+	 */
+	public List<ProductMedia> getMedia() {
+		return getMediaList();
+	}
+
+	public void setMedia(List<ProductMedia> media) {
+		setMediaList(media);
+	}
+
+	public boolean isHasMedia() {
+		return mediaList != null && !mediaList.isEmpty();
+	}
+
+	public boolean getHasMedia() {
+		return isHasMedia();
+	}
+
+	public boolean isHasVideoMedia() {
+		if (mediaList == null || mediaList.isEmpty()) {
+			return false;
+		}
+
+		for (ProductMedia media : mediaList) {
+			if (media != null && media.isVideo()) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	public boolean getHasVideoMedia() {
+		return isHasVideoMedia();
+	}
+
+	public boolean isHasImageMedia() {
+		if (mediaList == null || mediaList.isEmpty()) {
+			return false;
+		}
+
+		for (ProductMedia media : mediaList) {
+			if (media != null && media.isImage()) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	public boolean getHasImageMedia() {
+		return isHasImageMedia();
+	}
+
+	// ===== ACTIVE =====
 
 	public boolean isActive() {
 		return active;
@@ -269,9 +370,11 @@ public class Product {
 		if (isOutOfStock()) {
 			return "Hết hàng";
 		}
+
 		if (isLowStock()) {
 			return "Sắp hết";
 		}
+
 		return "Còn hàng";
 	}
 
@@ -279,6 +382,7 @@ public class Product {
 		if (title == null || title.isBlank()) {
 			return "Sản phẩm #" + id;
 		}
+
 		return title;
 	}
 
@@ -306,6 +410,8 @@ public class Product {
 				", stock=" + stock +
 				", image='" + image + '\'' +
 				", active=" + active +
+				", images=" + getImages().size() +
+				", mediaList=" + getMediaList().size() +
 				", categoryId=" + categoryId +
 				", brandId=" + brandId +
 				", categoryName='" + categoryName + '\'' +
