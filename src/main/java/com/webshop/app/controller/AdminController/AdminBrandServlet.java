@@ -39,6 +39,12 @@ public class AdminBrandServlet extends HttpServlet {
     private final BrandDAO brandDAO = new BrandDAO();
 
     @Override
+    public void init() throws ServletException {
+        super.init();
+        UploadConfig.ensureUploadDirectories();
+    }
+
+    @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
@@ -104,6 +110,11 @@ public class AdminBrandServlet extends HttpServlet {
             action = "create";
         }
 
+        /*
+         * Dùng để rollback file mới nếu SQL create/update bị lỗi.
+         */
+        String uploadedFileUrlForRollback = null;
+
         try {
             switch (action) {
 
@@ -116,9 +127,15 @@ public class AdminBrandServlet extends HttpServlet {
 
                     if (hasUploadedFile(logoPart)) {
                         imageUrl = saveBrandLogo(logoPart);
+                        uploadedFileUrlForRollback = imageUrl;
                     }
 
+                    /*
+                     * Tạo SQL thành công thì không rollback file mới nữa.
+                     */
                     brandDAO.create(name, imageUrl);
+                    uploadedFileUrlForRollback = null;
+
                     break;
                 }
 
@@ -131,14 +148,47 @@ public class AdminBrandServlet extends HttpServlet {
                     String name = safe(req.getParameter("name"));
                     validateName(name);
 
-                    String imageUrl = safe(req.getParameter("existingImage"));
+                    Brand oldBrand = brandDAO.findById(id);
+                    if (oldBrand == null) {
+                        throw new IllegalArgumentException("Không tìm thấy thương hiệu cần sửa.");
+                    }
+
+                    /*
+                     * Ưu tiên lấy ảnh cũ từ DB để chắc chắn đúng dữ liệu hiện tại.
+                     * Nếu model Brand của bạn lưu logo trong field image thì getImage() sẽ trả về /uploads/brand/...
+                     */
+                    String oldImageUrl = safe(oldBrand.getImage());
+
+                    /*
+                     * Khi update mà không upload logo mới thì giữ nguyên ảnh cũ.
+                     * existingImage chỉ dùng fallback nếu DB không có image.
+                     */
+                    String imageUrl = !oldImageUrl.isBlank()
+                            ? oldImageUrl
+                            : safe(req.getParameter("existingImage"));
+
                     Part logoPart = getLogoPart(req);
 
                     if (hasUploadedFile(logoPart)) {
                         imageUrl = saveBrandLogo(logoPart);
+                        uploadedFileUrlForRollback = imageUrl;
                     }
 
+                    /*
+                     * Update SQL trước.
+                     * Nếu SQL lỗi thì file cũ không bị xóa, file mới sẽ rollback ở catch.
+                     */
                     brandDAO.update(id, name, emptyToNull(imageUrl));
+                    uploadedFileUrlForRollback = null;
+
+                    /*
+                     * Nếu admin upload logo mới và SQL update thành công,
+                     * xóa logo cũ trong MyCosmeticShopUploads/brand.
+                     */
+                    if (isChangedLocalUploadFile(oldImageUrl, imageUrl, UploadConfig.BRAND_URL_PREFIX)) {
+                        UploadConfig.deleteBrandFileByUrl(oldImageUrl);
+                    }
+
                     break;
                 }
 
@@ -146,7 +196,20 @@ public class AdminBrandServlet extends HttpServlet {
                     int id = safeInt(req.getParameter("id"), -1);
 
                     if (id > 0) {
+                        Brand oldBrand = brandDAO.findById(id);
+                        String oldImageUrl = oldBrand == null ? null : oldBrand.getImage();
+
+                        /*
+                         * Xóa SQL trước.
+                         * Nếu brand đang được product tham chiếu và SQL lỗi,
+                         * code sẽ nhảy vào catch nên KHÔNG xóa file logo.
+                         */
                         brandDAO.delete(id);
+
+                        /*
+                         * SQL xóa thành công mới xóa file vật lý.
+                         */
+                        UploadConfig.deleteBrandFileByUrl(oldImageUrl);
                     }
 
                     break;
@@ -159,7 +222,18 @@ public class AdminBrandServlet extends HttpServlet {
             resp.sendRedirect(req.getContextPath() + "/admin/brands");
 
         } catch (IllegalArgumentException ex) {
+            if (uploadedFileUrlForRollback != null) {
+                UploadConfig.deleteBrandFileByUrl(uploadedFileUrlForRollback);
+            }
+
             forwardBackToForm(req, resp, action, ex.getMessage());
+
+        } catch (Exception ex) {
+            if (uploadedFileUrlForRollback != null) {
+                UploadConfig.deleteBrandFileByUrl(uploadedFileUrlForRollback);
+            }
+
+            throw new ServletException("AdminBrandServlet error", ex);
         }
     }
 
@@ -238,13 +312,23 @@ public class AdminBrandServlet extends HttpServlet {
                 + "."
                 + extension;
 
-        Path target = UploadConfig.BRAND_DIR.resolve(fileName);
+        Path target = UploadConfig.resolveBrandFile(fileName)
+                .toAbsolutePath()
+                .normalize();
+
+        Path brandDir = UploadConfig.BRAND_DIR
+                .toAbsolutePath()
+                .normalize();
+
+        if (!target.startsWith(brandDir)) {
+            throw new IllegalArgumentException("Đường dẫn upload logo thương hiệu không hợp lệ.");
+        }
 
         try (InputStream inputStream = part.getInputStream()) {
             Files.copy(inputStream, target, StandardCopyOption.REPLACE_EXISTING);
         }
 
-        return UploadConfig.BRAND_URL_PREFIX + fileName;
+        return UploadConfig.toBrandUrl(fileName);
     }
 
     private String getExtension(String fileName) {
@@ -265,6 +349,21 @@ public class AdminBrandServlet extends HttpServlet {
         }
 
         return extension;
+    }
+
+    private boolean isChangedLocalUploadFile(String oldUrl, String newUrl, String expectedPrefix) {
+        String oldValue = safe(oldUrl);
+        String newValue = safe(newUrl);
+
+        if (oldValue.isBlank()) {
+            return false;
+        }
+
+        if (!oldValue.startsWith(expectedPrefix)) {
+            return false;
+        }
+
+        return !oldValue.equals(newValue);
     }
 
     /* ===================== HELPERS ===================== */
