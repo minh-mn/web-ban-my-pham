@@ -33,6 +33,10 @@ public final class UploadConfig {
     public static final Path BANNER_DIR = BASE_DIR.resolve("banner");
     public static final Path PRODUCT_DIR = BASE_DIR.resolve("product");
     public static final Path PRODUCT_GALLERY_DIR = PRODUCT_DIR.resolve("gallery");
+
+    // Issue 123: thư mục lưu media chi tiết sản phẩm: ảnh/video
+    public static final Path PRODUCT_MEDIA_DIR = PRODUCT_DIR.resolve("media");
+
     public static final Path POLICY_DIR = BASE_DIR.resolve("policy");
 
     // Issue 118: thư mục lưu logo thương hiệu
@@ -50,6 +54,10 @@ public final class UploadConfig {
     public static final String BANNER_URL_PREFIX = UPLOAD_URL_PREFIX + "/banner/";
     public static final String PRODUCT_URL_PREFIX = UPLOAD_URL_PREFIX + "/product/";
     public static final String PRODUCT_GALLERY_URL_PREFIX = UPLOAD_URL_PREFIX + "/product/gallery/";
+
+    // Issue 123: URL lưu vào database cho media chi tiết sản phẩm
+    public static final String PRODUCT_MEDIA_URL_PREFIX = UPLOAD_URL_PREFIX + "/product/media/";
+
     public static final String POLICY_URL_PREFIX = UPLOAD_URL_PREFIX + "/policy/";
 
     // Issue 118: URL lưu vào database cho logo thương hiệu
@@ -168,6 +176,7 @@ public final class UploadConfig {
             Files.createDirectories(BANNER_DIR);
             Files.createDirectories(PRODUCT_DIR);
             Files.createDirectories(PRODUCT_GALLERY_DIR);
+            Files.createDirectories(PRODUCT_MEDIA_DIR);
             Files.createDirectories(POLICY_DIR);
             Files.createDirectories(BRAND_DIR);
 
@@ -178,6 +187,7 @@ public final class UploadConfig {
             System.out.println("BANNER_DIR = " + BANNER_DIR);
             System.out.println("PRODUCT_DIR = " + PRODUCT_DIR);
             System.out.println("PRODUCT_GALLERY_DIR = " + PRODUCT_GALLERY_DIR);
+            System.out.println("PRODUCT_MEDIA_DIR = " + PRODUCT_MEDIA_DIR);
             System.out.println("POLICY_DIR = " + POLICY_DIR);
             System.out.println("BRAND_DIR = " + BRAND_DIR);
             System.out.println("============================================");
@@ -202,6 +212,10 @@ public final class UploadConfig {
 
     public static String toProductGalleryUrl(String fileName) {
         return PRODUCT_GALLERY_URL_PREFIX + cleanFileName(fileName);
+    }
+
+    public static String toProductMediaUrl(String fileName) {
+        return PRODUCT_MEDIA_URL_PREFIX + cleanFileName(fileName);
     }
 
     public static String toPolicyUrl(String fileName) {
@@ -230,6 +244,10 @@ public final class UploadConfig {
         return PRODUCT_GALLERY_DIR.resolve(cleanFileName(fileName)).normalize();
     }
 
+    public static Path resolveProductMediaFile(String fileName) {
+        return PRODUCT_MEDIA_DIR.resolve(cleanFileName(fileName)).normalize();
+    }
+
     public static Path resolvePolicyFile(String fileName) {
         return POLICY_DIR.resolve(cleanFileName(fileName)).normalize();
     }
@@ -240,7 +258,7 @@ public final class UploadConfig {
 
     /*
      * =========================
-     * NORMALIZE EXISTING IMAGE URL
+     * NORMALIZE EXISTING IMAGE / MEDIA URL
      * =========================
      */
 
@@ -250,6 +268,10 @@ public final class UploadConfig {
 
     public static String normalizeProductGalleryImageUrl(String image) {
         return normalizeUploadUrl(image, PRODUCT_GALLERY_URL_PREFIX);
+    }
+
+    public static String normalizeProductMediaUrl(String media) {
+        return normalizeUploadUrl(media, PRODUCT_MEDIA_URL_PREFIX);
     }
 
     public static String normalizeBannerImageUrl(String image) {
@@ -282,6 +304,11 @@ public final class UploadConfig {
         value = value.replaceFirst("^assets/images/products/gallery/", "");
         value = value.replaceFirst("^assets/images/product/gallery/", "");
 
+        value = value.replaceFirst("^/assets/images/products/media/", "");
+        value = value.replaceFirst("^/assets/images/product/media/", "");
+        value = value.replaceFirst("^assets/images/products/media/", "");
+        value = value.replaceFirst("^assets/images/product/media/", "");
+
         value = value.replaceFirst("^/assets/images/products/", "");
         value = value.replaceFirst("^/assets/images/product/", "");
         value = value.replaceFirst("^assets/images/products/", "");
@@ -299,8 +326,20 @@ public final class UploadConfig {
 
         value = value.replaceFirst("^products/gallery/", "");
         value = value.replaceFirst("^/products/gallery/", "");
+
+        value = value.replaceFirst("^products/media/", "");
+        value = value.replaceFirst("^/products/media/", "");
+
+        value = value.replaceFirst("^product/gallery/", "");
+        value = value.replaceFirst("^/product/gallery/", "");
+
+        value = value.replaceFirst("^product/media/", "");
+        value = value.replaceFirst("^/product/media/", "");
+
         value = value.replaceFirst("^products/", "");
         value = value.replaceFirst("^/products/", "");
+        value = value.replaceFirst("^product/", "");
+        value = value.replaceFirst("^/product/", "");
 
         value = value.replaceFirst("^banners/", "");
         value = value.replaceFirst("^/banners/", "");
