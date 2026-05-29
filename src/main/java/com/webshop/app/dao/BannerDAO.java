@@ -25,8 +25,8 @@ public class BannerDAO {
                 """;
 
 		try (Connection connection = DBConnection.getConnection();
-			 PreparedStatement statement = connection.prepareStatement(sql);
-			 ResultSet resultSet = statement.executeQuery()) {
+		     PreparedStatement statement = connection.prepareStatement(sql);
+		     ResultSet resultSet = statement.executeQuery()) {
 
 			while (resultSet.next()) {
 				banners.add(mapRow(resultSet));
@@ -51,8 +51,8 @@ public class BannerDAO {
                 """;
 
 		try (Connection connection = DBConnection.getConnection();
-			 PreparedStatement statement = connection.prepareStatement(sql);
-			 ResultSet resultSet = statement.executeQuery()) {
+		     PreparedStatement statement = connection.prepareStatement(sql);
+		     ResultSet resultSet = statement.executeQuery()) {
 
 			while (resultSet.next()) {
 				banners.add(mapRow(resultSet));
@@ -73,7 +73,7 @@ public class BannerDAO {
                 """;
 
 		try (Connection connection = DBConnection.getConnection();
-			 PreparedStatement statement = connection.prepareStatement(sql)) {
+		     PreparedStatement statement = connection.prepareStatement(sql)) {
 
 			statement.setInt(1, id);
 
@@ -90,7 +90,37 @@ public class BannerDAO {
 		return null;
 	}
 
-	public void create(Banner banner) {
+	/*
+	 * Lấy image URL trước khi update/delete.
+	 * Servlet dùng URL này để xóa file vật lý trong MyCosmeticShopUploads/banner
+	 * sau khi SQL update/delete thành công.
+	 */
+	public String findImageUrlById(int id) {
+		String sql = """
+                SELECT image
+                FROM store_banner
+                WHERE id = ?
+                """;
+
+		try (Connection connection = DBConnection.getConnection();
+		     PreparedStatement statement = connection.prepareStatement(sql)) {
+
+			statement.setInt(1, id);
+
+			try (ResultSet resultSet = statement.executeQuery()) {
+				if (resultSet.next()) {
+					return resultSet.getString("image");
+				}
+			}
+
+		} catch (SQLException e) {
+			throw new RuntimeException("BannerDAO.findImageUrlById error", e);
+		}
+
+		return null;
+	}
+
+	public boolean create(Banner banner) {
 		String sql = """
                 INSERT INTO store_banner (title, image, link, is_active, `order`, created_at)
                 VALUES (
@@ -101,21 +131,21 @@ public class BannerDAO {
                 """;
 
 		try (Connection connection = DBConnection.getConnection();
-			 PreparedStatement statement = connection.prepareStatement(sql)) {
+		     PreparedStatement statement = connection.prepareStatement(sql)) {
 
 			statement.setString(1, banner.getTitle());
 			statement.setString(2, banner.getImageUrl());
 			statement.setString(3, banner.getLink());
 			statement.setBoolean(4, banner.isActive());
 
-			statement.executeUpdate();
+			return statement.executeUpdate() > 0;
 
 		} catch (SQLException e) {
 			throw new RuntimeException("BannerDAO.create error", e);
 		}
 	}
 
-	public void update(Banner banner) {
+	public boolean update(Banner banner) {
 		String sql = """
                 UPDATE store_banner
                 SET title = ?, image = ?, link = ?, is_active = ?
@@ -123,7 +153,7 @@ public class BannerDAO {
                 """;
 
 		try (Connection connection = DBConnection.getConnection();
-			 PreparedStatement statement = connection.prepareStatement(sql)) {
+		     PreparedStatement statement = connection.prepareStatement(sql)) {
 
 			statement.setString(1, banner.getTitle());
 			statement.setString(2, banner.getImageUrl());
@@ -131,31 +161,32 @@ public class BannerDAO {
 			statement.setBoolean(4, banner.isActive());
 			statement.setInt(5, banner.getId());
 
-			statement.executeUpdate();
+			return statement.executeUpdate() > 0;
 
 		} catch (SQLException e) {
 			throw new RuntimeException("BannerDAO.update error", e);
 		}
 	}
 
-	public void delete(int id) {
+	public boolean delete(int id) {
 		String sql = """
                 DELETE FROM store_banner
                 WHERE id = ?
                 """;
 
 		try (Connection connection = DBConnection.getConnection();
-			 PreparedStatement statement = connection.prepareStatement(sql)) {
+		     PreparedStatement statement = connection.prepareStatement(sql)) {
 
 			statement.setInt(1, id);
-			statement.executeUpdate();
+
+			return statement.executeUpdate() > 0;
 
 		} catch (SQLException e) {
 			throw new RuntimeException("BannerDAO.delete error", e);
 		}
 	}
 
-	public void toggleActive(int id) {
+	public boolean toggleActive(int id) {
 		String sql = """
                 UPDATE store_banner
                 SET is_active = CASE WHEN is_active = 1 THEN 0 ELSE 1 END
@@ -163,10 +194,11 @@ public class BannerDAO {
                 """;
 
 		try (Connection connection = DBConnection.getConnection();
-			 PreparedStatement statement = connection.prepareStatement(sql)) {
+		     PreparedStatement statement = connection.prepareStatement(sql)) {
 
 			statement.setInt(1, id);
-			statement.executeUpdate();
+
+			return statement.executeUpdate() > 0;
 
 		} catch (SQLException e) {
 			throw new RuntimeException("BannerDAO.toggleActive error", e);
