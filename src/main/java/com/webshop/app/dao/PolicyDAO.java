@@ -6,6 +6,7 @@ import com.webshop.app.utils.DBConnection;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,6 +37,31 @@ public class PolicyDAO {
         return null;
     }
 
+    public String getFileNameById(int id) {
+        String sql = """
+                SELECT file_name
+                FROM policies
+                WHERE id = ?
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setInt(1, id);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getString("file_name");
+                }
+            }
+
+        } catch (Exception e) {
+            throw new RuntimeException("PolicyDAO.getFileNameById error", e);
+        }
+
+        return null;
+    }
+
     public Policy getPolicyBySlug(String slug) {
         String sql = """
                 SELECT id, title, file_name, slug
@@ -61,6 +87,31 @@ public class PolicyDAO {
         return null;
     }
 
+    public Policy findById(int id) {
+        String sql = """
+                SELECT id, title, slug, file_name
+                FROM policies
+                WHERE id = ?
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setInt(1, id);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return mapRow(resultSet);
+                }
+            }
+
+        } catch (Exception e) {
+            throw new RuntimeException("PolicyDAO.findById error", e);
+        }
+
+        return null;
+    }
+
     public void insert(Policy policy) {
         String sql = """
                 INSERT INTO policies(title, slug, file_name)
@@ -78,6 +129,24 @@ public class PolicyDAO {
 
         } catch (Exception e) {
             throw new RuntimeException("PolicyDAO.insert error", e);
+        }
+    }
+
+    public boolean deleteById(int id) {
+        String sql = """
+                DELETE FROM policies
+                WHERE id = ?
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setInt(1, id);
+
+            return statement.executeUpdate() > 0;
+
+        } catch (Exception e) {
+            throw new RuntimeException("PolicyDAO.deleteById error", e);
         }
     }
 
@@ -105,7 +174,7 @@ public class PolicyDAO {
         return policies;
     }
 
-    private Policy mapRow(ResultSet resultSet) throws Exception {
+    private Policy mapRow(ResultSet resultSet) throws SQLException {
         Policy policy = new Policy();
 
         policy.setId(resultSet.getInt("id"));
