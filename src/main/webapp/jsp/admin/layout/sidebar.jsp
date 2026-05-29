@@ -64,6 +64,12 @@
         <span class="admin-nav__meta">/admin/returns</span>
       </a>
 
+      <a class="${activeMenu == 'cancelRequests' ? 'is-active' : ''}"
+         href="${pageContext.request.contextPath}/admin/cancel-requests">
+        <span>Cancel Requests</span>
+        <span class="admin-nav__meta">/admin/cancel-requests</span>
+      </a>
+
       <div class="admin-nav__section">Promotions</div>
 
       <a class="${
@@ -81,30 +87,30 @@
       </a>
 
       <div class=\"admin-nav__section\">Nội dung &amp; CMS</div>
-        
-        <a class=\"${activeMenu == 'settings' ? 'is-active' : ''}\"
-           href=\"${pageContext.request.contextPath}/admin/settings\">
-          <span>Footer Settings</span>
-          <span class=\"admin-nav__meta\">/admin/settings</span>
-        </a>
-        
-        <a class=\"${activeMenu == 'pages' ? 'is-active' : ''}\"
-           href=\"${pageContext.request.contextPath}/admin/pages\">
-          <span>Pages CMS</span>
-          <span class=\"admin-nav__meta\">/admin/pages</span>
-        </a>
-        
-        <a class=\"${activeMenu == 'contact' || activeMenu == 'contact-messages' ? 'is-active' : ''}\"
-           href=\"${pageContext.request.contextPath}/admin/contact-messages\">
-          <span>Contact Messages</span>
-          <span class=\"admin-nav__meta\">/admin/contact-messages</span>
-        </a>
-        
-        <a class=\"${activeMenu == 'events' || activeMenu == 'blogs' ? 'is-active' : ''}\"
-           href=\"${pageContext.request.contextPath}/admin/events\">
-          <span>News / Blogs</span>
-          <span class=\"admin-nav__meta\">/admin/events</span>
-        </a>
+
+      <a class=\"${activeMenu == 'settings' ? 'is-active' : ''}\"
+         href=\"${pageContext.request.contextPath}/admin/settings\">
+        <span>Footer Settings</span>
+        <span class=\"admin-nav__meta\">/admin/settings</span>
+      </a>
+
+      <a class=\"${activeMenu == 'pages' ? 'is-active' : ''}\"
+         href=\"${pageContext.request.contextPath}/admin/pages\">
+        <span>Pages CMS</span>
+        <span class=\"admin-nav__meta\">/admin/pages</span>
+      </a>
+
+      <a class=\"${activeMenu == 'contact' || activeMenu == 'contact-messages' ? 'is-active' : ''}\"
+         href=\"${pageContext.request.contextPath}/admin/contact-messages\">
+        <span>Contact Messages</span>
+        <span class=\"admin-nav__meta\">/admin/contact-messages</span>
+      </a>
+
+      <a class=\"${activeMenu == 'events' || activeMenu == 'blogs' ? 'is-active' : ''}\"
+         href=\"${pageContext.request.contextPath}/admin/events\">
+        <span>News / Blogs</span>
+        <span class=\"admin-nav__meta\">/admin/events</span>
+      </a>
 
       <div class="admin-nav__section">System</div>
 
