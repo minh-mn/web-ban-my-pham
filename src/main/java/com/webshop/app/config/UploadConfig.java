@@ -258,6 +258,160 @@ public final class UploadConfig {
 
     /*
      * =========================
+     * DELETE PHYSICAL UPLOAD FILE
+     * =========================
+     *
+     * Các hàm này dùng sau khi xóa/cập nhật dữ liệu SQL thành công.
+     *
+     * Có bảo vệ:
+     * - Không xóa URL ngoài như http/https/data
+     * - Không cho path traversal
+     * - Chỉ xóa file nằm trong đúng thư mục upload tương ứng
+     * - Không throw lỗi nếu file không tồn tại
+     */
+
+    public static boolean deleteBannerFileByUrl(String fileUrl) {
+        return deleteUploadFileByUrl(fileUrl, BANNER_URL_PREFIX, BANNER_DIR);
+    }
+
+    public static boolean deleteBrandFileByUrl(String fileUrl) {
+        return deleteUploadFileByUrl(fileUrl, BRAND_URL_PREFIX, BRAND_DIR);
+    }
+
+    public static boolean deletePolicyFileByUrl(String fileUrl) {
+        return deleteUploadFileByUrl(fileUrl, POLICY_URL_PREFIX, POLICY_DIR);
+    }
+
+    public static boolean deleteProductFileByUrl(String fileUrl) {
+        return deleteUploadFileByUrl(fileUrl, PRODUCT_URL_PREFIX, PRODUCT_DIR);
+    }
+
+    public static boolean deleteProductGalleryFileByUrl(String fileUrl) {
+        return deleteUploadFileByUrl(fileUrl, PRODUCT_GALLERY_URL_PREFIX, PRODUCT_GALLERY_DIR);
+    }
+
+    public static boolean deleteProductMediaFileByUrl(String fileUrl) {
+        return deleteUploadFileByUrl(fileUrl, PRODUCT_MEDIA_URL_PREFIX, PRODUCT_MEDIA_DIR);
+    }
+
+    /*
+     * Hàm tổng quát nếu controller/DAO muốn xóa theo URL bất kỳ trong /uploads.
+     * Ưu tiên dùng các hàm delete... cụ thể bên trên để tránh nhầm thư mục.
+     */
+    public static boolean deleteUploadFileByUrl(String fileUrl) {
+        if (fileUrl == null || fileUrl.trim().isEmpty()) {
+            return false;
+        }
+
+        String value = normalizeSlash(fileUrl);
+
+        if (isExternalOrDataUrl(value)) {
+            return false;
+        }
+
+        if (value.startsWith(BANNER_URL_PREFIX)) {
+            return deleteBannerFileByUrl(value);
+        }
+
+        if (value.startsWith(BRAND_URL_PREFIX)) {
+            return deleteBrandFileByUrl(value);
+        }
+
+        if (value.startsWith(POLICY_URL_PREFIX)) {
+            return deletePolicyFileByUrl(value);
+        }
+
+        if (value.startsWith(PRODUCT_GALLERY_URL_PREFIX)) {
+            return deleteProductGalleryFileByUrl(value);
+        }
+
+        if (value.startsWith(PRODUCT_MEDIA_URL_PREFIX)) {
+            return deleteProductMediaFileByUrl(value);
+        }
+
+        if (value.startsWith(PRODUCT_URL_PREFIX)) {
+            return deleteProductFileByUrl(value);
+        }
+
+        return false;
+    }
+
+    private static boolean deleteUploadFileByUrl(String fileUrl, String expectedPrefix, Path allowedDir) {
+        if (fileUrl == null || fileUrl.trim().isEmpty()) {
+            return false;
+        }
+
+        String value = normalizeSlash(fileUrl);
+
+        if (isExternalOrDataUrl(value)) {
+            return false;
+        }
+
+        if (!value.startsWith(expectedPrefix)) {
+            return false;
+        }
+
+        String fileName = cleanFileName(value.substring(expectedPrefix.length()));
+
+        return deleteUploadFile(allowedDir, fileName);
+    }
+
+    public static boolean deleteBannerFile(String fileName) {
+        return deleteUploadFile(BANNER_DIR, fileName);
+    }
+
+    public static boolean deleteBrandFile(String fileName) {
+        return deleteUploadFile(BRAND_DIR, fileName);
+    }
+
+    public static boolean deletePolicyFile(String fileName) {
+        return deleteUploadFile(POLICY_DIR, fileName);
+    }
+
+    public static boolean deleteProductFile(String fileName) {
+        return deleteUploadFile(PRODUCT_DIR, fileName);
+    }
+
+    public static boolean deleteProductGalleryFile(String fileName) {
+        return deleteUploadFile(PRODUCT_GALLERY_DIR, fileName);
+    }
+
+    public static boolean deleteProductMediaFile(String fileName) {
+        return deleteUploadFile(PRODUCT_MEDIA_DIR, fileName);
+    }
+
+    private static boolean deleteUploadFile(Path allowedDir, String fileName) {
+        if (allowedDir == null || fileName == null || fileName.trim().isEmpty()) {
+            return false;
+        }
+
+        try {
+            Path root = allowedDir.toAbsolutePath().normalize();
+            String cleanedName = cleanFileName(fileName);
+
+            if (cleanedName.isBlank()) {
+                return false;
+            }
+
+            Path target = root.resolve(cleanedName).toAbsolutePath().normalize();
+
+            if (!target.startsWith(root)) {
+                return false;
+            }
+
+            if (Files.isDirectory(target)) {
+                return false;
+            }
+
+            return Files.deleteIfExists(target);
+        } catch (Exception e) {
+            System.err.println("[UploadConfig] Cannot delete upload file: " + fileName + " - " + e.getMessage());
+            return false;
+        }
+    }
+
+    /*
+     * =========================
      * NORMALIZE EXISTING IMAGE / MEDIA URL
      * =========================
      */
@@ -282,16 +436,18 @@ public final class UploadConfig {
         return normalizeUploadUrl(image, BRAND_URL_PREFIX);
     }
 
+    public static String normalizePolicyFileUrl(String file) {
+        return normalizeUploadUrl(file, POLICY_URL_PREFIX);
+    }
+
     private static String normalizeUploadUrl(String image, String targetPrefix) {
         if (image == null || image.trim().isEmpty()) {
             return null;
         }
 
-        String value = image.trim().replace("\\", "/");
+        String value = normalizeSlash(image);
 
-        if (value.startsWith("http://")
-                || value.startsWith("https://")
-                || value.startsWith("data:")) {
+        if (isExternalOrDataUrl(value)) {
             return value;
         }
 
@@ -324,6 +480,11 @@ public final class UploadConfig {
         value = value.replaceFirst("^assets/images/brands/", "");
         value = value.replaceFirst("^assets/images/brand/", "");
 
+        value = value.replaceFirst("^/assets/files/policy/", "");
+        value = value.replaceFirst("^/assets/policy/", "");
+        value = value.replaceFirst("^assets/files/policy/", "");
+        value = value.replaceFirst("^assets/policy/", "");
+
         value = value.replaceFirst("^products/gallery/", "");
         value = value.replaceFirst("^/products/gallery/", "");
 
@@ -351,9 +512,34 @@ public final class UploadConfig {
         value = value.replaceFirst("^brand/", "");
         value = value.replaceFirst("^/brand/", "");
 
+        value = value.replaceFirst("^policies/", "");
+        value = value.replaceFirst("^/policies/", "");
+        value = value.replaceFirst("^policy/", "");
+        value = value.replaceFirst("^/policy/", "");
+
         value = cleanFileName(value);
 
         return targetPrefix + value;
+    }
+
+    private static String normalizeSlash(String value) {
+        if (value == null) {
+            return "";
+        }
+
+        return value.trim().replace("\\", "/");
+    }
+
+    private static boolean isExternalOrDataUrl(String value) {
+        if (value == null) {
+            return false;
+        }
+
+        String lower = value.trim().toLowerCase();
+
+        return lower.startsWith("http://")
+                || lower.startsWith("https://")
+                || lower.startsWith("data:");
     }
 
     private static String cleanFileName(String fileName) {
@@ -361,7 +547,17 @@ public final class UploadConfig {
             return "";
         }
 
-        String cleaned = fileName.trim().replace("\\", "/");
+        String cleaned = normalizeSlash(fileName);
+
+        int queryIndex = cleaned.indexOf("?");
+        if (queryIndex >= 0) {
+            cleaned = cleaned.substring(0, queryIndex);
+        }
+
+        int hashIndex = cleaned.indexOf("#");
+        if (hashIndex >= 0) {
+            cleaned = cleaned.substring(0, hashIndex);
+        }
 
         int lastSlash = cleaned.lastIndexOf("/");
         if (lastSlash >= 0) {
