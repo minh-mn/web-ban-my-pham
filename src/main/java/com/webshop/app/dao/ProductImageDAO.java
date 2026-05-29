@@ -28,14 +28,7 @@ public class ProductImageDAO {
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    ProductImage productImage = new ProductImage();
-
-                    productImage.setId(rs.getLong("id"));
-                    productImage.setImage(rs.getString("image"));
-                    productImage.setOrder(rs.getInt("order"));
-                    productImage.setProductId(rs.getInt("product_id"));
-
-                    list.add(productImage);
+                    list.add(mapRow(rs));
                 }
             }
 
@@ -44,6 +37,107 @@ public class ProductImageDAO {
         }
 
         return list;
+    }
+
+    public ProductImage findById(long id) {
+        String sql =
+                "SELECT id, image, `order`, product_id " +
+                        "FROM store_productimage " +
+                        "WHERE id = ?";
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            ps.setLong(1, id);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapRow(rs);
+                }
+
+                return null;
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("ProductImageDAO.findById error", e);
+        }
+    }
+
+    public ProductImage findByIdAndProductId(long id, int productId) {
+        String sql =
+                "SELECT id, image, `order`, product_id " +
+                        "FROM store_productimage " +
+                        "WHERE id = ? AND product_id = ?";
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            ps.setLong(1, id);
+            ps.setInt(2, productId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapRow(rs);
+                }
+
+                return null;
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("ProductImageDAO.findByIdAndProductId error", e);
+        }
+    }
+
+    public String findImageUrlByIdAndProductId(long id, int productId) {
+        String sql =
+                "SELECT image " +
+                        "FROM store_productimage " +
+                        "WHERE id = ? AND product_id = ?";
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            ps.setLong(1, id);
+            ps.setInt(2, productId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("image");
+                }
+
+                return null;
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("ProductImageDAO.findImageUrlByIdAndProductId error", e);
+        }
+    }
+
+    public List<String> findImageUrlsByProductId(int productId) {
+        String sql =
+                "SELECT image " +
+                        "FROM store_productimage " +
+                        "WHERE product_id = ? " +
+                        "ORDER BY `order` ASC, id ASC";
+
+        List<String> urls = new ArrayList<>();
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            ps.setInt(1, productId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    urls.add(rs.getString("image"));
+                }
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("ProductImageDAO.findImageUrlsByProductId error", e);
+        }
+
+        return urls;
     }
 
     public void insert(ProductImage image) {
@@ -58,41 +152,60 @@ public class ProductImageDAO {
         ProductImage productImage = new ProductImage();
 
         productImage.setProductId(productId);
-        productImage.setImage(image);
-        productImage.setOrder(order);
+        productImage.setImage(normalizeImagePath(image));
+        productImage.setOrder(Math.max(order, 0));
 
         insert(productImage);
     }
 
-    public void deleteByProductId(int productId) {
+    public int deleteByProductId(int productId) {
         try (Connection connection = DBConnection.getConnection()) {
-            deleteByProductId(connection, productId);
+            return deleteByProductId(connection, productId);
         } catch (SQLException e) {
             throw new RuntimeException("ProductImageDAO.deleteByProductId error", e);
         }
     }
 
-    public void deleteById(long id) {
+    public boolean deleteById(long id) {
         String sql = "DELETE FROM store_productimage WHERE id = ?";
 
         try (Connection connection = DBConnection.getConnection();
              PreparedStatement ps = connection.prepareStatement(sql)) {
 
             ps.setLong(1, id);
-            ps.executeUpdate();
+
+            return ps.executeUpdate() > 0;
 
         } catch (SQLException e) {
             throw new RuntimeException("ProductImageDAO.deleteById error", e);
         }
     }
 
+    public boolean deleteByIdAndProductId(long id, int productId) {
+        String sql =
+                "DELETE FROM store_productimage " +
+                        "WHERE id = ? AND product_id = ?";
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            ps.setLong(1, id);
+            ps.setInt(2, productId);
+
+            return ps.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("ProductImageDAO.deleteByIdAndProductId error", e);
+        }
+    }
+
     /*
      * Thay toàn bộ ảnh gallery của sản phẩm trong transaction.
      *
-     * Mục tiêu:
-     * - Xóa gallery cũ.
-     * - Insert gallery mới.
-     * - Nếu insert lỗi thì rollback, tránh mất dữ liệu gallery giữa chừng.
+     * Lưu ý:
+     * - Hàm này chỉ xử lý SQL.
+     * - Nếu cần xóa file vật lý của gallery cũ thì servlet/service phải lấy danh sách URL cũ
+     *   trước khi gọi replaceAll rồi gọi UploadConfig.deleteProductGalleryFileByUrl(...).
      */
     public void replaceAll(int productId, List<String> images) {
         try (Connection connection = DBConnection.getConnection()) {
@@ -121,9 +234,11 @@ public class ProductImageDAO {
                 }
 
                 connection.commit();
+
             } catch (Exception e) {
                 connection.rollback();
                 throw e;
+
             } finally {
                 connection.setAutoCommit(true);
             }
@@ -138,8 +253,14 @@ public class ProductImageDAO {
                 "INSERT INTO store_productimage (image, `order`, product_id) " +
                         "VALUES (?, ?, ?)";
 
+        String normalizedImage = normalizeImagePath(image == null ? null : image.getImage());
+
+        if (normalizedImage == null) {
+            throw new SQLException("Product image path is empty.");
+        }
+
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setString(1, image.getImage());
+            ps.setString(1, normalizedImage);
             ps.setInt(2, image.getOrder());
             ps.setInt(3, image.getProductId());
 
@@ -147,13 +268,25 @@ public class ProductImageDAO {
         }
     }
 
-    private void deleteByProductId(Connection connection, int productId) throws SQLException {
+    private int deleteByProductId(Connection connection, int productId) throws SQLException {
         String sql = "DELETE FROM store_productimage WHERE product_id = ?";
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setInt(1, productId);
-            ps.executeUpdate();
+
+            return ps.executeUpdate();
         }
+    }
+
+    private ProductImage mapRow(ResultSet rs) throws SQLException {
+        ProductImage productImage = new ProductImage();
+
+        productImage.setId(rs.getLong("id"));
+        productImage.setImage(rs.getString("image"));
+        productImage.setOrder(rs.getInt("order"));
+        productImage.setProductId(rs.getInt("product_id"));
+
+        return productImage;
     }
 
     private String normalizeImagePath(String imagePath) {
