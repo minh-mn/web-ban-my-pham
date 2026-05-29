@@ -312,6 +312,7 @@
                   và database lưu dạng
                   <b>/uploads/product/tên-file</b>.
                   Nếu sửa sản phẩm mà không chọn ảnh mới, hệ thống giữ ảnh cũ.
+                  Nếu chọn ảnh mới, hệ thống sẽ xóa file ảnh đại diện cũ sau khi cập nhật SQL thành công.
                 </div>
               </div>
 
@@ -366,15 +367,6 @@
               </div>
             </c:if>
 
-            <%--
-              Hiển thị gallery hiện tại.
-
-              AdminProductServlet khi edit đang gọi:
-              product.setImages(productImageDAO.findByProductId(product.getId()));
-
-              Vì vậy ưu tiên đọc product.images.
-              Vẫn giữ fallback productImages/galleryImages nếu servlet khác có truyền.
-            --%>
             <c:set var="displayGallery" value="${not empty product ? product.images : null}" />
 
             <c:if test="${empty displayGallery && not empty productImages}">
@@ -391,30 +383,47 @@
               <div class="product-gallery-current">
                 <div class="admin-label">Gallery hiện tại</div>
 
-                <div class="product-gallery-grid">
+                <div class="product-gallery-grid"
+                     style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px;">
                   <c:forEach var="img" items="${displayGallery}">
-                    <div class="product-gallery-item">
+                    <div class="product-gallery-item"
+                         style="border: 1px solid #eee; border-radius: 14px; padding: 10px; background: #fff;">
                       <img src="${pageContext.request.contextPath}${img.image}"
-                           alt="gallery">
+                           alt="gallery"
+                           style="width: 100%; height: 110px; object-fit: cover; border-radius: 10px;">
 
-                      <div class="admin-help admin-break" style="padding: 8px;">
+                      <div class="admin-help admin-break" style="margin-top: 8px;">
                         <c:out value="${img.image}"/>
                       </div>
 
                       <c:choose>
                         <c:when test="${fn:startsWith(img.image, '/uploads/product/gallery/')}">
-                          <div class="admin-help" style="padding: 0 8px 8px;">
+                          <div class="admin-help">
                             Ảnh gallery đã đúng chuẩn upload.
                           </div>
                         </c:when>
                         <c:otherwise>
-                          <div class="admin-help" style="padding: 0 8px 8px; color:#b45309;">
+                          <div class="admin-help" style="color:#b45309;">
                             Path cũ
                           </div>
                         </c:otherwise>
                       </c:choose>
+
+                      <c:if test="${not empty product && not empty img.id}">
+                        <label style="display:flex; gap:8px; align-items:flex-start; margin-top:10px; padding:8px; border-radius:10px; background:#fff1f2; color:#be123c; font-size:13px; font-weight:800;">
+                          <input type="checkbox"
+                                 name="deleteImageIds"
+                                 value="${img.id}">
+                          Xóa ảnh này khi lưu
+                        </label>
+                      </c:if>
                     </div>
                   </c:forEach>
+                </div>
+
+                <div class="admin-help" style="margin-top: 10px;">
+                  Tick ảnh gallery cần xóa, sau đó bấm <b>Lưu thay đổi</b>.
+                  Hệ thống sẽ xóa cả dữ liệu SQL và file trong <b>MyCosmeticShopUploads/product/gallery</b>.
                 </div>
               </div>
             </c:if>
@@ -437,13 +446,9 @@
                          accept=".jpg,.jpeg,.png,.webp,.gif,.mp4,.webm,.mov,.m4v,image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime"
                          multiple>
 
-                  <div class="product-media-hint">
-                    <div>
-                      <strong>Ảnh:</strong> png, jpg, jpeg, webp, gif.
-                    </div>
-                    <div>
-                      <strong>Video:</strong> mp4, webm, mov, m4v.
-                    </div>
+                  <div class="admin-help">
+                    <div><strong>Ảnh:</strong> png, jpg, jpeg, webp, gif.</div>
+                    <div><strong>Video:</strong> mp4, webm, mov, m4v.</div>
                     <div>
                       File sẽ lưu tại <b>MyCosmeticShopUploads/product/media/</b>
                       và database lưu dạng <b>/uploads/product/media/tên-file</b>.
@@ -454,26 +459,29 @@
 
               <c:set var="displayProductMedia" value="${productMediaList}" />
 
-              <c:if test="${empty displayProductMedia && not empty product && not empty product.productMediaList}">
-                <c:set var="displayProductMedia" value="${product.productMediaList}" />
-              </c:if>
-
               <c:choose>
                 <c:when test="${not empty displayProductMedia}">
-                  <div class="product-media-current">
-                    <h3 class="product-media-current__title">Media hiện tại</h3>
+                  <div class="product-media-current" style="margin-top: 18px;">
+                    <h3 class="admin-form-section__title" style="font-size: 18px; margin-bottom: 14px;">
+                      Media hiện tại
+                    </h3>
 
-                    <div class="product-media-grid">
+                    <div class="product-media-grid"
+                         style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px;">
                       <c:forEach var="media" items="${displayProductMedia}">
-                        <div class="product-media-card">
-                          <div class="product-media-card__preview">
-                            <span class="product-media-card__badge">
+                        <div class="product-media-card"
+                             style="overflow: hidden; border: 1px solid #eee; border-radius: 16px; background: #fff;">
+                          <div class="product-media-card__preview"
+                               style="position: relative; width: 100%; aspect-ratio: 16 / 9; background: #000; overflow: hidden;">
+                            <span class="product-media-card__badge"
+                                  style="position: absolute; top: 8px; left: 8px; z-index: 2; padding: 4px 9px; border-radius: 999px; background: rgba(15,23,42,.78); color: #fff; font-size: 12px; font-weight: 800;">
                               <c:out value="${media.displayTypeLabel}"/>
                             </span>
 
                             <c:choose>
                               <c:when test="${media.video}">
-                                <video controls muted preload="metadata">
+                                <video controls muted preload="metadata"
+                                       style="width: 100%; height: 100%; object-fit: contain; display: block;">
                                   <source src="${pageContext.request.contextPath}${media.mediaUrl}">
                                   Trình duyệt không hỗ trợ video.
                                 </video>
@@ -481,17 +489,22 @@
 
                               <c:otherwise>
                                 <img src="${pageContext.request.contextPath}${media.mediaUrl}"
-                                     alt="product media">
+                                     alt="product media"
+                                     style="width: 100%; height: 100%; object-fit: cover; display: block;">
                               </c:otherwise>
                             </c:choose>
                           </div>
 
-                          <div class="product-media-card__body">
-                            <div class="product-media-card__url">
+                          <div class="product-media-card__body" style="padding: 12px;">
+                            <div style="color:#be185d; font-size:13px; font-weight:900;">
+                              <c:out value="${media.displayTypeLabel}"/>
+                            </div>
+
+                            <div class="admin-help admin-break" style="margin-top: 6px;">
                               <c:out value="${media.mediaUrl}"/>
                             </div>
 
-                            <label class="product-media-card__delete">
+                            <label style="display:flex; gap:8px; align-items:flex-start; margin-top:10px; padding:8px; border-radius:10px; background:#fff1f2; color:#be123c; font-size:13px; font-weight:800;">
                               <input type="checkbox"
                                      name="deleteMediaIds"
                                      value="${media.id}">
@@ -502,14 +515,15 @@
                       </c:forEach>
                     </div>
 
-                    <div class="admin-help">
-                      Tick vào media cần xóa, sau đó bấm <b>Lưu thay đổi</b>.
+                    <div class="admin-help" style="margin-top: 10px;">
+                      Tick media cần xóa, sau đó bấm <b>Lưu thay đổi</b>.
+                      Hệ thống sẽ xóa cả dữ liệu SQL và file trong <b>MyCosmeticShopUploads/product/media</b>.
                     </div>
                   </div>
                 </c:when>
 
                 <c:otherwise>
-                  <div class="product-media-empty">
+                  <div class="admin-help" style="margin-top: 12px; padding: 14px; border: 1px dashed #f1b6d4; border-radius: 14px; background: #fff8fb;">
                     Chưa có media chi tiết. Bạn có thể upload nhiều ảnh/video để hiển thị ở trang chi tiết sản phẩm.
                   </div>
                 </c:otherwise>
