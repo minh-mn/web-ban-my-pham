@@ -57,6 +57,14 @@
           <span class="pd-tag pink">MyCosmetic</span>
           <span class="pd-tag blue">Chính hãng</span>
           <span class="pd-tag yellow">Còn ${product.stock}</span>
+
+          <c:if test="${not empty categoryTags}">
+            <c:forEach var="tag" items="${categoryTags}">
+              <span class="pd-tag category-tag">
+                <c:out value="${tag.name}" />
+              </span>
+            </c:forEach>
+          </c:if>
         </div>
 
         <div class="pd-rating-row">
@@ -255,7 +263,10 @@
         </c:otherwise>
       </c:choose>
 
-      <form method="get" action="${pageContext.request.contextPath}/product/${product.slug}#reviews" class="review-filter-form">
+      <form method="get"
+            action="${pageContext.request.contextPath}/product/${product.slug}#reviews"
+            class="review-filter-form">
+
         <select name="reviewSort">
           <option value="newest" ${reviewSort == 'newest' || empty reviewSort ? 'selected' : ''}>Gần nhất</option>
           <option value="oldest" ${reviewSort == 'oldest' ? 'selected' : ''}>Cũ nhất</option>
@@ -281,7 +292,11 @@
         </select>
 
         <button type="submit" class="btn-review-filter">Lọc</button>
-        <a href="${pageContext.request.contextPath}/product/${product.slug}#reviews" class="btn-review-filter clear">Xóa lọc</a>
+
+        <a href="${pageContext.request.contextPath}/product/${product.slug}#reviews"
+           class="btn-review-filter clear">
+          Xóa lọc
+        </a>
       </form>
 
       <c:choose>
@@ -309,6 +324,7 @@
                     <c:if test="${r.hasImage && not empty r.imageUrl}">
                       <a href="${r.imageUrl}" target="_blank" rel="noopener">Xem ảnh</a>
                     </c:if>
+
                     <c:if test="${r.hasVideo && not empty r.videoUrl}">
                       <a href="${r.videoUrl}" target="_blank" rel="noopener">Xem video</a>
                     </c:if>
@@ -328,13 +344,16 @@
         </c:otherwise>
       </c:choose>
     </section>
+
   </div>
 </section>
 
 <script>
   function handleImgError(img) {
     img.style.display = "none";
+
     const parent = img.closest(".pd-thumb");
+
     if (parent) {
       parent.classList.add("missing-img");
     }
@@ -342,7 +361,9 @@
 
   function handleMainImgError(img) {
     img.style.display = "none";
+
     const box = document.getElementById("mainImageBox");
+
     if (box) {
       box.classList.add("missing-img");
     }
