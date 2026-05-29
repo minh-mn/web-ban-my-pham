@@ -3,6 +3,7 @@ package com.webshop.app.dao;
 import com.webshop.app.model.Brand;
 import com.webshop.app.model.Category;
 import com.webshop.app.model.Product;
+import com.webshop.app.model.PromotionEvent;
 import com.webshop.app.utils.DBConnection;
 
 import java.math.BigDecimal;
@@ -13,6 +14,7 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -1179,5 +1181,59 @@ public class ProductDAO {
 		}
 
 		return new ArrayList<>(uniqueIds);
+	}
+
+	public List<Product> findProductsByPromotion(PromotionEvent promotion) {
+		if (promotion == null) {
+			return Collections.emptyList();
+		}
+
+		PromotionEvent.Scope scope = promotion.getScope();
+
+		if (scope == null) {
+			return Collections.emptyList();
+		}
+
+		List<Integer> categoryIds = Collections.emptyList();
+		List<Integer> brandIds = Collections.emptyList();
+		List<String> priceRanges = Collections.emptyList();
+
+		switch (scope) {
+			case ALL:
+				break;
+
+			case CATEGORY:
+				if (promotion.getCategoryId() == null || promotion.getCategoryId() <= 0) {
+					return Collections.emptyList();
+				}
+
+				categoryIds = Collections.singletonList(promotion.getCategoryId());
+				break;
+
+			case BRAND:
+				if (promotion.getBrandId() == null || promotion.getBrandId() <= 0) {
+					return Collections.emptyList();
+				}
+
+				brandIds = Collections.singletonList(promotion.getBrandId());
+				break;
+
+			case PRODUCTS:
+				return findByIds(promotion.getSelectedProductIds());
+
+			default:
+				return Collections.emptyList();
+		}
+
+		return findProductsPaged(
+				null,           // keyword
+				categoryIds,    // categoryIds
+				brandIds,       // brandIds
+				"created_desc", // sort
+				priceRanges,    // priceRanges
+				null,           // minRating
+				1,              // page
+				12              // pageSize
+		);
 	}
 }
