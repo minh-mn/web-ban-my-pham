@@ -118,7 +118,7 @@
           <strong><c:out value="${product.title}" /></strong>
           <c:if test="${not empty product.description}">
             <br>
-            <c:out value="${product.description}" />
+            Xem mô tả chi tiết sản phẩm ở phần bên dưới.
           </c:if>
         </p>
 
@@ -197,6 +197,87 @@
 
       </div>
     </div>
+
+    <!-- =====================================================
+         ISSUE 123: MÔ TẢ CHI TIẾT + MEDIA SẢN PHẨM
+    ====================================================== -->
+    <section class="pd-detail-content-section">
+
+      <c:if test="${not empty product.description}">
+        <section class="pd-description-section">
+          <h2 class="pd-section-title">Mô tả chi tiết sản phẩm</h2>
+
+          <div class="pd-rich-description">
+              ${product.description}
+          </div>
+        </section>
+      </c:if>
+
+      <c:set var="displayProductMedia" value="${productMediaList}" />
+
+      <c:if test="${empty displayProductMedia && not empty product && not empty product.productMediaList}">
+        <c:set var="displayProductMedia" value="${product.productMediaList}" />
+      </c:if>
+
+      <section class="pd-product-media-section">
+        <div class="pd-product-media-head">
+          <div>
+            <h2 class="pd-section-title">Hình ảnh và video sản phẩm</h2>
+            <p class="pd-product-media-desc">
+              Bộ sưu tập ảnh/video chi tiết giúp khách hàng xem rõ hơn về sản phẩm.
+            </p>
+          </div>
+        </div>
+
+        <c:choose>
+          <c:when test="${not empty displayProductMedia}">
+            <div class="pd-product-media-grid">
+              <c:forEach var="media" items="${displayProductMedia}">
+                <div class="pd-product-media-card">
+                  <div class="pd-product-media-preview">
+                    <span class="pd-product-media-badge">
+                      <c:out value="${media.displayTypeLabel}" />
+                    </span>
+
+                    <c:choose>
+                      <c:when test="${media.video}">
+                        <video controls preload="metadata">
+                          <source src="${pageContext.request.contextPath}${media.mediaUrl}">
+                          Trình duyệt không hỗ trợ video.
+                        </video>
+                      </c:when>
+
+                      <c:otherwise>
+                        <img src="${pageContext.request.contextPath}${media.mediaUrl}"
+                             alt="${fn:escapeXml(product.title)}"
+                             loading="lazy">
+                      </c:otherwise>
+                    </c:choose>
+                  </div>
+
+                  <div class="pd-product-media-body">
+                    <div class="pd-product-media-type">
+                      <c:out value="${media.displayTypeLabel}" />
+                    </div>
+
+                    <div class="pd-product-media-url">
+                      <c:out value="${media.mediaUrl}" />
+                    </div>
+                  </div>
+                </div>
+              </c:forEach>
+            </div>
+          </c:when>
+
+          <c:otherwise>
+            <div class="pd-product-media-empty">
+              Chưa có ảnh/video chi tiết cho sản phẩm này.
+            </div>
+          </c:otherwise>
+        </c:choose>
+      </section>
+
+    </section>
 
     <section class="pd-review-section" id="reviews">
       <h2>Đánh giá từ khách hàng</h2>
