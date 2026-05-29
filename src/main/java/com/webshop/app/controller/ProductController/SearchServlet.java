@@ -1,6 +1,8 @@
 package com.webshop.app.controller.ProductController;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import com.webshop.app.dao.BrandDAO;
@@ -33,64 +35,101 @@ public class SearchServlet extends HttpServlet {
         req.setCharacterEncoding("UTF-8");
         resp.setCharacterEncoding("UTF-8");
 
-        // ===== READ PARAMS (đồng bộ với /products) =====
+        // ===== READ PARAMS =====
         String keyword = req.getParameter("q");
         String sort = req.getParameter("sort");
-        String priceRange = req.getParameter("priceRange");
 
         Integer categoryId = parseInt(req.getParameter("category"));
-        Integer brandId    = parseInt(req.getParameter("brand"));
-        Integer minRating  = parseInt(req.getParameter("rating"));
+        Integer brandId = parseInt(req.getParameter("brand"));
+        Integer minRating = parseInt(req.getParameter("rating"));
+
+        /*
+         * ProductDAO hiện tại đang nhận List:
+         * - List<Integer> categoryIds
+         * - List<Integer> brandIds
+         * - List<String> priceRanges
+         */
+        List<Integer> categoryIds = toIdList(categoryId);
+        List<Integer> brandIds = toIdList(brandId);
+        List<String> priceRanges = toStringList(req.getParameterValues("priceRange"));
+
+        // Lấy lại 1 priceRange để giữ tương thích với JSP cũ nếu JSP đang dùng ${priceRange}
+        String priceRange = priceRanges.isEmpty() ? null : priceRanges.get(0);
 
         // Nếu không có q thì quay về /products
         if (keyword == null || keyword.trim().isEmpty()) {
             resp.sendRedirect(req.getContextPath() + "/products");
             return;
         }
+
         keyword = keyword.trim();
 
-        // ===== PAGINATION (giống /products) =====
+        // ===== PAGINATION =====
         int pageSize = 18;
         int page = parseIntOrDefault(req.getParameter("page"), 1);
-        if (page < 1) page = 1;
 
-        // Nếu DAO của bạn đã có countProducts và findProductsPaged như ProductListServlet
-        int total = productDAO.countProducts(keyword, categoryId, brandId, priceRange, minRating);
+        if (page < 1) {
+            page = 1;
+        }
+
+        int total = productDAO.countProducts(
+                keyword,
+                categoryIds,
+                brandIds,
+                priceRanges,
+                minRating
+        );
+
         int totalPages = (int) Math.ceil(total / (double) pageSize);
-        if (totalPages < 1) totalPages = 1;
-        if (page > totalPages) page = totalPages;
+
+        if (totalPages < 1) {
+            totalPages = 1;
+        }
+
+        if (page > totalPages) {
+            page = totalPages;
+        }
 
         List<Product> products = productDAO.findProductsPaged(
                 keyword,
-                categoryId,
-                brandId,
+                categoryIds,
+                brandIds,
                 sort,
-                priceRange,
+                priceRanges,
                 minRating,
                 page,
                 pageSize
         );
 
-        // final price
+        // ===== FINAL PRICE =====
         products.forEach(p -> p.setFinalPrice(pricingFacade.getFinalPrice(p)));
 
-        // ===== SIDEBAR DATA (để hiện đủ danh mục + brand) =====
+        // ===== SIDEBAR DATA =====
         req.setAttribute("categories", categoryDAO.findParents());
         req.setAttribute("brands", brandDAO.findWithProductCount());
 
-        // giữ trạng thái filter đang chọn
-        req.setAttribute("priceRange", priceRange);
-        req.setAttribute("selectedBrand", brandId);
+        // ===== KEEP FILTER STATE =====
+        req.setAttribute("q", keyword);
+        req.setAttribute("sort", sort);
 
-        // ===== PAGE DATA (để list.jsp dùng chung) =====
+        req.setAttribute("selectedCategory", categoryId);
+        req.setAttribute("selectedBrand", brandId);
+        req.setAttribute("selectedRating", minRating);
+
+        // Dành cho JSP cũ đang dùng 1 giá trị
+        req.setAttribute("priceRange", priceRange);
+
+        // Dành cho JSP mới đang dùng nhiều checkbox/filter
+        req.setAttribute("selectedCategories", categoryIds);
+        req.setAttribute("selectedBrands", brandIds);
+        req.setAttribute("selectedPriceRanges", priceRanges);
+
+        // ===== PAGE DATA =====
         req.setAttribute("products", products);
         req.setAttribute("page", page);
         req.setAttribute("totalPages", totalPages);
         req.setAttribute("total", total);
         req.setAttribute("pageSize", pageSize);
-
-        // để list.jsp lấy hiển thị tiêu đề/giữ keyword
-        req.setAttribute("q", keyword);
 
         // ===== META =====
         req.setAttribute("pageTitle", "MyCosmetic | Tìm kiếm: " + keyword);
@@ -99,6 +138,30 @@ public class SearchServlet extends HttpServlet {
 
         // ===== RENDER =====
         req.getRequestDispatcher("/jsp/common/base.jsp").forward(req, resp);
+    }
+
+    private List<Integer> toIdList(Integer id) {
+        if (id == null || id <= 0) {
+            return Collections.emptyList();
+        }
+
+        return Collections.singletonList(id);
+    }
+
+    private List<String> toStringList(String[] values) {
+        if (values == null || values.length == 0) {
+            return Collections.emptyList();
+        }
+
+        List<String> result = new ArrayList<>();
+
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                result.add(value.trim());
+            }
+        }
+
+        return result;
     }
 
     private Integer parseInt(String v) {
