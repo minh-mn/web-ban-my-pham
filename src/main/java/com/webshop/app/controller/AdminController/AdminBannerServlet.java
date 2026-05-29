@@ -105,6 +105,7 @@ public class AdminBannerServlet extends HttpServlet {
                 case "create": {
                     Banner banner = new Banner();
                     bind(req, banner, true);
+
                     bannerDAO.create(banner);
                     break;
                 }
@@ -119,9 +120,25 @@ public class AdminBannerServlet extends HttpServlet {
                     Banner banner = bannerDAO.findById(id);
 
                     if (banner != null) {
+                        String oldImageUrl = banner.getImageUrl();
+
                         bind(req, banner, false);
                         banner.setId(id);
+
+                        String newImageUrl = banner.getImageUrl();
+
+                        /*
+                         * Cập nhật SQL trước.
+                         * Nếu update lỗi, code sẽ nhảy vào catch và KHÔNG xóa file cũ.
+                         */
                         bannerDAO.update(banner);
+
+                        /*
+                         * Nếu admin upload ảnh mới, xóa file banner cũ sau khi SQL update thành công.
+                         */
+                        if (isChangedLocalUploadFile(oldImageUrl, newImageUrl, UploadConfig.BANNER_URL_PREFIX)) {
+                            UploadConfig.deleteBannerFileByUrl(oldImageUrl);
+                        }
                     }
 
                     break;
@@ -131,7 +148,19 @@ public class AdminBannerServlet extends HttpServlet {
                     int id = safeParseInt(req.getParameter("id"), -1);
 
                     if (id > 0) {
+                        Banner banner = bannerDAO.findById(id);
+                        String oldImageUrl = banner == null ? null : banner.getImageUrl();
+
+                        /*
+                         * Xóa SQL trước.
+                         * Nếu delete lỗi, code sẽ nhảy vào catch và KHÔNG xóa file vật lý.
+                         */
                         bannerDAO.delete(id);
+
+                        /*
+                         * Xóa file banner vật lý sau khi SQL delete thành công.
+                         */
+                        UploadConfig.deleteBannerFileByUrl(oldImageUrl);
                     }
 
                     break;
@@ -215,6 +244,21 @@ public class AdminBannerServlet extends HttpServlet {
         }
 
         banner.setImageUrl(imageUrl);
+    }
+
+    private boolean isChangedLocalUploadFile(String oldUrl, String newUrl, String expectedPrefix) {
+        String oldValue = trim(oldUrl);
+        String newValue = trim(newUrl);
+
+        if (oldValue.isBlank()) {
+            return false;
+        }
+
+        if (!oldValue.startsWith(expectedPrefix)) {
+            return false;
+        }
+
+        return !oldValue.equals(newValue);
     }
 
     private static int safeParseInt(String value, int fallback) {
