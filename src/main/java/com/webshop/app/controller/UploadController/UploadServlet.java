@@ -24,10 +24,15 @@ public class UploadServlet extends HttpServlet {
 
     /*
      * Chỉ public các loại file cần thiết.
-     * Tránh lỡ public file lạ trong MyCosmeticShopUploads.
+     * Tránh public file lạ trong MyCosmeticShopUploads.
      *
-     * Issue 123:
-     * Bổ sung video sản phẩm: mp4, webm, mov, m4v.
+     * Bao gồm:
+     * - banner
+     * - brand
+     * - policy
+     * - product
+     * - product/gallery
+     * - product/media
      */
     private static final Set<String> ALLOWED_EXTENSIONS = Set.of(
             ".jpg",
@@ -43,19 +48,20 @@ public class UploadServlet extends HttpServlet {
             ".m4v"
     );
 
+    private static final int BUFFER_SIZE = 8192;
+
     @Override
     public void init() throws ServletException {
         super.init();
 
         /*
-         * Đảm bảo các thư mục:
+         * Đảm bảo các thư mục tồn tại khi app chạy:
          * MyCosmeticShopUploads/banner
          * MyCosmeticShopUploads/product
          * MyCosmeticShopUploads/product/gallery
          * MyCosmeticShopUploads/product/media
          * MyCosmeticShopUploads/policy
          * MyCosmeticShopUploads/brand
-         * đã tồn tại khi app chạy.
          */
         UploadConfig.ensureUploadDirectories();
     }
@@ -67,11 +73,11 @@ public class UploadServlet extends HttpServlet {
         /*
          * Ví dụ URL:
          * /uploads/banner/abc.png
+         * /uploads/brand/abc.png
+         * /uploads/policy/abc.pdf
          * /uploads/product/abc.png
          * /uploads/product/gallery/abc.png
          * /uploads/product/media/abc.mp4
-         * /uploads/policy/abc.pdf
-         * /uploads/brand/abc.png
          */
         String pathInfo = req.getPathInfo();
 
@@ -137,43 +143,181 @@ public class UploadServlet extends HttpServlet {
             return;
         }
 
-        String mime = URLConnection.guessContentTypeFromName(filePath.getFileName().toString());
+        long fileLength = Files.size(filePath);
 
-        /*
-         * Một số server/JDK có thể không đoán đúng MIME cho webm/mov/m4v,
-         * nên fallback thủ công để trình duyệt phát video ổn định hơn.
-         */
+        String fileName = filePath.getFileName().toString();
+        String mime = URLConnection.guessContentTypeFromName(fileName);
+
         if (mime == null || mime.isBlank()) {
-            mime = detectMimeFromExtension(filePath.getFileName().toString());
+            mime = detectMimeFromExtension(fileName);
         }
 
         if (mime == null || mime.isBlank()) {
             mime = "application/octet-stream";
         }
 
+        /*
+         * Header chung.
+         */
         resp.setContentType(mime);
+        resp.setHeader("Accept-Ranges", "bytes");
         resp.setHeader("Cache-Control", "public, max-age=86400");
         resp.setHeader("X-Content-Type-Options", "nosniff");
         resp.setHeader("Content-Disposition", "inline");
 
-        try {
-            resp.setContentLengthLong(Files.size(filePath));
-        } catch (Exception ignored) {
-            // Không bắt buộc set Content-Length.
+        /*
+         * Hỗ trợ Range request để video có thể phát/tua ổn định.
+         */
+        String rangeHeader = req.getHeader("Range");
+
+        if (rangeHeader != null && rangeHeader.startsWith("bytes=")) {
+            servePartialContent(resp, filePath, fileLength, rangeHeader);
+            return;
         }
+
+        /*
+         * Trả full file nếu không có Range.
+         */
+        resp.setStatus(HttpServletResponse.SC_OK);
+        resp.setContentLengthLong(fileLength);
 
         try (InputStream inputStream = Files.newInputStream(filePath);
              OutputStream outputStream = resp.getOutputStream()) {
 
-            inputStream.transferTo(outputStream);
+            copy(inputStream, outputStream, fileLength);
+        }
+    }
+
+    private void servePartialContent(HttpServletResponse resp,
+                                     Path filePath,
+                                     long fileLength,
+                                     String rangeHeader)
+            throws IOException {
+
+        Range range = parseRange(rangeHeader, fileLength);
+
+        if (range == null) {
+            resp.setHeader("Content-Range", "bytes */" + fileLength);
+            resp.sendError(HttpServletResponse.SC_REQUESTED_RANGE_NOT_SATISFIABLE);
+            return;
+        }
+
+        long contentLength = range.end - range.start + 1;
+
+        resp.setStatus(HttpServletResponse.SC_PARTIAL_CONTENT);
+        resp.setHeader("Content-Range", "bytes " + range.start + "-" + range.end + "/" + fileLength);
+        resp.setContentLengthLong(contentLength);
+
+        try (InputStream inputStream = Files.newInputStream(filePath);
+             OutputStream outputStream = resp.getOutputStream()) {
+
+            long skipped = inputStream.skip(range.start);
+
+            while (skipped < range.start) {
+                long current = inputStream.skip(range.start - skipped);
+
+                if (current <= 0) {
+                    break;
+                }
+
+                skipped += current;
+            }
+
+            copy(inputStream, outputStream, contentLength);
+        }
+    }
+
+    private Range parseRange(String rangeHeader, long fileLength) {
+        if (rangeHeader == null || !rangeHeader.startsWith("bytes=") || fileLength <= 0) {
+            return null;
+        }
+
+        try {
+            String rangeValue = rangeHeader.substring("bytes=".length()).trim();
+
+            /*
+             * Chỉ xử lý range đầu tiên nếu browser gửi nhiều range.
+             */
+            int commaIndex = rangeValue.indexOf(",");
+            if (commaIndex >= 0) {
+                rangeValue = rangeValue.substring(0, commaIndex).trim();
+            }
+
+            if (rangeValue.isBlank()) {
+                return null;
+            }
+
+            long start;
+            long end;
+
+            if (rangeValue.startsWith("-")) {
+                /*
+                 * bytes=-500
+                 * Lấy 500 bytes cuối.
+                 */
+                long suffixLength = Long.parseLong(rangeValue.substring(1));
+
+                if (suffixLength <= 0) {
+                    return null;
+                }
+
+                start = Math.max(0, fileLength - suffixLength);
+                end = fileLength - 1;
+            } else {
+                /*
+                 * bytes=0-999
+                 * bytes=500-
+                 */
+                String[] parts = rangeValue.split("-", 2);
+
+                start = Long.parseLong(parts[0]);
+
+                if (parts.length > 1 && !parts[1].isBlank()) {
+                    end = Long.parseLong(parts[1]);
+                } else {
+                    end = fileLength - 1;
+                }
+            }
+
+            if (start < 0 || end < start || start >= fileLength) {
+                return null;
+            }
+
+            end = Math.min(end, fileLength - 1);
+
+            return new Range(start, end);
+
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private void copy(InputStream inputStream,
+                      OutputStream outputStream,
+                      long length)
+            throws IOException {
+
+        byte[] buffer = new byte[BUFFER_SIZE];
+        long remaining = length;
+
+        while (remaining > 0) {
+            int maxRead = (int) Math.min(buffer.length, remaining);
+            int read = inputStream.read(buffer, 0, maxRead);
+
+            if (read == -1) {
+                break;
+            }
+
+            outputStream.write(buffer, 0, read);
+            remaining -= read;
         }
     }
 
     private boolean isAllowedUploadPath(String relative) {
         return relative.startsWith("banner/")
-                || relative.startsWith("product/")
+                || relative.startsWith("brand/")
                 || relative.startsWith("policy/")
-                || relative.startsWith("brand/");
+                || relative.startsWith("product/");
     }
 
     private boolean isAllowedExtension(String relative) {
@@ -233,13 +377,14 @@ public class UploadServlet extends HttpServlet {
             return true;
         }
 
+        String lower = path.toLowerCase(Locale.ROOT);
+
         return path.contains("..")
                 || path.contains("\\")
                 || path.contains("//")
-                || path.contains("%2e")
-                || path.contains("%2E")
-                || path.contains("%5c")
-                || path.contains("%5C");
+                || lower.contains("%2e")
+                || lower.contains("%5c")
+                || lower.contains("%2f");
     }
 
     private String normalizeRelativePath(String relative) {
@@ -251,5 +396,15 @@ public class UploadServlet extends HttpServlet {
                 .trim()
                 .replace("\\", "/")
                 .replaceAll("/{2,}", "/");
+    }
+
+    private static final class Range {
+        private final long start;
+        private final long end;
+
+        private Range(long start, long end) {
+            this.start = start;
+            this.end = end;
+        }
     }
 }
