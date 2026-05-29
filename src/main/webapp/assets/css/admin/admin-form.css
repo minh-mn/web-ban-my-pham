@@ -831,6 +831,237 @@
   line-height: 1.5;
 }
 
+/* =========================================================
+   PRODUCT FORM - ISSUE 123
+   Dùng cho: /jsp/admin/products/product_form.jsp
+   Chức năng:
+   - Mô tả chi tiết sản phẩm
+   - Upload nhiều ảnh/video
+   - Hiển thị media hiện có
+========================================================= */
+
+.product-form-page {
+  width: 100%;
+}
+
+.product-form-layout {
+  display: grid;
+  gap: 18px;
+}
+
+.product-form-section {
+  display: grid;
+  gap: 14px;
+}
+
+.product-description-tools {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius, 14px);
+  background: rgba(15, 23, 42, 0.02);
+}
+
+.product-description-tool {
+  min-height: 34px;
+  padding: 0 11px;
+  border-radius: 999px;
+  border: 1px solid var(--admin-border);
+  background: #fff;
+  color: var(--admin-text);
+  font-size: 12px;
+  font-weight: 850;
+  cursor: pointer;
+  transition:
+          border-color 0.15s ease,
+          background 0.15s ease,
+          color 0.15s ease,
+          transform 0.15s ease,
+          box-shadow 0.15s ease;
+}
+
+.product-description-tool:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 95, 162, 0.38);
+  background: rgba(255, 95, 162, 0.08);
+  color: #be185d;
+  box-shadow: var(--admin-shadow-sm);
+}
+
+.product-description-editor {
+  min-height: 260px;
+  font-family: Arial, sans-serif;
+  line-height: 1.6;
+}
+
+.product-media-uploader {
+  display: grid;
+  gap: 14px;
+}
+
+.product-media-upload-box {
+  padding: 16px;
+  border: 1px dashed rgba(255, 95, 162, 0.45);
+  border-radius: var(--admin-radius-lg, 18px);
+  background: rgba(255, 95, 162, 0.045);
+}
+
+.product-media-upload-box .admin-input[type="file"] {
+  background: #fff;
+}
+
+.product-media-hint {
+  margin-top: 8px;
+  display: grid;
+  gap: 4px;
+  color: var(--admin-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.product-media-hint strong {
+  color: #be185d;
+  font-weight: 900;
+}
+
+.product-media-current {
+  display: grid;
+  gap: 12px;
+}
+
+.product-media-current__title {
+  margin: 0;
+  color: var(--admin-text);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.product-media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 14px;
+}
+
+.product-media-card {
+  overflow: hidden;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-lg, 18px);
+  background: #fff;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.045);
+}
+
+.product-media-card__preview {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: rgba(15, 23, 42, 0.035);
+  overflow: hidden;
+}
+
+.product-media-card__preview img,
+.product-media-card__preview video {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.product-media-card__badge {
+  position: absolute;
+  top: 9px;
+  left: 9px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.78);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.product-media-card__body {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+}
+
+.product-media-card__url {
+  color: var(--admin-muted);
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.product-media-card__delete {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px;
+  border: 1px solid rgba(220, 38, 38, 0.22);
+  border-radius: 12px;
+  background: rgba(220, 38, 38, 0.055);
+  color: #991b1b;
+  font-size: 12px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.product-media-card__delete input {
+  width: 15px;
+  height: 15px;
+  accent-color: #dc2626;
+}
+
+.product-media-empty {
+  padding: 14px;
+  border: 1px dashed var(--admin-border);
+  border-radius: var(--admin-radius, 14px);
+  background: rgba(15, 23, 42, 0.02);
+  color: var(--admin-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.product-gallery-current {
+  display: grid;
+  gap: 12px;
+}
+
+.product-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 12px;
+}
+
+.product-gallery-item {
+  overflow: hidden;
+  border: 1px solid var(--admin-border);
+  border-radius: 16px;
+  background: #fff;
+}
+
+.product-gallery-item img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  display: block;
+  object-fit: cover;
+}
+
+.product-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-top: 14px;
+  border-top: 1px solid rgba(15, 23, 42, 0.06);
+}
+
 /* =========================
    Responsive
 ========================= */
@@ -896,6 +1127,27 @@
   .admin-promo-product-list {
     max-height: 420px;
   }
+
+  .product-description-tools {
+    align-items: stretch;
+  }
+
+  .product-description-tool {
+    flex: 1 1 calc(50% - 8px);
+  }
+
+  .product-media-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .product-gallery-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .product-form-actions .admin-btn,
+  .product-form-actions button {
+    width: 100%;
+  }
 }
 
 @media (max-width: 720px) {
@@ -939,6 +1191,21 @@
   }
 
   .admin-form-section {
+    padding: 13px;
+  }
+}
+
+@media (max-width: 520px) {
+  .product-description-tool {
+    flex-basis: 100%;
+  }
+
+  .product-media-grid,
+  .product-gallery-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .product-media-upload-box {
     padding: 13px;
   }
 }
