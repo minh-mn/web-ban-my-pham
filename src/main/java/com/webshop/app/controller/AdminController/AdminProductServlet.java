@@ -9,6 +9,7 @@ import com.webshop.app.dao.ProductMediaDAO;
 import com.webshop.app.model.Brand;
 import com.webshop.app.model.Category;
 import com.webshop.app.model.Product;
+import com.webshop.app.utils.DBConnection;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,10 +19,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.UUID;
 
 import jakarta.servlet.ServletException;
@@ -142,6 +149,12 @@ public class AdminProductServlet extends HttpServlet {
 			action = "create";
 		}
 
+		/*
+		 * Dùng để rollback file mới nếu quá trình create/update bị lỗi sau khi upload.
+		 * File cũ chỉ bị xóa sau khi SQL update/delete thành công.
+		 */
+		List<String> uploadedFileUrlsForRollback = new ArrayList<>();
+
 		try {
 			switch (action) {
 				case "create": {
@@ -151,17 +164,20 @@ public class AdminProductServlet extends HttpServlet {
 
 					if (mainImage != null) {
 						product.setImage(mainImage);
+						uploadedFileUrlsForRollback.add(mainImage);
 					}
 
 					int newId = productDAO.create(product);
 
 					/*
-					 * Gallery ảnh cũ của sản phẩm.
+					 * Gallery ảnh của sản phẩm.
 					 * Input name bên JSP: imageGallery
 					 */
 					List<String> gallery = saveMultiIfPresent(req, "imageGallery", true);
 
 					if (!gallery.isEmpty()) {
+						uploadedFileUrlsForRollback.addAll(gallery);
+
 						int order = 0;
 
 						for (String imagePath : gallery) {
@@ -180,9 +196,12 @@ public class AdminProductServlet extends HttpServlet {
 						int order = 0;
 
 						for (MediaUploadResult media : mediaFiles) {
+							uploadedFileUrlsForRollback.add(media.url);
 							productMediaDAO.insert(newId, media.url, media.mediaType, order++);
 						}
 					}
+
+					uploadedFileUrlsForRollback.clear();
 
 					resp.sendRedirect(req.getContextPath() + "/admin/products");
 					return;
@@ -196,45 +215,73 @@ public class AdminProductServlet extends HttpServlet {
 						return;
 					}
 
+					Product oldProduct = productDAO.findByIdAdmin(id);
+					String oldMainImage = oldProduct == null ? null : oldProduct.getImage();
+
 					Product product = buildFromRequest(req);
 					product.setId(id);
 
 					/*
 					 * Nếu không upload ảnh đại diện mới thì giữ nguyên ảnh cũ.
-					 * Không tự normalize ảnh cũ để tránh đổi DB sang /uploads/ khi file thật chưa được copy.
+					 * Ưu tiên ảnh từ DB để tránh existingImage bị sửa trên form.
 					 */
-					String existingMain = req.getParameter("existingImage");
+					String existingMain = oldMainImage;
+					if (existingMain == null || existingMain.isBlank()) {
+						existingMain = req.getParameter("existingImage");
+					}
 
 					String mainImage = saveIfPresent(req, "imageMain", false);
 
 					if (mainImage != null) {
 						product.setImage(mainImage);
+						uploadedFileUrlsForRollback.add(mainImage);
 					} else {
 						product.setImage(existingMain);
 					}
 
+					/*
+					 * Update SQL trước.
+					 * Nếu update lỗi, ảnh mới sẽ rollback, ảnh cũ không bị xóa.
+					 */
 					productDAO.update(product);
 
 					/*
+					 * Nếu đổi ảnh đại diện mới và SQL update thành công,
+					 * xóa file ảnh đại diện cũ trong MyCosmeticShopUploads/product.
+					 */
+					if (mainImage != null && isChangedLocalUploadFile(oldMainImage, mainImage, UploadConfig.PRODUCT_URL_PREFIX)) {
+						UploadConfig.deleteProductFileByUrl(oldMainImage);
+					}
+
+					/*
+					 * Xóa gallery ảnh được tick trong form.
+					 * Hỗ trợ 2 tên parameter để tránh lệch JSP:
+					 * - deleteImageIds
+					 * - deleteGalleryImageIds
+					 */
+					deleteSelectedProductGalleryImages(req, id);
+
+					/*
+					 * Issue 123:
+					 * Xóa media chi tiết ảnh/video được tick trong form.
+					 */
+					deleteSelectedProductMedia(req, id);
+
+					/*
 					 * Gallery ảnh sản phẩm.
-					 * Bản cũ khi upload gallery mới sẽ xóa toàn bộ gallery cũ.
-					 * Bản này chuyển sang append để đúng yêu cầu "thêm được nhiều ảnh hơn".
+					 * Khi sửa sản phẩm, ảnh mới sẽ được append vào gallery hiện có.
 					 */
 					List<String> gallery = saveMultiIfPresent(req, "imageGallery", true);
 
 					if (!gallery.isEmpty()) {
+						uploadedFileUrlsForRollback.addAll(gallery);
+
 						int order = productImageDAO.findByProductId(id).size();
 
 						for (String imagePath : gallery) {
 							productImageDAO.insert(id, imagePath, order++);
 						}
 					}
-
-					/*
-					 * Issue 123:
-					 * Xóa media chi tiết đã chọn, nếu JSP có checkbox name="deleteMediaIds".
-					 */
-					deleteSelectedProductMedia(req, id);
 
 					/*
 					 * Issue 123:
@@ -246,9 +293,12 @@ public class AdminProductServlet extends HttpServlet {
 						int order = productMediaDAO.findByProductId(id).size();
 
 						for (MediaUploadResult media : mediaFiles) {
+							uploadedFileUrlsForRollback.add(media.url);
 							productMediaDAO.insert(id, media.url, media.mediaType, order++);
 						}
 					}
+
+					uploadedFileUrlsForRollback.clear();
 
 					resp.sendRedirect(req.getContextPath() + "/admin/products");
 					return;
@@ -258,14 +308,34 @@ public class AdminProductServlet extends HttpServlet {
 					int id = parseInt(req.getParameter("id"), -1);
 
 					if (id > 0) {
+						/*
+						 * Lấy danh sách file trước khi xóa SQL.
+						 * Vì hard delete trong ProductDAO sẽ xóa các record liên quan.
+						 */
+						Product oldProduct = productDAO.findByIdAdmin(id);
+						String oldMainImage = oldProduct == null ? null : oldProduct.getImage();
+
+						List<String> oldGalleryUrls = findProductGalleryImageUrls(id);
+						List<String> oldMediaUrls = findProductMediaUrls(id);
+
 						ProductDAO.DeleteMode deleteMode = productDAO.deleteOrDeactivateSafely(id);
 
 						if (deleteMode == ProductDAO.DeleteMode.SOFT_DELETED) {
+							/*
+							 * Product đã có trong đơn hàng:
+							 * Chỉ ẩn sản phẩm, không xóa file để bảo toàn dữ liệu lịch sử.
+							 */
 							resp.sendRedirect(req.getContextPath() + "/admin/products?delete=soft");
 							return;
 						}
 
 						if (deleteMode == ProductDAO.DeleteMode.HARD_DELETED) {
+							/*
+							 * Product chưa có đơn hàng:
+							 * SQL đã xóa thành công thì xóa tiếp file vật lý.
+							 */
+							deleteProductPhysicalFiles(oldMainImage, oldGalleryUrls, oldMediaUrls);
+
 							resp.sendRedirect(req.getContextPath() + "/admin/products?delete=hard");
 							return;
 						}
@@ -285,6 +355,8 @@ public class AdminProductServlet extends HttpServlet {
 			}
 
 		} catch (IllegalArgumentException ex) {
+			rollbackUploadedFiles(uploadedFileUrlsForRollback);
+
 			req.setAttribute("error", ex.getMessage());
 			loadDropdowns(req);
 
@@ -305,6 +377,7 @@ public class AdminProductServlet extends HttpServlet {
 			req.getRequestDispatcher(JSP_FORM).forward(req, resp);
 
 		} catch (Exception e) {
+			rollbackUploadedFiles(uploadedFileUrlsForRollback);
 			throw new ServletException("AdminProductServlet error", e);
 		}
 	}
@@ -636,20 +709,84 @@ public class AdminProductServlet extends HttpServlet {
 		return new MediaUploadResult(publicUrl, mediaType);
 	}
 
-	private void deleteSelectedProductMedia(HttpServletRequest req, int productId) {
-		String[] deleteIds = req.getParameterValues("deleteMediaIds");
+	/*
+	 * Xóa từng ảnh gallery được tick trong form.
+	 * Xử lý đủ:
+	 * - Xóa dòng store_productimage
+	 * - Xóa file vật lý trong MyCosmeticShopUploads/product/gallery
+	 */
+	private void deleteSelectedProductGalleryImages(HttpServletRequest req, int productId) {
+		Set<Integer> imageIds = getDeleteIdSet(req, "deleteImageIds", "deleteGalleryImageIds");
 
-		if (deleteIds == null || deleteIds.length == 0) {
+		if (imageIds.isEmpty()) {
 			return;
 		}
 
-		for (String rawId : deleteIds) {
-			int mediaId = parseInt(rawId, -1);
+		for (Integer imageId : imageIds) {
+			if (imageId == null || imageId <= 0) {
+				continue;
+			}
 
-			if (mediaId > 0) {
-				productMediaDAO.deleteByIdAndProductId(mediaId, productId);
+			String imageUrl = findProductGalleryImageUrlById(productId, imageId);
+			boolean deletedSql = deleteProductGalleryImageById(productId, imageId);
+
+			if (deletedSql) {
+				UploadConfig.deleteProductGalleryFileByUrl(imageUrl);
 			}
 		}
+	}
+
+	/*
+	 * Xóa từng media chi tiết ảnh/video được tick trong form.
+	 * Xử lý đủ:
+	 * - Xóa dòng store_productmedia
+	 * - Xóa file vật lý trong MyCosmeticShopUploads/product/media
+	 */
+	private void deleteSelectedProductMedia(HttpServletRequest req, int productId) {
+		Set<Integer> mediaIds = getDeleteIdSet(req, "deleteMediaIds");
+
+		if (mediaIds.isEmpty()) {
+			return;
+		}
+
+		for (Integer mediaId : mediaIds) {
+			if (mediaId == null || mediaId <= 0) {
+				continue;
+			}
+
+			String mediaUrl = findProductMediaUrlById(productId, mediaId);
+			boolean deletedSql = deleteProductMediaById(productId, mediaId);
+
+			if (deletedSql) {
+				UploadConfig.deleteProductMediaFileByUrl(mediaUrl);
+			}
+		}
+	}
+
+	private Set<Integer> getDeleteIdSet(HttpServletRequest req, String... parameterNames) {
+		Set<Integer> ids = new LinkedHashSet<>();
+
+		if (parameterNames == null || parameterNames.length == 0) {
+			return ids;
+		}
+
+		for (String parameterName : parameterNames) {
+			String[] values = req.getParameterValues(parameterName);
+
+			if (values == null || values.length == 0) {
+				continue;
+			}
+
+			for (String rawValue : values) {
+				int id = parseInt(rawValue, -1);
+
+				if (id > 0) {
+					ids.add(id);
+				}
+			}
+		}
+
+		return ids;
 	}
 
 	private static final class MediaUploadResult {
@@ -659,6 +796,194 @@ public class AdminProductServlet extends HttpServlet {
 		private MediaUploadResult(String url, String mediaType) {
 			this.url = url;
 			this.mediaType = mediaType;
+		}
+	}
+
+	/* ===================== PRODUCT FILE DELETE HELPERS ===================== */
+
+	private void deleteProductPhysicalFiles(String mainImageUrl,
+	                                        List<String> galleryUrls,
+	                                        List<String> mediaUrls) {
+
+		UploadConfig.deleteProductFileByUrl(mainImageUrl);
+
+		if (galleryUrls != null) {
+			for (String imageUrl : galleryUrls) {
+				UploadConfig.deleteProductGalleryFileByUrl(imageUrl);
+			}
+		}
+
+		if (mediaUrls != null) {
+			for (String mediaUrl : mediaUrls) {
+				UploadConfig.deleteProductMediaFileByUrl(mediaUrl);
+			}
+		}
+	}
+
+	private void rollbackUploadedFiles(List<String> uploadedFileUrls) {
+		if (uploadedFileUrls == null || uploadedFileUrls.isEmpty()) {
+			return;
+		}
+
+		for (String fileUrl : uploadedFileUrls) {
+			UploadConfig.deleteUploadFileByUrl(fileUrl);
+		}
+
+		uploadedFileUrls.clear();
+	}
+
+	private boolean isChangedLocalUploadFile(String oldUrl, String newUrl, String expectedPrefix) {
+		String oldValue = safe(oldUrl);
+		String newValue = safe(newUrl);
+
+		if (oldValue.isBlank()) {
+			return false;
+		}
+
+		if (!oldValue.startsWith(expectedPrefix)) {
+			return false;
+		}
+
+		return !oldValue.equals(newValue);
+	}
+
+	/* ===================== PRODUCT IMAGE / MEDIA SQL HELPERS ===================== */
+
+	private List<String> findProductGalleryImageUrls(int productId) {
+		List<String> urls = new ArrayList<>();
+
+		String sql =
+				"SELECT image " +
+						"FROM store_productimage " +
+						"WHERE product_id = ?";
+
+		try (Connection conn = DBConnection.getConnection();
+		     PreparedStatement ps = conn.prepareStatement(sql)) {
+
+			ps.setInt(1, productId);
+
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					urls.add(rs.getString("image"));
+				}
+			}
+
+		} catch (SQLException e) {
+			throw new RuntimeException("AdminProductServlet.findProductGalleryImageUrls error", e);
+		}
+
+		return urls;
+	}
+
+	private String findProductGalleryImageUrlById(int productId, int imageId) {
+		String sql =
+				"SELECT image " +
+						"FROM store_productimage " +
+						"WHERE id = ? AND product_id = ?";
+
+		try (Connection conn = DBConnection.getConnection();
+		     PreparedStatement ps = conn.prepareStatement(sql)) {
+
+			ps.setInt(1, imageId);
+			ps.setInt(2, productId);
+
+			try (ResultSet rs = ps.executeQuery()) {
+				if (rs.next()) {
+					return rs.getString("image");
+				}
+			}
+
+			return null;
+
+		} catch (SQLException e) {
+			throw new RuntimeException("AdminProductServlet.findProductGalleryImageUrlById error", e);
+		}
+	}
+
+	private boolean deleteProductGalleryImageById(int productId, int imageId) {
+		String sql =
+				"DELETE FROM store_productimage " +
+						"WHERE id = ? AND product_id = ?";
+
+		try (Connection conn = DBConnection.getConnection();
+		     PreparedStatement ps = conn.prepareStatement(sql)) {
+
+			ps.setInt(1, imageId);
+			ps.setInt(2, productId);
+
+			return ps.executeUpdate() > 0;
+
+		} catch (SQLException e) {
+			throw new RuntimeException("AdminProductServlet.deleteProductGalleryImageById error", e);
+		}
+	}
+
+	private List<String> findProductMediaUrls(int productId) {
+		List<String> urls = new ArrayList<>();
+
+		String sql =
+				"SELECT media_url " +
+						"FROM store_productmedia " +
+						"WHERE product_id = ?";
+
+		try (Connection conn = DBConnection.getConnection();
+		     PreparedStatement ps = conn.prepareStatement(sql)) {
+
+			ps.setInt(1, productId);
+
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					urls.add(rs.getString("media_url"));
+				}
+			}
+
+		} catch (SQLException e) {
+			throw new RuntimeException("AdminProductServlet.findProductMediaUrls error", e);
+		}
+
+		return urls;
+	}
+
+	private String findProductMediaUrlById(int productId, int mediaId) {
+		String sql =
+				"SELECT media_url " +
+						"FROM store_productmedia " +
+						"WHERE id = ? AND product_id = ?";
+
+		try (Connection conn = DBConnection.getConnection();
+		     PreparedStatement ps = conn.prepareStatement(sql)) {
+
+			ps.setInt(1, mediaId);
+			ps.setInt(2, productId);
+
+			try (ResultSet rs = ps.executeQuery()) {
+				if (rs.next()) {
+					return rs.getString("media_url");
+				}
+			}
+
+			return null;
+
+		} catch (SQLException e) {
+			throw new RuntimeException("AdminProductServlet.findProductMediaUrlById error", e);
+		}
+	}
+
+	private boolean deleteProductMediaById(int productId, int mediaId) {
+		String sql =
+				"DELETE FROM store_productmedia " +
+						"WHERE id = ? AND product_id = ?";
+
+		try (Connection conn = DBConnection.getConnection();
+		     PreparedStatement ps = conn.prepareStatement(sql)) {
+
+			ps.setInt(1, mediaId);
+			ps.setInt(2, productId);
+
+			return ps.executeUpdate() > 0;
+
+		} catch (SQLException e) {
+			throw new RuntimeException("AdminProductServlet.deleteProductMediaById error", e);
 		}
 	}
 
