@@ -45,6 +45,115 @@ public class ProductMediaDAO {
         return list;
     }
 
+    public ProductMedia findById(int mediaId) {
+        String sql =
+                "SELECT id, product_id, media_url, media_type, sort_order, created_at " +
+                        "FROM store_productmedia " +
+                        "WHERE id = ?";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, mediaId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapRow(rs);
+                }
+
+                return null;
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("ProductMediaDAO.findById error", e);
+        }
+    }
+
+    public ProductMedia findByIdAndProductId(int mediaId, int productId) {
+        String sql =
+                "SELECT id, product_id, media_url, media_type, sort_order, created_at " +
+                        "FROM store_productmedia " +
+                        "WHERE id = ? AND product_id = ?";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, mediaId);
+            ps.setInt(2, productId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapRow(rs);
+                }
+
+                return null;
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("ProductMediaDAO.findByIdAndProductId error", e);
+        }
+    }
+
+    /*
+     * Lấy media_url trước khi xóa SQL.
+     * Servlet dùng URL này để xóa file vật lý sau khi SQL delete thành công.
+     */
+    public String findMediaUrlByIdAndProductId(int mediaId, int productId) {
+        String sql =
+                "SELECT media_url " +
+                        "FROM store_productmedia " +
+                        "WHERE id = ? AND product_id = ?";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, mediaId);
+            ps.setInt(2, productId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("media_url");
+                }
+
+                return null;
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("ProductMediaDAO.findMediaUrlByIdAndProductId error", e);
+        }
+    }
+
+    /*
+     * Lấy toàn bộ media_url của sản phẩm.
+     * Dùng trước khi hard delete product để xóa file vật lý sau khi SQL delete thành công.
+     */
+    public List<String> findMediaUrlsByProductId(int productId) {
+        List<String> urls = new ArrayList<>();
+
+        String sql =
+                "SELECT media_url " +
+                        "FROM store_productmedia " +
+                        "WHERE product_id = ? " +
+                        "ORDER BY sort_order ASC, id ASC";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, productId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    urls.add(rs.getString("media_url"));
+                }
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("ProductMediaDAO.findMediaUrlsByProductId error", e);
+        }
+
+        return urls;
+    }
+
     /*
      * Thêm media mới cho sản phẩm.
      *
@@ -62,14 +171,48 @@ public class ProductMediaDAO {
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, productId);
-            ps.setString(2, mediaUrl);
+            ps.setString(2, normalizeMediaUrl(mediaUrl));
             ps.setString(3, normalizeMediaType(mediaType));
-            ps.setInt(4, sortOrder);
+            ps.setInt(4, Math.max(sortOrder, 0));
 
             return ps.executeUpdate() > 0;
 
         } catch (SQLException e) {
             throw new RuntimeException("ProductMediaDAO.insert error", e);
+        }
+    }
+
+    public boolean insert(ProductMedia media) {
+        if (media == null) {
+            return false;
+        }
+
+        return insert(
+                media.getProductId(),
+                media.getMediaUrl(),
+                media.getMediaType(),
+                media.getSortOrder()
+        );
+    }
+
+    /*
+     * Xóa 1 media theo id.
+     * Ít dùng hơn deleteByIdAndProductId vì không kiểm tra thuộc sản phẩm nào.
+     */
+    public boolean deleteById(int mediaId) {
+        String sql =
+                "DELETE FROM store_productmedia " +
+                        "WHERE id = ?";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, mediaId);
+
+            return ps.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("ProductMediaDAO.deleteById error", e);
         }
     }
 
@@ -97,7 +240,11 @@ public class ProductMediaDAO {
 
     /*
      * Xóa toàn bộ media của một sản phẩm.
-     * Có thể dùng khi hard delete sản phẩm hoặc reset media.
+     *
+     * Lưu ý:
+     * - Hàm này chỉ xóa SQL.
+     * - Nếu cần xóa file vật lý, servlet/service phải lấy media_url trước bằng
+     *   findMediaUrlsByProductId(productId), sau đó gọi UploadConfig.deleteProductMediaFileByUrl(...).
      */
     public int deleteByProductId(int productId) {
         String sql =
@@ -129,7 +276,7 @@ public class ProductMediaDAO {
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            ps.setInt(1, sortOrder);
+            ps.setInt(1, Math.max(sortOrder, 0));
             ps.setInt(2, mediaId);
             ps.setInt(3, productId);
 
@@ -191,5 +338,13 @@ public class ProductMediaDAO {
         }
 
         return "IMAGE";
+    }
+
+    private String normalizeMediaUrl(String mediaUrl) {
+        if (mediaUrl == null) {
+            return "";
+        }
+
+        return mediaUrl.trim();
     }
 }
