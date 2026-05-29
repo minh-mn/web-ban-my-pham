@@ -1,6 +1,8 @@
 package com.webshop.app.controller.ProductController;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -45,7 +47,7 @@ public class ProductListServlet extends HttpServlet {
         req.setCharacterEncoding("UTF-8");
         resp.setCharacterEncoding("UTF-8");
 
-        // ===== 1. ĐỌC THAM SỐ DẠNG LIST ĐỂ HỖ TRỢ MULTI-FILTER =====
+        // ===== 1. ĐỌC THAM SỐ FILTER =====
         String keyword = req.getParameter("q");
         String sort = req.getParameter("sort");
 
@@ -93,36 +95,31 @@ public class ProductListServlet extends HttpServlet {
                 pageSize
         );
 
+        // ===== 4. TÍNH GIÁ SAU KHUYẾN MÃI =====
         products.forEach(product ->
                 product.setFinalPrice(pricingFacade.getFinalPrice(product))
         );
 
-        /*
-         * ===== 4. LOAD THẺ DANH MỤC CHO DANH SÁCH SẢN PHẨM =====
-         * Không sửa ProductDAO để tránh ảnh hưởng luồng /products đang chạy ổn.
-         */
+        // ===== 5. LOAD THẺ DANH MỤC CHO PRODUCT CARD =====
         Map<Integer, List<CategoryTag>> categoryTagsByCategoryId =
                 loadCategoryTagsByProductCategories(products);
 
-        // ===== 5. DỮ LIỆU THANH SIDEBAR =====
+        // ===== 6. DỮ LIỆU SIDEBAR =====
         List<Category> categories = categoryDAO.findParents();
         List<Brand> brands = brandDAO.findWithProductCount();
 
         req.setAttribute("categories", categories);
         req.setAttribute("brands", brands);
 
-        // ===== 6. GIỮ LẠI TRẠNG THÁI FILTER =====
+        // ===== 7. GIỮ LẠI TRẠNG THÁI FILTER =====
         req.setAttribute("priceRangeList", priceRangeList);
         req.setAttribute("selectedCategoryList", selectedCategoryList);
         req.setAttribute("selectedBrandList", selectedBrandList);
         req.setAttribute("minRating", minRating);
 
         /*
-         * ===== 7. LABEL HIỂN THỊ CHO PHẦN "ĐANG LỌC" =====
-         * Giúp JSP hiển thị đúng tên thay vì ID:
-         * category=4 -> Serum/Essence (Tinh Chất Dưỡng)
-         * brand=1 -> Mary & May
-         * priceRange=500_1000 -> 500.000 - 1.000.000đ
+         * ===== 8. LABEL HIỂN THỊ CHO PHẦN "ĐANG LỌC" =====
+         * Các attribute này giữ lại để list.jsp cũ hoặc block hiển thị label vẫn dùng được.
          */
         req.setAttribute(
                 "selectedCategoryNames",
@@ -149,7 +146,28 @@ public class ProductListServlet extends HttpServlet {
                 resolveSortLabel(sort)
         );
 
-        // ===== 8. DỮ LIỆU PHÂN TRANG & HIỂN THỊ =====
+        /*
+         * ===== 9. ACTIVE FILTER TAGS CÓ NÚT XÓA RIÊNG =====
+         * Mỗi tag có:
+         * - label: nội dung hiển thị.
+         * - removeUrl: URL đã bỏ riêng filter đó.
+         */
+        req.setAttribute(
+                "activeFilterTags",
+                buildActiveFilterTags(
+                        req,
+                        categories,
+                        brands,
+                        keyword,
+                        selectedCategoryList,
+                        selectedBrandList,
+                        priceRangeList,
+                        minRating,
+                        sort
+                )
+        );
+
+        // ===== 10. DỮ LIỆU PHÂN TRANG & HIỂN THỊ =====
         req.setAttribute("products", products);
         req.setAttribute("categoryTagsByCategoryId", categoryTagsByCategoryId);
 
@@ -162,8 +180,188 @@ public class ProductListServlet extends HttpServlet {
         req.setAttribute("pageCss", "product-list.css");
         req.setAttribute("pageContent", "/jsp/product/list.jsp");
 
-        // ===== 9. RENDER =====
+        // ===== 11. RENDER =====
         req.getRequestDispatcher("/jsp/common/base.jsp").forward(req, resp);
+    }
+
+    /* =====================================================
+       ACTIVE FILTER TAGS
+    ===================================================== */
+
+    private List<ActiveFilterTag> buildActiveFilterTags(
+            HttpServletRequest req,
+            List<Category> categories,
+            List<Brand> brands,
+            String keyword,
+            List<Integer> selectedCategoryIds,
+            List<Integer> selectedBrandIds,
+            List<String> priceRangeList,
+            Integer minRating,
+            String sort
+    ) {
+        List<ActiveFilterTag> tags = new ArrayList<>();
+
+        if (!isBlank(keyword)) {
+            tags.add(new ActiveFilterTag(
+                    "Từ khóa: " + keyword.trim(),
+                    buildRemoveUrl(req, "q", null)
+            ));
+        }
+
+        if (selectedCategoryIds != null) {
+            for (Integer categoryId : selectedCategoryIds) {
+                if (categoryId == null || categoryId <= 0) {
+                    continue;
+                }
+
+                String name = findCategoryNameById(categories, categoryId);
+                String label = !isBlank(name) ? name : "#" + categoryId;
+
+                tags.add(new ActiveFilterTag(
+                        "Danh mục: " + label,
+                        buildRemoveUrl(req, "category", String.valueOf(categoryId))
+                ));
+            }
+        }
+
+        if (selectedBrandIds != null) {
+            for (Integer brandId : selectedBrandIds) {
+                if (brandId == null || brandId <= 0) {
+                    continue;
+                }
+
+                String name = findBrandNameById(brands, brandId);
+                String label = !isBlank(name) ? name : "#" + brandId;
+
+                tags.add(new ActiveFilterTag(
+                        "Thương hiệu: " + label,
+                        buildRemoveUrl(req, "brand", String.valueOf(brandId))
+                ));
+            }
+        }
+
+        if (priceRangeList != null) {
+            for (String priceRange : priceRangeList) {
+                if (isBlank(priceRange)) {
+                    continue;
+                }
+
+                String value = priceRange.trim();
+
+                tags.add(new ActiveFilterTag(
+                        "Giá: " + resolveSinglePriceRangeLabel(value),
+                        buildRemoveUrl(req, "priceRange", value)
+                ));
+            }
+        }
+
+        if (minRating != null && minRating > 0) {
+            tags.add(new ActiveFilterTag(
+                    "Đánh giá: Từ " + minRating + " sao",
+                    buildRemoveUrl(req, "rating", null)
+            ));
+        }
+
+        if (!isBlank(sort)) {
+            tags.add(new ActiveFilterTag(
+                    "Sắp xếp: " + resolveSortLabel(sort),
+                    buildRemoveUrl(req, "sort", null)
+            ));
+        }
+
+        return tags;
+    }
+
+    private String buildRemoveUrl(
+            HttpServletRequest req,
+            String removeParamName,
+            String removeParamValue
+    ) {
+        StringBuilder url = new StringBuilder();
+        url.append(req.getContextPath()).append("/products");
+
+        List<String> queryParts = new ArrayList<>();
+
+        for (Map.Entry<String, String[]> entry : req.getParameterMap().entrySet()) {
+            String paramName = entry.getKey();
+            String[] values = entry.getValue();
+
+            if ("page".equals(paramName)) {
+                continue;
+            }
+
+            if (values == null || values.length == 0) {
+                continue;
+            }
+
+            for (String value : values) {
+                if (value == null) {
+                    continue;
+                }
+
+                if (shouldSkipParam(paramName, value, removeParamName, removeParamValue)) {
+                    continue;
+                }
+
+                queryParts.add(urlEncode(paramName) + "=" + urlEncode(value));
+            }
+        }
+
+        if (!queryParts.isEmpty()) {
+            url.append("?").append(String.join("&", queryParts));
+        }
+
+        return url.toString();
+    }
+
+    private boolean shouldSkipParam(
+            String paramName,
+            String value,
+            String removeParamName,
+            String removeParamValue
+    ) {
+        if (!paramName.equals(removeParamName)) {
+            return false;
+        }
+
+        /*
+         * removeParamValue == null:
+         * Dùng cho filter chỉ có một giá trị như q, rating, sort.
+         * Khi xóa thì xóa toàn bộ param đó.
+         */
+        if (removeParamValue == null) {
+            return true;
+        }
+
+        /*
+         * removeParamValue != null:
+         * Dùng cho filter có thể chọn nhiều như category, brand, priceRange.
+         * Chỉ xóa đúng giá trị được bấm x.
+         */
+        return removeParamValue.equals(value);
+    }
+
+    private String urlEncode(String value) {
+        return URLEncoder.encode(value == null ? "" : value, StandardCharsets.UTF_8);
+    }
+
+    public static class ActiveFilterTag {
+
+        private final String label;
+        private final String removeUrl;
+
+        public ActiveFilterTag(String label, String removeUrl) {
+            this.label = label;
+            this.removeUrl = removeUrl;
+        }
+
+        public String getLabel() {
+            return label;
+        }
+
+        public String getRemoveUrl() {
+            return removeUrl;
+        }
     }
 
     /* =====================================================
@@ -223,7 +421,7 @@ public class ProductListServlet extends HttpServlet {
         for (Integer selectedId : selectedCategoryIds) {
             String name = findCategoryNameById(categories, selectedId);
 
-            if (name != null && !name.isBlank()) {
+            if (!isBlank(name)) {
                 names.add(name);
             } else {
                 names.add("Danh mục #" + selectedId);
@@ -271,7 +469,7 @@ public class ProductListServlet extends HttpServlet {
         for (Integer selectedId : selectedBrandIds) {
             String name = findBrandNameById(brands, selectedId);
 
-            if (name != null && !name.isBlank()) {
+            if (!isBlank(name)) {
                 names.add(name);
             } else {
                 names.add("Thương hiệu #" + selectedId);
@@ -303,49 +501,47 @@ public class ProductListServlet extends HttpServlet {
         }
 
         for (String priceRange : priceRangeList) {
-            if (priceRange == null || priceRange.isBlank()) {
-                continue;
-            }
-
-            switch (priceRange.trim()) {
-                case "lt500":
-                case "0_500":
-                case "under_500":
-                    labels.add("0 - 500.000đ");
-                    break;
-
-                case "500_1000":
-                    labels.add("500.000 - 1.000.000đ");
-                    break;
-
-                case "gt1000":
-                case "over_1000":
-                    labels.add("Trên 1.000.000đ");
-                    break;
-
-                case "under-200":
-                    labels.add("Dưới 200.000đ");
-                    break;
-
-                case "200-500":
-                    labels.add("200.000 - 500.000đ");
-                    break;
-
-                case "500-1000":
-                    labels.add("500.000 - 1.000.000đ");
-                    break;
-
-                case "over-1000":
-                    labels.add("Trên 1.000.000đ");
-                    break;
-
-                default:
-                    labels.add(priceRange.trim());
-                    break;
+            if (!isBlank(priceRange)) {
+                labels.add(resolveSinglePriceRangeLabel(priceRange));
             }
         }
 
         return labels;
+    }
+
+    private String resolveSinglePriceRangeLabel(String priceRange) {
+        if (priceRange == null) {
+            return "";
+        }
+
+        switch (priceRange.trim()) {
+            case "lt500":
+            case "0_500":
+            case "under_500":
+                return "0 - 500.000đ";
+
+            case "500_1000":
+                return "500.000 - 1.000.000đ";
+
+            case "gt1000":
+            case "over_1000":
+                return "Trên 1.000.000đ";
+
+            case "under-200":
+                return "Dưới 200.000đ";
+
+            case "200-500":
+                return "200.000 - 500.000đ";
+
+            case "500-1000":
+                return "500.000 - 1.000.000đ";
+
+            case "over-1000":
+                return "Trên 1.000.000đ";
+
+            default:
+                return priceRange.trim();
+        }
     }
 
     private String resolveRatingLabel(Integer minRating) {
@@ -357,7 +553,7 @@ public class ProductListServlet extends HttpServlet {
     }
 
     private String resolveSortLabel(String sort) {
-        if (sort == null || sort.isBlank()) {
+        if (isBlank(sort)) {
             return "";
         }
 
@@ -385,9 +581,7 @@ public class ProductListServlet extends HttpServlet {
 
     private Integer parseInt(String value) {
         try {
-            return (value != null && !value.isBlank())
-                    ? Integer.parseInt(value.trim())
-                    : null;
+            return !isBlank(value) ? Integer.parseInt(value.trim()) : null;
 
         } catch (Exception e) {
             return null;
@@ -396,9 +590,7 @@ public class ProductListServlet extends HttpServlet {
 
     private int parseIntOrDefault(String value, int defaultValue) {
         try {
-            return (value != null && !value.isBlank())
-                    ? Integer.parseInt(value.trim())
-                    : defaultValue;
+            return !isBlank(value) ? Integer.parseInt(value.trim()) : defaultValue;
 
         } catch (Exception e) {
             return defaultValue;
@@ -417,7 +609,7 @@ public class ProductListServlet extends HttpServlet {
         }
 
         return Arrays.stream(values)
-                .filter(value -> value != null && !value.isBlank())
+                .filter(value -> !isBlank(value))
                 .map(String::trim)
                 .filter(value -> !value.equalsIgnoreCase("all"))
                 .map(value -> {
@@ -439,9 +631,13 @@ public class ProductListServlet extends HttpServlet {
         }
 
         return Arrays.stream(values)
-                .filter(value -> value != null && !value.isBlank())
+                .filter(value -> !isBlank(value))
                 .map(String::trim)
                 .distinct()
                 .collect(Collectors.toList());
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 }
