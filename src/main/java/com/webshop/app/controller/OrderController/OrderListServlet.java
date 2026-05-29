@@ -31,6 +31,8 @@ public class OrderListServlet extends HttpServlet {
             return;
         }
 
+        orderDAO.autoCompleteUnconfirmedDeliveredOrders(7);
+
         List<Order> orders = user.isAdmin()
                 ? orderDAO.findAll()
                 : orderDAO.findByUser(user.getId());

@@ -1,11 +1,19 @@
 package com.webshop.app.controller.OrderController;
 
+import com.webshop.app.dao.CancelRequestDAO;
 import com.webshop.app.dao.OrderDAO;
+import com.webshop.app.model.CancelRequest;
+import com.webshop.app.model.Order;
 import com.webshop.app.model.User;
+import com.webshop.app.service.OrderNotificationService;
+import com.webshop.app.utils.DBConnection;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
+import java.sql.SQLException;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -20,6 +28,8 @@ public class CancelOrderServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
     private final OrderDAO orderDAO = new OrderDAO();
+    private final CancelRequestDAO cancelRequestDAO = new CancelRequestDAO();
+    private final OrderNotificationService notificationService = new OrderNotificationService();
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
@@ -55,24 +65,70 @@ public class CancelOrderServlet extends HttpServlet {
             return;
         }
 
-        boolean cancelled = orderDAO.cancelOrderByUser(orderId, user.getId(), reason);
+        try (Connection connection = DBConnection.getConnection()) {
+            connection.setAutoCommit(false);
 
-        if (cancelled) {
-            redirectWithMessage(
-                    request,
-                    response,
-                    "/orders/detail?id=" + orderId,
-                    "success",
-                    "Đơn hàng đã được hủy thành công. Nếu đơn đã thanh toán online, shop sẽ xử lý hoàn tiền theo chính sách."
-            );
-        } else {
-            redirectWithMessage(
-                    request,
-                    response,
-                    "/orders/detail?id=" + orderId,
-                    "error",
-                    "Đơn hàng này không còn đủ điều kiện hủy. Chỉ có thể hủy đơn trước khi bắt đầu giao hàng."
-            );
+            try {
+                Order order = orderDAO.findById(connection, orderId);
+                if (order == null || order.getUserId() != user.getId()) {
+                    connection.rollback();
+                    response.sendError(HttpServletResponse.SC_FORBIDDEN);
+                    return;
+                }
+
+                if (!order.isCancelable()) {
+                    connection.rollback();
+                    redirectWithMessage(
+                            request,
+                            response,
+                            "/orders/detail?id=" + orderId,
+                            "error",
+                            "Đơn hàng này không còn đủ điều kiện hủy. Chỉ có thể gửi yêu cầu trước khi đơn bắt đầu giao hàng."
+                    );
+                    return;
+                }
+
+                if (cancelRequestDAO.existsActiveByOrderId(connection, orderId)) {
+                    connection.rollback();
+                    redirectWithMessage(
+                            request,
+                            response,
+                            "/orders/detail?id=" + orderId,
+                            "error",
+                            "Đơn hàng này đã có yêu cầu hủy đang chờ ADMIN xử lý."
+                    );
+                    return;
+                }
+
+                boolean paidVnpay = "VNPAY".equalsIgnoreCase(order.getPaymentMethod())
+                        && "PAID".equalsIgnoreCase(order.getPaymentStatus());
+
+                CancelRequest cancelRequest = new CancelRequest();
+                cancelRequest.setOrderId(orderId);
+                cancelRequest.setUserId(user.getId());
+                cancelRequest.setReason(reason);
+                cancelRequest.setStatus("REQUESTED");
+                cancelRequest.setRefundAmount(paidVnpay ? order.getTotal() : BigDecimal.ZERO);
+                cancelRequest.setRefundMethod(paidVnpay ? "VNPAY" : null);
+
+                cancelRequestDAO.create(connection, cancelRequest);
+                notificationService.notifyCancelRequestedSafely(connection, orderId, user, reason);
+
+                connection.commit();
+
+                redirectWithMessage(
+                        request,
+                        response,
+                        "/orders/detail?id=" + orderId,
+                        "success",
+                        "Yêu cầu hủy đơn đã được gửi. ADMIN sẽ xác nhận và phản hồi cho bạn."
+                );
+            } catch (SQLException e) {
+                connection.rollback();
+                throw e;
+            }
+        } catch (SQLException e) {
+            throw new ServletException("CancelOrderServlet error", e);
         }
     }
 
@@ -80,7 +136,6 @@ public class CancelOrderServlet extends HttpServlet {
         if (raw == null || raw.isBlank()) {
             return defaultValue;
         }
-
         try {
             return Integer.parseInt(raw.trim());
         } catch (NumberFormatException e) {
@@ -92,7 +147,6 @@ public class CancelOrderServlet extends HttpServlet {
         if (reason == null || reason.trim().isEmpty()) {
             return null;
         }
-
         String value = reason.trim();
         return value.length() > 500 ? value.substring(0, 500) : value;
     }
