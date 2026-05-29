@@ -7,20 +7,22 @@ import java.util.List;
 
 import com.webshop.app.dao.ProductDAO;
 import com.webshop.app.dao.ProductImageDAO;
+import com.webshop.app.dao.ProductMediaDAO;
 import com.webshop.app.dao.ProductVariantDAO;
 import com.webshop.app.dao.ReviewDAO;
 import com.webshop.app.model.Product;
+import com.webshop.app.model.ProductMedia;
 import com.webshop.app.model.ProductVariant;
 import com.webshop.app.model.Review;
-import com.webshop.app.service.ProductPricingFacade;
 import com.webshop.app.model.User;
-import jakarta.servlet.http.HttpSession;
+import com.webshop.app.service.ProductPricingFacade;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 @WebServlet("/product/*")
 public class ProductDetailServlet extends HttpServlet {
@@ -29,6 +31,10 @@ public class ProductDetailServlet extends HttpServlet {
 
     private final ProductDAO productDAO = new ProductDAO();
     private final ProductImageDAO productImageDAO = new ProductImageDAO();
+
+    // Issue 123: DAO lấy media chi tiết sản phẩm gồm ảnh/video
+    private final ProductMediaDAO productMediaDAO = new ProductMediaDAO();
+
     private final ProductVariantDAO productVariantDAO = new ProductVariantDAO();
     private final ReviewDAO reviewDAO = new ReviewDAO();
     private final ProductPricingFacade pricingFacade = new ProductPricingFacade();
@@ -62,7 +68,17 @@ public class ProductDetailServlet extends HttpServlet {
             return;
         }
 
+        /*
+         * Gallery ảnh cũ của sản phẩm.
+         */
         product.setImages(productImageDAO.findByProductId(product.getId()));
+
+        /*
+         * Issue 123:
+         * Lấy danh sách media chi tiết sản phẩm gồm ảnh/video.
+         * JSP detail.jsp sẽ dùng productMediaList để hiển thị.
+         */
+        List<ProductMedia> productMediaList = productMediaDAO.findByProductId(product.getId());
 
         List<ProductVariant> variants =
                 productVariantDAO.findActiveByProductId(product.getId());
@@ -71,7 +87,12 @@ public class ProductDetailServlet extends HttpServlet {
         String reviewSort = req.getParameter("reviewSort");
         String reviewMedia = req.getParameter("reviewMedia");
 
-        List<Review> reviews = reviewDAO.findByProductId(product.getId(), reviewSort, reviewRating, reviewMedia);
+        List<Review> reviews = reviewDAO.findByProductId(
+                product.getId(),
+                reviewSort,
+                reviewRating,
+                reviewMedia
+        );
 
         int reviewCount = reviews != null ? reviews.size() : 0;
         product.setReviewCount(reviewCount);
@@ -92,6 +113,7 @@ public class ProductDetailServlet extends HttpServlet {
         product.setFinalPrice(pricingFacade.getFinalPrice(product));
 
         req.setAttribute("product", product);
+        req.setAttribute("productMediaList", productMediaList);
         req.setAttribute("reviews", reviews);
         req.setAttribute("variants", variants);
         req.setAttribute("reviewSort", reviewSort);
@@ -100,7 +122,10 @@ public class ProductDetailServlet extends HttpServlet {
 
         HttpSession session = req.getSession(false);
         User user = session == null ? null : (User) session.getAttribute("user");
-        boolean canReviewProduct = user != null && reviewDAO.canUserReviewProduct(user.getId(), product.getId());
+
+        boolean canReviewProduct =
+                user != null && reviewDAO.canUserReviewProduct(user.getId(), product.getId());
+
         req.setAttribute("canReviewProduct", canReviewProduct);
 
         req.setAttribute("pageTitle", "MyCosmetic | " + product.getTitle());
@@ -111,17 +136,17 @@ public class ProductDetailServlet extends HttpServlet {
                 .forward(req, resp);
     }
 
-
     private Integer parseNullableRating(String value) {
         try {
             if (value == null || value.isBlank()) {
                 return null;
             }
+
             int rating = Integer.parseInt(value.trim());
+
             return rating >= 1 && rating <= 5 ? rating : null;
         } catch (Exception e) {
             return null;
         }
     }
-
 }
