@@ -7,6 +7,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,6 +19,8 @@ public class CategoryDAO {
 
     private static final int MYSQL_FOREIGN_KEY_CONSTRAINT_ERROR = 1451;
     private static final int MYSQL_DUPLICATE_ENTRY_ERROR = 1062;
+
+    private final CategoryTagDAO categoryTagDAO = new CategoryTagDAO();
 
     /* =====================================================
        FRONTEND: CATEGORY TREE
@@ -38,6 +41,8 @@ public class CategoryDAO {
     public List<Category> findActiveTree() {
 
         Map<Integer, Integer> countMap = countActiveProductsByCategory();
+        Map<Integer, Integer> tagCountMap = categoryTagDAO.countActiveByCategory();
+
         List<Category> categories = new ArrayList<>();
 
         String sql = """
@@ -57,6 +62,7 @@ public class CategoryDAO {
 
                 category.setParentId(getNullableInteger(resultSet, "parent_id"));
                 category.setProductCount(countMap.getOrDefault(category.getId(), 0));
+                category.setTagCount(tagCountMap.getOrDefault(category.getId(), 0));
 
                 categories.add(category);
             }
@@ -73,6 +79,7 @@ public class CategoryDAO {
      */
     public List<Category> findActiveForMenu() {
 
+        Map<Integer, Integer> tagCountMap = categoryTagDAO.countActiveByCategory();
         List<Category> categories = new ArrayList<>();
 
         String sql = """
@@ -91,6 +98,7 @@ public class CategoryDAO {
                 Category category = mapCategory(resultSet);
 
                 category.setParentId(getNullableInteger(resultSet, "parent_id"));
+                category.setTagCount(tagCountMap.getOrDefault(category.getId(), 0));
 
                 categories.add(category);
             }
@@ -142,6 +150,8 @@ public class CategoryDAO {
     public List<Category> findAll() {
 
         Map<Integer, Integer> countMap = countActiveProductsByCategory();
+        Map<Integer, Integer> tagCountMap = categoryTagDAO.countActiveByCategory();
+
         List<Category> categories = new ArrayList<>();
 
         String sql = """
@@ -160,6 +170,7 @@ public class CategoryDAO {
 
                 category.setParentId(getNullableInteger(resultSet, "parent_id"));
                 category.setProductCount(countMap.getOrDefault(category.getId(), 0));
+                category.setTagCount(tagCountMap.getOrDefault(category.getId(), 0));
 
                 categories.add(category);
             }
@@ -202,6 +213,7 @@ public class CategoryDAO {
 
                 category.setParentId(getNullableInteger(resultSet, "parent_id"));
                 category.setProductCount(countActiveProductsByCategory().getOrDefault(category.getId(), 0));
+                category.setTags(categoryTagDAO.findAllByCategoryId(category.getId()));
 
                 return category;
             }
@@ -216,6 +228,7 @@ public class CategoryDAO {
      */
     public List<Category> findAllParents() {
 
+        Map<Integer, Integer> tagCountMap = categoryTagDAO.countActiveByCategory();
         List<Category> parents = new ArrayList<>();
 
         String sql = """
@@ -234,6 +247,7 @@ public class CategoryDAO {
                 Category category = mapCategory(resultSet);
 
                 category.setParentId(getNullableInteger(resultSet, "parent_id"));
+                category.setTagCount(tagCountMap.getOrDefault(category.getId(), 0));
 
                 parents.add(category);
             }
@@ -251,6 +265,8 @@ public class CategoryDAO {
     public List<Category> findChildrenByParentId(int parentId) {
 
         Map<Integer, Integer> countMap = countActiveProductsByCategory();
+        Map<Integer, Integer> tagCountMap = categoryTagDAO.countActiveByCategory();
+
         List<Category> children = new ArrayList<>();
 
         String sql = """
@@ -273,6 +289,7 @@ public class CategoryDAO {
 
                     child.setParentId(getNullableInteger(resultSet, "parent_id"));
                     child.setProductCount(countMap.getOrDefault(child.getId(), 0));
+                    child.setTagCount(tagCountMap.getOrDefault(child.getId(), 0));
 
                     children.add(child);
                 }
@@ -290,6 +307,14 @@ public class CategoryDAO {
     ===================================================== */
 
     public void create(Category category) {
+        createAndReturnId(category);
+    }
+
+    /**
+     * Tạo danh mục và trả về ID.
+     * Dùng cho AdminCategoryServlet khi cần tạo danh mục xong rồi lưu tag.
+     */
+    public int createAndReturnId(Category category) {
 
         validateCategoryBeforeSave(category, false);
 
@@ -312,7 +337,7 @@ public class CategoryDAO {
                 """;
 
         try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+             PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             statement.setString(1, name);
             statement.setString(2, slug);
@@ -321,13 +346,23 @@ public class CategoryDAO {
 
             statement.executeUpdate();
 
+            try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    int generatedId = generatedKeys.getInt(1);
+                    category.setId(generatedId);
+                    return generatedId;
+                }
+            }
+
+            return 0;
+
         } catch (SQLException e) {
 
             if (e.getErrorCode() == MYSQL_DUPLICATE_ENTRY_ERROR) {
                 throw new RuntimeException("Slug danh mục đã tồn tại. Vui lòng nhập slug khác.", e);
             }
 
-            throw new RuntimeException("CategoryDAO.create error", e);
+            throw new RuntimeException("CategoryDAO.createAndReturnId error", e);
         }
     }
 
