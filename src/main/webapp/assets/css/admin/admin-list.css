@@ -23,13 +23,67 @@
   line-height: 1.5;
 }
 
+.admin-empty__title {
+  color: var(--admin-text);
+  font-size: 14px;
+  font-weight: 900;
+  margin-bottom: 5px;
+}
+
+.admin-empty__text {
+  color: var(--admin-muted);
+  font-size: 13px;
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
 .admin-inline {
   display: inline;
 }
 
 /* =========================
+   Alert
+========================= */
+
+.admin-alert {
+  padding: 12px 14px;
+  border-radius: var(--admin-radius);
+  border: 1px solid var(--admin-border);
+  background: rgba(15, 23, 42, 0.03);
+  margin-bottom: 12px;
+  font-size: 13px;
+  line-height: 1.45;
+  font-weight: 750;
+}
+
+.admin-alert--danger {
+  border-color: rgba(220, 38, 38, 0.35);
+  background: rgba(220, 38, 38, 0.08);
+  color: #991b1b;
+}
+
+.admin-alert--success,
+.admin-alert--ok {
+  border-color: rgba(16, 185, 129, 0.35);
+  background: rgba(16, 185, 129, 0.08);
+  color: #065f46;
+}
+
+.admin-alert--warning {
+  border-color: rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.10);
+  color: #92400e;
+}
+
+/* =========================
    Table compact
 ========================= */
+
+.admin-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: var(--admin-radius);
+}
 
 .admin-table {
   width: 100%;
@@ -151,6 +205,13 @@
 
 .admin-muted {
   color: var(--admin-muted);
+}
+
+.admin-id {
+  color: var(--admin-muted);
+  font-size: 12px;
+  font-weight: 850;
+  white-space: nowrap;
 }
 
 /* =========================
@@ -346,6 +407,202 @@ td.product-actions {
 
 .badge-gray {
   background: #6b7280;
+}
+
+/* =========================================================
+   Category List With Tags
+   Scope: category_list.jsp
+========================================================= */
+
+.admin-category-container {
+  width: 100%;
+}
+
+.admin-category-card {
+  width: 100%;
+}
+
+.admin-category-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.admin-category-table {
+  width: 100%;
+  min-width: 980px;
+  table-layout: fixed;
+}
+
+.admin-category-table th,
+.admin-category-table td {
+  vertical-align: middle;
+}
+
+.admin-category-col-id {
+  width: 70px;
+}
+
+.admin-category-col-name {
+  width: 240px;
+}
+
+.admin-category-col-slug {
+  width: 190px;
+}
+
+.admin-category-col-tags {
+  width: 140px;
+}
+
+.admin-category-col-type {
+  width: 130px;
+}
+
+.admin-category-col-products {
+  width: 120px;
+}
+
+.admin-category-col-status {
+  width: 120px;
+}
+
+.admin-category-col-actions {
+  width: 150px;
+}
+
+.admin-category-id-cell {
+  white-space: nowrap;
+}
+
+.admin-category-name {
+  color: var(--admin-text);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.admin-category-name strong {
+  font-weight: 900;
+}
+
+.admin-category-name--child {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.admin-tree-symbol {
+  color: #be185d;
+  font-weight: 900;
+}
+
+.admin-category-subtext {
+  margin-top: 4px;
+  color: var(--admin-muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.admin-category-subtext strong {
+  color: var(--admin-text);
+  font-weight: 850;
+}
+
+.admin-category-slug {
+  display: inline-flex;
+  max-width: 100%;
+  padding: 4px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--admin-border);
+  background: rgba(15, 23, 42, 0.03);
+  color: rgba(15, 23, 42, 0.76);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.admin-category-tag-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px dashed var(--admin-border);
+  background: rgba(15, 23, 42, 0.025);
+  color: var(--admin-muted);
+  font-size: 12px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.admin-category-tag-count--active {
+  border-style: solid;
+  border-color: rgba(255, 95, 162, 0.35);
+  background: rgba(255, 95, 162, 0.10);
+  color: #be185d;
+}
+
+.admin-count-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(59, 130, 246, 0.24);
+  background: rgba(59, 130, 246, 0.08);
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.admin-pill--info {
+  border-color: rgba(168, 85, 247, 0.30);
+  background: rgba(168, 85, 247, 0.10);
+  color: #7e22ce;
+}
+
+.admin-pill--sub {
+  border-color: rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.10);
+  color: #92400e;
+}
+
+.admin-category-action-cell {
+  white-space: nowrap;
+}
+
+.admin-category-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.admin-category-actions form {
+  margin: 0;
+}
+
+.admin-category-actions .admin-inline {
+  display: block;
+  margin: 0;
+}
+
+.admin-category-action-btn {
+  min-width: 54px;
+  height: 34px;
+  padding: 0 10px;
+  justify-content: center;
+  border-radius: 11px;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.admin-category-row--child {
+  background: rgba(15, 23, 42, 0.012);
 }
 
 /* =========================================================
@@ -550,7 +807,6 @@ td.product-actions {
   white-space: nowrap;
 }
 
-/* Cột bảng đã thu gọn để không cắt cột thao tác */
 .admin-promo-col-id {
   width: 52px;
 }
@@ -812,6 +1068,10 @@ td.product-actions {
     min-width: 1320px;
   }
 
+  .admin-category-table {
+    min-width: 980px;
+  }
+
   .admin-card__body {
     overflow-x: auto;
   }
@@ -867,6 +1127,10 @@ td.product-actions {
   .admin-promo-tab {
     width: 100%;
   }
+
+  .admin-category-table {
+    min-width: 980px;
+  }
 }
 
 @media (max-width: 640px) {
@@ -883,15 +1147,17 @@ td.product-actions {
   .admin-actions,
   .admin-action-group,
   .product-actions-inner,
-  .admin-promo-actions {
+  .admin-promo-actions,
+  .admin-category-actions {
     gap: 6px;
   }
 
   .admin-actions .admin-btn,
   .admin-action-group .admin-btn,
   .product-actions-inner .admin-btn,
-  .admin-promo-action-btn {
-    padding: 0;
+  .admin-promo-action-btn,
+  .admin-category-action-btn {
+    padding: 0 8px;
     font-size: 12px;
   }
 }
