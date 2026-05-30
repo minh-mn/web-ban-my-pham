@@ -6,6 +6,12 @@
 <c:set var="activeMenu" value="dashboard" scope="request"/>
 <c:set var="pageCss" value="/assets/css/admin/admin-center.css" scope="request"/>
 
+<c:set var="inventoryAlertCount" value="${outOfStockCount + lowStockCount}" />
+<c:set var="inventoryNormalCount" value="${productCount - outOfStockCount - lowStockCount}" />
+<c:if test="${inventoryNormalCount < 0}">
+  <c:set var="inventoryNormalCount" value="0" />
+</c:if>
+
 <jsp:include page="/jsp/admin/layout/header.jsp"/>
 <jsp:include page="/jsp/admin/layout/sidebar.jsp"/>
 
@@ -194,11 +200,70 @@
           <div class="admin-h1">
             <c:out value="${lowStockCount}"/>
           </div>
-          <div class="admin-subtext">Tồn kho còn từ 1 đến 10 sản phẩm.</div>
+          <div class="admin-subtext">Tồn kho còn từ 1 đến 9 sản phẩm (&lt; 10).</div>
         </div>
       </div>
 
     </div>
+
+    <!-- INVENTORY DASHBOARD SUMMARY -->
+    <div class="admin-card" style="margin-top:16px;">
+      <div class="admin-card__body">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:14px;">
+          <div>
+            <h2 style="margin:0; font-size:18px;">Dashboard thống kê tồn kho</h2>
+            <p class="admin-subtext" style="margin:4px 0 0;">
+              Theo dõi nhanh tình trạng tồn kho và chuyển sang trang quản lý tồn kho để xem số lượng xuất theo ngày, tuần, tháng, năm.
+            </p>
+          </div>
+
+          <a class="admin-btn"
+             href="${pageContext.request.contextPath}/admin/inventory"
+             style="white-space:nowrap; text-decoration:none;">
+            Mở quản lý tồn kho
+          </a>
+        </div>
+
+        <div class="admin-grid" style="grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px;">
+          <div style="padding:14px; border:1px solid #eef0f4; border-radius:16px; background:#f9fafb;">
+            <div class="admin-muted" style="font-weight:800; font-size:12px;">Tổng sản phẩm active</div>
+            <div class="admin-h1" style="margin-top:6px;">
+              <c:out value="${productCount}"/>
+            </div>
+            <div class="admin-subtext">Sản phẩm đang kinh doanh.</div>
+          </div>
+
+          <div style="padding:14px; border:1px solid #dcfce7; border-radius:16px; background:#f0fdf4;">
+            <div class="admin-muted" style="font-weight:800; font-size:12px;">Tồn kho ổn định</div>
+            <div class="admin-h1" style="margin-top:6px; color:#047857;">
+              <c:out value="${inventoryNormalCount}"/>
+            </div>
+            <div class="admin-subtext">Sản phẩm có tồn kho từ 10 trở lên.</div>
+          </div>
+
+          <div style="padding:14px; border:1px solid #fef3c7; border-radius:16px; background:#fffbeb;">
+            <div class="admin-muted" style="font-weight:800; font-size:12px;">Sắp hết hàng</div>
+            <div class="admin-h1" style="margin-top:6px; color:#b45309;">
+              <c:out value="${lowStockCount}"/>
+            </div>
+            <div class="admin-subtext">Tồn kho còn từ 1 đến 9 sản phẩm.</div>
+          </div>
+
+          <div style="padding:14px; border:1px solid #fee2e2; border-radius:16px; background:#fef2f2;">
+            <div class="admin-muted" style="font-weight:800; font-size:12px;">Cần xử lý</div>
+            <div class="admin-h1" style="margin-top:6px; color:#b91c1c;">
+              <c:out value="${inventoryAlertCount}"/>
+            </div>
+            <div class="admin-subtext">Tổng sản phẩm sắp hết và hết hàng.</div>
+          </div>
+        </div>
+
+        <div class="admin-subtext" style="margin-top:12px;">
+          Gợi ý: vào trang <strong>Quản lý tồn kho</strong> để nhập thêm hàng, xem lịch sử nhập/xuất kho và thống kê số lượng xuất rõ ràng theo ngày, tuần, tháng, năm.
+        </div>
+      </div>
+    </div>
+
 
     <!-- CHARTS -->
     <div class="admin-grid" style="grid-template-columns: 2fr 1fr; gap: 16px; margin-top: 16px;">
