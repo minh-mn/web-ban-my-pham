@@ -25,6 +25,18 @@ public class Category {
 	private int tagCount;
 
 	/*
+	 * Used by homepage hot category UI.
+	 * This value is usually the representative image of an active product
+	 * inside the category, so the homepage can render circle category thumbnails.
+	 */
+	private String hotImageUrl;
+
+	/*
+	 * Optional short label for homepage/category highlight badges.
+	 */
+	private String highlightLabel;
+
+	/*
 	 * Used to display hierarchical categories:
 	 * parent category -> child categories.
 	 */
@@ -132,6 +144,30 @@ public class Category {
 
 	public void setTagCount(int tagCount) {
 		this.tagCount = Math.max(tagCount, 0);
+	}
+
+
+	/**
+	 * JSP: ${category.hotImageUrl}
+	 */
+	public String getHotImageUrl() {
+		return hotImageUrl;
+	}
+
+	public void setHotImageUrl(String hotImageUrl) {
+		this.hotImageUrl = hotImageUrl == null ? null : hotImageUrl.trim();
+	}
+
+
+	/**
+	 * JSP: ${category.highlightLabel}
+	 */
+	public String getHighlightLabel() {
+		return highlightLabel;
+	}
+
+	public void setHighlightLabel(String highlightLabel) {
+		this.highlightLabel = highlightLabel == null ? null : highlightLabel.trim();
 	}
 
 

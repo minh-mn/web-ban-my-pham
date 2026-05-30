@@ -31,6 +31,10 @@ public class Product {
 	private Double avgRating;
 	private int reviewCount;
 
+	// ===== HOME / STATISTIC FIELDS =====
+	private int soldQuantity;
+	private int viewCount;
+
 	// ===== RELATION =====
 	private Category category;
 	private Brand brand;
@@ -267,6 +271,43 @@ public class Product {
 		this.reviewCount = Math.max(reviewCount, 0);
 	}
 
+
+
+	// ===== HOME / STATISTIC FIELDS =====
+
+	/**
+	 * JSP gọi: ${product.soldQuantity}
+	 */
+	public int getSoldQuantity() {
+		return soldQuantity;
+	}
+
+	public void setSoldQuantity(int soldQuantity) {
+		this.soldQuantity = Math.max(soldQuantity, 0);
+	}
+
+	/**
+	 * Alias nếu JSP hoặc DAO gọi soldCount.
+	 */
+	public int getSoldCount() {
+		return getSoldQuantity();
+	}
+
+	public void setSoldCount(int soldCount) {
+		setSoldQuantity(soldCount);
+	}
+
+	/**
+	 * JSP gọi: ${product.viewCount}
+	 */
+	public int getViewCount() {
+		return viewCount;
+	}
+
+	public void setViewCount(int viewCount) {
+		this.viewCount = Math.max(viewCount, 0);
+	}
+
 	// ===== RELATION OBJECTS =====
 
 	public Category getCategory() {
@@ -360,6 +401,42 @@ public class Product {
 
 	public boolean getLowStock() {
 		return isLowStock();
+	}
+
+
+	/**
+	 * JSP helper for homepage deal progress bar.
+	 * It is calculated from sold quantity, stock and discount percent so the
+	 * homepage can show a stable "ĐANG DIỄN RA" bar even when the project does
+	 * not have a dedicated flash-sale progress table.
+	 */
+	public int getSaleProgressPercent() {
+		int base = 35;
+
+		if (soldQuantity > 0 || stock > 0) {
+			int total = soldQuantity + stock;
+			if (total > 0) {
+				base = (int) Math.round((soldQuantity * 100.0) / total);
+			}
+		}
+
+		if (discountPercent >= 30) {
+			base += 18;
+		} else if (discountPercent >= 20) {
+			base += 12;
+		} else if (discountPercent >= 10) {
+			base += 8;
+		}
+
+		if (viewCount > 100) {
+			base += 8;
+		}
+
+		return Math.max(18, Math.min(base, 95));
+	}
+
+	public boolean getHasSaleProgress() {
+		return getSaleProgressPercent() > 0;
 	}
 
 	public BigDecimal getEffectivePrice() {
