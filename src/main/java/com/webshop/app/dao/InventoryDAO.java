@@ -34,7 +34,7 @@ public class InventoryDAO {
                 SELECT
                     COUNT(*) AS product_count,
                     COALESCE(SUM(stock), 0) AS total_stock,
-                    COALESCE(SUM(CASE WHEN stock = 0 THEN 1 ELSE 0 END), 0) AS out_of_stock_count,
+                    COALESCE(SUM(CASE WHEN stock <= 0 THEN 1 ELSE 0 END), 0) AS out_of_stock_count,
                     COALESCE(SUM(CASE WHEN stock > 0 AND stock < ? THEN 1 ELSE 0 END), 0) AS low_stock_count,
                     COALESCE(SUM(CASE WHEN stock >= ? THEN 1 ELSE 0 END), 0) AS normal_stock_count
                 FROM store_product
@@ -97,11 +97,11 @@ public class InventoryDAO {
         List<Object> params = new ArrayList<>();
 
         String safeKeyword = keyword == null ? "" : keyword.trim();
+
         if (!safeKeyword.isEmpty()) {
             sql.append("""
                     AND (
                         LOWER(p.title) LIKE ?
-                        OR LOWER(p.name) LIKE ?
                         OR LOWER(p.slug) LIKE ?
                         OR LOWER(COALESCE(c.name, '')) LIKE ?
                         OR LOWER(COALESCE(b.name, '')) LIKE ?
@@ -113,13 +113,12 @@ public class InventoryDAO {
             params.add(pattern);
             params.add(pattern);
             params.add(pattern);
-            params.add(pattern);
         }
 
         String normalizedStatus = status == null ? "" : status.trim().toLowerCase();
 
         switch (normalizedStatus) {
-            case "out" -> sql.append("AND p.stock = 0\n");
+            case "out" -> sql.append("AND p.stock <= 0\n");
 
             case "low" -> {
                 sql.append("AND p.stock > 0 AND p.stock < ?\n");
@@ -140,7 +139,7 @@ public class InventoryDAO {
                 GROUP BY p.id, p.title, c.name, b.name, p.stock, p.price
                 ORDER BY
                     CASE
-                        WHEN p.stock = 0 THEN 0
+                        WHEN p.stock <= 0 THEN 0
                         WHEN p.stock > 0 AND p.stock < ? THEN 1
                         ELSE 2
                     END,
@@ -230,17 +229,7 @@ public class InventoryDAO {
                 int beforeStock = lockCurrentProductStock(conn, productId);
                 int afterStock = beforeStock + quantity;
 
-                String updateSql = """
-                        UPDATE store_product
-                        SET stock = ?
-                        WHERE id = ?
-                        """;
-
-                try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
-                    ps.setInt(1, afterStock);
-                    ps.setInt(2, productId);
-                    ps.executeUpdate();
-                }
+                updateProductStock(conn, productId, afterStock);
 
                 insertMovement(
                         conn,
@@ -270,6 +259,180 @@ public class InventoryDAO {
 
         } catch (Exception e) {
             throw new RuntimeException("InventoryDAO.addStock error", e);
+        }
+    }
+
+    /**
+     * Dùng cho issue 127:
+     * Lấy danh sách sản phẩm đã tích chọn kèm số lượng cần nhập để xuất ra Excel.
+     */
+    public List<RestockProductRow> findProductsForRestockExcel(List<RestockRequestRow> requestRows) {
+        List<RestockProductRow> result = new ArrayList<>();
+
+        if (requestRows == null || requestRows.isEmpty()) {
+            return result;
+        }
+
+        try (Connection conn = DBConnection.getConnection()) {
+            for (RestockRequestRow requestRow : requestRows) {
+                if (requestRow == null || requestRow.productId() <= 0 || requestRow.quantity() <= 0) {
+                    continue;
+                }
+
+                RestockProductRow row = findRestockProductRow(
+                        conn,
+                        requestRow.productId(),
+                        requestRow.quantity(),
+                        requestRow.note()
+                );
+
+                if (row != null) {
+                    result.add(row);
+                }
+            }
+
+            return result;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("InventoryDAO.findProductsForRestockExcel error", e);
+        }
+    }
+
+    /**
+     * Dùng cho issue 127:
+     * Cộng tồn kho hàng loạt sau khi đọc dữ liệu từ file Excel.
+     */
+    public List<RestockImportResultRow> importRestockRows(
+            List<RestockImportRow> importRows,
+            Integer adminUserId
+    ) {
+        List<RestockImportResultRow> resultRows = new ArrayList<>();
+
+        if (importRows == null || importRows.isEmpty()) {
+            resultRows.add(RestockImportResultRow.error(
+                    0,
+                    "",
+                    null,
+                    0,
+                    null,
+                    "Lỗi: Không có dữ liệu nhập kho."
+            ));
+            return resultRows;
+        }
+
+        try (Connection conn = DBConnection.getConnection()) {
+            conn.setAutoCommit(false);
+
+            try {
+                for (int i = 0; i < importRows.size(); i++) {
+                    RestockImportRow row = importRows.get(i);
+                    int displayRow = i + 2;
+
+                    if (row == null) {
+                        resultRows.add(RestockImportResultRow.error(
+                                0,
+                                "",
+                                null,
+                                0,
+                                null,
+                                "Lỗi dòng " + displayRow + ": Dữ liệu trống."
+                        ));
+                        continue;
+                    }
+
+                    int productId = row.productId();
+                    int quantity = row.quantity();
+
+                    if (productId <= 0) {
+                        resultRows.add(RestockImportResultRow.error(
+                                productId,
+                                "",
+                                null,
+                                quantity,
+                                null,
+                                "Lỗi dòng " + displayRow + ": Mã sản phẩm không hợp lệ."
+                        ));
+                        continue;
+                    }
+
+                    ProductStockSnapshot product = findProductForUpdate(conn, productId);
+
+                    if (product == null) {
+                        resultRows.add(RestockImportResultRow.error(
+                                productId,
+                                "",
+                                null,
+                                quantity,
+                                null,
+                                "Lỗi dòng " + displayRow + ": Không tìm thấy sản phẩm."
+                        ));
+                        continue;
+                    }
+
+                    if (quantity <= 0) {
+                        resultRows.add(RestockImportResultRow.error(
+                                productId,
+                                product.title(),
+                                product.stock(),
+                                quantity,
+                                product.stock(),
+                                "Lỗi dòng " + displayRow + ": Số lượng nhập phải lớn hơn 0."
+                        ));
+                        continue;
+                    }
+
+                    int beforeStock = product.stock();
+                    int afterStock = beforeStock + quantity;
+
+                    updateProductStock(conn, productId, afterStock);
+
+                    insertMovement(
+                            conn,
+                            productId,
+                            "IN",
+                            quantity,
+                            beforeStock,
+                            afterStock,
+                            "EXCEL_IMPORT",
+                            null,
+                            normalizeNote(row.note(), "Nhập kho từ file Excel"),
+                            adminUserId
+                    );
+
+                    resultRows.add(RestockImportResultRow.success(
+                            productId,
+                            product.title(),
+                            beforeStock,
+                            quantity,
+                            afterStock
+                    ));
+                }
+
+                conn.commit();
+
+            } catch (Exception e) {
+                conn.rollback();
+                throw e;
+
+            } finally {
+                conn.setAutoCommit(true);
+            }
+
+            if (resultRows.isEmpty()) {
+                resultRows.add(RestockImportResultRow.error(
+                        0,
+                        "",
+                        null,
+                        0,
+                        null,
+                        "Lỗi: File Excel không có dòng dữ liệu hợp lệ."
+                ));
+            }
+
+            return resultRows;
+
+        } catch (Exception e) {
+            throw new RuntimeException("InventoryDAO.importRestockRows error", e);
         }
     }
 
@@ -458,6 +621,87 @@ public class InventoryDAO {
         }
     }
 
+    private RestockProductRow findRestockProductRow(
+            Connection conn,
+            int productId,
+            int quantity,
+            String note
+    ) throws SQLException {
+
+        String sql = """
+                SELECT
+                    p.id,
+                    p.title,
+                    COALESCE(c.name, 'Chưa phân loại') AS category_name,
+                    COALESCE(b.name, 'Chưa có thương hiệu') AS brand_name,
+                    p.stock
+                FROM store_product p
+                LEFT JOIN store_category c ON c.id = p.category_id
+                LEFT JOIN store_brand b ON b.id = p.brand_id
+                WHERE p.id = ?
+                LIMIT 1
+                """;
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, productId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    return null;
+                }
+
+                return new RestockProductRow(
+                        rs.getInt("id"),
+                        rs.getString("title"),
+                        rs.getString("category_name"),
+                        rs.getString("brand_name"),
+                        rs.getInt("stock"),
+                        quantity,
+                        normalizeNote(note, "")
+                );
+            }
+        }
+    }
+
+    private ProductStockSnapshot findProductForUpdate(Connection conn, int productId) throws SQLException {
+        String sql = """
+                SELECT id, title, stock
+                FROM store_product
+                WHERE id = ?
+                FOR UPDATE
+                """;
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, productId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    return null;
+                }
+
+                return new ProductStockSnapshot(
+                        rs.getInt("id"),
+                        rs.getString("title"),
+                        rs.getInt("stock")
+                );
+            }
+        }
+    }
+
+    private void updateProductStock(Connection conn, int productId, int afterStock) throws SQLException {
+        String sql = """
+                UPDATE store_product
+                SET stock = ?
+                WHERE id = ?
+                """;
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, Math.max(afterStock, 0));
+            ps.setInt(2, productId);
+            ps.executeUpdate();
+        }
+    }
+
     private void insertMovement(
             Connection conn,
             int productId,
@@ -541,7 +785,7 @@ public class InventoryDAO {
     }
 
     private void setNullableInteger(PreparedStatement ps, int index, Integer value) throws SQLException {
-        if (value == null || value <= 0) {
+        if (value == null) {
             ps.setNull(index, Types.INTEGER);
         } else {
             ps.setInt(index, value);
@@ -578,5 +822,82 @@ public class InventoryDAO {
         WEEK,
         MONTH,
         YEAR
+    }
+
+    public record RestockRequestRow(
+            int productId,
+            int quantity,
+            String note
+    ) {
+    }
+
+    public record RestockProductRow(
+            int productId,
+            String title,
+            String categoryName,
+            String brandName,
+            int currentStock,
+            int quantity,
+            String note
+    ) {
+    }
+
+    public record RestockImportRow(
+            int productId,
+            int quantity,
+            String note
+    ) {
+    }
+
+    public record RestockImportResultRow(
+            int productId,
+            String title,
+            Integer beforeStock,
+            int quantity,
+            Integer afterStock,
+            String status
+    ) {
+
+        public static RestockImportResultRow success(
+                int productId,
+                String title,
+                int beforeStock,
+                int quantity,
+                int afterStock
+        ) {
+            return new RestockImportResultRow(
+                    productId,
+                    title,
+                    beforeStock,
+                    quantity,
+                    afterStock,
+                    "Thành công"
+            );
+        }
+
+        public static RestockImportResultRow error(
+                int productId,
+                String title,
+                Integer beforeStock,
+                int quantity,
+                Integer afterStock,
+                String status
+        ) {
+            return new RestockImportResultRow(
+                    productId,
+                    title,
+                    beforeStock,
+                    Math.max(quantity, 0),
+                    afterStock,
+                    status
+            );
+        }
+    }
+
+    private record ProductStockSnapshot(
+            int productId,
+            String title,
+            int stock
+    ) {
     }
 }
