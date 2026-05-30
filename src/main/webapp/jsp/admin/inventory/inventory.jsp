@@ -173,11 +173,87 @@
             </section>
         </div>
 
-        <section class="admin-card inventory-panel">
+        <section class="admin-card inventory-panel inventory-mt-20">
+            <div class="inventory-panel-header">
+                <div>
+                    <h2>Nhập hàng bằng Excel</h2>
+                    <span>
+                        Tích chọn sản phẩm ở bảng bên dưới, nhập số lượng cần nhập rồi xuất file Excel.
+                        Sau khi nhập hàng thực tế, upload lại file Excel để hệ thống cộng tồn kho.
+                    </span>
+                </div>
+            </div>
+
+            <div class="inventory-panel-body">
+                <div class="inventory-excel-grid">
+
+                    <div class="inventory-excel-box">
+                        <div class="inventory-excel-title">1. Xuất danh sách nhập hàng</div>
+                        <div class="inventory-excel-desc">
+                            Chọn sản phẩm trong bảng tồn kho, nhập số lượng cần nhập và ghi chú.
+                            Sau đó bấm nút bên dưới để tải file Excel về máy.
+                        </div>
+
+                        <form id="restockExportForm"
+                              method="post"
+                              action="${pageContext.request.contextPath}/admin/inventory">
+                            <input type="hidden" name="action" value="exportRestockExcel">
+                            <input type="hidden" name="csrf_token" value="${csrfValue}">
+                            <input type="hidden" name="csrfToken" value="${csrfValue}">
+
+                            <button class="admin-btn admin-btn--primary" type="submit">
+                                Xuất file Excel nhập hàng
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="inventory-excel-box">
+                        <div class="inventory-excel-title">2. Nhập kho từ file Excel</div>
+                        <div class="inventory-excel-desc">
+                            Upload file Excel đã cập nhật số lượng nhập thực tế.
+                            Sau khi xử lý, hệ thống sẽ tự tải về file kết quả nhập kho.
+                        </div>
+
+                        <form class="inventory-import-excel-form"
+                              method="post"
+                              enctype="multipart/form-data"
+                              action="${pageContext.request.contextPath}/admin/inventory">
+                            <input type="hidden" name="action" value="importRestockExcel">
+                            <input type="hidden" name="csrf_token" value="${csrfValue}">
+                            <input type="hidden" name="csrfToken" value="${csrfValue}">
+
+                            <input class="admin-input"
+                                   type="file"
+                                   name="restockFile"
+                                   accept=".xlsx"
+                                   required>
+
+                            <button class="admin-btn admin-btn--ok" type="submit">
+                                Nhập kho từ Excel
+                            </button>
+                        </form>
+                    </div>
+
+                </div>
+
+                <div class="admin-empty inventory-excel-note">
+                    <strong>Lưu ý:</strong>
+                    File Excel cần giữ đúng các cột:
+                    Mã SP, Tên sản phẩm, Danh mục, Thương hiệu, Tồn hiện tại,
+                    Số lượng cần nhập, Ghi chú. Hệ thống sẽ đọc cột
+                    <strong>Mã SP</strong> và <strong>Số lượng cần nhập</strong>
+                    để cộng tồn kho.
+                </div>
+            </div>
+        </section>
+
+        <section class="admin-card inventory-panel inventory-mt-20">
             <div class="inventory-panel-header">
                 <div>
                     <h2>Danh sách tồn kho sản phẩm</h2>
-                    <span>Quản lý số lượng tồn và nhập thêm hàng</span>
+                    <span>
+                        Quản lý số lượng tồn, nhập thủ công hoặc chọn sản phẩm để xuất file Excel nhập hàng.
+                    </span>
                 </div>
 
                 <form class="inventory-filter" method="get" action="${pageContext.request.contextPath}/admin/inventory">
@@ -207,6 +283,7 @@
                 <table class="admin-table inventory-table">
                     <thead>
                     <tr>
+                        <th>Chọn Excel</th>
                         <th>Sản phẩm</th>
                         <th>Giá bán</th>
                         <th>Tồn kho</th>
@@ -215,7 +292,9 @@
                         <th>Xuất tuần</th>
                         <th>Xuất tháng</th>
                         <th>Xuất năm</th>
-                        <th>Nhập thêm</th>
+                        <th>SL cần nhập</th>
+                        <th>Ghi chú Excel</th>
+                        <th>Nhập thủ công</th>
                     </tr>
                     </thead>
 
@@ -224,6 +303,17 @@
                         <c:when test="${not empty products}">
                             <c:forEach var="product" items="${products}">
                                 <tr>
+                                    <td class="inventory-select-cell">
+                                        <label class="inventory-check-label">
+                                            <input
+                                                    type="checkbox"
+                                                    name="selectedProductIds"
+                                                    value="${product.id}"
+                                                    form="restockExportForm">
+                                            <span>Chọn</span>
+                                        </label>
+                                    </td>
+
                                     <td>
                                         <div class="product-name">
                                             <c:out value="${product.displayTitle}"/>
@@ -268,6 +358,25 @@
                                     </td>
 
                                     <td>
+                                        <input class="admin-input inventory-excel-qty-input"
+                                               type="number"
+                                               name="importQuantities_${product.id}"
+                                               form="restockExportForm"
+                                               min="1"
+                                               step="1"
+                                               placeholder="SL">
+                                    </td>
+
+                                    <td>
+                                        <input class="admin-input inventory-excel-note-input"
+                                               type="text"
+                                               name="importNotes_${product.id}"
+                                               form="restockExportForm"
+                                               maxlength="255"
+                                               placeholder="Ghi chú">
+                                    </td>
+
+                                    <td>
                                         <form class="inventory-add-stock-form"
                                               method="post"
                                               action="${pageContext.request.contextPath}/admin/inventory">
@@ -301,7 +410,7 @@
 
                         <c:otherwise>
                             <tr>
-                                <td colspan="9">
+                                <td colspan="12">
                                     <div class="admin-empty inventory-empty">
                                         Không tìm thấy sản phẩm phù hợp với bộ lọc hiện tại.
                                     </div>
