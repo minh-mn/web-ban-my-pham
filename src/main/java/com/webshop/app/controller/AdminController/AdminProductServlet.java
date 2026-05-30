@@ -243,7 +243,24 @@ public class AdminProductServlet extends HttpServlet {
 					 * Update SQL trước.
 					 * Nếu update lỗi, ảnh mới sẽ rollback, ảnh cũ không bị xóa.
 					 */
-					productDAO.update(product);
+					boolean isUpdated = productDAO.update(product);
+
+					// =========================================================================
+					// "BẪY" GỬI THÔNG BÁO GIẢM GIÁ (Thêm mới)
+					// =========================================================================
+					if (isUpdated) {
+						// Kiểm tra điều kiện giảm giá (Thay getDiscountPercent() bằng getter thực tế của bạn)
+						if (product.getDiscountPercent() > 0) {
+
+							// Dùng Thread để chạy ngầm, không làm treo màn hình Admin
+							final int pId = product.getId();
+							final String pName = product.getTitle();
+
+							new Thread(() -> {
+								notificationDAO.sendWishlistDiscountNotification(pId, pName);
+							}).start();
+						}
+					}
 
 					/*
 					 * Nếu đổi ảnh đại diện mới và SQL update thành công,
