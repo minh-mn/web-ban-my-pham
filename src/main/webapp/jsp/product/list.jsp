@@ -4,6 +4,7 @@
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
 <c:set var="ctx" value="${pageContext.request.contextPath}" />
+<script src="${pageContext.request.contextPath}/assets/js/main.js"></script>
 
 <link rel="stylesheet" href="${ctx}/assets/css/base.css">
 <link rel="stylesheet" href="${ctx}/assets/css/product-list.css">
@@ -103,7 +104,6 @@
                        value="${categoryTagsByCategoryId[product.category.id]}" />
 
                 <div class="product-card">
-
                   <!-- SALE BADGE -->
                   <c:if test="${product.finalPrice lt product.price}">
                     <div class="badge-sale">
@@ -222,6 +222,17 @@
                   <a href="${ctx}/product/${product.slug}" class="btn-outline">
                     Xem chi tiết
                   </a>
+
+                  <form method="post" action="${ctx}/wishlist/toggle" class="wishlist-form" style="margin: 0; display: flex;">
+                    <input type="hidden" name="productId" value="${product.id}" />
+
+                    <c:set var="inWishlist" value="${wishlistIds != null && wishlistIds.contains(product.id)}" />
+
+                    <button type="submit" class="wishlist-btn ${inWishlist ? 'active' : ''}" title="Thêm vào yêu thích"
+                            style="background: #ffffff; width: 44px; border-radius: 8px; border: 1px solid var(--pink-main, #ff5fa2); font-size: 20px; cursor: pointer; color: ${inWishlist ? 'red' : '#ccc'}; transition: all 0.2s; display: flex; align-items: center; justify-content: center; padding: 0; flex-shrink: 0;">
+                      ❤
+                    </button>
+                  </form>
 
                 </div>
               </c:forEach>
@@ -400,3 +411,50 @@
     </div>
   </div>
 </section>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const wishlistForms = document.querySelectorAll(".wishlist-form");
+
+    wishlistForms.forEach(form => {
+      form.addEventListener("submit", function(e) {
+        e.preventDefault(); // Ngăn form tải lại trang
+
+        const btn = this.querySelector(".wishlist-btn");
+        const formData = new URLSearchParams(new FormData(this));
+
+        // Gửi request bằng AJAX
+        fetch(this.action, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+          },
+          body: formData
+        })
+                .then(response => {
+                  // Bắt lỗi 401 từ WishlistToggleServlet
+                  if (response.status === 401) {
+                    showLoginModal();
+                    throw new Error("LOGIN_REQUIRED");
+                  }
+                  return response.text();
+                })
+                .then(data => {
+                  // Cập nhật giao diện nút tim dựa trên phản hồi
+                  if (data === "ADDED") {
+                    btn.style.color = "red";
+                    btn.classList.add("active");
+                  } else if (data === "REMOVED") {
+                    btn.style.color = "#ccc";
+                    btn.classList.remove("active");
+                  }
+                })
+                .catch(error => {
+                  if(error.message !== "LOGIN_REQUIRED"){
+                    console.error("Lỗi khi thêm vào wishlist:", error);
+                  }
+                });
+      });
+    });
+  });
+</script>
