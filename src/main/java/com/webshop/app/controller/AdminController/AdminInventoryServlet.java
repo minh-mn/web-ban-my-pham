@@ -12,6 +12,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -72,6 +73,19 @@ public class AdminInventoryServlet extends HttpServlet {
         String keyword = req.getParameter("keyword");
         String status = req.getParameter("status");
 
+        LocalDate today = LocalDate.now();
+        int selectedImportMonth = parseInt(req.getParameter("importMonth"), today.getMonthValue());
+        int selectedImportYear = parseInt(req.getParameter("importYear"), today.getYear());
+        String importKeyword = req.getParameter("importKeyword");
+
+        if (selectedImportMonth < 1 || selectedImportMonth > 12) {
+            selectedImportMonth = today.getMonthValue();
+        }
+
+        if (selectedImportYear < 2000) {
+            selectedImportYear = today.getYear();
+        }
+
         req.setAttribute("keyword", keyword);
         req.setAttribute("status", status);
 
@@ -84,6 +98,33 @@ public class AdminInventoryServlet extends HttpServlet {
                 toJsonStringArray(inventoryDAO.last7DaysExportLabels()));
         req.setAttribute("last7DaysExportValuesJson",
                 toJsonNumberArray(inventoryDAO.last7DaysExportValues()));
+
+        /*
+         * ISSUE 128 - Lịch sử nhập hàng
+         * Các method này sẽ được bổ sung trong InventoryDAO ở bước tiếp theo:
+         * - getImportSummary(month, year)
+         * - findImportHistory(month, year, keyword)
+         * - monthlyImportStatLabels(year)
+         * - monthlyImportStatValues(year)
+         * - importYearOptions()
+         */
+        req.setAttribute("selectedImportMonth", selectedImportMonth);
+        req.setAttribute("selectedImportYear", selectedImportYear);
+        req.setAttribute("importKeyword", importKeyword);
+
+        req.setAttribute("importSummary",
+                inventoryDAO.getImportSummary(selectedImportMonth, selectedImportYear));
+
+        req.setAttribute("importHistory",
+                inventoryDAO.findImportHistory(selectedImportMonth, selectedImportYear, importKeyword));
+
+        req.setAttribute("importYearOptions", inventoryDAO.importYearOptions());
+
+        req.setAttribute("importMonthStatsLabelsJson",
+                toJsonStringArray(inventoryDAO.monthlyImportStatLabels(selectedImportYear)));
+
+        req.setAttribute("importMonthStatsValuesJson",
+                toJsonNumberArray(inventoryDAO.monthlyImportStatValues(selectedImportYear)));
 
         req.getRequestDispatcher(JSP_INVENTORY).forward(req, resp);
     }
