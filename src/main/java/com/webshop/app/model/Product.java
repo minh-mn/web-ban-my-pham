@@ -7,6 +7,8 @@ import java.util.List;
 
 public class Product {
 
+	public static final int LOW_STOCK_THRESHOLD = 10;
+
 	// ===== CORE FIELDS =====
 	private int id;
 	private String title;
@@ -54,7 +56,7 @@ public class Product {
 	}
 
 	public void setId(int id) {
-		this.id = id;
+		this.id = Math.max(id, 0);
 	}
 
 	public String getTitle() {
@@ -271,8 +273,6 @@ public class Product {
 		this.reviewCount = Math.max(reviewCount, 0);
 	}
 
-
-
 	// ===== HOME / STATISTIC FIELDS =====
 
 	/**
@@ -396,13 +396,76 @@ public class Product {
 	}
 
 	public boolean isLowStock() {
-		return stock > 0 && stock <= 5;
+		return stock > 0 && stock < LOW_STOCK_THRESHOLD;
 	}
 
 	public boolean getLowStock() {
 		return isLowStock();
 	}
 
+	public boolean isNormalStock() {
+		return stock >= LOW_STOCK_THRESHOLD;
+	}
+
+	public boolean getNormalStock() {
+		return isNormalStock();
+	}
+
+	public boolean isAvailable() {
+		return active && stock > 0;
+	}
+
+	public boolean getAvailable() {
+		return isAvailable();
+	}
+
+	public String getStockStatus() {
+		if (isOutOfStock()) {
+			return "out";
+		}
+
+		if (isLowStock()) {
+			return "low";
+		}
+
+		return "normal";
+	}
+
+	public String getStockStatusLabel() {
+		if (isOutOfStock()) {
+			return "Hết hàng";
+		}
+
+		if (isLowStock()) {
+			return "Sắp hết hàng";
+		}
+
+		return "Còn hàng";
+	}
+
+	public String getStockStatusClass() {
+		if (isOutOfStock()) {
+			return "stock-out";
+		}
+
+		if (isLowStock()) {
+			return "stock-low";
+		}
+
+		return "stock-normal";
+	}
+
+	public String getStockWarningMessage() {
+		if (isOutOfStock()) {
+			return "Sản phẩm đã hết hàng, cần nhập thêm.";
+		}
+
+		if (isLowStock()) {
+			return "Sản phẩm sắp hết hàng, tồn kho dưới " + LOW_STOCK_THRESHOLD + ".";
+		}
+
+		return "Tồn kho ổn định.";
+	}
 
 	/**
 	 * JSP helper for homepage deal progress bar.
@@ -441,18 +504,6 @@ public class Product {
 
 	public BigDecimal getEffectivePrice() {
 		return getFinalPrice();
-	}
-
-	public String getStockStatusLabel() {
-		if (isOutOfStock()) {
-			return "Hết hàng";
-		}
-
-		if (isLowStock()) {
-			return "Sắp hết";
-		}
-
-		return "Còn hàng";
 	}
 
 	public String getDisplayTitle() {
