@@ -2,359 +2,443 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
+
+<c:set var="ctx" value="${pageContext.request.contextPath}" />
 <script src="${pageContext.request.contextPath}/assets/js/main.js"></script>
 
-
-<section class="banner-slider">
-	<div class="slider-wrapper">
-		<c:forEach var="banner" items="${banners}" varStatus="st">
-			<div class="slide ${st.first ? 'active' : ''}">
-				<img src="${pageContext.request.contextPath}${banner.imageUrl}"
-				     alt="${banner.title}">
-				<div class="banner-overlay">
-					<c:if test="${not empty banner.title}">
-						<h2>${banner.title}</h2>
-					</c:if>
-					<c:if test="${not empty banner.link}">
-						<a href="${banner.link}" class="btn-primary"> Khám phá ngay </a>
-					</c:if>
-				</div>
-			</div>
-		</c:forEach>
-		<button class="nav prev">&#10094;</button>
-		<button class="nav next">&#10095;</button>
-		<div class="dots">
-			<c:forEach items="${banners}" varStatus="st">
-				<span class="dot ${st.first ? 'active' : ''}"></span>
-			</c:forEach>
-		</div>
-	</div>
-</section>
-
-<section class="section">
-	<div class="container">
-		<h2 style="text-align: left; margin-bottom: 30px; font-weight: 800;">ƯU ĐÃI ĐỘC QUYỀN</h2>
-
-		<div class="voucher-grid">
-			<c:forEach var="voucher" items="${vouchers}" begin="0" end="2">
-				<div class="voucher-card">
-					<div class="voucher-left">
-							${voucher.type == 'FREESHIP' ? '🚚' : '🎟'}
-					</div>
-
-					<div class="voucher-right">
-						<div>
-							<span class="v-code">${voucher.code}</span>
-							<span class="v-discount">
-                           <c:choose>
-							   <c:when test="${voucher.type == 'FREESHIP'}">Miễn phí Ship</c:when>
-							   <c:otherwise>Giảm ${voucher.discountPercent}%</c:otherwise>
-						   </c:choose>
-                       </span>
-
-							<div class="v-info-text">
-								<div>Đơn tối thiểu: <b><fmt:formatNumber value="${voucher.minOrderAmount}" type="number"/>đ</b></div>
-								<div>Áp dụng: <b>${not empty voucher.applicableProducts ? voucher.applicableProducts : 'Tất cả sản phẩm'}</b></div>
-								<div>HSD: <b>${voucher.endDate}</b></div>
-							</div>
-						</div>
-
-						<div class="btn-wrapper">
-							<button type="button" class="btn-detail"
-							        onclick="showVoucherDetailFromEl(this)"
-							        data-code="${voucher.code}"
-							        data-desc="${not empty voucher.description ? voucher.description : 'Không có mô tả'}"
-							        data-min="${voucher.minOrderAmount}"
-							        data-end="${voucher.endDate}">
-								Xem chi tiết
-							</button>
-							<button class="btn-save" onclick="saveVoucher(this)" data-code="${voucher.code}" data-loggedin="${not empty sessionScope.user}">
-								Lưu mã
-							</button>
-						</div>
-					</div>
-				</div>
-			</c:forEach>
-		</div>
-
-		<c:if test="${fn:length(vouchers) > 3}">
-			<div style="text-align: center; margin-top: 30px;">
-				<a href="${pageContext.request.contextPath}/vouchers" style="color: #d0021b; font-weight: 700; text-decoration: underline;">XEM TẤT CẢ ƯU ĐÃI</a>
-			</div>
-		</c:if>
-	</div>
-</section>
-<jsp:include page="/jsp/product/hot-categories.jsp" />
-
-<jsp:include page="/jsp/product/flash-sale.jsp">
-	<jsp:param name="limit" value="4" />
-</jsp:include>
-
-<jsp:include page="/jsp/common/store-events.jsp">
-	<jsp:param name="limit" value="3" />
-</jsp:include>
-
-<section class="section">
-	<div class="container">
-
-		<div class="section-divider"></div>
-		<h2 class="section-title">Sản phẩm nổi bật</h2>
-
-		<div class="product-grid">
-
-			<c:forEach var="product" items="${products}">
-				<div class="product-card">
-
-					<!-- SALE BADGE -->
-					<c:if test="${product.discountPercent > 0}">
-						<div class="badge-sale">-${product.discountPercent}%</div>
-					</c:if>
-
-					<!-- IMAGE -->
-					<div class="product-img-box">
-						<c:choose>
-							<c:when test="${not empty product.imageUrl}">
-								<img src="${pageContext.request.contextPath}${product.imageUrl}"
-								     alt="${product.title}">
-							</c:when>
-
-							<c:otherwise>
-								<div class="no-image">No image</div>
-							</c:otherwise>
-						</c:choose>
-					</div>
-
-					<!-- TITLE -->
-					<h3 class="product-title">${product.title}</h3>
-
-					<!-- RATING -->
-					<div class="rating-wrap">
-						<div class="rating-stars">
-							<c:forEach begin="1" end="5" var="i">
+<!-- =========================================================
+HOME HERO / BANNER
+Thiết kế tham khảo tinh thần ThegioiSkinFood:
+banner rộng, section sale rõ, card sản phẩm dày thông tin.
+========================================================= -->
+<section class="skin-hero">
+	<div class="skin-container">
+		<div class="skin-hero-shell">
+			<div class="skin-hero-slider">
+				<c:choose>
+					<c:when test="${not empty banners}">
+						<c:forEach var="banner" items="${banners}" varStatus="st">
+							<a class="skin-hero-slide ${st.first ? 'active' : ''}"
+							   href="${not empty banner.link ? banner.link : '#'}">
 								<c:choose>
-									<c:when test="${i <= product.avgRating}">
-										<svg width="14" height="14" viewBox="0 0 24 24" fill="#ffb400">
-											<path
-													d="M12 17.3l6.2 3.7-1.6-7
-                                                     5.4-4.7-7.1-.6L12 2
-                                                     9.1 8.7l-7.1.6 5.4
-                                                     4.7-1.6 7z" />
-										</svg>
+									<c:when test="${not empty banner.imageUrl}">
+										<img src="${ctx}${banner.imageUrl}" alt="${not empty banner.title ? banner.title : 'MyCosmeticShop banner'}">
 									</c:when>
 									<c:otherwise>
-										<svg width="14" height="14" viewBox="0 0 24 24" fill="#e0e0e0">
-											<path
-													d="M12 17.3l6.2 3.7-1.6-7
-                                                     5.4-4.7-7.1-.6L12 2
-                                                     9.1 8.7l-7.1.6 5.4
-                                                     4.7-1.6 7z" />
-										</svg>
+										<div class="skin-hero-fallback">
+											<span>MYCOSMETICSHOP</span>
+											<strong>Beauty Deals</strong>
+										</div>
 									</c:otherwise>
 								</c:choose>
-							</c:forEach>
-						</div>
 
-						<span class="rating-count"> (${product.reviewCount} đánh
-							giá) </span>
-					</div>
+								<div class="skin-hero-caption">
+									<span>MYCOSMETICSHOP</span>
+									<strong>${not empty banner.title ? banner.title : 'Ưu đãi mỹ phẩm chính hãng'}</strong>
+									<em>Mua sắm nhanh · Ưu đãi tốt · Sản phẩm nổi bật</em>
+								</div>
+							</a>
+						</c:forEach>
+					</c:when>
+					<c:otherwise>
+						<a class="skin-hero-slide active" href="${ctx}/products">
+							<div class="skin-hero-fallback">
+								<span>MYCOSMETICSHOP</span>
+								<strong>Beauty Flash Deal</strong>
+							</div>
+							<div class="skin-hero-caption">
+								<span>WELCOME</span>
+								<strong>Khám phá mỹ phẩm nổi bật hôm nay</strong>
+								<em>Giảm giá · Bán chạy · Danh mục hot</em>
+							</div>
+						</a>
+					</c:otherwise>
+				</c:choose>
 
-					<!-- PRICE -->
-					<c:choose>
-						<c:when test="${product.discountPercent > 0}">
-							<p class="price">
-								<span class="old-price"> <fmt:formatNumber
-										value="${product.price}" type="number" groupingUsed="true" />
-									₫
-								</span> <span class="sale-price"> <fmt:formatNumber
-									value="${product.finalPrice}" type="number"
-									groupingUsed="true" /> ₫
-								</span>
-							</p>
-						</c:when>
-						<c:otherwise>
-							<p class="price">
-								<fmt:formatNumber value="${product.price}" type="number"
-								                  groupingUsed="true" />
-								₫
-							</p>
-						</c:otherwise>
-					</c:choose>
+				<button type="button" class="skin-hero-nav skin-hero-prev" aria-label="Banner trước">‹</button>
+				<button type="button" class="skin-hero-nav skin-hero-next" aria-label="Banner sau">›</button>
 
-					<!-- STOCK -->
-					<c:choose>
-						<c:when test="${product.stock == 0}">
-							<div class="badge-out">Hết hàng</div>
-						</c:when>
-						<c:when test="${product.stock <= 5}">
-							<div class="badge-low">Sắp hết</div>
-						</c:when>
-						<c:otherwise>
-							<div class="stock-ok">Còn hàng</div>
-						</c:otherwise>
-					</c:choose>
-
-					<!-- CTA -->
-					<a
-							href="${pageContext.request.contextPath}/product/${product.slug}"
-							class="btn-outline"> Xem chi tiết </a>
-
-					<form method="post" action="${pageContext.request.contextPath}/wishlist/toggle" class="wishlist-form" style="margin: 0; display: flex;">						<input type="hidden" name="productId" value="${product.id}" />
-
-						<c:set var="inWishlist" value="${wishlistIds != null && wishlistIds.contains(product.id)}" />
-
-						<button type="submit" class="wishlist-btn ${inWishlist ? 'active' : ''}" title="Thêm vào yêu thích"
-						        style="background: #ffffff; width: 44px; border-radius: 8px; border: 1px solid var(--pink-main, #ff5fa2); font-size: 20px; cursor: pointer; color: ${inWishlist ? 'red' : '#ccc'}; transition: all 0.2s; display: flex; align-items: center; justify-content: center; padding: 0; flex-shrink: 0;">
-							❤
-						</button>
-					</form>
-
+				<div class="skin-hero-dots">
+					<c:forEach items="${banners}" varStatus="st">
+						<button type="button" class="skin-hero-dot ${st.first ? 'active' : ''}" aria-label="Banner ${st.index + 1}"></button>
+					</c:forEach>
 				</div>
-			</c:forEach>
+			</div>
 
+			<div class="skin-hero-side">
+				<div class="skin-side-card skin-side-hot">
+					<span>FLASH</span>
+					<strong>Deal đang chạy</strong>
+					<small>Ưu tiên các sản phẩm giảm sâu, bán tốt</small>
+					<a href="${ctx}/products?sort=discount-desc">Xem ngay</a>
+				</div>
+				<div class="skin-side-card">
+					<span>HOT CATE</span>
+					<strong>Danh mục nổi bật</strong>
+					<small>Lấy động từ danh mục có nhiều sản phẩm active</small>
+					<a href="#hot-categories">Khám phá</a>
+				</div>
+			</div>
 		</div>
 	</div>
 </section>
 
+<!-- =========================================================
+VOUCHER STRIP
+========================================================= -->
+<c:if test="${not empty vouchers}">
+	<section class="skin-voucher-strip">
+		<div class="skin-container">
+			<div class="skin-voucher-shell">
 
-<!-- ================= BRAND STORY ================= -->
-<section class="section brand-story">
-	<div class="container brand-story-inner">
+				<div class="skin-strip-head skin-strip-head--voucher">
+					<div>
+						<span class="skin-eyebrow">MÃ ƯU ĐÃI</span>
+						<h2>Săn mã nhanh</h2>
+					</div>
 
-		<h2 class="section-title">Science meets Nature</h2>
+					<div class="skin-strip-actions">
+						<span class="skin-strip-note">
+							<span></span>
+							Ưu đãi nổi bật hôm nay
+						</span>
+						<a href="${ctx}/vouchers">Xem tất cả mã</a>
+					</div>
+				</div>
 
-		<p class="brand-desc">Chúng tôi tin rằng chăm sóc da không chỉ là
-			làm đẹp, mà còn là nuôi dưỡng làn da khỏe mạnh từ bên trong bằng
-			những thành phần an toàn, minh bạch và bền vững.</p>
+				<div class="skin-voucher-row skin-voucher-row--sync">
+					<c:forEach var="voucher" items="${vouchers}" begin="0" end="3">
+						<article class="skin-voucher-card skin-voucher-card--sync">
+							<div class="skin-voucher-left">
+								<div class="skin-voucher-mark">
+									<c:choose>
+										<c:when test="${voucher.type == 'FREESHIP'}">🚚</c:when>
+										<c:otherwise>MC</c:otherwise>
+									</c:choose>
+								</div>
+							</div>
 
+							<div class="skin-voucher-divider"></div>
+
+							<div class="skin-voucher-content">
+								<div class="skin-voucher-top">
+									<div class="skin-voucher-tags">
+										<span class="skin-voucher-tag skin-voucher-tag-hot">HOT</span>
+										<c:if test="${voucher.type == 'FREESHIP'}">
+											<span class="skin-voucher-tag skin-voucher-tag-soft">FREESHIP</span>
+										</c:if>
+									</div>
+								</div>
+
+								<div class="skin-voucher-code-row">
+									<strong>${voucher.code}</strong>
+
+									<button type="button"
+											class="skin-save-voucher"
+											onclick="saveVoucher(this)"
+											data-code="${voucher.code}"
+											data-loggedin="${not empty sessionScope.user}">
+										Lưu
+									</button>
+								</div>
+
+								<div class="skin-voucher-discount">
+									<c:choose>
+										<c:when test="${voucher.type == 'FREESHIP'}">
+											Miễn phí vận chuyển
+										</c:when>
+										<c:otherwise>
+											Giảm <b>${voucher.discountPercent}%</b>
+										</c:otherwise>
+									</c:choose>
+								</div>
+
+								<div class="skin-voucher-meta">
+									<span>
+										Đơn từ
+										<b>
+											<fmt:formatNumber value="${voucher.minOrderAmount}" type="number" groupingUsed="true"/>đ
+										</b>
+									</span>
+									<span class="dot"></span>
+									<span>HSD ${voucher.endDate}</span>
+								</div>
+							</div>
+						</article>
+					</c:forEach>
+				</div>
+
+			</div>
+		</div>
+	</section>
+</c:if>
+									</div>
+								</div>
+
+								<div class="skin-voucher-code-row">
+									<strong>${voucher.code}</strong>
+
+									<button type="button"
+											class="skin-save-voucher"
+											onclick="saveVoucher(this)"
+											data-code="${voucher.code}"
+											data-loggedin="${not empty sessionScope.user}">
+										Lưu
+									</button>
+								</div>
+
+								<div class="skin-voucher-discount">
+									<c:choose>
+										<c:when test="${voucher.type == 'FREESHIP'}">
+											Miễn phí vận chuyển
+										</c:when>
+										<c:otherwise>
+											Giảm <b>${voucher.discountPercent}%</b>
+										</c:otherwise>
+									</c:choose>
+								</div>
+
+								<div class="skin-voucher-meta">
+									<span>
+										Đơn từ
+										<b>
+											<fmt:formatNumber value="${voucher.minOrderAmount}" type="number" groupingUsed="true"/>đ
+										</b>
+									</span>
+									<span class="dot"></span>
+									<span>HSD ${voucher.endDate}</span>
+								</div>
+							</div>
+						</article>
+					</c:forEach>
+				</div>
+
+			</div>
+		</div>
+	</section>
+</c:if>
+
+<!-- =========================================================
+FLASH DEAL - dùng deepDiscountProducts
+========================================================= -->
+<c:set var="homeSectionProducts" value="${deepDiscountProducts}" scope="request"/>
+<c:set var="homeSectionTitle" value="FLASH DEAL" scope="request"/>
+<c:set var="homeSectionDesc" value="Deal nổi bật, giá tốt, số lượng có hạn trong hôm nay." scope="request"/>
+<c:set var="homeSectionLink" value="/products?sort=discount-desc" scope="request"/>
+<c:set var="homeSectionMode" value="flash" scope="request"/>
+<c:set var="homeSectionShowSold" value="${true}" scope="request"/>
+<c:set var="homeSectionShowViews" value="${false}" scope="request"/>
+<c:set var="homeSectionShowDiscount" value="${true}" scope="request"/>
+<jsp:include page="/jsp/product/home-product-section.jsp"/>
+
+<!-- =========================================================
+DANH MỤC HOT
+========================================================= -->
+<jsp:include page="/jsp/product/hot-categories.jsp" />
+
+<!-- =========================================================
+SỰ KIỆN HOT - kiểu banner mosaic
+========================================================= -->
+<section class="skin-events-section">
+	<div class="skin-container">
+		<div class="skin-section-top">
+			<div>
+				<span class="skin-eyebrow">HOT EVENT</span>
+				<h2>SỰ KIỆN HOT!!!</h2>
+			</div>
+			<a href="${ctx}/blog">Xem tất cả</a>
+		</div>
+
+		<div class="skin-event-mosaic">
+			<c:choose>
+				<c:when test="${not empty recentEvents}">
+					<c:forEach var="event" items="${recentEvents}" varStatus="st">
+						<a class="skin-event-tile ${st.first ? 'is-large' : ''}" href="${ctx}/blog/detail?id=${event.id}">
+							<c:choose>
+								<c:when test="${not empty event.imageUrl}">
+									<img src="${ctx}${event.imageUrl}" alt="${event.title}">
+								</c:when>
+								<c:otherwise>
+									<div class="skin-event-fallback">
+										<span>${not empty event.tag ? event.tag : 'EVENT'}</span>
+										<strong>${event.title}</strong>
+									</div>
+								</c:otherwise>
+							</c:choose>
+							<div class="skin-event-info">
+								<span>${not empty event.tag ? event.tag : 'SỰ KIỆN'}</span>
+								<strong>${event.title}</strong>
+								<small>${event.summary}</small>
+							</div>
+						</a>
+					</c:forEach>
+				</c:when>
+				<c:otherwise>
+					<a class="skin-event-tile is-large" href="${ctx}/products?sort=discount-desc">
+						<div class="skin-event-fallback pink">
+							<span>BEAUTY SALE</span>
+							<strong>Ưu đãi mỹ phẩm hôm nay</strong>
+						</div>
+					</a>
+					<a class="skin-event-tile" href="${ctx}/products">
+						<div class="skin-event-fallback blue">
+							<span>NEW ARRIVAL</span>
+							<strong>Sản phẩm mới</strong>
+						</div>
+					</a>
+				</c:otherwise>
+			</c:choose>
+		</div>
 	</div>
 </section>
 
-<script>
-	document.addEventListener("DOMContentLoaded", function () {
-		const slides = document.querySelectorAll(".slide");
-		const dots = document.querySelectorAll(".dot");
-		const prev = document.querySelector(".prev");
-		const next = document.querySelector(".next");
+<!-- =========================================================
+PRODUCT GROUPS
+========================================================= -->
+<c:set var="homeSectionProducts" value="${bestSellingProducts}" scope="request"/>
+<c:set var="homeSectionTitle" value="BÁN CHẠY" scope="request"/>
+<c:set var="homeSectionDesc" value="Các sản phẩm được mua nhiều nhất từ dữ liệu đơn hàng." scope="request"/>
+<c:set var="homeSectionLink" value="/products?sort=best-selling" scope="request"/>
+<c:set var="homeSectionMode" value="default" scope="request"/>
+<c:set var="homeSectionShowSold" value="${true}" scope="request"/>
+<c:set var="homeSectionShowViews" value="${false}" scope="request"/>
+<c:set var="homeSectionShowDiscount" value="${false}" scope="request"/>
+<jsp:include page="/jsp/product/home-product-section.jsp"/>
 
+<c:set var="homeSectionProducts" value="${featuredProducts}" scope="request"/>
+<c:set var="homeSectionTitle" value="KHÁM PHÁ" scope="request"/>
+<c:set var="homeSectionDesc" value="Sản phẩm nổi bật dựa trên đánh giá, lượt bán và mức độ quan tâm." scope="request"/>
+<c:set var="homeSectionLink" value="/products?sort=featured" scope="request"/>
+<c:set var="homeSectionMode" value="default" scope="request"/>
+<c:set var="homeSectionShowSold" value="${false}" scope="request"/>
+<c:set var="homeSectionShowViews" value="${false}" scope="request"/>
+<c:set var="homeSectionShowDiscount" value="${false}" scope="request"/>
+<jsp:include page="/jsp/product/home-product-section.jsp"/>
+
+<c:set var="homeSectionProducts" value="${mostViewedProducts}" scope="request"/>
+<c:set var="homeSectionTitle" value="LƯỢT XEM NHIỀU" scope="request"/>
+<c:set var="homeSectionDesc" value="Các sản phẩm được khách hàng ghé xem nhiều trên website." scope="request"/>
+<c:set var="homeSectionLink" value="/products?sort=view-desc" scope="request"/>
+<c:set var="homeSectionMode" value="default" scope="request"/>
+<c:set var="homeSectionShowSold" value="${false}" scope="request"/>
+<c:set var="homeSectionShowViews" value="${true}" scope="request"/>
+<c:set var="homeSectionShowDiscount" value="${false}" scope="request"/>
+<jsp:include page="/jsp/product/home-product-section.jsp"/>
+
+<c:set var="homeSectionProducts" value="${newProducts}" scope="request"/>
+<c:set var="homeSectionTitle" value="SẢN PHẨM MỚI" scope="request"/>
+<c:set var="homeSectionDesc" value="Các sản phẩm mới nhất vừa được cập nhật trong cửa hàng." scope="request"/>
+<c:set var="homeSectionLink" value="/products?sort=created_desc" scope="request"/>
+<c:set var="homeSectionMode" value="default" scope="request"/>
+<c:set var="homeSectionShowSold" value="${false}" scope="request"/>
+<c:set var="homeSectionShowViews" value="${false}" scope="request"/>
+<c:set var="homeSectionShowDiscount" value="${false}" scope="request"/>
+<jsp:include page="/jsp/product/home-product-section.jsp"/>
+
+<section class="skin-brand-story">
+	<div class="skin-container">
+		<div class="skin-story-box">
+			<span>MYCOSMETICSHOP</span>
+			<h2>Chăm sóc da rõ ràng hơn, mua sắm nhanh hơn</h2>
+			<p>Trang chủ được chia thành các nhóm sản phẩm rõ ràng: flash deal, bán chạy, giảm sâu, xem nhiều và sản phẩm mới. Khách hàng có thể tìm đúng nhóm sản phẩm cần mua chỉ trong vài giây.</p>
+		</div>
+	</div>
+</section>
+
+<button type="button" class="skin-backtop" aria-label="Lên đầu trang">↑</button>
+
+<script>
+	window.APP_CTX = "${ctx}";
+
+	document.addEventListener("DOMContentLoaded", function () {
+		initSkinHero();
+		initDealCountdown();
+		initBackTop();
+	});
+
+	function initSkinHero() {
+		const slides = document.querySelectorAll(".skin-hero-slide");
+		const dots = document.querySelectorAll(".skin-hero-dot");
+		const prev = document.querySelector(".skin-hero-prev");
+		const next = document.querySelector(".skin-hero-next");
 		if (!slides.length) return;
 
 		let index = 0;
-		const interval = 5000;
-
 
 		function showSlide(i) {
-			slides.forEach(s => s.classList.remove("active", "prev", "next"));
+			slides.forEach(s => s.classList.remove("active"));
 			dots.forEach(d => d.classList.remove("active"));
-
-			const prevIndex = (i - 1 + slides.length) % slides.length;
-			const nextIndex = (i + 1) % slides.length;
-
-
 			slides[i].classList.add("active");
-			slides[prevIndex].classList.add("prev");
-			slides[nextIndex].classList.add("next");
-
 			if (dots[i]) dots[i].classList.add("active");
 			index = i;
 		}
-
 
 		function nextSlide() {
 			showSlide((index + 1) % slides.length);
 		}
 
-
 		function prevSlide() {
 			showSlide((index - 1 + slides.length) % slides.length);
 		}
 
-		// AUTO SLIDE
-		showSlide(index);
+		if (next) next.addEventListener("click", nextSlide);
+		if (prev) prev.addEventListener("click", prevSlide);
+		dots.forEach((dot, i) => dot.addEventListener("click", () => showSlide(i)));
 
-		let autoSlide = setInterval(nextSlide, interval);
+		if (slides.length > 1) {
+			setInterval(nextSlide, 5000);
+		}
+	}
 
+	function initDealCountdown() {
+		const boxes = document.querySelectorAll("[data-deal-countdown]");
+		if (!boxes.length) return;
 
-		function resetAuto() {
-			clearInterval(autoSlide);
-			autoSlide = setInterval(nextSlide, interval);
+		function pad(num) {
+			return num < 10 ? "0" + num : String(num);
 		}
 
+		function render() {
+			const now = new Date();
+			const end = new Date();
+			end.setHours(23, 59, 59, 999);
 
-		// CLICK EVENTS
+			let distance = end.getTime() - now.getTime();
+			if (distance < 0) distance = 0;
 
-		if (next) {
-			next.addEventListener("click", () => {
-				nextSlide();
-				resetAuto();
-			});
-
-		}
-
-
-
-		if (prev) {
-			prev.addEventListener("click", () => {
-				prevSlide();
-				resetAuto();
-			});
-		}
-
-
-		dots.forEach((dot, i) => {
-			dot.addEventListener("click", () => {
-
-				showSlide(i);
-				resetAuto();
-
-			});
-		});
-	});
-
-	// Logic Countdown Flash Deal
-	function startFlashSale(endTimeStr) {
-		const countDownDate = new Date(endTimeStr).getTime();
-
-		const x = setInterval(function() {
-			const now = new Date().getTime();
-			const distance = countDownDate - now;
-
-			// Tính toán Giờ, Phút, Giây
-			const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+			const hours = Math.floor(distance / (1000 * 60 * 60));
 			const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
 			const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
-			// Hiển thị ra ID 'timer'
-			document.getElementById("timer").innerHTML =
-					(hours < 10 ? "0" + hours : hours) + " : " +
-					(minutes < 10 ? "0" + minutes : minutes) + " : " +
-					(seconds < 10 ? "0" + seconds : seconds);
+			boxes.forEach(box => {
+				box.querySelector("[data-hh]").innerText = pad(hours);
+				box.querySelector("[data-mm]").innerText = pad(minutes);
+				box.querySelector("[data-ss]").innerText = pad(seconds);
+			});
+		}
 
-			if (distance < 0) {
-				clearInterval(x);
-				document.getElementById("timer").innerHTML = "SỰ KIỆN KẾT THÚC";
-			}
-		}, 1000);
+		render();
+		setInterval(render, 1000);
 	}
 
-	window.onload = function () {
-		var fiveHours = 60 * 60 * 5,
-				display = document.querySelector('#timer');
-		startTimer(fiveHours, display);
-	};
+	function initBackTop() {
+		const btn = document.querySelector(".skin-backtop");
+		if (!btn) return;
 
-	// 1. Hàm hiển thị thêm Voucher
-	function showMoreVouchers() {
-		const hiddenVouchers = document.querySelectorAll('.hidden-voucher');
-		hiddenVouchers.forEach(v => v.classList.remove('hidden-voucher'));
-		document.getElementById('btn-load-more-vouchers').style.display = 'none';
+		window.addEventListener("scroll", function () {
+			btn.classList.toggle("show", window.scrollY > 400);
+		});
+
+		btn.addEventListener("click", function () {
+			window.scrollTo({ top: 0, behavior: "smooth" });
+		});
 	}
 
-	// 2. Hàm tạo Popup thông báo custom thay thế alert()
 	function showCustomAlert(title, message, isSuccess) {
 		const modal = document.createElement("div");
 		modal.className = "custom-alert-modal";
 		const icon = isSuccess ? "🎉" : "⚠️";
-		const color = isSuccess ? "#ff5fa2" : "#e53935";
+		const color = isSuccess ? "#9b0012" : "#e53935";
 
 		modal.innerHTML =
 				'<div class="custom-alert-box">' +
@@ -364,13 +448,13 @@
 				'<button onclick="this.closest(\'.custom-alert-modal\').remove()" ' +
 				'style="background: ' + color + '; color: #fff; border: none; padding: 10px 24px; border-radius: 999px; cursor: pointer; font-weight: bold; width: 100%;">Đóng</button>' +
 				'</div>';
+
 		document.body.appendChild(modal);
 	}
 
-	// 3. Ghi đè lại hàm saveVoucher hiện tại
 	function saveVoucher(btn) {
-		const code = btn.getAttribute('data-code');
-		const isLoggedIn = btn.getAttribute('data-loggedin') === 'true';
+		const code = btn.getAttribute("data-code");
+		const isLoggedIn = btn.getAttribute("data-loggedin") === "true";
 
 		if (!isLoggedIn) {
 			showCustomAlert("Chưa đăng nhập", "Vui lòng đăng nhập để lưu mã!", false);
@@ -380,107 +464,92 @@
 		btn.innerText = "Đang lưu...";
 		btn.disabled = true;
 
-		// THÊM &action=save ĐỂ BÁO VỚI SERVER LÀ CHỈ LƯU VÀO VÍ
-		fetch(window.APP_CTX + '/ajax/apply-coupon?code=' + encodeURIComponent(code) + '&action=save')
+		fetch(window.APP_CTX + "/ajax/apply-coupon?code=" + encodeURIComponent(code) + "&action=save")
 				.then(res => res.json())
 				.then(data => {
 					const msg = data.message ? data.message.toLowerCase() : "";
-
-					// Nếu thành công HOẶC đã sở hữu từ trước -> Đổi trạng thái nút thành "Đã lưu"
 					if (data.success || msg.includes("đã sở hữu") || msg.includes("đã lưu")) {
 						btn.innerText = "Đã lưu";
 						btn.classList.add("saved");
-						btn.style.backgroundColor = "#ccc";
-						btn.style.cursor = "not-allowed";
 						showCustomAlert("Thông báo", data.success ? "Lưu mã thành công!" : "Mã này đã có trong ví của bạn.", true);
 					} else {
-						// Nếu lỗi khác (không phải lỗi trùng), trả lại trạng thái nút
 						btn.disabled = false;
-						btn.innerText = "Lưu mã";
-						showCustomAlert("Lưu thất bại", data.message, false);
+						btn.innerText = "Lưu";
+						showCustomAlert("Lưu thất bại", data.message || "Không thể lưu mã.", false);
 					}
 				})
-				.catch(err => {
+				.catch(() => {
 					btn.disabled = false;
-					btn.innerText = "Lưu mã";
+					btn.innerText = "Lưu";
 					showCustomAlert("Lỗi", "Có lỗi kết nối, vui lòng thử lại.", false);
 				});
 	}
 
-	// 4. Hàm hiển thị Chi tiết Voucher
+	// Hàm tương thích với giao diện voucher cũ nếu còn nút Xem chi tiết trong fragment khác
 	function showVoucherDetailFromEl(btn) {
-		// Lấy dữ liệu từ các thuộc tính data-* của nút
-		const code = btn.getAttribute('data-code') || "Không rõ";
-		const desc = btn.getAttribute('data-desc') || "Không có mô tả cụ thể.";
-		const min = btn.getAttribute('data-min');
-		const end = btn.getAttribute('data-end');
+		const code = btn.getAttribute("data-code") || "Không rõ";
+		const desc = btn.getAttribute("data-desc") || "Không có mô tả cụ thể.";
+		const min = btn.getAttribute("data-min");
+		const end = btn.getAttribute("data-end");
 
-		// Format số tiền (thêm dấu chấm phân cách)
 		let minText = "0 ₫";
 		if (min && parseInt(min) > 0) {
-			minText = Number(min).toLocaleString('vi-VN') + " ₫";
+			minText = Number(min).toLocaleString("vi-VN") + " ₫";
 		}
 
-		// Format ngày tháng (nếu có)
-		let endText = "Không giới hạn";
-		if (end && end.trim() !== "") {
-			endText = end;
-		}
+		const endText = end && end.trim() !== "" ? end : "Không giới hạn";
 
-		// Tạo Popup Modal
 		const modal = document.createElement("div");
-		modal.className = "custom-alert-modal"; // Tận dụng lại CSS class có sẵn để tạo hiệu ứng mờ nền
-
+		modal.className = "custom-alert-modal";
 		modal.innerHTML =
 				'<div class="custom-alert-box" style="text-align: left;">' +
 				'<div style="font-size: 32px; text-align: center; margin-bottom: 10px;">🎟️</div>' +
-				'<h3 style="color: #ff5fa2; margin-bottom: 15px; font-size: 20px; text-align: center;">Chi tiết Ưu đãi</h3>' +
-
+				'<h3 style="color: #9b0012; margin-bottom: 15px; font-size: 20px; text-align: center;">Chi tiết ưu đãi</h3>' +
 				'<div style="color: #444; line-height: 1.6; font-size: 14px; margin-bottom: 24px; padding: 15px; background: #fff0f6; border-radius: 12px;">' +
-				'<p style="margin: 0 0 8px 0;"><strong>Mã code:</strong> <span style="color: #d0021b; font-weight: bold; font-size: 16px;">' + code + '</span></p>' +
+				'<p style="margin: 0 0 8px 0;"><strong>Mã code:</strong> <span style="color: #9b0012; font-weight: bold; font-size: 16px;">' + code + '</span></p>' +
 				'<p style="margin: 0 0 8px 0;"><strong>Mô tả:</strong> ' + desc + '</p>' +
 				'<p style="margin: 0 0 8px 0;"><strong>Đơn tối thiểu:</strong> ' + minText + '</p>' +
 				'<p style="margin: 0;"><strong>Hạn sử dụng:</strong> ' + endText + '</p>' +
 				'</div>' +
-
 				'<button onclick="this.closest(\'.custom-alert-modal\').remove()" ' +
-				'style="background: linear-gradient(135deg, #ff5fa2, #ff85bc); color: #fff; border: none; padding: 12px 24px; border-radius: 999px; cursor: pointer; font-weight: bold; width: 100%; transition: 0.2s;">' +
+				'style="background: linear-gradient(135deg, #8f001f, #d44d79); color: #fff; border: none; padding: 12px 24px; border-radius: 999px; cursor: pointer; font-weight: bold; width: 100%;">' +
 				'Đã hiểu' +
 				'</button>' +
 				'</div>';
 
-		// Hiển thị lên màn hình
 		document.body.appendChild(modal);
 	}
 
-	document.addEventListener("DOMContentLoaded", function() {
+	// Giữ lại AJAX wishlist từ file cũ để các product card cũ hoặc fragment khác vẫn hoạt động
+	document.addEventListener("DOMContentLoaded", function () {
 		const wishlistForms = document.querySelectorAll(".wishlist-form");
+		if (!wishlistForms.length) return;
 
 		wishlistForms.forEach(form => {
-			form.addEventListener("submit", function(e) {
-				e.preventDefault(); // Ngăn form tải lại trang
+			form.addEventListener("submit", function (e) {
+				e.preventDefault();
 
 				const btn = this.querySelector(".wishlist-btn");
 				const formData = new URLSearchParams(new FormData(this));
 
-				// Gửi request bằng AJAX
 				fetch(this.action, {
 					method: "POST",
-					headers: {
-						"Content-Type": "application/x-www-form-urlencoded"
-					},
+					headers: { "Content-Type": "application/x-www-form-urlencoded" },
 					body: formData
 				})
 						.then(response => {
-							// Bắt lỗi 401 từ WishlistToggleServlet
 							if (response.status === 401) {
-								showLoginModal();
+								if (typeof showLoginModal === "function") {
+									showLoginModal();
+								} else {
+									showCustomAlert("Chưa đăng nhập", "Vui lòng đăng nhập để thêm sản phẩm vào yêu thích.", false);
+								}
 								throw new Error("LOGIN_REQUIRED");
 							}
 							return response.text();
 						})
 						.then(data => {
-							// Cập nhật giao diện nút tim dựa trên phản hồi
+							if (!btn) return;
 							if (data === "ADDED") {
 								btn.style.color = "red";
 								btn.classList.add("active");
@@ -490,11 +559,12 @@
 							}
 						})
 						.catch(error => {
-							if(error.message !== "LOGIN_REQUIRED"){
+							if (error.message !== "LOGIN_REQUIRED") {
 								console.error("Lỗi khi thêm vào wishlist:", error);
 							}
 						});
 			});
 		});
 	});
+
 </script>
