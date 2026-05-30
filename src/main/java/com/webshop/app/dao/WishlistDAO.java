@@ -75,4 +75,23 @@ public class WishlistDAO {
 
         return ids;
     }
+
+    public List<Integer> findUserIdsByProduct(int productId) {
+        List<Integer> userIds = new ArrayList<>();
+        String sql = "SELECT user_id FROM store_wishlist WHERE product_id = ?";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, productId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    userIds.add(rs.getInt("user_id"));
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("WishlistDAO.findUserIdsByProduct error", e);
+        }
+        return userIds;
+    }
 }
