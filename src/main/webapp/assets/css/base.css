@@ -827,3 +827,8 @@ a { text-decoration: none; color: inherit; }
 .dropdown-menu li {
   position: relative;
 }
+
+
+.notification-wrapper:hover .notif-menu {
+  display: block !important;
+}
