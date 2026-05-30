@@ -1,6 +1,8 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 
+<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/base.css">
+
 <nav class="category-nav-bar">
   <div class="container">
     <ul class="menu-horizontal-list">
