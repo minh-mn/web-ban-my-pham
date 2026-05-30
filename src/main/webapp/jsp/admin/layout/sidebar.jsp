@@ -132,6 +132,12 @@
         <span class="admin-nav__meta">/admin/users</span>
       </a>
 
+      <a class="${activeMenu == 'notifications' ? 'is-active' : ''}"
+         href="${pageContext.request.contextPath}/admin/notifications">
+        <span>Notifications</span>
+        <span class="admin-nav__meta">/admin/notifications</span>
+      </a>
+
     </nav>
 
     <div class="admin-sidebar__footer">
