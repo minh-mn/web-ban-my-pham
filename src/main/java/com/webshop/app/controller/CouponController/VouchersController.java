@@ -57,7 +57,7 @@ public class VouchersController extends HttpServlet {
 
         // 3. Cấu hình hiển thị qua base.jsp
         request.setAttribute("pageTitle", "Tất cả ưu đãi - MyCosmetic");
-        request.setAttribute("pageCss", "home.css");
+        request.setAttribute("pageCss", "voucher.css");
         request.setAttribute("pageContent", "/jsp/coupon/vouchers.jsp");
 
         request.getRequestDispatcher("/jsp/common/base.jsp").forward(request, response);
