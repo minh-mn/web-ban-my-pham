@@ -3,14 +3,11 @@ package com.webshop.app.controller.ProductController;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
-import com.webshop.app.dao.HomeSectionDAO;
-import com.webshop.app.dao.ProductDAO;
-import com.webshop.app.dao.ProductImageDAO;
-import com.webshop.app.dao.ProductMediaDAO;
-import com.webshop.app.dao.ProductVariantDAO;
-import com.webshop.app.dao.ReviewDAO;
+import com.webshop.app.dao.*;
 import com.webshop.app.model.Product;
 import com.webshop.app.model.ProductMedia;
 import com.webshop.app.model.ProductVariant;
@@ -31,7 +28,6 @@ public class ProductDetailServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
     private final ProductDAO productDAO = new ProductDAO();
-    private final HomeSectionDAO homeSectionDAO = new HomeSectionDAO();
     private final ProductImageDAO productImageDAO = new ProductImageDAO();
 
     // Issue 123: DAO lấy media chi tiết sản phẩm gồm ảnh/video
@@ -68,14 +64,6 @@ public class ProductDetailServlet extends HttpServlet {
         if (product == null) {
             resp.sendRedirect(req.getContextPath() + "/products");
             return;
-        }
-
-        // Issue 27: tăng lượt xem để phục vụ nhóm "Sản phẩm được xem nhiều" ở trang chủ.
-        try {
-            homeSectionDAO.increaseViewCount(product.getId());
-            product.setViewCount(homeSectionDAO.findViewCountByProductId(product.getId()));
-        } catch (RuntimeException ignored) {
-            // Không chặn trang chi tiết nếu DB chưa chạy patch view_count.
         }
 
         /*
@@ -137,6 +125,16 @@ public class ProductDetailServlet extends HttpServlet {
                 user != null && reviewDAO.canUserReviewProduct(user.getId(), product.getId());
 
         req.setAttribute("canReviewProduct", canReviewProduct);
+
+        WishlistDAO wishlistDAO = new WishlistDAO();
+
+        if (user != null) {
+            // Sử dụng WishlistDAO đã có sẵn để kiểm tra
+            boolean inWishlist = wishlistDAO.exists(user.getId(), product.getId());
+            req.setAttribute("inWishlist", inWishlist);
+        } else {
+            req.setAttribute("inWishlist", false);
+        }
 
         req.setAttribute("pageTitle", "MyCosmetic | " + product.getTitle());
         req.setAttribute("pageCss", "product-detail.css");
