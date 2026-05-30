@@ -28,7 +28,7 @@
             <div class="inventory-title">
                 <h1 class="admin-h1">Quản lý tồn kho</h1>
                 <p class="admin-subtext">
-                    Theo dõi tồn kho, cảnh báo sắp hết hàng và thống kê số lượng xuất theo ngày, tuần, tháng, năm.
+                    Theo dõi tồn kho, cảnh báo sắp hết hàng, thống kê xuất kho và lịch sử nhập hàng.
                 </p>
             </div>
 
@@ -426,6 +426,189 @@
         <section class="admin-card inventory-panel inventory-mt-20">
             <div class="inventory-panel-header">
                 <div>
+                    <h2>Lịch sử nhập hàng</h2>
+                    <span>
+                        Hiển thị rõ số lượng nhập hàng, tồn trước/sau và thống kê nhập hàng theo tháng, năm.
+                    </span>
+                </div>
+
+                <form class="inventory-import-filter"
+                      method="get"
+                      action="${pageContext.request.contextPath}/admin/inventory">
+                    <input type="hidden" name="keyword" value="${fn:escapeXml(keyword)}">
+                    <input type="hidden" name="status" value="${fn:escapeXml(status)}">
+
+                    <select class="admin-select" name="importMonth">
+                        <c:forEach var="m" begin="1" end="12">
+                            <option value="${m}" ${selectedImportMonth == m ? 'selected' : ''}>
+                                Tháng ${m}
+                            </option>
+                        </c:forEach>
+                    </select>
+
+                    <select class="admin-select" name="importYear">
+                        <c:choose>
+                            <c:when test="${not empty importYearOptions}">
+                                <c:forEach var="year" items="${importYearOptions}">
+                                    <option value="${year}" ${selectedImportYear == year ? 'selected' : ''}>
+                                        Năm ${year}
+                                    </option>
+                                </c:forEach>
+                            </c:when>
+                            <c:otherwise>
+                                <option value="${selectedImportYear}" selected>
+                                    Năm ${selectedImportYear}
+                                </option>
+                            </c:otherwise>
+                        </c:choose>
+                    </select>
+
+                    <input class="admin-input inventory-import-search"
+                           type="text"
+                           name="importKeyword"
+                           value="${fn:escapeXml(importKeyword)}"
+                           placeholder="Tìm sản phẩm, thương hiệu, ghi chú">
+
+                    <button class="admin-btn admin-btn--primary" type="submit">
+                        Lọc lịch sử
+                    </button>
+
+                    <a class="admin-btn"
+                       href="${pageContext.request.contextPath}/admin/inventory">
+                        Làm mới
+                    </a>
+                </form>
+            </div>
+
+            <div class="inventory-panel-body">
+                <div class="inventory-import-summary-grid">
+                    <div class="export-box inventory-import-stat">
+                        <strong>
+                            <fmt:formatNumber value="${importSummary.monthlyImportQuantity}" type="number"/>
+                        </strong>
+                        <span>SL nhập tháng ${selectedImportMonth}/${selectedImportYear}</span>
+                    </div>
+
+                    <div class="export-box inventory-import-stat">
+                        <strong>
+                            <fmt:formatNumber value="${importSummary.monthlyImportCount}" type="number"/>
+                        </strong>
+                        <span>Lượt nhập trong tháng</span>
+                    </div>
+
+                    <div class="export-box inventory-import-stat">
+                        <strong>
+                            <fmt:formatNumber value="${importSummary.monthlyProductCount}" type="number"/>
+                        </strong>
+                        <span>Sản phẩm đã nhập trong tháng</span>
+                    </div>
+
+                    <div class="export-box inventory-import-stat">
+                        <strong>
+                            <fmt:formatNumber value="${importSummary.yearlyImportQuantity}" type="number"/>
+                        </strong>
+                        <span>SL nhập năm ${selectedImportYear}</span>
+                    </div>
+                </div>
+
+                <div class="chart-wrap inventory-import-chart-wrap">
+                    <canvas id="inventoryImportChart"></canvas>
+                </div>
+            </div>
+
+            <div class="admin-table-wrap inventory-import-history-wrap">
+                <table class="admin-table inventory-import-history-table">
+                    <thead>
+                    <tr>
+                        <th>Ngày nhập</th>
+                        <th>Sản phẩm</th>
+                        <th>SL nhập</th>
+                        <th>Tồn trước</th>
+                        <th>Tồn sau</th>
+                        <th>Biến động</th>
+                        <th>Hình thức</th>
+                        <th>Người nhập</th>
+                        <th>Ghi chú</th>
+                    </tr>
+                    </thead>
+
+                    <tbody>
+                    <c:choose>
+                        <c:when test="${not empty importHistory}">
+                            <c:forEach var="item" items="${importHistory}">
+                                <tr>
+                                    <td>
+                                        <c:out value="${item.formattedCreatedAt}"/>
+                                    </td>
+
+                                    <td>
+                                        <div class="product-name">
+                                            <c:out value="${item.displayProductTitle}"/>
+                                        </div>
+                                        <div class="product-meta">
+                                            <c:out value="${item.displayCategoryName}"/>
+                                            ·
+                                            <c:out value="${item.displayBrandName}"/>
+                                        </div>
+                                    </td>
+
+                                    <td>
+                                        <span class="inventory-import-qty">
+                                            <c:out value="${item.quantityText}"/>
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        <c:out value="${item.beforeStockText}"/>
+                                    </td>
+
+                                    <td>
+                                        <c:out value="${item.afterStockText}"/>
+                                    </td>
+
+                                    <td>
+                                        <span class="inventory-stock-change">
+                                            <c:out value="${item.stockChangeText}"/>
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        <span class="admin-pill ${item.referenceTypeClass}">
+                                            <c:out value="${item.referenceTypeLabel}"/>
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        <c:out value="${item.displayCreatedByName}"/>
+                                    </td>
+
+                                    <td>
+                                        <div class="inventory-history-note">
+                                            <c:out value="${item.displayNote}"/>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </c:forEach>
+                        </c:when>
+
+                        <c:otherwise>
+                            <tr>
+                                <td colspan="9">
+                                    <div class="admin-empty inventory-empty">
+                                        Chưa có lịch sử nhập hàng trong thời gian hoặc từ khóa đã chọn.
+                                    </div>
+                                </td>
+                            </tr>
+                        </c:otherwise>
+                    </c:choose>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="admin-card inventory-panel inventory-mt-20">
+            <div class="inventory-panel-header">
+                <div>
                     <h2>Lịch sử nhập/xuất kho gần đây</h2>
                     <span>Theo dõi hoạt động tồn kho mới nhất</span>
                 </div>
@@ -484,91 +667,109 @@
 
 <script>
     (function () {
-        const labels = ${empty last7DaysExportLabelsJson ? "[]" : last7DaysExportLabelsJson};
-        const values = ${empty last7DaysExportValuesJson ? "[]" : last7DaysExportValuesJson};
+        const exportLabels = ${empty last7DaysExportLabelsJson ? "[]" : last7DaysExportLabelsJson};
+        const exportValues = ${empty last7DaysExportValuesJson ? "[]" : last7DaysExportValuesJson};
 
-        const canvas = document.getElementById("inventoryExportChart");
-        if (!canvas) {
-            return;
-        }
+        const importLabels = ${empty importMonthStatsLabelsJson ? "[]" : importMonthStatsLabelsJson};
+        const importValues = ${empty importMonthStatsValuesJson ? "[]" : importMonthStatsValuesJson};
 
-        const ctx = canvas.getContext("2d");
-        const dpr = window.devicePixelRatio || 1;
-        const rect = canvas.getBoundingClientRect();
+        drawInventoryBarChart("inventoryExportChart", exportLabels, exportValues);
+        drawInventoryBarChart("inventoryImportChart", importLabels, importValues);
 
-        canvas.width = rect.width * dpr;
-        canvas.height = rect.height * dpr;
-        ctx.scale(dpr, dpr);
+        function drawInventoryBarChart(canvasId, labels, values) {
+            const canvas = document.getElementById(canvasId);
 
-        const width = rect.width;
-        const height = rect.height;
-        const paddingLeft = 42;
-        const paddingRight = 18;
-        const paddingTop = 18;
-        const paddingBottom = 42;
-        const chartWidth = width - paddingLeft - paddingRight;
-        const chartHeight = height - paddingTop - paddingBottom;
+            if (!canvas) {
+                return;
+            }
 
-        ctx.clearRect(0, 0, width, height);
+            const ctx = canvas.getContext("2d");
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
 
-        const maxValue = Math.max.apply(null, values.concat([1]));
-        const barGap = 12;
-        const barWidth = values.length > 0
-            ? Math.max(18, (chartWidth - barGap * (values.length - 1)) / values.length)
-            : 18;
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
 
-        ctx.font = "12px Arial";
-        ctx.fillStyle = "#6b7280";
-        ctx.strokeStyle = "#e5e7eb";
-        ctx.lineWidth = 1;
+            const width = rect.width;
+            const height = rect.height;
+            const paddingLeft = 42;
+            const paddingRight = 18;
+            const paddingTop = 18;
+            const paddingBottom = 42;
+            const chartWidth = width - paddingLeft - paddingRight;
+            const chartHeight = height - paddingTop - paddingBottom;
 
-        for (let i = 0; i <= 4; i++) {
-            const y = paddingTop + chartHeight - (chartHeight * i / 4);
-            ctx.beginPath();
-            ctx.moveTo(paddingLeft, y);
-            ctx.lineTo(width - paddingRight, y);
-            ctx.stroke();
+            ctx.clearRect(0, 0, width, height);
 
-            const label = Math.round(maxValue * i / 4).toString();
-            ctx.fillText(label, 8, y + 4);
-        }
+            const safeValues = Array.isArray(values) ? values : [];
+            const safeLabels = Array.isArray(labels) ? labels : [];
+            const maxValue = Math.max.apply(null, safeValues.concat([1]));
+            const barGap = safeValues.length > 8 ? 7 : 12;
+            const barWidth = safeValues.length > 0
+                ? Math.max(14, (chartWidth - barGap * (safeValues.length - 1)) / safeValues.length)
+                : 18;
 
-        values.forEach(function (value, index) {
-            const barHeight = Math.round((value / maxValue) * chartHeight);
-            const x = paddingLeft + index * (barWidth + barGap);
-            const y = paddingTop + chartHeight - barHeight;
-
-            const gradient = ctx.createLinearGradient(0, y, 0, paddingTop + chartHeight);
-            gradient.addColorStop(0, "#ec4899");
-            gradient.addColorStop(1, "#f9a8d4");
-
-            ctx.fillStyle = gradient;
-            roundRect(ctx, x, y, barWidth, barHeight, 8);
-            ctx.fill();
-
-            ctx.fillStyle = "#111827";
-            ctx.font = "bold 12px Arial";
-            ctx.textAlign = "center";
-            ctx.fillText(value.toString(), x + barWidth / 2, y - 6);
-
+            ctx.font = "12px Arial";
             ctx.fillStyle = "#6b7280";
-            ctx.font = "11px Arial";
-            const label = labels[index] ? labels[index].substring(5) : "";
-            ctx.fillText(label, x + barWidth / 2, height - 14);
-        });
+            ctx.strokeStyle = "#e5e7eb";
+            ctx.lineWidth = 1;
 
-        function roundRect(ctx, x, y, width, height, radius) {
-            const safeRadius = Math.min(radius, width / 2, height / 2);
+            for (let i = 0; i <= 4; i++) {
+                const y = paddingTop + chartHeight - (chartHeight * i / 4);
+                ctx.beginPath();
+                ctx.moveTo(paddingLeft, y);
+                ctx.lineTo(width - paddingRight, y);
+                ctx.stroke();
 
-            ctx.beginPath();
-            ctx.moveTo(x + safeRadius, y);
-            ctx.lineTo(x + width - safeRadius, y);
-            ctx.quadraticCurveTo(x + width, y, x + width, y + safeRadius);
-            ctx.lineTo(x + width, y + height);
-            ctx.lineTo(x, y + height);
-            ctx.lineTo(x, y + safeRadius);
-            ctx.quadraticCurveTo(x, y, x + safeRadius, y);
-            ctx.closePath();
+                const gridLabel = Math.round(maxValue * i / 4).toString();
+                ctx.textAlign = "left";
+                ctx.fillText(gridLabel, 8, y + 4);
+            }
+
+            safeValues.forEach(function (value, index) {
+                const safeValue = Number(value) || 0;
+                const barHeight = Math.round((safeValue / maxValue) * chartHeight);
+                const x = paddingLeft + index * (barWidth + barGap);
+                const y = paddingTop + chartHeight - barHeight;
+
+                const gradient = ctx.createLinearGradient(0, y, 0, paddingTop + chartHeight);
+                gradient.addColorStop(0, "#ec4899");
+                gradient.addColorStop(1, "#f9a8d4");
+
+                ctx.fillStyle = gradient;
+                roundRect(ctx, x, y, barWidth, barHeight, 8);
+                ctx.fill();
+
+                ctx.fillStyle = "#111827";
+                ctx.font = "bold 12px Arial";
+                ctx.textAlign = "center";
+                ctx.fillText(safeValue.toString(), x + barWidth / 2, y - 6);
+
+                ctx.fillStyle = "#6b7280";
+                ctx.font = "11px Arial";
+
+                const rawLabel = safeLabels[index] ? String(safeLabels[index]) : "";
+                const label = rawLabel.includes("-")
+                    ? rawLabel.substring(5)
+                    : rawLabel.substring(0, 5);
+
+                ctx.fillText(label, x + barWidth / 2, height - 14);
+            });
+
+            function roundRect(ctx, x, y, width, height, radius) {
+                const safeRadius = Math.min(radius, width / 2, height / 2);
+
+                ctx.beginPath();
+                ctx.moveTo(x + safeRadius, y);
+                ctx.lineTo(x + width - safeRadius, y);
+                ctx.quadraticCurveTo(x + width, y, x + width, y + safeRadius);
+                ctx.lineTo(x + width, y + height);
+                ctx.lineTo(x, y + height);
+                ctx.lineTo(x, y + safeRadius);
+                ctx.quadraticCurveTo(x, y, x + safeRadius, y);
+                ctx.closePath();
+            }
         }
     })();
 </script>
