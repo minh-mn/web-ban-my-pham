@@ -10,7 +10,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.sql.Types;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -263,7 +266,7 @@ public class InventoryDAO {
     }
 
     /**
-     * Dùng cho issue 127:
+     * Issue 127:
      * Lấy danh sách sản phẩm đã tích chọn kèm số lượng cần nhập để xuất ra Excel.
      */
     public List<RestockProductRow> findProductsForRestockExcel(List<RestockRequestRow> requestRows) {
@@ -299,7 +302,7 @@ public class InventoryDAO {
     }
 
     /**
-     * Dùng cho issue 127:
+     * Issue 127:
      * Cộng tồn kho hàng loạt sau khi đọc dữ liệu từ file Excel.
      */
     public List<RestockImportResultRow> importRestockRows(
@@ -433,6 +436,272 @@ public class InventoryDAO {
 
         } catch (Exception e) {
             throw new RuntimeException("InventoryDAO.importRestockRows error", e);
+        }
+    }
+
+    /**
+     * Issue 128:
+     * Thống kê nhập hàng theo tháng và năm.
+     */
+    public ImportSummary getImportSummary(int month, int year) {
+        ImportSummary summary = new ImportSummary();
+
+        int safeMonth = normalizeMonth(month);
+        int safeYear = normalizeYear(year);
+
+        summary.setSelectedMonth(safeMonth);
+        summary.setSelectedYear(safeYear);
+
+        String monthSql = """
+                SELECT
+                    COALESCE(SUM(im.quantity), 0) AS total_quantity,
+                    COUNT(*) AS import_count,
+                    COUNT(DISTINCT im.product_id) AS product_count
+                FROM inventory_movement im
+                WHERE UPPER(COALESCE(im.movement_type, '')) = 'IN'
+                AND MONTH(im.created_at) = ?
+                AND YEAR(im.created_at) = ?
+                """;
+
+        String yearSql = """
+                SELECT
+                    COALESCE(SUM(im.quantity), 0) AS total_quantity,
+                    COUNT(*) AS import_count,
+                    COUNT(DISTINCT im.product_id) AS product_count
+                FROM inventory_movement im
+                WHERE UPPER(COALESCE(im.movement_type, '')) = 'IN'
+                AND YEAR(im.created_at) = ?
+                """;
+
+        try (Connection conn = DBConnection.getConnection()) {
+            try (PreparedStatement ps = conn.prepareStatement(monthSql)) {
+                ps.setInt(1, safeMonth);
+                ps.setInt(2, safeYear);
+
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        summary.setMonthlyImportQuantity(rs.getInt("total_quantity"));
+                        summary.setMonthlyImportCount(rs.getInt("import_count"));
+                        summary.setMonthlyProductCount(rs.getInt("product_count"));
+                    }
+                }
+            }
+
+            try (PreparedStatement ps = conn.prepareStatement(yearSql)) {
+                ps.setInt(1, safeYear);
+
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        summary.setYearlyImportQuantity(rs.getInt("total_quantity"));
+                        summary.setYearlyImportCount(rs.getInt("import_count"));
+                        summary.setYearlyProductCount(rs.getInt("product_count"));
+                    }
+                }
+            }
+
+            return summary;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("InventoryDAO.getImportSummary error", e);
+        }
+    }
+
+    /**
+     * Issue 128:
+     * Lịch sử nhập hàng chi tiết theo tháng/năm/từ khóa.
+     */
+    public List<ImportHistoryRow> findImportHistory(int month, int year, String keyword) {
+        int safeMonth = normalizeMonth(month);
+        int safeYear = normalizeYear(year);
+
+        StringBuilder sql = new StringBuilder("""
+                SELECT
+                    im.id,
+                    im.product_id,
+                    COALESCE(p.title, CONCAT('Sản phẩm #', im.product_id)) AS product_title,
+                    COALESCE(c.name, 'Chưa phân loại') AS category_name,
+                    COALESCE(b.name, 'Chưa có thương hiệu') AS brand_name,
+                    im.quantity,
+                    im.before_stock,
+                    im.after_stock,
+                    im.reference_type,
+                    im.note,
+                    COALESCE(u.full_name, u.username, 'Admin') AS created_by_name,
+                    im.created_at
+                FROM inventory_movement im
+                LEFT JOIN store_product p ON p.id = im.product_id
+                LEFT JOIN store_category c ON c.id = p.category_id
+                LEFT JOIN store_brand b ON b.id = p.brand_id
+                LEFT JOIN users u ON u.id = im.created_by
+                WHERE UPPER(COALESCE(im.movement_type, '')) = 'IN'
+                AND MONTH(im.created_at) = ?
+                AND YEAR(im.created_at) = ?
+                """);
+
+        List<Object> params = new ArrayList<>();
+        params.add(safeMonth);
+        params.add(safeYear);
+
+        String safeKeyword = keyword == null ? "" : keyword.trim();
+
+        if (!safeKeyword.isEmpty()) {
+            sql.append("""
+                    AND (
+                        LOWER(COALESCE(p.title, '')) LIKE ?
+                        OR LOWER(COALESCE(p.slug, '')) LIKE ?
+                        OR LOWER(COALESCE(c.name, '')) LIKE ?
+                        OR LOWER(COALESCE(b.name, '')) LIKE ?
+                        OR LOWER(COALESCE(im.note, '')) LIKE ?
+                    )
+                    """);
+
+            String pattern = "%" + safeKeyword.toLowerCase() + "%";
+            params.add(pattern);
+            params.add(pattern);
+            params.add(pattern);
+            params.add(pattern);
+            params.add(pattern);
+        }
+
+        sql.append("""
+                ORDER BY im.created_at DESC, im.id DESC
+                LIMIT 200
+                """);
+
+        List<ImportHistoryRow> result = new ArrayList<>();
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+
+            bindParams(ps, params);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    ImportHistoryRow row = new ImportHistoryRow();
+
+                    row.setId(rs.getInt("id"));
+                    row.setProductId(rs.getInt("product_id"));
+                    row.setProductTitle(rs.getString("product_title"));
+                    row.setCategoryName(rs.getString("category_name"));
+                    row.setBrandName(rs.getString("brand_name"));
+                    row.setQuantity(rs.getInt("quantity"));
+                    row.setBeforeStock(getNullableInteger(rs, "before_stock"));
+                    row.setAfterStock(getNullableInteger(rs, "after_stock"));
+                    row.setReferenceType(rs.getString("reference_type"));
+                    row.setNote(rs.getString("note"));
+                    row.setCreatedByName(rs.getString("created_by_name"));
+                    row.setCreatedAt(rs.getTimestamp("created_at"));
+
+                    result.add(row);
+                }
+            }
+
+            return result;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("InventoryDAO.findImportHistory error", e);
+        }
+    }
+
+    /**
+     * Issue 128:
+     * Danh sách năm có dữ liệu nhập hàng để đổ vào combobox lọc.
+     */
+    public List<Integer> importYearOptions() {
+        String sql = """
+                SELECT DISTINCT YEAR(created_at) AS import_year
+                FROM inventory_movement
+                WHERE UPPER(COALESCE(movement_type, '')) = 'IN'
+                AND created_at IS NOT NULL
+                ORDER BY import_year DESC
+                """;
+
+        List<Integer> years = new ArrayList<>();
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                int year = rs.getInt("import_year");
+
+                if (year > 0 && !years.contains(year)) {
+                    years.add(year);
+                }
+            }
+
+            int currentYear = LocalDate.now().getYear();
+
+            if (!years.contains(currentYear)) {
+                years.add(0, currentYear);
+            }
+
+            return years;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("InventoryDAO.importYearOptions error", e);
+        }
+    }
+
+    /**
+     * Issue 128:
+     * Labels biểu đồ nhập hàng theo 12 tháng của năm.
+     */
+    public List<String> monthlyImportStatLabels(int year) {
+        int safeYear = normalizeYear(year);
+        List<String> labels = new ArrayList<>();
+
+        for (int month = 1; month <= 12; month++) {
+            labels.add(String.format("%02d/%d", month, safeYear));
+        }
+
+        return labels;
+    }
+
+    /**
+     * Issue 128:
+     * Values biểu đồ nhập hàng theo 12 tháng của năm.
+     */
+    public List<Integer> monthlyImportStatValues(int year) {
+        int safeYear = normalizeYear(year);
+
+        String sql = """
+                SELECT
+                    MONTH(created_at) AS import_month,
+                    COALESCE(SUM(quantity), 0) AS total_quantity
+                FROM inventory_movement
+                WHERE UPPER(COALESCE(movement_type, '')) = 'IN'
+                AND YEAR(created_at) = ?
+                GROUP BY MONTH(created_at)
+                ORDER BY import_month ASC
+                """;
+
+        List<Integer> values = new ArrayList<>();
+
+        for (int i = 0; i < 12; i++) {
+            values.add(0);
+        }
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, safeYear);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    int month = rs.getInt("import_month");
+                    int quantity = rs.getInt("total_quantity");
+
+                    if (month >= 1 && month <= 12) {
+                        values.set(month - 1, Math.max(quantity, 0));
+                    }
+                }
+            }
+
+            return values;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("InventoryDAO.monthlyImportStatValues error", e);
         }
     }
 
@@ -817,6 +1086,22 @@ public class InventoryDAO {
         return note.trim();
     }
 
+    private int normalizeMonth(int month) {
+        if (month < 1 || month > 12) {
+            return LocalDate.now().getMonthValue();
+        }
+
+        return month;
+    }
+
+    private int normalizeYear(int year) {
+        if (year < 2000) {
+            return LocalDate.now().getYear();
+        }
+
+        return year;
+    }
+
     private enum ExportPeriod {
         TODAY,
         WEEK,
@@ -891,6 +1176,290 @@ public class InventoryDAO {
                     afterStock,
                     status
             );
+        }
+    }
+
+    public static class ImportSummary {
+
+        private int selectedMonth;
+        private int selectedYear;
+
+        private int monthlyImportQuantity;
+        private int monthlyImportCount;
+        private int monthlyProductCount;
+
+        private int yearlyImportQuantity;
+        private int yearlyImportCount;
+        private int yearlyProductCount;
+
+        public int getSelectedMonth() {
+            return selectedMonth;
+        }
+
+        public void setSelectedMonth(int selectedMonth) {
+            this.selectedMonth = Math.max(selectedMonth, 0);
+        }
+
+        public int getSelectedYear() {
+            return selectedYear;
+        }
+
+        public void setSelectedYear(int selectedYear) {
+            this.selectedYear = Math.max(selectedYear, 0);
+        }
+
+        public int getMonthlyImportQuantity() {
+            return monthlyImportQuantity;
+        }
+
+        public void setMonthlyImportQuantity(int monthlyImportQuantity) {
+            this.monthlyImportQuantity = Math.max(monthlyImportQuantity, 0);
+        }
+
+        public int getMonthlyImportCount() {
+            return monthlyImportCount;
+        }
+
+        public void setMonthlyImportCount(int monthlyImportCount) {
+            this.monthlyImportCount = Math.max(monthlyImportCount, 0);
+        }
+
+        public int getMonthlyProductCount() {
+            return monthlyProductCount;
+        }
+
+        public void setMonthlyProductCount(int monthlyProductCount) {
+            this.monthlyProductCount = Math.max(monthlyProductCount, 0);
+        }
+
+        public int getYearlyImportQuantity() {
+            return yearlyImportQuantity;
+        }
+
+        public void setYearlyImportQuantity(int yearlyImportQuantity) {
+            this.yearlyImportQuantity = Math.max(yearlyImportQuantity, 0);
+        }
+
+        public int getYearlyImportCount() {
+            return yearlyImportCount;
+        }
+
+        public void setYearlyImportCount(int yearlyImportCount) {
+            this.yearlyImportCount = Math.max(yearlyImportCount, 0);
+        }
+
+        public int getYearlyProductCount() {
+            return yearlyProductCount;
+        }
+
+        public void setYearlyProductCount(int yearlyProductCount) {
+            this.yearlyProductCount = Math.max(yearlyProductCount, 0);
+        }
+
+        public String getSelectedPeriodText() {
+            return String.format("%02d/%d", selectedMonth, selectedYear);
+        }
+    }
+
+    public static class ImportHistoryRow {
+
+        private int id;
+        private int productId;
+        private String productTitle;
+        private String categoryName;
+        private String brandName;
+        private int quantity;
+        private Integer beforeStock;
+        private Integer afterStock;
+        private String referenceType;
+        private String note;
+        private String createdByName;
+        private Timestamp createdAt;
+
+        public int getId() {
+            return id;
+        }
+
+        public void setId(int id) {
+            this.id = Math.max(id, 0);
+        }
+
+        public int getProductId() {
+            return productId;
+        }
+
+        public void setProductId(int productId) {
+            this.productId = Math.max(productId, 0);
+        }
+
+        public String getProductTitle() {
+            return productTitle;
+        }
+
+        public String getDisplayProductTitle() {
+            if (productTitle == null || productTitle.trim().isEmpty()) {
+                return "Sản phẩm #" + productId;
+            }
+
+            return productTitle.trim();
+        }
+
+        public void setProductTitle(String productTitle) {
+            this.productTitle = productTitle;
+        }
+
+        public String getCategoryName() {
+            return categoryName;
+        }
+
+        public String getDisplayCategoryName() {
+            if (categoryName == null || categoryName.trim().isEmpty()) {
+                return "Chưa phân loại";
+            }
+
+            return categoryName.trim();
+        }
+
+        public void setCategoryName(String categoryName) {
+            this.categoryName = categoryName;
+        }
+
+        public String getBrandName() {
+            return brandName;
+        }
+
+        public String getDisplayBrandName() {
+            if (brandName == null || brandName.trim().isEmpty()) {
+                return "Chưa có thương hiệu";
+            }
+
+            return brandName.trim();
+        }
+
+        public void setBrandName(String brandName) {
+            this.brandName = brandName;
+        }
+
+        public int getQuantity() {
+            return quantity;
+        }
+
+        public void setQuantity(int quantity) {
+            this.quantity = Math.max(quantity, 0);
+        }
+
+        public String getQuantityText() {
+            return "+" + quantity;
+        }
+
+        public Integer getBeforeStock() {
+            return beforeStock;
+        }
+
+        public String getBeforeStockText() {
+            return beforeStock == null ? "-" : String.valueOf(Math.max(beforeStock, 0));
+        }
+
+        public void setBeforeStock(Integer beforeStock) {
+            this.beforeStock = beforeStock;
+        }
+
+        public Integer getAfterStock() {
+            return afterStock;
+        }
+
+        public String getAfterStockText() {
+            return afterStock == null ? "-" : String.valueOf(Math.max(afterStock, 0));
+        }
+
+        public void setAfterStock(Integer afterStock) {
+            this.afterStock = afterStock;
+        }
+
+        public String getStockChangeText() {
+            return getBeforeStockText() + " → " + getAfterStockText();
+        }
+
+        public String getReferenceType() {
+            return referenceType;
+        }
+
+        public String getReferenceTypeLabel() {
+            if (referenceType == null || referenceType.trim().isEmpty()) {
+                return "Không xác định";
+            }
+
+            return switch (referenceType.trim().toUpperCase()) {
+                case "MANUAL" -> "Nhập thủ công";
+                case "EXCEL_IMPORT" -> "Nhập từ Excel";
+                case "RETURN" -> "Hoàn kho";
+                default -> referenceType.trim();
+            };
+        }
+
+        public String getReferenceTypeClass() {
+            if (referenceType == null || referenceType.trim().isEmpty()) {
+                return "import-method-other";
+            }
+
+            return switch (referenceType.trim().toUpperCase()) {
+                case "MANUAL" -> "import-method-manual";
+                case "EXCEL_IMPORT" -> "import-method-excel";
+                case "RETURN" -> "import-method-return";
+                default -> "import-method-other";
+            };
+        }
+
+        public void setReferenceType(String referenceType) {
+            this.referenceType = referenceType;
+        }
+
+        public String getNote() {
+            return note;
+        }
+
+        public String getDisplayNote() {
+            if (note == null || note.trim().isEmpty()) {
+                return "Không có ghi chú";
+            }
+
+            return note.trim();
+        }
+
+        public void setNote(String note) {
+            this.note = note;
+        }
+
+        public String getCreatedByName() {
+            return createdByName;
+        }
+
+        public String getDisplayCreatedByName() {
+            if (createdByName == null || createdByName.trim().isEmpty()) {
+                return "Admin";
+            }
+
+            return createdByName.trim();
+        }
+
+        public void setCreatedByName(String createdByName) {
+            this.createdByName = createdByName;
+        }
+
+        public Timestamp getCreatedAt() {
+            return createdAt;
+        }
+
+        public String getFormattedCreatedAt() {
+            if (createdAt == null) {
+                return "";
+            }
+
+            return new SimpleDateFormat("dd/MM/yyyy HH:mm").format(createdAt);
+        }
+
+        public void setCreatedAt(Timestamp createdAt) {
+            this.createdAt = createdAt;
         }
     }
 
