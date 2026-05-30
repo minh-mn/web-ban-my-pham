@@ -1395,7 +1395,7 @@ td.product-actions {
 }
 
 .inventory-table {
-  min-width: 1180px;
+  min-width: 1420px;
   border-left: 0;
   border-right: 0;
   border-radius: 0;
@@ -1557,6 +1557,91 @@ td.product-actions {
   margin-top: 20px;
 }
 
+/* =========================================================
+   Inventory Excel Restock
+   Scope: inventory.jsp - issue 127
+========================================================= */
+
+.inventory-excel-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--admin-gap, 14px);
+}
+
+.inventory-excel-box {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius, 14px);
+  background: rgba(15, 23, 42, 0.02);
+}
+
+.inventory-excel-title {
+  color: var(--admin-text);
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1.35;
+}
+
+.inventory-excel-desc {
+  color: var(--admin-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.inventory-import-excel-form {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.inventory-import-excel-form .admin-input[type="file"] {
+  max-width: 360px;
+}
+
+.inventory-excel-note {
+  margin-top: 12px;
+  text-align: left;
+}
+
+.inventory-excel-note strong {
+  color: #be185d;
+  font-weight: 900;
+}
+
+.inventory-select-cell {
+  min-width: 94px;
+}
+
+.inventory-check-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--admin-text);
+  font-size: 12px;
+  font-weight: 850;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.inventory-check-label input {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--admin-brand, #ff5fa2);
+}
+
+.inventory-excel-qty-input {
+  width: 95px;
+  min-width: 95px;
+}
+
+.inventory-excel-note-input {
+  width: 150px;
+  min-width: 150px;
+}
+
 @media (max-width: 1280px) {
   .inventory-summary-grid,
   .export-grid {
@@ -1565,6 +1650,23 @@ td.product-actions {
 
   .inventory-section-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .inventory-excel-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .inventory-import-excel-form {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .inventory-import-excel-form .admin-input[type="file"],
+  .inventory-import-excel-form .admin-btn {
+    width: 100%;
+    max-width: 100%;
   }
 }
 
@@ -1609,5 +1711,11 @@ td.product-actions {
 
   .inventory-add-stock-form .admin-btn {
     width: 100%;
+  }
+
+  .inventory-excel-qty-input,
+  .inventory-excel-note-input {
+    width: 100%;
+    min-width: 100%;
   }
 }
