@@ -64,9 +64,18 @@
             <span class="admin-chip">/admin/products</span>
           </a>
 
+          <!-- INVENTORY -->
+          <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/inventory">
+            <div class="admin-menu-card__title">Quản lý tồn kho</div>
+            <p class="admin-menu-card__desc">
+              Theo dõi số lượng tồn, nhập thêm hàng, cảnh báo sắp hết hàng và thống kê xuất kho.
+            </p>
+            <span class="admin-chip">/admin/inventory</span>
+          </a>
+
           <!-- UNIFIED PROMOTIONS -->
           <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/promotions">
-            <div class="admin-menu-card__title">Khuyến mãi & Mã giảm giá</div>
+            <div class="admin-menu-card__title">Khuyến mãi &amp; Mã giảm giá</div>
             <p class="admin-menu-card__desc">
               Quản lý tập trung mã giảm giá, giảm giá thương hiệu, giảm theo đơn hàng
               và chương trình khuyến mãi cửa hàng.
