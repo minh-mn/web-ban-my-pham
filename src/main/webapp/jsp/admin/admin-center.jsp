@@ -158,6 +158,15 @@
             <span class="admin-chip">CMS / blogs</span>
           </a>
 
+          <!-- NOTIFICATIONS -->
+          <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/notifications">
+            <div class="admin-menu-card__title">Hệ thống Thông báo</div>
+            <p class="admin-menu-card__desc">
+              Gửi thông báo hàng loạt sự kiện, voucher, ưu đãi giảm giá đến toàn bộ khách hàng.
+            </p>
+            <span class="admin-chip">Hệ thống / Broadcast</span>
+          </a>
+
         </div>
       </div>
     </div>
