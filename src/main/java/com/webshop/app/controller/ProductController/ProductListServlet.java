@@ -3,23 +3,11 @@ package com.webshop.app.controller.ProductController;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
-import com.webshop.app.dao.BrandDAO;
-import com.webshop.app.dao.CategoryDAO;
-import com.webshop.app.dao.CategoryTagDAO;
-import com.webshop.app.dao.ProductDAO;
-import com.webshop.app.model.Brand;
-import com.webshop.app.model.Category;
-import com.webshop.app.model.CategoryTag;
-import com.webshop.app.model.Product;
+import com.webshop.app.dao.*;
+import com.webshop.app.model.*;
 import com.webshop.app.service.ProductPricingFacade;
 
 import jakarta.servlet.ServletException;
@@ -56,6 +44,18 @@ public class ProductListServlet extends HttpServlet {
         List<Integer> selectedBrandList = parseIntegerList(req.getParameterValues("brand"));
 
         Integer minRating = parseInt(req.getParameter("rating"));
+
+        WishlistDAO wishlistDAO = new WishlistDAO();
+
+        User user = (User) req.getSession().getAttribute("user");
+
+        Set<Integer> wishlistIds = new HashSet<>();
+
+        if (user != null) {
+            wishlistIds = new HashSet<>(wishlistDAO.findProductIdsByUser(user.getId()));
+        }
+
+        req.setAttribute("wishlistIds", wishlistIds);
 
         // ===== 2. PHÂN TRANG =====
         int pageSize = 18;
