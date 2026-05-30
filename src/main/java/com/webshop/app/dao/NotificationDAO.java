@@ -211,4 +211,148 @@ public class NotificationDAO {
         String trimmed = trimToNull(value);
         return trimmed == null ? defaultValue : trimmed;
     }
+
+    // 1. Hàm phát hành thông báo tới TẤT CẢ người dùng hệ thống (Dùng Batch Insert tối ưu)
+    public boolean broadcastNotification(String type, String title, String message, String targetUrl) {
+        String getAllUsersSql = "SELECT id FROM account";
+        String insertSql = "INSERT INTO store_notification (user_id, type, title, message, target_url, is_read, created_at) VALUES (?, ?, ?, ?, ?, false, NOW())";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement getStmt = conn.prepareStatement(getAllUsersSql);
+             ResultSet rs = getStmt.executeQuery();
+             PreparedStatement insertStmt = conn.prepareStatement(insertSql)) {
+
+            conn.setAutoCommit(false);
+
+            while (rs.next()) {
+                int userId = rs.getInt("id");
+                insertStmt.setInt(1, userId);
+                insertStmt.setString(2, type);
+                insertStmt.setString(3, title);
+                insertStmt.setString(4, message);
+                insertStmt.setString(5, targetUrl);
+                insertStmt.addBatch(); 
+            }
+
+            insertStmt.executeBatch(); 
+            conn.commit();
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    // 2. Hàm đếm số thông báo CHƯA ĐỌC của 1 người dùng cụ thể
+    public int getUnreadCount(int userId) {
+        String sql = "SELECT COUNT(*) FROM store_notification WHERE user_id = ? AND is_read = false";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, userId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    // 3. Hàm lấy danh sách 10 thông báo MỚI NHẤT của 1 người dùng cụ thể
+    public List<Notification> getNotificationsByUserId(int userId) {
+        List<Notification> list = new ArrayList<>();
+        String sql = "SELECT id, user_id, type, title, message, target_url, is_read, created_at FROM store_notification WHERE user_id = ? ORDER BY created_at DESC LIMIT 10";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, userId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    Notification n = new Notification();
+                    n.setId(rs.getLong("id"));
+                    n.setUserId(rs.getInt("user_id"));
+                    n.setType(rs.getString("type"));
+                    n.setTitle(rs.getString("title"));
+                    n.setMessage(rs.getString("message"));
+                    n.setTargetUrl(rs.getString("target_url"));
+                    n.setRead(rs.getBoolean("is_read"));
+                    list.add(n);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    /**
+     * Lấy danh sách lịch sử các thông báo hệ thống để hiển thị trên trang danh sách Admin
+     */
+    public List<Notification> getSystemBroadcastHistory() {
+        List<Notification> list = new ArrayList<>();
+        String sql = "SELECT MIN(id) as id, type, title, message, target_url FROM store_notification WHERE order_id IS NULL GROUP BY title, message, type, target_url ORDER BY id DESC";
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet resultSet = statement.executeQuery()) {
+
+            while (resultSet.next()) {
+                Notification n = new Notification();
+                n.setId(resultSet.getLong("id"));
+                n.setType(resultSet.getString("type"));
+                n.setTitle(resultSet.getString("title"));
+                n.setMessage(resultSet.getString("message"));
+                n.setTargetUrl(resultSet.getString("target_url"));
+                list.add(n);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("NotificationDAO.getSystemBroadcastHistory error", e);
+        }
+        return list;
+    }
+
+    /**
+     * Đánh dấu một thông báo là đã đọc bằng ID
+     */
+    public boolean markAsRead(long id) {
+        String sql = "UPDATE store_notification SET is_read = true, read_at = CURRENT_TIMESTAMP WHERE id = ?";
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setLong(1, id);
+            return statement.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            System.err.println("NotificationDAO.markAsRead error: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public void sendWishlistDiscountNotification(int productId, String productName) {
+        WishlistDAO wishlistDAO = new WishlistDAO();
+        // 1. Lấy danh sách tất cả ID người dùng đang lưu sản phẩm này trong Wishlist
+        List<Integer> userIds = wishlistDAO.findUserIdsByProduct(productId);
+
+        // Nếu không có ai thích sản phẩm này thì dừng lại luôn cho nhẹ máy
+        if (userIds == null || userIds.isEmpty()) return;
+
+        // 2. Cấu hình nội dung thông báo
+        String type = "VOUCHER";
+        String title = "!!! Sản phẩm yêu thích của bạn ĐANG GIẢM GIÁ !!!";
+        String message = "Sản phẩm \"" + productName + "\" trong danh sách yêu thích của bạn vừa hạ giá sốc. Click mua ngay kẻo lỡ!";
+        String targetUrl = "/products/detail?id=" + productId; 
+
+        // 3. Thực hiện ghi vào DB (Dùng chung 1 Connection + Transaction để tăng tối đa hiệu năng)
+        try (Connection conn = DBConnection.getConnection()) {
+            conn.setAutoCommit(false);
+
+            for (int userId : userIds) {
+                // Gọi hàm nạp chồng (overload) có sẵn trong NotificationDAO của bạn
+                this.create(conn, userId, null, type, title, message, targetUrl);
+            }
+
+            conn.commit(); // Hoàn tất lưu toàn bộ thông báo
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 }
