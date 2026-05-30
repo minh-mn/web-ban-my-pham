@@ -4,6 +4,7 @@
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
 <c:set var="mainImg" value="${product.imageUrl}" />
+<script src="${pageContext.request.contextPath}/assets/js/main.js"></script>
 
 <section class="pd-page">
   <div class="pd-container">
@@ -49,9 +50,19 @@
       <!-- RIGHT: PRODUCT INFO -->
       <div class="pd-info-col">
 
-        <h1 class="pd-title">
-          <c:out value="${product.title}" />
-        </h1>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;">
+          <h1 class="pd-title" style="flex: 1; margin: 0;">
+            <c:out value="${product.title}" />
+          </h1>
+
+          <c:set var="inWishlist" value="${wishlistIds != null && wishlistIds.contains(product.id)}" />
+          <button type="button"
+                  class="wishlist-btn ${inWishlist ? 'active' : ''}"
+                  onclick="toggleWishlistDetail(${product.id}, this)"
+                  style="color: ${inWishlist ? '#ff4757' : '#999'}; cursor: pointer; border: none; background: none; font-size: 24px; transition: 0.3s;">
+            ❤
+          </button>
+        </div>
 
         <div class="pd-tags">
           <span class="pd-tag pink">MyCosmetic</span>
@@ -518,4 +529,34 @@
 
     highlight(selectedRating);
   });
+
+  function toggleWishlistDetail(productId, btn) {
+    const formData = new URLSearchParams();
+    formData.append("productId", productId);
+
+    fetch("${pageContext.request.contextPath}/wishlist/toggle", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: formData
+    })
+            .then(response => {
+              if (response.status === 401) {
+                showLoginModal();
+                throw new Error("LOGIN_REQUIRED");
+              }
+              return response.text();
+            })
+            .then(data => {
+              if (data === "ADDED") {
+                btn.style.color = "#ff4757"; // Sáng đỏ
+                btn.style.transform = "scale(1.2)";
+                setTimeout(() => btn.style.transform = "scale(1)", 200);
+              } else if (data === "REMOVED") {
+                btn.style.color = "#999"; // Về xám
+              }
+            })
+            .catch(err => {
+              if (err.message !== "LOGIN_REQUIRED") console.error("Lỗi Wishlist:", err);
+            });
+  }
 </script>
