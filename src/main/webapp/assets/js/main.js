@@ -204,6 +204,8 @@ document.addEventListener("DOMContentLoaded", function () {
         }, 100);
       });
 
+
+
       // Xử lý click ra ngoài để đóng menu
       document.addEventListener("click", function (e) {
         if (!userDropdown.contains(e.target)) {
@@ -248,3 +250,24 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
 });
+
+function showLoginModal() {
+  const existing = document.querySelector(".custom-alert-modal");
+  if (existing) existing.remove();
+
+  const ctxPath = window.APP_CTX || ""; 
+
+  const modal = document.createElement("div");
+  modal.className = "custom-alert-modal";
+  modal.innerHTML = `
+        <div class="custom-alert-box">
+            <h3 style="color: #ff5fa2; margin-bottom: 10px;">Thông báo</h3>
+            <p style="color: #555; margin-bottom: 20px;">Bạn cần đăng nhập để thực hiện chức năng này.</p>
+            <div class="alert-actions" style="display: flex; gap: 10px; justify-content: center;">
+                <button onclick="window.location.href='${ctxPath}/login'" class="btn-login" style="background: #ff5fa2; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">Đăng nhập ngay</button>
+                <button onclick="this.closest('.custom-alert-modal').remove()" class="btn-close" style="background: #eee; color: #333; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">Đóng</button>
+            </div>
+        </div>
+    `;
+  document.body.appendChild(modal);
+}
