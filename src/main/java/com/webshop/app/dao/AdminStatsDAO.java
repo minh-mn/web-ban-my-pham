@@ -18,6 +18,7 @@ import java.util.List;
 public class AdminStatsDAO {
 
     private static final String PAID = "PAID";
+    private static final int LOW_STOCK_THRESHOLD = 10;
 
     private static BigDecimal vnd0(BigDecimal value) {
         if (value == null) {
@@ -837,7 +838,7 @@ public class AdminStatsDAO {
                 SELECT COUNT(*)
                 FROM store_product
                 WHERE is_active = 1
-                AND stock = 0
+                AND stock <= 0
                 """;
 
         try (Connection connection = DBConnection.getConnection();
@@ -862,15 +863,18 @@ public class AdminStatsDAO {
                 FROM store_product
                 WHERE is_active = 1
                 AND stock > 0
-                AND stock <= 10
+                AND stock < ?
                 """;
 
         try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql);
-             ResultSet resultSet = statement.executeQuery()) {
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            if (resultSet.next()) {
-                return resultSet.getInt(1);
+            statement.setInt(1, LOW_STOCK_THRESHOLD);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getInt(1);
+                }
             }
 
             return 0;
@@ -912,9 +916,9 @@ public class AdminStatsDAO {
 
         String sql = """
                 SELECT
-                    COALESCE(SUM(CASE WHEN stock = 0 THEN 1 ELSE 0 END), 0) AS out_of_stock,
-                    COALESCE(SUM(CASE WHEN stock > 0 AND stock <= 10 THEN 1 ELSE 0 END), 0) AS low_stock,
-                    COALESCE(SUM(CASE WHEN stock > 10 THEN 1 ELSE 0 END), 0) AS normal_stock
+                    COALESCE(SUM(CASE WHEN stock <= 0 THEN 1 ELSE 0 END), 0) AS out_of_stock,
+                    COALESCE(SUM(CASE WHEN stock > 0 AND stock < ? THEN 1 ELSE 0 END), 0) AS low_stock,
+                    COALESCE(SUM(CASE WHEN stock >= ? THEN 1 ELSE 0 END), 0) AS normal_stock
                 FROM store_product
                 WHERE is_active = 1
                 """;
@@ -922,13 +926,17 @@ public class AdminStatsDAO {
         List<Integer> values = new ArrayList<>();
 
         try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql);
-             ResultSet resultSet = statement.executeQuery()) {
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            if (resultSet.next()) {
-                values.add(resultSet.getInt("out_of_stock"));
-                values.add(resultSet.getInt("low_stock"));
-                values.add(resultSet.getInt("normal_stock"));
+            statement.setInt(1, LOW_STOCK_THRESHOLD);
+            statement.setInt(2, LOW_STOCK_THRESHOLD);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    values.add(resultSet.getInt("out_of_stock"));
+                    values.add(resultSet.getInt("low_stock"));
+                    values.add(resultSet.getInt("normal_stock"));
+                }
             }
 
             return values;
@@ -1004,7 +1012,7 @@ public class AdminStatsDAO {
                 FROM store_product p
                 LEFT JOIN store_category c ON c.id = p.category_id
                 WHERE p.is_active = 1
-                AND p.stock <= 10
+                AND p.stock < ?
                 ORDER BY p.stock ASC, p.title ASC
                 LIMIT 10
                 """;
@@ -1012,17 +1020,20 @@ public class AdminStatsDAO {
         List<Object[]> products = new ArrayList<>();
 
         try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql);
-             ResultSet resultSet = statement.executeQuery()) {
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            while (resultSet.next()) {
-                products.add(new Object[]{
-                        resultSet.getInt("id"),
-                        resultSet.getString("title"),
-                        resultSet.getInt("stock"),
-                        vnd0(resultSet.getBigDecimal("price")),
-                        resultSet.getString("category_name")
-                });
+            statement.setInt(1, LOW_STOCK_THRESHOLD);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    products.add(new Object[]{
+                            resultSet.getInt("id"),
+                            resultSet.getString("title"),
+                            resultSet.getInt("stock"),
+                            vnd0(resultSet.getBigDecimal("price")),
+                            resultSet.getString("category_name")
+                    });
+                }
             }
 
             return products;
