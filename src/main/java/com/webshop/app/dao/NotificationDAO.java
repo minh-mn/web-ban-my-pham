@@ -355,4 +355,70 @@ public class NotificationDAO {
             e.printStackTrace();
         }
     }
+
+    public void createOrderNotification(Connection conn, int userId, long orderId, String status) 
+        throws SQLException {
+
+        String title;
+        String message;
+
+        String targetUrl = "/orders/detail?id=" + orderId;
+
+        switch (status.toLowerCase()) {
+            case "pending":
+                title = "Đặt hàng thành công";
+                message = "Đơn hàng #" + orderId + " đã được tạo thành công.";
+                break;
+                
+            case "processing":
+                title = "Đơn hàng đã được xác nhận";
+                message = "Đơn hàng #" + orderId + " đang được chuẩn bị.";
+                break;
+                
+            case "shipping":
+                title = "Đơn hàng đang được giao";
+                message = "Đơn hàng #" + orderId + " đang trên đường tới bạn.";
+                break;
+
+            case "completed":
+                title = "Đơn hàng hoàn thành";
+                message = "Đơn hàng #" + orderId + " đã giao thành công.";
+                break;
+
+            case "cancelled":
+
+            case "canceled":
+                title = "Đơn hàng đã bị hủy";
+                message = "Đơn hàng #" + orderId + " đã bị hủy.";
+                break;
+
+            default:
+                return;
+        }
+
+        String sql = """
+            INSERT INTO store_notification(
+                user_id,
+                order_id,
+                type,
+                title,
+                message,
+                target_url,
+                is_read,
+                created_at
+            )
+            VALUES (?, ?, 'ORDER', ?, ?, ?, 0, NOW())
+            """;
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, userId);
+            ps.setLong(2, orderId);
+            ps.setString(3, title);
+            ps.setString(4, message);
+            ps.setString(5, targetUrl);
+
+            ps.executeUpdate();
+        }
+    }
 }
