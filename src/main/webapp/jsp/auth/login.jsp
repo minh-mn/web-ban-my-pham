@@ -11,10 +11,7 @@
 		<h2 class="auth-title">Đăng nhập vào MyCosmetic</h2>
 
 		<div class="social-login-stack" style="display: flex; flex-direction: column; gap: 12px; margin-top: 10px;">
-			<a href="javascript:void(0)" id="btn-google" class="social-btn" style="border: 1px solid #d9dadc; border-radius: 500px; padding: 12px 24px; text-decoration: none; color: #121212; font-weight: 700; display: flex; align-items: center;">
-				<img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google" style="width: 20px; margin-right: 12px;">
-				<span style="flex: 1; text-align: center;">Tiếp tục bằng Google</span>
-			</a>
+			<a href="javascript:void(0)" id="btn-google" class="social-btn">
 
 			<a href="javascript:void(0)" id="btn-facebook" class="social-btn" style="border: 1px solid #d9dadc; border-radius: 500px; padding: 12px 24px; text-decoration: none; color: #121212; font-weight: 700; display: flex; align-items: center;">
 				<img src="https://upload.wikimedia.org/wikipedia/commons/0/05/Facebook_Logo_%282019%29.png" alt="Facebook" style="width: 20px; margin-right: 12px;">
@@ -239,4 +236,56 @@
 			});
 		}
 	});
+
+const GOOGLE_CLIENT_ID = "78979081819-fo21lsm5idv3pp22779bais8l1f5csnm.apps.googleusercontent.com";
+const contextPath = "${pageContext.request.contextPath}";
+
+window.addEventListener("load", () => {
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: handleGoogleLogin
+  });
+
+  google.accounts.id.renderButton(
+    document.getElementById("googleLoginBtn"),
+    {
+      theme: "outline",
+      size: "large",
+      shape: "pill",
+      width: 320
+    }
+  );
+});
+
+function handleGoogleLogin(response) {
+  fetch(contextPath + "/social-auth/google", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    body: new URLSearchParams({
+      credential: response.credential
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.status === "success") {
+      Swal.fire({
+        icon: "success",
+        title: "Đăng nhập thành công"
+      }).then(() => {
+        window.location.href = contextPath + data.redirectUrl;
+      });
+    } else {
+      Swal.fire({
+        icon: "error",
+        title: "Lỗi",
+        text: data.message
+      });
+    }
+  })
+  .catch(() => {
+    Swal.fire("Lỗi", "Không thể kết nối server", "error");
+  });
+}
 </script>
