@@ -73,10 +73,19 @@ public class CartServlet extends HttpServlet {
             }
 
             if (selectedVariant.getStock() <= 0) {
-                resp.sendRedirect(req.getContextPath()
-                        + "/product/" + product.getSlug() + "?variantOutOfStock=1");
-                return;
+                if (quantity > selectedVariant.getStock()) {
+
+                    resp.sendRedirect(
+                            req.getContextPath()
+                                    + "/product/"
+                                    + product.getSlug()
+                                    + "?variantOutOfStock=1"
+                    );
+
+                    return;
+                }
             }
+            
         }
 
         HttpSession session = req.getSession();
