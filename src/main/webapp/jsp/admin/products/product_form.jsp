@@ -238,6 +238,52 @@
             </div>
           </section>
 
+          // QUẢN LÝ BIẾN SẢN PHẨM
+          <div class="admin-card" style="margin-top: 20px;">
+            <div class="admin-form-section__title">
+              <h2>Quản lý Biến thể sản phẩm</h2>
+            </div>
+            <div class="admin-card__body">
+              <table class="admin-table" id="variantTable">
+                <thead>
+                <tr>
+                  <th>Kích thước (Size)</th>
+                  <th>Loại (Type)</th>
+                  <th>Giá cộng thêm</th>
+                  <th>Tồn kho</th>
+                  <th>Hành động</th>
+                </tr>
+                </thead>
+                <tbody>
+                <c:choose>
+                  <c:when test="${not empty variants}">
+                    <c:forEach var="v" items="${variants}">
+                      <tr>
+                        <td><input type="text" name="v_size[]" class="admin-input" value="${fn:escapeXml(v.size)}"></td>
+                        <td><input type="text" name="v_type[]" class="admin-input" value="${fn:escapeXml(v.type)}"></td>
+                        <td><input type="number" name="v_price[]" class="admin-input" value="${v.extraPrice}"></td>
+                        <td><input type="number" name="v_stock[]" class="admin-input" value="${v.stock}"></td>
+                        <td><button type="button" class="admin-btn admin-btn--danger" onclick="removeRow(this)">Xóa</button></td>
+                      </tr>
+                    </c:forEach>
+                  </c:when>
+                  <c:otherwise>
+                    <tr>
+                      <td><input type="text" name="v_size[]" class="admin-input" placeholder="VD: XL"></td>
+                      <td><input type="text" name="v_type[]" class="admin-input" placeholder="VD: Đỏ"></td>
+                      <td><input type="number" name="v_price[]" class="admin-input" value="0"></td>
+                      <td><input type="number" name="v_stock[]" class="admin-input" value="0"></td>
+                      <td><button type="button" class="admin-btn admin-btn--danger" onclick="removeRow(this)">Xóa</button></td>
+                    </tr>
+                  </c:otherwise>
+                </c:choose>
+                </tbody>
+              </table>
+              <button type="button" class="admin-btn" onclick="addRow()" style="margin-top: 10px;">+ Thêm biến thể</button>
+            </div>
+          </div>
+
+
           <!-- =====================================================
                MÔ TẢ CHI TIẾT
           ====================================================== -->
@@ -586,6 +632,23 @@
       field.setSelectionRange(cursor, cursor);
     }
   })();
+
+function addRow() {
+    const tableBody = document.querySelector("#variantTable tbody");
+    const newRow = document.createElement("tr");
+    newRow.innerHTML = `
+        <td><input type="text" name="v_size[]" class="admin-input"></td>
+        <td><input type="text" name="v_type[]" class="admin-input"></td>
+        <td><input type="number" name="v_price[]" class="admin-input" value="0"></td>
+        <td><input type="number" name="v_stock[]" class="admin-input" value="0"></td>
+        <td><button type="button" class="admin-btn admin-btn--danger" onclick="removeRow(this)">Xóa</button></td>
+    `;
+    tableBody.appendChild(newRow);
+  }
+
+  function removeRow(btn) {
+    btn.closest("tr").remove();
+  }
 </script>
 
 <jsp:include page="/jsp/admin/layout/footer.jsp"/>
