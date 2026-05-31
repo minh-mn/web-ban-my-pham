@@ -54,7 +54,6 @@
 
     <section class="admin-user-hero">
       <div class="admin-user-hero__content">
-        <span class="admin-user-eyebrow">Issue 130</span>
         <h1 class="admin-h1 admin-user-title">Quản lí user</h1>
         <p class="admin-subtext admin-user-subtitle">
           Hiển thị tên tài khoản, role, rank, trạng thái và thông tin liên hệ.
