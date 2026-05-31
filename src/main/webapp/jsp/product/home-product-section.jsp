@@ -96,18 +96,17 @@
                                         <span class="skin-discount-bubble">-${product.discountPercent}%</span>
                                     </c:if>
 
-
                                     <c:choose>
                                         <c:when test="${not empty product.imageUrl}">
                                             <c:choose>
                                                 <c:when test="${fn:startsWith(product.imageUrl, 'http')}">
-                                                    <img src="${product.imageUrl}" alt="${product.title}" loading="lazy" onerror="this.style.display='none'; this.closest('.skin-product-image').classList.add('image-error');">
+                                                    <img src="${product.imageUrl}" alt="${product.title}" loading="lazy">
                                                 </c:when>
                                                 <c:when test="${fn:startsWith(product.imageUrl, '/')}">
-                                                    <img src="${ctx}${product.imageUrl}" alt="${product.title}" loading="lazy" onerror="this.style.display='none'; this.closest('.skin-product-image').classList.add('image-error');">
+                                                    <img src="${ctx}${product.imageUrl}" alt="${product.title}" loading="lazy">
                                                 </c:when>
                                                 <c:otherwise>
-                                                    <img src="${ctx}/uploads/product/${product.imageUrl}" alt="${product.title}" loading="lazy" onerror="this.style.display='none'; this.closest('.skin-product-image').classList.add('image-error');">
+                                                    <img src="${ctx}/uploads/product/${product.imageUrl}" alt="${product.title}" loading="lazy">
                                                 </c:otherwise>
                                             </c:choose>
                                         </c:when>
@@ -170,10 +169,10 @@
                                     <c:choose>
                                         <c:when test="${isFlashSection}">
                                             <div class="skin-progress">
-                                                <span style="width: ${product.saleProgressPercent}%;"></span>
+                                                <span style="width: 18%;"></span>
                                             </div>
                                             <div class="skin-progress-text">
-                                                ĐANG DIỄN RA ${product.saleProgressPercent}%
+                                                ĐANG DIỄN RA 18%
                                             </div>
                                         </c:when>
 
@@ -216,14 +215,15 @@
 <c:if test="${isFlashSection}">
     <style>
         .skin-product-section.is-flash {
-            padding-top: 34px;
+            padding-top: 72px;
             padding-bottom: 56px;
             overflow: hidden;
         }
 
         .skin-product-section.is-flash .flash-top {
             align-items: center;
-            margin-bottom: 24px;
+            margin-bottom: 26px;
+            gap: 22px;
         }
 
         .skin-product-section.is-flash .skin-section-actions {
@@ -245,6 +245,7 @@
             display: flex;
             flex-direction: column;
             gap: 11px;
+            min-width: 0;
         }
 
         .skin-product-section.is-flash .flash-deal-eyebrow {
@@ -282,6 +283,7 @@
         .skin-product-section.is-flash .flash-deal-heading {
             position: relative;
             width: fit-content;
+            max-width: 100%;
             margin: 0;
             display: flex;
             align-items: center;
@@ -305,7 +307,7 @@
 
         .skin-product-section.is-flash .flash-word {
             color: #b0003a;
-            font-size: clamp(42px, 5.2vw, 76px);
+            font-size: clamp(38px, 4.7vw, 70px);
             font-weight: 1000;
             letter-spacing: .095em;
             line-height: .95;
@@ -333,15 +335,15 @@
             position: relative;
             isolation: isolate;
             flex: 0 0 auto;
-            width: clamp(48px, 4.8vw, 68px);
-            height: clamp(48px, 4.8vw, 68px);
+            width: clamp(46px, 4.5vw, 64px);
+            height: clamp(46px, 4.5vw, 64px);
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            border-radius: 22px;
+            border-radius: 20px;
             background: radial-gradient(circle at 30% 20%, #fff2a7 0%, #ffd25f 26%, #ff9f1a 62%, #ff7a00 100%);
             color: #fff;
-            font-size: clamp(25px, 3vw, 38px);
+            font-size: clamp(24px, 2.8vw, 36px);
             font-weight: 1000;
             line-height: 1;
             box-shadow: 0 15px 30px rgba(255, 150, 25, .30), inset 0 1px 0 rgba(255, 255, 255, .55);
@@ -512,15 +514,15 @@
         }
 
         .skin-product-section.is-flash .skin-product-title {
-            min-height: 54px;
+            min-height: 66px;
             display: -webkit-box;
             overflow: hidden;
             color: #1b1b1b;
-            font-size: 16px;
-            line-height: 1.42;
+            font-size: 15px;
+            line-height: 1.45;
             font-weight: 850;
             text-decoration: none;
-            -webkit-line-clamp: 2;
+            -webkit-line-clamp: 3;
             -webkit-box-orient: vertical;
         }
 
@@ -670,136 +672,31 @@
                 max-width: 100%;
             }
 
-            .skin-product-section.is-flash .flash-word {
-                font-size: 34px;
-                letter-spacing: .06em;
-            }
-
             .skin-product-section.is-flash .flash-deal-heading {
                 gap: 10px;
             }
 
+            .skin-product-section.is-flash .flash-word {
+                font-size: clamp(30px, 9vw, 44px);
+                letter-spacing: .06em;
+            }
+
             .skin-product-section.is-flash .flash-icon {
-                width: 46px;
-                height: 46px;
-                border-radius: 16px;
-                font-size: 24px;
+                width: 44px;
+                height: 44px;
+                border-radius: 14px;
+                font-size: 22px;
             }
 
             .skin-product-section.is-flash .flash-deal-subtitle {
                 font-size: 15px;
+                line-height: 1.55;
             }
 
             .skin-product-section.is-flash .skin-countdown span {
                 min-width: 42px;
                 height: 42px;
                 font-size: 20px;
-            }
-        }
-
-
-        /* =========================================================
-           OVERRIDE 2026-05-31
-           Fix card Flash Deal trang chủ: không mất chữ, ảnh không làm vỡ layout,
-           card cao đều và chuyển slide mượt hơn.
-        ========================================================= */
-        .skin-product-section.is-flash .skin-flash-viewport {
-            overflow: hidden;
-            padding: 2px 0 18px;
-        }
-
-        .skin-product-section.is-flash .skin-product-scroll.flash-scroll {
-            align-items: stretch;
-            transition: transform .46s cubic-bezier(.22, .61, .36, 1);
-        }
-
-        .skin-product-section.is-flash .skin-product-card.flash-card {
-            min-height: 486px;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .skin-product-section.is-flash .skin-product-image {
-            aspect-ratio: auto;
-            height: 220px;
-            display: block;
-            background: linear-gradient(135deg, #f8fbff 0%, #fff6fa 100%);
-        }
-
-        .skin-product-section.is-flash .skin-product-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            padding: 10px;
-        }
-
-        .skin-product-section.is-flash .skin-product-image.image-error::after {
-            content: "MyCosmetic";
-            position: absolute;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #b0003a;
-            font-size: 22px;
-            font-weight: 1000;
-            letter-spacing: .04em;
-        }
-
-        .skin-product-section.is-flash .skin-product-body {
-            min-height: 252px;
-            display: flex;
-            flex-direction: column;
-            padding: 14px 14px 18px;
-        }
-
-        .skin-product-section.is-flash .skin-product-title {
-            min-height: 69px;
-            font-size: 15.5px;
-            line-height: 1.48;
-            -webkit-line-clamp: 3;
-        }
-
-        .skin-product-section.is-flash .skin-price-row {
-            min-height: 31px;
-        }
-
-        .skin-product-section.is-flash .skin-product-meta {
-            min-height: 26px;
-        }
-
-        .skin-product-section.is-flash .skin-progress {
-            margin-top: auto;
-        }
-
-        .skin-product-section.is-flash .skin-progress-text {
-            min-height: 18px;
-        }
-
-        @media (max-width: 1280px) {
-            .skin-product-section.is-flash .skin-product-card.flash-card {
-                flex-basis: calc((100% - 54px) / 4);
-                max-width: calc((100% - 54px) / 4);
-            }
-        }
-
-        @media (max-width: 980px) {
-            .skin-product-section.is-flash .skin-product-card.flash-card {
-                flex-basis: calc((100% - 18px) / 2);
-                max-width: calc((100% - 18px) / 2);
-            }
-        }
-
-        @media (max-width: 620px) {
-            .skin-product-section.is-flash .skin-product-card.flash-card {
-                flex-basis: 100%;
-                max-width: 100%;
-                min-height: auto;
-            }
-
-            .skin-product-section.is-flash .skin-product-image {
-                height: 245px;
             }
         }
     </style>

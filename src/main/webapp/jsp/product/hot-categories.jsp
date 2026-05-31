@@ -6,50 +6,63 @@
 
 <section class="skin-hot-categories" id="hot-categories">
   <div class="skin-container">
-    <div class="skin-section-top">
+    <div class="skin-section-top skin-hot-category-head">
       <div>
-        <span class="skin-eyebrow">HOT CATEGORY</span>
         <h2>DANH MỤC HOT</h2>
-        <p>Danh mục nổi bật được lấy theo số lượng sản phẩm đang hoạt động.</p>
       </div>
-      <a class="skin-view-all" href="${ctx}/products">Xem sản phẩm</a>
     </div>
 
-    <div class="skin-category-grid">
+    <div class="skin-category-grid skin-category-grid--circle">
       <c:choose>
         <c:when test="${not empty hotCategories}">
           <c:forEach var="category" items="${hotCategories}">
-            <a class="skin-category-card" href="${ctx}/products?categoryIds=${category.id}">
+            <c:choose>
+              <c:when test="${category.id > 0}">
+                <c:set var="categoryUrl" value="${ctx}/products?categoryIds=${category.id}" />
+              </c:when>
+              <c:otherwise>
+                <c:set var="categoryUrl" value="${ctx}/products" />
+              </c:otherwise>
+            </c:choose>
+
+            <a class="skin-category-card" href="${categoryUrl}" title="${category.name}">
               <div class="skin-category-thumb">
+                <c:set var="categoryInitial" value="${fn:substring(category.name, 0, 1)}" />
+
                 <c:choose>
                   <c:when test="${not empty category.hotImageUrl}">
                     <c:choose>
                       <c:when test="${fn:startsWith(category.hotImageUrl, 'http')}">
-                        <img src="${category.hotImageUrl}" alt="${category.name}">
+                        <img src="${category.hotImageUrl}" alt="${category.name}" loading="lazy"
+                             onerror="this.style.display='none'; var fb=this.parentElement.querySelector('.skin-category-fallback'); if(fb){fb.classList.add('is-show');}">
                       </c:when>
                       <c:when test="${fn:startsWith(category.hotImageUrl, '/')}">
-                        <img src="${ctx}${category.hotImageUrl}" alt="${category.name}">
+                        <img src="${ctx}${category.hotImageUrl}" alt="${category.name}" loading="lazy"
+                             onerror="this.style.display='none'; var fb=this.parentElement.querySelector('.skin-category-fallback'); if(fb){fb.classList.add('is-show');}">
                       </c:when>
                       <c:otherwise>
-                        <img src="${ctx}/uploads/product/${category.hotImageUrl}" alt="${category.name}">
+                        <img src="${ctx}/uploads/product/${category.hotImageUrl}" alt="${category.name}" loading="lazy"
+                             onerror="this.style.display='none'; var fb=this.parentElement.querySelector('.skin-category-fallback'); if(fb){fb.classList.add('is-show');}">
                       </c:otherwise>
                     </c:choose>
+
+                    <span class="skin-category-fallback">${categoryInitial}</span>
                   </c:when>
                   <c:otherwise>
-                    <span>${fn:substring(category.name, 0, 1)}</span>
+                    <span class="skin-category-fallback is-show">${categoryInitial}</span>
                   </c:otherwise>
                 </c:choose>
               </div>
+
               <strong>${category.name}</strong>
-              <small>${category.productCount} sản phẩm</small>
             </a>
           </c:forEach>
         </c:when>
+
         <c:otherwise>
           <a class="skin-category-card" href="${ctx}/products">
-            <div class="skin-category-thumb"><span>M</span></div>
+            <div class="skin-category-thumb"><span class="skin-category-fallback is-show">M</span></div>
             <strong>Mỹ phẩm</strong>
-            <small>Đang cập nhật</small>
           </a>
         </c:otherwise>
       </c:choose>
