@@ -313,67 +313,30 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04) !important;
 }
 
-/* ─── KHỐI HOẶC TRUNG TÂM CHUẨN ĐẸP ─── */
 .auth-separator {
-  position: relative;
-  text-align: center;
-  /* Tăng khoảng cách cách biệt trên và dưới (32px) để UI thoáng đạt */
-  margin: 32px 0;
-  color: #777;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 1px;
-}
-
-/* Tạo đường gạch ngang mờ xuyên qua chữ HOẶC */
-.auth-separator::before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 0;
-  width: 100%;
-  height: 1px;
-  background-color: #eee;
-  z-index: 1;
-}
-
-
-/* ─── KHỐI HOẶC GIỮA FORM TRUNG TÂM TUYỆT ĐỐI ─── */
-.auth-divider {
-  position: relative;
-  display: flex; /* Kích hoạt flexbox để căn giữa */
+  display: flex;
   align-items: center;
-  justify-content: center;
-  text-align: center;
-  margin: 28px 0; /* Tạo khoảng cách rộng rãi trên dưới phân tách nút bấm và Social */
+  margin: 36px 0;
   color: #777;
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 1px;
-  width: 100%;
-  box-sizing: border-box;
 }
 
-/* Tạo đường gạch ngang mờ chạy xuyên qua */
-.auth-divider::before {
+.auth-separator::before,
+.auth-separator::after {
   content: "";
-  position: absolute;
-  top: 50%;
-  left: 0;
-  width: 100%;
+  flex: 1;
   height: 1px;
-  background-color: #eee;
-  z-index: 1;
+  background: #e5e5e5;
 }
 
-/* Thẻ span bọc chữ HOẶC đè lên đường gạch, định vị ngay chính giữa trung tâm */
-.auth-divider span {
-  position: relative;
-  background-color: #ffffff !important; /* Đè màu nền trắng xóa đường gạch ở giữa */
-  padding: 0 16px !important;
-  z-index: 2;
-  display: inline-block !important;
-  text-transform: uppercase;
+.auth-separator::before {
+  margin-right: 12px;
+}
+
+.auth-separator::after {
+  margin-left: 12px;
 }
 
 /* =========================================================
