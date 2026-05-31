@@ -1,266 +1,289 @@
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
 <c:set var="ctx" value="${pageContext.request.contextPath}" />
+<c:set var="selectedSlot" value="${empty param.slot ? '09:00' : param.slot}" />
+<c:set var="selectedCategory" value="${empty param.category ? 'TOP_PICK' : param.category}" />
 
-<section class="mc-flash-page">
-  <div class="mc-flash-container">
+<c:set var="dealProducts" value="${flashSaleProducts}" />
+<c:if test="${empty dealProducts && not empty deepDiscountProducts}">
+  <c:set var="dealProducts" value="${deepDiscountProducts}" />
+</c:if>
+<c:if test="${empty dealProducts && not empty products}">
+  <c:set var="dealProducts" value="${products}" />
+</c:if>
+<c:if test="${empty dealProducts && not empty featuredProducts}">
+  <c:set var="dealProducts" value="${featuredProducts}" />
+</c:if>
 
-    <!-- Banner lớn giống trang Flash Sale tham khảo, dùng CSS thuần nên không cần ảnh ngoài -->
-    <div class="mc-flash-hero">
-      <div class="mc-flash-hero__brand">MyCosmetic</div>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flash Deal - MyCosmetic</title>
+  <link rel="stylesheet" href="${ctx}/assets/css/flash-sale.css?v=20260531-final">
+</head>
+<body>
 
-      <div class="mc-flash-hero__center">
-        <div class="mc-flash-ghost">FLASH DEAL</div>
-        <h1>Khung giờ vàng</h1>
-        <h2>Giá giảm đến <strong>25%</strong></h2>
+<jsp:include page="/jsp/common/header.jsp" />
+
+<main class="flash-page">
+  <div class="flash-container">
+
+    <!-- HERO GIỐNG MẪU THAM KHẢO -->
+    <section class="flash-hero">
+      <div class="flash-hero__brand">MyCosmetic</div>
+
+      <div class="flash-hero__content">
+        <div class="flash-hero__title">FLASHDEAL</div>
+        <div class="flash-hero__sub">KHUNG GIỜ VÀNG</div>
+        <div class="flash-hero__discount">GIÁ GIẢM ĐẾN <strong>25%</strong></div>
       </div>
 
-      <div class="mc-flash-hero__schedule">
-        <span>Duy nhất hôm nay</span>
-        <b>09:00</b>
-        <b>12:00</b>
-        <b>18:00</b>
-        <b>21:00</b>
-        <span>Độc quyền tại website MyCosmetic</span>
-      </div>
-    </div>
-
-    <!-- Countdown -->
-    <div class="mc-flash-countdown-wrap">
-      <span class="mc-flash-countdown-label">KẾT THÚC TRONG</span>
-
-      <c:choose>
-        <c:when test="${not empty activeFlashSale}">
-          <div class="mc-flash-countdown" id="flashCountdown" data-end-time="${activeFlashSale.endTime.time}">
-            <span data-hh>00</span>
-            <b>:</b>
-            <span data-mm>00</span>
-            <b>:</b>
-            <span data-ss>00</span>
-          </div>
-        </c:when>
-        <c:otherwise>
-          <div class="mc-flash-countdown">
-            <span>00</span>
-            <b>:</b>
-            <span>00</span>
-            <b>:</b>
-            <span>00</span>
-          </div>
-        </c:otherwise>
-      </c:choose>
-    </div>
-
-    <!-- Khung giờ -->
-    <div class="mc-flash-slots">
-      <button type="button" class="mc-slot is-active">
-        <strong>09:00</strong>
-        <span>Đang diễn ra</span>
-      </button>
-      <button type="button" class="mc-slot">
-        <strong>15:00</strong>
-        <span>Sắp diễn ra</span>
-      </button>
-      <button type="button" class="mc-slot">
-        <strong>21:00</strong>
-        <span>Sắp diễn ra</span>
-      </button>
-    </div>
-
-    <!-- Tab nhóm sản phẩm -->
-    <div class="mc-flash-tabs">
-      <button type="button" class="mc-flash-tab is-active" data-filter="all">TOP PICK</button>
-      <button type="button" class="mc-flash-tab" data-filter="gift">MUA LÀ CÓ QUÀ</button>
-      <button type="button" class="mc-flash-tab" data-filter="skincare">SKINCARE</button>
-      <button type="button" class="mc-flash-tab" data-filter="makeup">MAKEUP</button>
-      <button type="button" class="mc-flash-tab" data-filter="other">QUÀ TẶNG</button>
-    </div>
-
-    <c:choose>
-      <c:when test="${empty fsItems}">
-        <div class="mc-flash-empty">
-          <h3>Chưa có sản phẩm Flash Deal</h3>
-          <p>Hiện chưa có chương trình Flash Deal đang hoạt động. Vui lòng quay lại sau.</p>
+      <div class="flash-hero__schedule">
+        <div class="flash-hero__schedule-left">
+          <span class="flash-hero__clock">⏰</span>
+          <span class="flash-hero__schedule-text">DUY NHẤT HÔM NAY</span>
+          <span class="flash-hero__time-pill">09:00</span>
+          <span class="flash-hero__time-pill">12:00</span>
+          <span class="flash-hero__time-pill">18:00</span>
+          <span class="flash-hero__time-pill">21:00</span>
         </div>
-      </c:when>
 
-      <c:otherwise>
-        <div class="mc-flash-grid">
-          <c:forEach var="item" items="${fsItems}">
-            <c:set var="titleLower" value="${fn:toLowerCase(item.product.title)}" />
-            <c:set var="categoryLower" value="${fn:toLowerCase(item.product.categoryName)}" />
-            <c:set var="productType" value="other" />
+        <div class="flash-hero__schedule-right">
+          <span class="flash-hero__clock">⏰</span>
+          <span class="flash-hero__schedule-text">ĐỘC QUYỀN TẠI WEBSITE MYCOSMETIC</span>
+          <span class="flash-hero__time-pill">12:00</span>
+          <span class="flash-hero__time-pill">18:00</span>
+        </div>
+      </div>
+    </section>
 
-            <c:if test="${fn:contains(titleLower, 'quà')
-                                   or fn:contains(titleLower, 'gift')
-                                   or fn:contains(titleLower, 'box')
-                                   or fn:contains(titleLower, 'gương')
-                                   or fn:contains(titleLower, 'cọ')
-                                   or fn:contains(titleLower, 'phụ kiện')
-                                   or fn:contains(categoryLower, 'phụ kiện')
-                                   or fn:contains(categoryLower, 'gift')}">
-              <c:set var="productType" value="gift" />
-            </c:if>
+    <!-- COUNTDOWN -->
+    <section class="flash-countdown-section">
+      <div class="flash-countdown-label">KẾT THÚC TRONG</div>
 
-            <c:if test="${fn:contains(titleLower, 'son')
-                                   or fn:contains(titleLower, 'lip')
-                                   or fn:contains(titleLower, 'phấn')
-                                   or fn:contains(titleLower, 'cushion')
-                                   or fn:contains(titleLower, 'mascara')
-                                   or fn:contains(titleLower, 'eyeliner')
-                                   or fn:contains(categoryLower, 'makeup')
-                                   or fn:contains(categoryLower, 'trang điểm')
-                                   or fn:contains(categoryLower, 'son')}">
-              <c:set var="productType" value="makeup" />
-            </c:if>
+      <div class="flash-countdown"
+           id="flashCountdown"
+           data-hours="${requestScope.countdownHours != null ? requestScope.countdownHours : 1}"
+           data-minutes="${requestScope.countdownMinutes != null ? requestScope.countdownMinutes : 17}"
+           data-seconds="${requestScope.countdownSeconds != null ? requestScope.countdownSeconds : 45}">
+        <span id="cdHours">00</span>
+        <b>:</b>
+        <span id="cdMinutes">00</span>
+        <b>:</b>
+        <span id="cdSeconds">00</span>
+      </div>
+    </section>
 
-            <c:if test="${fn:contains(titleLower, 'serum')
-                                   or fn:contains(titleLower, 'kem')
-                                   or fn:contains(titleLower, 'toner')
-                                   or fn:contains(titleLower, 'sữa rửa')
-                                   or fn:contains(titleLower, 'mask')
-                                   or fn:contains(titleLower, 'tẩy')
-                                   or fn:contains(titleLower, 'dưỡng')
-                                   or fn:contains(titleLower, 'essence')
-                                   or fn:contains(categoryLower, 'skincare')
-                                   or fn:contains(categoryLower, 'chăm sóc da')}">
-              <c:set var="productType" value="skincare" />
-            </c:if>
+    <!-- KHUNG GIỜ -->
+    <section class="flash-time-slots">
+      <a class="flash-time-slot ${selectedSlot eq '09:00' ? 'active' : ''}"
+         href="${ctx}/flash-sale?slot=09:00&category=${selectedCategory}">
+        <strong>09:00</strong>
+        <span>${selectedSlot eq '09:00' ? 'Đang Diễn Ra' : 'Sắp Diễn Ra'}</span>
+      </a>
 
-            <article class="mc-flash-card" data-category="${productType}">
-              <a class="mc-flash-img" href="${ctx}/product/${item.product.slug}">
+      <a class="flash-time-slot ${selectedSlot eq '12:00' ? 'active' : ''}"
+         href="${ctx}/flash-sale?slot=12:00&category=${selectedCategory}">
+        <strong>12:00</strong>
+        <span>${selectedSlot eq '12:00' ? 'Đang Diễn Ra' : 'Sắp Diễn Ra'}</span>
+      </a>
+
+      <a class="flash-time-slot ${selectedSlot eq '15:00' ? 'active' : ''}"
+         href="${ctx}/flash-sale?slot=15:00&category=${selectedCategory}">
+        <strong>15:00</strong>
+        <span>${selectedSlot eq '15:00' ? 'Đang Diễn Ra' : 'Sắp Diễn Ra'}</span>
+      </a>
+
+      <a class="flash-time-slot ${selectedSlot eq '21:00' ? 'active' : ''}"
+         href="${ctx}/flash-sale?slot=21:00&category=${selectedCategory}">
+        <strong>21:00</strong>
+        <span>${selectedSlot eq '21:00' ? 'Đang Diễn Ra' : 'Sắp Diễn Ra'}</span>
+      </a>
+    </section>
+
+    <!-- TAB DANH MỤC -->
+    <section class="flash-category-tabs">
+      <a class="flash-category-tab ${selectedCategory eq 'TOP_PICK' ? 'active' : ''}"
+         href="${ctx}/flash-sale?slot=${selectedSlot}&category=TOP_PICK">TOP PICK</a>
+
+      <a class="flash-category-tab ${selectedCategory eq 'MUA_LA_CO_QUA' ? 'active' : ''}"
+         href="${ctx}/flash-sale?slot=${selectedSlot}&category=MUA_LA_CO_QUA">MUA LÀ CÓ QUÀ</a>
+
+      <a class="flash-category-tab ${selectedCategory eq 'SKINCARE' ? 'active' : ''}"
+         href="${ctx}/flash-sale?slot=${selectedSlot}&category=SKINCARE">SKINCARE</a>
+
+      <a class="flash-category-tab ${selectedCategory eq 'MAKEUP' ? 'active' : ''}"
+         href="${ctx}/flash-sale?slot=${selectedSlot}&category=MAKEUP">MAKEUP</a>
+
+      <a class="flash-category-tab ${selectedCategory eq 'QUA_TANG' ? 'active' : ''}"
+         href="${ctx}/flash-sale?slot=${selectedSlot}&category=QUA_TANG">QUÀ TẶNG</a>
+    </section>
+
+    <!-- DANH SÁCH SẢN PHẨM -->
+    <section class="flash-products-section">
+      <c:choose>
+        <c:when test="${not empty dealProducts}">
+          <div class="flash-products-grid">
+            <c:forEach var="product" items="${dealProducts}">
+              <article class="flash-product-card">
+
                 <c:choose>
-                  <c:when test="${not empty item.product.imageUrl}">
-                    <c:choose>
-                      <c:when test="${fn:startsWith(item.product.imageUrl, 'http')}">
-                        <img src="${item.product.imageUrl}" alt="${item.product.title}">
-                      </c:when>
-                      <c:when test="${fn:startsWith(item.product.imageUrl, '/')}">
-                        <img src="${ctx}${item.product.imageUrl}" alt="${item.product.title}">
-                      </c:when>
-                      <c:otherwise>
-                        <img src="${ctx}/uploads/product/${item.product.imageUrl}" alt="${item.product.title}">
-                      </c:otherwise>
-                    </c:choose>
+                  <c:when test="${not empty product.slug}">
+                    <c:set var="productUrl" value="${ctx}/products/${product.slug}" />
                   </c:when>
                   <c:otherwise>
-                    <div class="mc-flash-no-image">No image</div>
+                    <c:set var="productUrl" value="${ctx}/product?id=${product.id}" />
                   </c:otherwise>
                 </c:choose>
 
-                <c:if test="${item.product.discountPercent > 0}">
-                  <span class="mc-discount-badge">-${item.product.discountPercent}%</span>
-                </c:if>
-              </a>
-
-              <div class="mc-flash-card-body">
-                <div class="mc-card-badges">
-                  <span>FREESHIP TQ</span>
-                  <span>FLASH DEAL</span>
-                </div>
-
-                <a class="mc-flash-title" href="${ctx}/product/${item.product.slug}">
-                    ${item.product.title}
+                <a class="flash-product-image-link" href="${productUrl}">
+                  <div class="flash-product-image-box">
+                    <c:choose>
+                      <c:when test="${not empty product.imageUrl}">
+                        <c:choose>
+                          <c:when test="${fn:startsWith(product.imageUrl, 'http')}">
+                            <img src="${product.imageUrl}" alt="${product.title}">
+                          </c:when>
+                          <c:when test="${fn:startsWith(product.imageUrl, '/')}">
+                            <img src="${ctx}${product.imageUrl}" alt="${product.title}">
+                          </c:when>
+                          <c:otherwise>
+                            <img src="${ctx}/uploads/product/${product.imageUrl}" alt="${product.title}">
+                          </c:otherwise>
+                        </c:choose>
+                      </c:when>
+                      <c:otherwise>
+                        <div class="flash-no-image">No image</div>
+                      </c:otherwise>
+                    </c:choose>
+                  </div>
                 </a>
 
-                <div class="mc-price-row">
-                  <c:if test="${item.product.price > 0}">
-                    <del>
-                      <fmt:formatNumber value="${item.product.price}" type="number" groupingUsed="true"/>đ
-                    </del>
+                <div class="flash-badge-row">
+                  <span class="flash-badge flash-badge-ship">FREESHIP TQ</span>
+                  <span class="flash-badge flash-badge-deal">FLASH DEAL</span>
+
+                  <c:if test="${product.discountPercent > 0}">
+                    <span class="flash-discount-bubble">-${product.discountPercent}%</span>
                   </c:if>
-                  <strong>
-                    <fmt:formatNumber value="${item.flashPrice}" type="number" groupingUsed="true"/>đ
-                  </strong>
                 </div>
 
-                <div class="mc-progress-wrap">
-                  <div class="mc-progress">
-                    <span style="width: ${item.soldPercent}%;"></span>
+                <h3 class="flash-product-title">
+                  <a href="${productUrl}">${product.title}</a>
+                </h3>
+
+                <div class="flash-price-row">
+                  <c:choose>
+                    <c:when test="${product.discountPercent > 0}">
+                      <strong>
+                        <fmt:formatNumber value="${product.finalPrice}" type="number" groupingUsed="true"/>đ
+                      </strong>
+                      <del>
+                        <fmt:formatNumber value="${product.price}" type="number" groupingUsed="true"/>đ
+                      </del>
+                    </c:when>
+                    <c:otherwise>
+                      <strong>
+                        <fmt:formatNumber value="${product.price}" type="number" groupingUsed="true"/>đ
+                      </strong>
+                    </c:otherwise>
+                  </c:choose>
+                </div>
+
+                <div class="flash-product-bottom">
+                  <div class="flash-progress-wrap">
+                    <div class="flash-progress">
+                      <span style="width: ${empty product.saleProgressPercent ? 75 : product.saleProgressPercent}%;"></span>
+                    </div>
+                    <div class="flash-progress-text">
+                      ĐANG DIỄN RA ${empty product.saleProgressPercent ? 75 : product.saleProgressPercent}%
+                    </div>
                   </div>
-                  <small>ĐANG DIỄN RA ${item.soldPercent}%</small>
-                </div>
 
-                <div class="mc-card-footer">
-                                    <span class="mc-remain">
-                                        <c:choose>
-                                          <c:when test="${item.remainQuantity <= 0}">
-                                            TẠM HẾT
-                                          </c:when>
-                                          <c:otherwise>
-                                            Còn ${item.remainQuantity} sản phẩm
-                                          </c:otherwise>
-                                        </c:choose>
-                                    </span>
-
-                  <a class="mc-buy-btn" href="${ctx}/product/${item.product.slug}">
-                    MUA NGAY
+                  <a class="flash-buy-btn" href="${productUrl}">
+                    MUA<br>NGAY
                   </a>
                 </div>
-              </div>
-            </article>
-          </c:forEach>
-        </div>
-      </c:otherwise>
-    </c:choose>
+              </article>
+            </c:forEach>
+          </div>
+        </c:when>
+
+        <c:otherwise>
+          <div class="flash-empty">
+            <h3>Chưa có sản phẩm Flash Deal</h3>
+            <p>Hiện chưa có chương trình Flash Deal đang hoạt động. Vui lòng quay lại sau.</p>
+          </div>
+        </c:otherwise>
+      </c:choose>
+    </section>
 
   </div>
-</section>
+</main>
+
+<jsp:include page="/jsp/common/footer.jsp" />
 
 <script>
-  document.addEventListener("DOMContentLoaded", function () {
+  (function () {
     const countdown = document.getElementById("flashCountdown");
+    if (!countdown) return;
 
-    if (countdown) {
-      const endTime = parseInt(countdown.getAttribute("data-end-time") || "0", 10);
-      const hh = countdown.querySelector("[data-hh]");
-      const mm = countdown.querySelector("[data-mm]");
-      const ss = countdown.querySelector("[data-ss]");
+    let hours = parseInt(countdown.getAttribute("data-hours") || "0", 10);
+    let minutes = parseInt(countdown.getAttribute("data-minutes") || "0", 10);
+    let seconds = parseInt(countdown.getAttribute("data-seconds") || "0", 10);
 
-      function renderCountdown() {
-        const distance = endTime - Date.now();
+    const hEl = document.getElementById("cdHours");
+    const mEl = document.getElementById("cdMinutes");
+    const sEl = document.getElementById("cdSeconds");
 
-        if (distance <= 0) {
-          hh.textContent = "00";
-          mm.textContent = "00";
-          ss.textContent = "00";
-          return;
-        }
-
-        const totalSeconds = Math.floor(distance / 1000);
-        const hours = Math.floor(totalSeconds / 3600);
-        const minutes = Math.floor((totalSeconds % 3600) / 60);
-        const seconds = totalSeconds % 60;
-
-        hh.textContent = String(hours).padStart(2, "0");
-        mm.textContent = String(minutes).padStart(2, "0");
-        ss.textContent = String(seconds).padStart(2, "0");
-      }
-
-      renderCountdown();
-      setInterval(renderCountdown, 1000);
+    function pad(num) {
+      return String(num).padStart(2, "0");
     }
 
-    const tabs = document.querySelectorAll(".mc-flash-tab");
-    const cards = document.querySelectorAll(".mc-flash-card");
+    function render() {
+      hEl.textContent = pad(hours);
+      mEl.textContent = pad(minutes);
+      sEl.textContent = pad(seconds);
+    }
 
-    tabs.forEach(function (tab) {
-      tab.addEventListener("click", function () {
-        const filter = tab.getAttribute("data-filter");
+    function tick() {
+      if (hours === 0 && minutes === 0 && seconds === 0) {
+        render();
+        return;
+      }
 
-        tabs.forEach(function (item) {
-          item.classList.remove("is-active");
-        });
-        tab.classList.add("is-active");
+      if (seconds > 0) {
+        seconds--;
+      } else {
+        seconds = 59;
 
-        cards.forEach(function (card) {
-          const category = card.getAttribute("data-category");
-          card.style.display = (filter === "all" || filter === category) ? "" : "none";
-        });
-      });
-    });
-  });
+        if (minutes > 0) {
+          minutes--;
+        } else {
+          minutes = 59;
+
+          if (hours > 0) {
+            hours--;
+          } else {
+            hours = 0;
+            minutes = 0;
+            seconds = 0;
+          }
+        }
+      }
+
+      render();
+    }
+
+    render();
+    setInterval(tick, 1000);
+  })();
 </script>
+
+</body>
+</html>
