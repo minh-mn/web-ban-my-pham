@@ -3,6 +3,7 @@ package com.webshop.app.controller.AdminController;
 import com.webshop.app.config.UploadConfig;
 import com.webshop.app.dao.BrandDAO;
 import com.webshop.app.dao.CategoryDAO;
+import com.webshop.app.dao.NotificationDAO;
 import com.webshop.app.dao.ProductDAO;
 import com.webshop.app.dao.ProductImageDAO;
 import com.webshop.app.dao.ProductMediaDAO;
@@ -57,6 +58,9 @@ public class AdminProductServlet extends HttpServlet {
 
 	private final CategoryDAO categoryDAO = new CategoryDAO();
 	private final BrandDAO brandDAO = new BrandDAO();
+
+	// DAO gửi thông báo cho người dùng khi sản phẩm trong wishlist được giảm giá
+	private final NotificationDAO notificationDAO = new NotificationDAO();
 
 	private static final String JSP_FORM = "/jsp/admin/products/product_form.jsp";
 	private static final String JSP_LIST = "/jsp/admin/products/product_list.jsp";
@@ -245,21 +249,21 @@ public class AdminProductServlet extends HttpServlet {
 					 */
 					boolean isUpdated = productDAO.update(product);
 
-					// =========================================================================
-					// "BẪY" GỬI THÔNG BÁO GIẢM GIÁ (Thêm mới)
-					// =========================================================================
-					if (isUpdated) {
-						// Kiểm tra điều kiện giảm giá (Thay getDiscountPercent() bằng getter thực tế của bạn)
-						if (product.getDiscountPercent() > 0) {
+					/*
+					 * Gửi thông báo cho người dùng có sản phẩm trong wishlist khi sản phẩm được giảm giá.
+					 * Chạy nền để không làm treo màn hình Admin.
+					 */
+					if (isUpdated && product.getDiscountPercent() > 0) {
+						final int pId = product.getId();
+						final String pName = product.getTitle();
 
-							// Dùng Thread để chạy ngầm, không làm treo màn hình Admin
-							final int pId = product.getId();
-							final String pName = product.getTitle();
-
-							new Thread(() -> {
+						new Thread(() -> {
+							try {
 								notificationDAO.sendWishlistDiscountNotification(pId, pName);
-							}).start();
-						}
+							} catch (Exception e) {
+								e.printStackTrace();
+							}
+						}, "wishlist-discount-notification-" + pId).start();
 					}
 
 					/*
@@ -819,8 +823,8 @@ public class AdminProductServlet extends HttpServlet {
 	/* ===================== PRODUCT FILE DELETE HELPERS ===================== */
 
 	private void deleteProductPhysicalFiles(String mainImageUrl,
-	                                        List<String> galleryUrls,
-	                                        List<String> mediaUrls) {
+											List<String> galleryUrls,
+											List<String> mediaUrls) {
 
 		UploadConfig.deleteProductFileByUrl(mainImageUrl);
 
@@ -875,7 +879,7 @@ public class AdminProductServlet extends HttpServlet {
 						"WHERE product_id = ?";
 
 		try (Connection conn = DBConnection.getConnection();
-		     PreparedStatement ps = conn.prepareStatement(sql)) {
+			 PreparedStatement ps = conn.prepareStatement(sql)) {
 
 			ps.setInt(1, productId);
 
@@ -899,7 +903,7 @@ public class AdminProductServlet extends HttpServlet {
 						"WHERE id = ? AND product_id = ?";
 
 		try (Connection conn = DBConnection.getConnection();
-		     PreparedStatement ps = conn.prepareStatement(sql)) {
+			 PreparedStatement ps = conn.prepareStatement(sql)) {
 
 			ps.setInt(1, imageId);
 			ps.setInt(2, productId);
@@ -923,7 +927,7 @@ public class AdminProductServlet extends HttpServlet {
 						"WHERE id = ? AND product_id = ?";
 
 		try (Connection conn = DBConnection.getConnection();
-		     PreparedStatement ps = conn.prepareStatement(sql)) {
+			 PreparedStatement ps = conn.prepareStatement(sql)) {
 
 			ps.setInt(1, imageId);
 			ps.setInt(2, productId);
@@ -944,7 +948,7 @@ public class AdminProductServlet extends HttpServlet {
 						"WHERE product_id = ?";
 
 		try (Connection conn = DBConnection.getConnection();
-		     PreparedStatement ps = conn.prepareStatement(sql)) {
+			 PreparedStatement ps = conn.prepareStatement(sql)) {
 
 			ps.setInt(1, productId);
 
@@ -968,7 +972,7 @@ public class AdminProductServlet extends HttpServlet {
 						"WHERE id = ? AND product_id = ?";
 
 		try (Connection conn = DBConnection.getConnection();
-		     PreparedStatement ps = conn.prepareStatement(sql)) {
+			 PreparedStatement ps = conn.prepareStatement(sql)) {
 
 			ps.setInt(1, mediaId);
 			ps.setInt(2, productId);
@@ -992,7 +996,7 @@ public class AdminProductServlet extends HttpServlet {
 						"WHERE id = ? AND product_id = ?";
 
 		try (Connection conn = DBConnection.getConnection();
-		     PreparedStatement ps = conn.prepareStatement(sql)) {
+			 PreparedStatement ps = conn.prepareStatement(sql)) {
 
 			ps.setInt(1, mediaId);
 			ps.setInt(2, productId);
