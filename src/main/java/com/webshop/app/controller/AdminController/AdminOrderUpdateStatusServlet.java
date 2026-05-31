@@ -3,10 +3,12 @@ package com.webshop.app.controller.AdminController;
 import java.io.IOException;
 
 import com.webshop.app.dao.OrderDAO;
+import com.webshop.app.dao.NotificationDAO;
 import com.webshop.app.model.Order;
 import com.webshop.app.model.OrderStatus;
 import com.webshop.app.model.User;
 
+import com.webshop.app.utils.DBConnection;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -18,6 +20,7 @@ import jakarta.servlet.http.HttpSession;
 public class AdminOrderUpdateStatusServlet extends HttpServlet {
 
     private final OrderDAO orderDAO = new OrderDAO();
+    private final NotificationDAO notificationDAO = new NotificationDAO();
 
     private static final String CSRF_SESSION_KEY = "CSRF_TOKEN";
     private static final String CSRF_PARAM = "csrf_token";
@@ -90,8 +93,8 @@ public class AdminOrderUpdateStatusServlet extends HttpServlet {
                     paymentStatus
             );
 
-            // tạo notification cho khách
-            try (Connection conn = DBConnection.getConnection()) {
+            // tạo notification cho khách hàng
+            try (java.sql.Connection conn = DBConnection.getConnection()) { // Chỉ định tường minh gói java.sql để chặn tuyệt đối lỗi compiler
 
                 notificationDAO.createOrderNotification(
                         conn,
