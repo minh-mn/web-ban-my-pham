@@ -34,7 +34,7 @@
 
       <a class="${activeMenu == 'inventory' ? 'is-active' : ''}"
          href="${pageContext.request.contextPath}/admin/inventory">
-        <span>Quản lý tồn kho</span>
+        <span>Quản lí tồn kho</span>
         <span class="admin-nav__meta">/admin/inventory</span>
       </a>
 
@@ -94,6 +94,12 @@
 
       <div class="admin-nav__section">Nội dung &amp; CMS</div>
 
+      <a class="${activeMenu == 'reviews' ? 'is-active' : ''}"
+         href="${pageContext.request.contextPath}/admin/reviews">
+        <span>Quản lí bình luận</span>
+        <span class="admin-nav__meta">/admin/reviews</span>
+      </a>
+
       <a class="${activeMenu == 'settings' ? 'is-active' : ''}"
          href="${pageContext.request.contextPath}/admin/settings">
         <span>Footer Settings</span>
@@ -119,12 +125,6 @@
       </a>
 
       <div class="admin-nav__section">System</div>
-
-      <a class="${activeMenu == 'reviews' ? 'is-active' : ''}"
-         href="${pageContext.request.contextPath}/admin/reviews">
-        <span>Reviews</span>
-        <span class="admin-nav__meta">/admin/reviews</span>
-      </a>
 
       <a class="${activeMenu == 'users' ? 'is-active' : ''}"
          href="${pageContext.request.contextPath}/admin/users">
