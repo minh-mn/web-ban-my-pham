@@ -30,6 +30,121 @@ html {
     margin: 0 auto;
 }
 
+
+
+/* ================= HOME FLASH DEAL HEADING - dùng khi file này được nạp kèm trang chủ ================= */
+
+.skin-product-section.is-flash .flash-deal-heading-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 11px;
+}
+
+.skin-product-section.is-flash .flash-deal-eyebrow {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    min-height: 30px;
+    padding: 7px 16px 7px 36px;
+    border: 1px solid rgba(196, 0, 62, .16);
+    border-radius: 999px;
+    background: linear-gradient(135deg, #fff7fb 0%, #ffe3ec 100%);
+    color: #b0003a;
+    font-size: 12px;
+    line-height: 1;
+    font-weight: 950;
+    letter-spacing: 2.2px;
+    text-transform: uppercase;
+    box-shadow: 0 10px 24px rgba(196, 0, 62, .10);
+}
+
+.skin-product-section.is-flash .flash-deal-eyebrow::before {
+    content: "";
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #ffb000;
+    box-shadow: 0 0 0 5px rgba(255, 176, 0, .18);
+    transform: translateY(-50%);
+}
+
+.skin-product-section.is-flash .flash-deal-heading {
+    position: relative;
+    width: fit-content;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    line-height: .95;
+}
+
+.skin-product-section.is-flash .flash-deal-heading::after {
+    content: "";
+    position: absolute;
+    left: 4px;
+    right: 4px;
+    bottom: -10px;
+    height: 12px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, rgba(255, 54, 122, .16), rgba(255, 176, 0, .28), rgba(255, 54, 122, .05));
+    z-index: -1;
+}
+
+.skin-product-section.is-flash .flash-word {
+    color: #b0003a;
+    font-size: clamp(42px, 5.2vw, 76px);
+    font-weight: 1000;
+    letter-spacing: .095em;
+    line-height: .95;
+    text-transform: uppercase;
+}
+
+.skin-product-section.is-flash .flash-word-left {
+    background: linear-gradient(135deg, #ff5b9b 0%, #d90049 42%, #99002c 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.skin-product-section.is-flash .flash-word-right {
+    background: linear-gradient(135deg, #8d001f 0%, #c4003f 48%, #ff6ca6 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.skin-product-section.is-flash .flash-icon {
+    position: relative;
+    flex: 0 0 auto;
+    width: clamp(48px, 4.8vw, 68px);
+    height: clamp(48px, 4.8vw, 68px);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 22px;
+    background: radial-gradient(circle at 30% 20%, #fff2a7 0%, #ffd25f 26%, #ff9f1a 62%, #ff7a00 100%);
+    color: #fff;
+    font-size: clamp(25px, 3vw, 38px);
+    font-weight: 1000;
+    line-height: 1;
+    box-shadow: 0 15px 30px rgba(255, 150, 25, .30), inset 0 1px 0 rgba(255, 255, 255, .55);
+    transform: rotate(-8deg);
+}
+
+.skin-product-section.is-flash .flash-deal-subtitle {
+    max-width: 760px;
+    margin: 18px 0 0;
+    color: #6b7280;
+    font-size: 18px;
+    line-height: 1.65;
+    font-weight: 600;
+}
+
 /* ================= HERO BANNER ================= */
 
 .flash-hero {
@@ -88,13 +203,52 @@ html {
 }
 
 .flash-hero__title {
-    color: rgba(255,255,255,.78);
-    font-size: clamp(66px, 8vw, 126px);
-    line-height: .82;
+    position: relative;
+    width: fit-content;
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 0 22px 10px;
+    color: #ffffff;
+    font-size: clamp(62px, 8vw, 126px);
+    line-height: .86;
     font-weight: 1000;
-    letter-spacing: .04em;
+    letter-spacing: .08em;
     text-transform: uppercase;
-    text-shadow: 0 14px 36px rgba(0,0,0,.18);
+    text-shadow: 0 18px 38px rgba(0, 0, 0, .20);
+}
+
+.flash-hero__title::before {
+    content: "FLASH";
+    background: linear-gradient(135deg, #ffffff 0%, #ffe7f0 42%, #ffd166 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.flash-hero__title {
+    font-size: 0;
+}
+
+.flash-hero__title::before,
+.flash-hero__title::after {
+    display: inline-block;
+    font-size: clamp(62px, 8vw, 126px);
+    line-height: .86;
+    font-weight: 1000;
+    letter-spacing: .08em;
+}
+
+.flash-hero__title::after {
+    content: " DEAL";
+    background: linear-gradient(135deg, #ffd166 0%, #ffffff 42%, #ffe7f0 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.flash-hero__title span,
+.flash-hero__title .flash-title-bolt {
+    display: none;
 }
 
 .flash-hero__sub {
@@ -643,5 +797,28 @@ html {
         width: 100%;
         min-height: 56px;
         border-radius: 18px;
+    }
+}
+
+
+@media (max-width: 768px) {
+    .skin-product-section.is-flash .flash-word {
+        font-size: 34px;
+        letter-spacing: .06em;
+    }
+
+    .skin-product-section.is-flash .flash-deal-heading {
+        gap: 10px;
+    }
+
+    .skin-product-section.is-flash .flash-icon {
+        width: 46px;
+        height: 46px;
+        border-radius: 16px;
+        font-size: 24px;
+    }
+
+    .skin-product-section.is-flash .flash-deal-subtitle {
+        font-size: 15px;
     }
 }
