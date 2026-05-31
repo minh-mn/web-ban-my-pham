@@ -1,6 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
 <c:set var="pageTitle" value="ADMIN | Chi tiết bình luận" scope="request"/>
 <c:set var="activeMenu" value="reviews" scope="request"/>
@@ -9,20 +10,59 @@
 <jsp:include page="/jsp/admin/layout/header.jsp"/>
 <jsp:include page="/jsp/admin/layout/sidebar.jsp"/>
 
-<main class="admin-main">
-  <div class="admin-container">
+<c:if test="${not empty review}">
+  <c:if test="${not empty review.productImage}">
+    <c:set var="productImageUrl" value="${review.productImage}" />
+    <c:if test="${fn:startsWith(review.productImage, '/')}">
+      <c:set var="productImageUrl" value="${pageContext.request.contextPath}${review.productImage}" />
+    </c:if>
+    <c:if test="${not fn:startsWith(review.productImage, '/') and not fn:startsWith(review.productImage, 'http')}">
+      <c:set var="productImageUrl" value="${pageContext.request.contextPath}/${review.productImage}" />
+    </c:if>
+  </c:if>
 
-    <div class="admin-topbar">
-      <div>
-        <h1 class="admin-h1">Chi tiết bình luận #${review.id}</h1>
-        <p class="admin-subtext">
-          Xem nội dung bình luận, mã sản phẩm, ID user, thời gian, thông tin người bình luận và thao tác kiểm duyệt.
+  <c:if test="${not empty review.imageUrl}">
+    <c:set var="reviewImageUrl" value="${review.imageUrl}" />
+    <c:if test="${fn:startsWith(review.imageUrl, '/')}">
+      <c:set var="reviewImageUrl" value="${pageContext.request.contextPath}${review.imageUrl}" />
+    </c:if>
+    <c:if test="${not fn:startsWith(review.imageUrl, '/') and not fn:startsWith(review.imageUrl, 'http')}">
+      <c:set var="reviewImageUrl" value="${pageContext.request.contextPath}/${review.imageUrl}" />
+    </c:if>
+  </c:if>
+
+  <c:if test="${not empty review.videoUrl}">
+    <c:set var="reviewVideoUrl" value="${review.videoUrl}" />
+    <c:if test="${fn:startsWith(review.videoUrl, '/')}">
+      <c:set var="reviewVideoUrl" value="${pageContext.request.contextPath}${review.videoUrl}" />
+    </c:if>
+    <c:if test="${not fn:startsWith(review.videoUrl, '/') and not fn:startsWith(review.videoUrl, 'http')}">
+      <c:set var="reviewVideoUrl" value="${pageContext.request.contextPath}/${review.videoUrl}" />
+    </c:if>
+  </c:if>
+</c:if>
+
+<main class="admin-main">
+  <div class="admin-container review-detail-page">
+
+    <div class="review-topbar">
+      <div class="review-title-block">
+        <h1 class="review-title">
+          Chi tiết bình luận
+          <c:if test="${not empty review}">
+            #${review.id}
+          </c:if>
+        </h1>
+        <p class="review-subtitle">
+          Theo dõi nội dung bình luận, thông tin sản phẩm, người bình luận và trạng thái kiểm duyệt.
         </p>
       </div>
 
-      <a class="admin-btn" href="${pageContext.request.contextPath}/admin/reviews">
-        Quay lại danh sách
-      </a>
+      <div class="review-top-actions">
+        <a class="admin-btn" href="${pageContext.request.contextPath}/admin/reviews">
+          Quay lại danh sách
+        </a>
+      </div>
     </div>
 
     <c:if test="${not empty successMessage}">
@@ -39,512 +79,558 @@
 
     <c:choose>
       <c:when test="${empty review}">
-        <div class="admin-card">
-          <div class="admin-card__body">
-            <div class="admin-empty">Không tìm thấy bình luận.</div>
-          </div>
+        <div class="review-empty-state">
+          Không tìm thấy bình luận.
         </div>
       </c:when>
 
       <c:otherwise>
 
-        <div class="admin-card">
-          <div class="admin-card__body">
+        <section class="review-summary">
 
-            <h2 class="admin-section-title">Thông tin kiểm duyệt</h2>
+          <div class="review-summary-card">
+            <div class="review-summary-card__label">Bình luận</div>
+            <div class="review-summary-card__value">
+              #${review.id}
+              <span class="admin-pill ${review.statusCssClass} review-status-pill">
+                <c:out value="${review.statusLabel}" />
+              </span>
+            </div>
+            <div class="review-summary-card__hint">
+              <fmt:formatDate value="${review.createdAtDate}" pattern="dd/MM/yyyy HH:mm"/>
+            </div>
+          </div>
 
-            <div class="admin-form-grid">
+          <div class="review-summary-card">
+            <div class="review-summary-card__label">Đánh giá</div>
+            <div class="review-summary-card__value">
+              <span class="review-rating">
+                <c:forEach begin="1" end="5" var="star">
+                  <span class="${star <= review.rating ? 'is-on' : ''}">★</span>
+                </c:forEach>
+              </span>
+            </div>
+            <div class="review-summary-card__hint">
+              ${review.rating}/5 sao · <c:out value="${review.sentimentLabel}" />
+            </div>
+          </div>
 
-              <div class="admin-field">
-                <label>ID bình luận</label>
+          <div class="review-summary-card">
+            <div class="review-summary-card__label">Sản phẩm</div>
+            <div class="review-summary-card__value">
+              Mã SP: <c:out value="${review.productDisplayCode}" />
+            </div>
+            <div class="review-summary-card__hint">
+              Product ID: #${review.productId}
+            </div>
+          </div>
+
+          <div class="review-summary-card">
+            <div class="review-summary-card__label">Người bình luận</div>
+            <div class="review-summary-card__value">
+              User ID: #${review.authorId}
+            </div>
+            <div class="review-summary-card__hint">
+              <c:out value="${review.authorDisplayName}" />
+            </div>
+          </div>
+
+        </section>
+
+        <div class="review-layout">
+
+          <div class="review-main">
+
+            <section class="review-card">
+              <div class="review-card__header">
                 <div>
-                  <strong>#${review.id}</strong>
+                  <h2 class="review-card__title">Nội dung bình luận</h2>
+                  <p class="review-card__desc">Nội dung khách hàng gửi kèm đánh giá sản phẩm.</p>
                 </div>
-              </div>
 
-              <div class="admin-field">
-                <label>Trạng thái</label>
-                <div>
-                  <span class="admin-pill ${review.statusCssClass}">
-                    <c:out value="${review.statusLabel}" />
-                  </span>
-                </div>
-              </div>
-
-              <div class="admin-field">
-                <label>Voucher đánh giá</label>
-                <div>
-                  <c:choose>
-                    <c:when test="${review.voucherAwarded}">
-                      <span class="admin-pill admin-pill--ok">Đã cấp voucher</span>
-                    </c:when>
-                    <c:otherwise>
-                      <span class="admin-pill admin-pill--warning">Chưa cấp</span>
-                    </c:otherwise>
-                  </c:choose>
-                </div>
-              </div>
-
-              <div class="admin-field">
-                <label>Ẩn khỏi khách hàng</label>
-                <div>
-                  <c:choose>
-                    <c:when test="${review.hidden}">
-                      <span class="admin-pill admin-pill--warning">Đang ẩn</span>
-                    </c:when>
-                    <c:otherwise>
-                      <span class="admin-pill admin-pill--ok">Đang hiển thị</span>
-                    </c:otherwise>
-                  </c:choose>
-                </div>
-              </div>
-
-              <div class="admin-field">
-                <label>Thời gian gửi</label>
-                <div>
-                  <fmt:formatDate value="${review.createdAtDate}" pattern="dd/MM/yyyy HH:mm"/>
-                </div>
-              </div>
-
-              <div class="admin-field">
-                <label>Thời gian duyệt</label>
-                <div>
-                  <c:choose>
-                    <c:when test="${not empty review.approvedAtDate}">
-                      <fmt:formatDate value="${review.approvedAtDate}" pattern="dd/MM/yyyy HH:mm"/>
-                    </c:when>
-                    <c:otherwise>
-                      <span class="admin-muted">Chưa duyệt</span>
-                    </c:otherwise>
-                  </c:choose>
-                </div>
-              </div>
-
-              <div class="admin-field">
-                <label>Admin duyệt</label>
-                <div>
-                  <c:choose>
-                    <c:when test="${not empty review.approvedBy}">
-                      Admin ID: #${review.approvedBy}
-                    </c:when>
-                    <c:otherwise>
-                      <span class="admin-muted">Chưa có</span>
-                    </c:otherwise>
-                  </c:choose>
-                </div>
-              </div>
-
-              <div class="admin-field">
-                <label>Cảm xúc hệ thống</label>
-                <div>
-                  <c:out value="${review.sentimentLabel}" />
+                <div class="review-chip-row review-chip-row--compact">
                   <c:if test="${review.hasEmoji}">
-                    <span class="admin-pill" style="margin-left: 6px;">Có emoji</span>
+                    <span class="admin-pill">Có emoji</span>
+                  </c:if>
+
+                  <c:if test="${review.hasImage}">
+                    <span class="admin-pill">Ảnh</span>
+                  </c:if>
+
+                  <c:if test="${review.hasVideo}">
+                    <span class="admin-pill">Video</span>
                   </c:if>
                 </div>
               </div>
 
-            </div>
-
-          </div>
-        </div>
-
-        <div class="admin-card">
-          <div class="admin-card__body">
-
-            <h2 class="admin-section-title">Thông tin sản phẩm</h2>
-
-            <div class="admin-form-grid">
-
-              <div class="admin-field">
-                <label>Mã sản phẩm</label>
-                <div>
-                  <strong>
-                    <c:out value="${review.productDisplayCode}" />
-                  </strong>
-                </div>
-              </div>
-
-              <div class="admin-field">
-                <label>Product ID</label>
-                <div>
-                  #${review.productId}
-                </div>
-              </div>
-
-              <div class="admin-field admin-field--full">
-                <label>Tên sản phẩm</label>
-                <div>
-                  <strong>
-                    <c:out value="${review.productName}" />
-                  </strong>
-                </div>
-              </div>
-
-              <c:if test="${not empty review.productSlug}">
-                <div class="admin-field">
-                  <label>Slug</label>
-                  <div>
-                    <c:out value="${review.productSlug}" />
-                  </div>
-                </div>
-              </c:if>
-
-              <c:if test="${not empty review.productImage}">
-                <div class="admin-field">
-                  <label>Ảnh sản phẩm</label>
-                  <div>
-                    <a class="admin-btn"
-                       href="${review.productImage}"
-                       target="_blank"
-                       rel="noopener">
-                      Mở ảnh sản phẩm
-                    </a>
-                  </div>
-                </div>
-              </c:if>
-
-              <div class="admin-field">
-                <label>Order ID</label>
-                <div>
-                  <c:choose>
-                    <c:when test="${not empty review.orderId}">
-                      #${review.orderId}
-                    </c:when>
-                    <c:otherwise>
-                      <span class="admin-muted">Không có</span>
-                    </c:otherwise>
-                  </c:choose>
-                </div>
-              </div>
-
-              <div class="admin-field">
-                <label>Order Item ID</label>
-                <div>
-                  <c:choose>
-                    <c:when test="${not empty review.orderItemId}">
-                      #${review.orderItemId}
-                    </c:when>
-                    <c:otherwise>
-                      <span class="admin-muted">Không có</span>
-                    </c:otherwise>
-                  </c:choose>
-                </div>
-              </div>
-
-            </div>
-
-          </div>
-        </div>
-
-        <div class="admin-card">
-          <div class="admin-card__body">
-
-            <h2 class="admin-section-title">Thông tin người bình luận</h2>
-
-            <div class="admin-form-grid">
-
-              <div class="admin-field">
-                <label>User ID</label>
-                <div>
-                  <strong>#${review.authorId}</strong>
-                </div>
-              </div>
-
-              <div class="admin-field">
-                <label>Username</label>
-                <div>
-                  <c:choose>
-                    <c:when test="${not empty review.authorName}">
-                      <c:out value="${review.authorName}" />
-                    </c:when>
-                    <c:otherwise>
-                      <span class="admin-muted">Không có</span>
-                    </c:otherwise>
-                  </c:choose>
-                </div>
-              </div>
-
-              <div class="admin-field">
-                <label>Họ tên</label>
-                <div>
-                  <c:choose>
-                    <c:when test="${not empty review.authorFullName}">
-                      <c:out value="${review.authorFullName}" />
-                    </c:when>
-                    <c:otherwise>
-                      <span class="admin-muted">Chưa cập nhật</span>
-                    </c:otherwise>
-                  </c:choose>
-                </div>
-              </div>
-
-              <div class="admin-field">
-                <label>Tên hiển thị</label>
-                <div>
-                  <strong>
-                    <c:out value="${review.authorDisplayName}" />
-                  </strong>
-                </div>
-              </div>
-
-              <div class="admin-field">
-                <label>Email</label>
-                <div>
-                  <c:choose>
-                    <c:when test="${not empty review.authorEmail}">
-                      <c:out value="${review.authorEmail}" />
-                    </c:when>
-                    <c:otherwise>
-                      <span class="admin-muted">Chưa cập nhật</span>
-                    </c:otherwise>
-                  </c:choose>
-                </div>
-              </div>
-
-              <div class="admin-field">
-                <label>Số điện thoại</label>
-                <div>
-                  <c:choose>
-                    <c:when test="${not empty review.authorPhone}">
-                      <c:out value="${review.authorPhone}" />
-                    </c:when>
-                    <c:otherwise>
-                      <span class="admin-muted">Chưa cập nhật</span>
-                    </c:otherwise>
-                  </c:choose>
-                </div>
-              </div>
-
-              <div class="admin-field">
-                <label>Role</label>
-                <div>
-                  <c:choose>
-                    <c:when test="${not empty review.authorRole}">
-                      <c:out value="${review.authorRole}" />
-                    </c:when>
-                    <c:otherwise>
-                      <span class="admin-muted">Không rõ</span>
-                    </c:otherwise>
-                  </c:choose>
-                </div>
-              </div>
-
-              <div class="admin-field">
-                <label>Rank</label>
-                <div>
-                  <c:out value="${review.authorRankDisplay}" />
-                </div>
-              </div>
-
-              <div class="admin-field">
-                <label>Trạng thái tài khoản</label>
-                <div>
-                  <span class="admin-pill ${review.authorStatusCssClass}">
-                    <c:out value="${review.authorStatusLabel}" />
-                  </span>
-                </div>
-              </div>
-
-              <div class="admin-field">
-                <label>Ngày tạo tài khoản</label>
-                <div>
-                  <c:choose>
-                    <c:when test="${not empty review.authorCreatedAtDate}">
-                      <fmt:formatDate value="${review.authorCreatedAtDate}" pattern="dd/MM/yyyy HH:mm"/>
-                    </c:when>
-                    <c:otherwise>
-                      <span class="admin-muted">Không rõ</span>
-                    </c:otherwise>
-                  </c:choose>
-                </div>
-              </div>
-
-            </div>
-
-          </div>
-        </div>
-
-        <div class="admin-card">
-          <div class="admin-card__body">
-
-            <h2 class="admin-section-title">Nội dung bình luận</h2>
-
-            <div class="admin-form-grid">
-
-              <div class="admin-field">
-                <label>Số sao</label>
-                <div>
-                  <strong>${review.rating}★</strong>
-                </div>
-              </div>
-
-              <div class="admin-field">
-                <label>Media</label>
-                <div>
-                  <c:choose>
-                    <c:when test="${review.hasImage or review.hasVideo}">
-                      <c:if test="${review.hasImage}">
-                        <span class="admin-pill">Ảnh</span>
-                      </c:if>
-
-                      <c:if test="${review.hasVideo}">
-                        <span class="admin-pill">Video</span>
-                      </c:if>
-
-                      <span class="admin-muted" style="margin-left: 6px;">
-                        ${review.mediaCount} file
-                      </span>
-                    </c:when>
-                    <c:otherwise>
-                      <span class="admin-muted">Không có ảnh/video</span>
-                    </c:otherwise>
-                  </c:choose>
-                </div>
-              </div>
-
-              <div class="admin-field admin-field--full">
-                <label>Bình luận</label>
-                <div class="admin-help" style="white-space: pre-wrap; line-height: 1.7;">
+              <div class="review-card__body">
+                <div class="review-comment-box">
                   <c:choose>
                     <c:when test="${not empty review.comment}">
                       <c:out value="${review.comment}" />
                     </c:when>
                     <c:otherwise>
-                      <span class="admin-muted">Không có nội dung.</span>
+                      <span class="review-muted">Không có nội dung bình luận.</span>
                     </c:otherwise>
                   </c:choose>
                 </div>
-              </div>
 
-              <c:if test="${review.hasImage or review.hasVideo}">
-                <div class="admin-field admin-field--full">
-                  <label>Hình ảnh / video đính kèm</label>
+                <c:if test="${review.hasImage or review.hasVideo}">
+                  <div class="review-spacer"></div>
 
-                  <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                    <c:if test="${review.hasImage and not empty review.imageUrl}">
-                      <a class="admin-btn"
-                         href="${review.imageUrl}"
-                         target="_blank"
-                         rel="noopener">
-                        Mở ảnh bình luận
-                      </a>
+                  <div class="review-media-grid">
+                    <c:if test="${review.hasImage}">
+                      <div class="review-media-box">
+                        <h3 class="review-media-box__title">Ảnh bình luận</h3>
+
+                        <div class="review-media-preview">
+                          <c:choose>
+                            <c:when test="${not empty reviewImageUrl}">
+                              <img src="${reviewImageUrl}" alt="Ảnh bình luận #${review.id}">
+                            </c:when>
+                            <c:otherwise>
+                              <span class="review-muted">Có ảnh nhưng chưa có đường dẫn.</span>
+                            </c:otherwise>
+                          </c:choose>
+                        </div>
+
+                        <c:if test="${not empty reviewImageUrl}">
+                          <a class="admin-btn" href="${reviewImageUrl}" target="_blank" rel="noopener">
+                            Mở ảnh
+                          </a>
+                        </c:if>
+                      </div>
                     </c:if>
 
-                    <c:if test="${review.hasVideo and not empty review.videoUrl}">
-                      <a class="admin-btn"
-                         href="${review.videoUrl}"
-                         target="_blank"
-                         rel="noopener">
-                        Mở video bình luận
-                      </a>
+                    <c:if test="${review.hasVideo}">
+                      <div class="review-media-box">
+                        <h3 class="review-media-box__title">Video bình luận</h3>
+
+                        <div class="review-media-preview">
+                          <c:choose>
+                            <c:when test="${not empty reviewVideoUrl}">
+                              <video controls preload="metadata">
+                                <source src="${reviewVideoUrl}">
+                                Trình duyệt không hỗ trợ xem video.
+                              </video>
+                            </c:when>
+                            <c:otherwise>
+                              <span class="review-muted">Có video nhưng chưa có đường dẫn.</span>
+                            </c:otherwise>
+                          </c:choose>
+                        </div>
+
+                        <c:if test="${not empty reviewVideoUrl}">
+                          <a class="admin-btn" href="${reviewVideoUrl}" target="_blank" rel="noopener">
+                            Mở video
+                          </a>
+                        </c:if>
+                      </div>
                     </c:if>
                   </div>
-                </div>
-              </c:if>
+                </c:if>
+              </div>
+            </section>
 
-              <div class="admin-field admin-field--full">
-                <label>Ghi chú kiểm duyệt hiện tại</label>
-                <div class="admin-help" style="white-space: pre-wrap;">
-                  <c:choose>
-                    <c:when test="${not empty review.adminNote}">
-                      <c:out value="${review.adminNote}" />
-                    </c:when>
-                    <c:otherwise>
-                      <span class="admin-muted">Chưa có ghi chú.</span>
-                    </c:otherwise>
-                  </c:choose>
+            <section class="review-card">
+              <div class="review-card__header">
+                <div>
+                  <h2 class="review-card__title">Thông tin sản phẩm</h2>
+                  <p class="review-card__desc">Sản phẩm liên quan đến bình luận này.</p>
                 </div>
               </div>
 
-            </div>
+              <div class="review-card__body">
+                <div class="review-product-box">
 
-          </div>
-        </div>
+                  <div class="review-product-thumb">
+                    <c:choose>
+                      <c:when test="${not empty productImageUrl}">
+                        <img src="${productImageUrl}" alt="Ảnh sản phẩm">
+                      </c:when>
+                      <c:otherwise>
+                        <span class="review-product-thumb__empty">Chưa có ảnh</span>
+                      </c:otherwise>
+                    </c:choose>
+                  </div>
 
-        <div class="admin-card">
-          <div class="admin-card__body">
+                  <div>
+                    <h3 class="review-product-name">
+                      <c:choose>
+                        <c:when test="${not empty review.productName}">
+                          <c:out value="${review.productName}" />
+                        </c:when>
+                        <c:otherwise>
+                          Sản phẩm #${review.productId}
+                        </c:otherwise>
+                      </c:choose>
+                    </h3>
 
-            <h2 class="admin-section-title">Thao tác kiểm duyệt</h2>
+                    <div class="review-info-grid">
+                      <div class="review-info-item">
+                        <span class="review-info-label">Mã sản phẩm</span>
+                        <div class="review-info-value">
+                          <c:out value="${review.productDisplayCode}" />
+                        </div>
+                      </div>
 
-            <form method="post"
-                  action="${pageContext.request.contextPath}/admin/reviews"
-                  class="admin-form">
+                      <div class="review-info-item">
+                        <span class="review-info-label">Product ID</span>
+                        <div class="review-info-value">#${review.productId}</div>
+                      </div>
 
-              <%@ include file="/jsp/common/csrf.jspf" %>
+                      <div class="review-info-item">
+                        <span class="review-info-label">Order ID</span>
+                        <div class="review-info-value">
+                          <c:choose>
+                            <c:when test="${not empty review.orderId}">
+                              #${review.orderId}
+                            </c:when>
+                            <c:otherwise>
+                              <span class="review-muted">Không có</span>
+                            </c:otherwise>
+                          </c:choose>
+                        </div>
+                      </div>
 
-              <input type="hidden" name="id" value="${review.id}" />
+                      <div class="review-info-item">
+                        <span class="review-info-label">Order Item ID</span>
+                        <div class="review-info-value">
+                          <c:choose>
+                            <c:when test="${not empty review.orderItemId}">
+                              #${review.orderItemId}
+                            </c:when>
+                            <c:otherwise>
+                              <span class="review-muted">Không có</span>
+                            </c:otherwise>
+                          </c:choose>
+                        </div>
+                      </div>
 
-              <div class="admin-field">
-                <label for="adminNote">Ghi chú kiểm duyệt</label>
-                <textarea id="adminNote"
-                          name="adminNote"
-                          class="admin-textarea"
-                          rows="4"
-                          placeholder="Nhập lý do duyệt hoặc từ chối nếu cần..."><c:out value="${review.adminNote}" /></textarea>
+                      <c:if test="${not empty review.productSlug}">
+                        <div class="review-info-item review-info-item--full">
+                          <span class="review-info-label">Slug</span>
+                          <div class="review-info-value">
+                            <c:out value="${review.productSlug}" />
+                          </div>
+                        </div>
+                      </c:if>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </section>
+
+            <section class="review-card">
+              <div class="review-card__header">
+                <div>
+                  <h2 class="review-card__title">Thông tin người bình luận</h2>
+                  <p class="review-card__desc">Thông tin tài khoản đã gửi bình luận.</p>
+                </div>
+
+                <span class="admin-pill ${review.authorStatusCssClass}">
+                  <c:out value="${review.authorStatusLabel}" />
+                </span>
               </div>
 
-              <div class="admin-actions">
+              <div class="review-card__body">
+                <div class="review-author-card">
 
-                <c:if test="${not review.approved}">
-                  <button class="admin-btn admin-btn--ok"
-                          type="submit"
-                          name="action"
-                          value="approve"
-                          onclick="return confirm('Duyệt bình luận này và cấp voucher nếu đủ điều kiện?');">
-                    Duyệt
-                  </button>
-                </c:if>
+                  <div class="review-avatar">
+                    #${review.authorId}
+                  </div>
 
-                <c:if test="${not review.rejected}">
-                  <button class="admin-btn admin-btn--danger"
-                          type="submit"
-                          name="action"
-                          value="reject"
-                          onclick="return confirm('Từ chối bình luận này?');">
-                    Từ chối
-                  </button>
-                </c:if>
+                  <div>
+                    <h3 class="review-author-name">
+                      <c:out value="${review.authorDisplayName}" />
+                    </h3>
 
-                <c:choose>
-                  <c:when test="${review.hidden}">
-                    <button class="admin-btn"
-                            type="submit"
-                            name="action"
-                            value="unhide">
-                      Hiện lại
-                    </button>
-                  </c:when>
+                    <div class="review-author-meta">
+                      User ID: #${review.authorId}
+                      <c:if test="${not empty review.authorName}">
+                        · Username: <c:out value="${review.authorName}" />
+                      </c:if>
+                    </div>
 
-                  <c:otherwise>
-                    <button class="admin-btn"
-                            type="submit"
-                            name="action"
-                            value="hide"
-                            onclick="return confirm('Ẩn bình luận này khỏi trang khách hàng?');">
-                      Ẩn bình luận
-                    </button>
-                  </c:otherwise>
-                </c:choose>
+                    <div class="review-chip-row">
+                      <span class="admin-pill">
+                        Rank: <c:out value="${review.authorRankDisplay}" />
+                      </span>
 
-                <button class="admin-btn admin-btn--danger"
-                        type="submit"
-                        name="action"
-                        value="delete"
-                        onclick="return confirm('Xóa vĩnh viễn bình luận này? Thao tác này không thể hoàn tác.');">
-                  Xóa
-                </button>
+                      <c:if test="${not empty review.authorRole}">
+                        <span class="admin-pill">
+                          Role: <c:out value="${review.authorRole}" />
+                        </span>
+                      </c:if>
+                    </div>
+                  </div>
 
-                <a class="admin-btn"
-                   href="${pageContext.request.contextPath}/admin/reviews">
-                  Quay lại
-                </a>
+                </div>
 
+                <div class="review-spacer"></div>
+
+                <div class="review-info-grid review-info-grid--3">
+                  <div class="review-info-item">
+                    <span class="review-info-label">Họ tên</span>
+                    <div class="review-info-value">
+                      <c:choose>
+                        <c:when test="${not empty review.authorFullName}">
+                          <c:out value="${review.authorFullName}" />
+                        </c:when>
+                        <c:otherwise>
+                          <span class="review-muted">Chưa cập nhật</span>
+                        </c:otherwise>
+                      </c:choose>
+                    </div>
+                  </div>
+
+                  <div class="review-info-item">
+                    <span class="review-info-label">Email</span>
+                    <div class="review-info-value">
+                      <c:choose>
+                        <c:when test="${not empty review.authorEmail}">
+                          <c:out value="${review.authorEmail}" />
+                        </c:when>
+                        <c:otherwise>
+                          <span class="review-muted">Chưa cập nhật</span>
+                        </c:otherwise>
+                      </c:choose>
+                    </div>
+                  </div>
+
+                  <div class="review-info-item">
+                    <span class="review-info-label">Số điện thoại</span>
+                    <div class="review-info-value">
+                      <c:choose>
+                        <c:when test="${not empty review.authorPhone}">
+                          <c:out value="${review.authorPhone}" />
+                        </c:when>
+                        <c:otherwise>
+                          <span class="review-muted">Chưa cập nhật</span>
+                        </c:otherwise>
+                      </c:choose>
+                    </div>
+                  </div>
+
+                  <div class="review-info-item">
+                    <span class="review-info-label">Role</span>
+                    <div class="review-info-value">
+                      <c:choose>
+                        <c:when test="${not empty review.authorRole}">
+                          <c:out value="${review.authorRole}" />
+                        </c:when>
+                        <c:otherwise>
+                          <span class="review-muted">Không rõ</span>
+                        </c:otherwise>
+                      </c:choose>
+                    </div>
+                  </div>
+
+                  <div class="review-info-item">
+                    <span class="review-info-label">Rank</span>
+                    <div class="review-info-value">
+                      <c:out value="${review.authorRankDisplay}" />
+                    </div>
+                  </div>
+
+                  <div class="review-info-item">
+                    <span class="review-info-label">Ngày tạo tài khoản</span>
+                    <div class="review-info-value">
+                      <c:choose>
+                        <c:when test="${not empty review.authorCreatedAtDate}">
+                          <fmt:formatDate value="${review.authorCreatedAtDate}" pattern="dd/MM/yyyy HH:mm"/>
+                        </c:when>
+                        <c:otherwise>
+                          <span class="review-muted">Không rõ</span>
+                        </c:otherwise>
+                      </c:choose>
+                    </div>
+                  </div>
+                </div>
               </div>
-
-            </form>
+            </section>
 
           </div>
+
+          <aside class="review-side">
+
+            <section class="review-card">
+              <div class="review-card__header">
+                <div>
+                  <h2 class="review-card__title">Kiểm duyệt</h2>
+                  <p class="review-card__desc">Duyệt, từ chối, ẩn hoặc xóa bình luận.</p>
+                </div>
+              </div>
+
+              <div class="review-card__body">
+                <div class="review-mini-list">
+                  <div class="review-mini-row">
+                    <span>Trạng thái</span>
+                    <span><c:out value="${review.statusLabel}" /></span>
+                  </div>
+
+                  <div class="review-mini-row">
+                    <span>Hiển thị</span>
+                    <span>
+                      <c:choose>
+                        <c:when test="${review.hidden}">Đang ẩn</c:when>
+                        <c:otherwise>Đang hiển thị</c:otherwise>
+                      </c:choose>
+                    </span>
+                  </div>
+
+                  <div class="review-mini-row">
+                    <span>Voucher</span>
+                    <span>
+                      <c:choose>
+                        <c:when test="${review.voucherAwarded}">Đã cấp</c:when>
+                        <c:otherwise>Chưa cấp</c:otherwise>
+                      </c:choose>
+                    </span>
+                  </div>
+
+                  <div class="review-mini-row">
+                    <span>Media</span>
+                    <span>${review.mediaCount} file</span>
+                  </div>
+                </div>
+
+                <div class="review-spacer"></div>
+
+                <form method="post"
+                      action="${pageContext.request.contextPath}/admin/reviews"
+                      class="review-action-form">
+
+                  <%@ include file="/jsp/common/csrf.jspf" %>
+
+                  <input type="hidden" name="id" value="${review.id}" />
+
+                  <label for="adminNote" class="review-info-label">
+                    Ghi chú kiểm duyệt
+                  </label>
+
+                  <textarea id="adminNote"
+                            name="adminNote"
+                            placeholder="Nhập lý do duyệt, từ chối hoặc ghi chú nội bộ..."><c:out value="${review.adminNote}" /></textarea>
+
+                  <div class="review-action-grid">
+                    <c:if test="${not review.approved}">
+                      <button class="admin-btn admin-btn--ok"
+                              type="submit"
+                              name="action"
+                              value="approve"
+                              onclick="return confirm('Duyệt bình luận này và cấp voucher nếu đủ điều kiện?');">
+                        Duyệt bình luận
+                      </button>
+                    </c:if>
+
+                    <c:if test="${not review.rejected}">
+                      <button class="admin-btn admin-btn--danger"
+                              type="submit"
+                              name="action"
+                              value="reject"
+                              onclick="return confirm('Từ chối bình luận này?');">
+                        Từ chối bình luận
+                      </button>
+                    </c:if>
+
+                    <c:choose>
+                      <c:when test="${review.hidden}">
+                        <button class="admin-btn"
+                                type="submit"
+                                name="action"
+                                value="unhide">
+                          Hiện lại bình luận
+                        </button>
+                      </c:when>
+
+                      <c:otherwise>
+                        <button class="admin-btn"
+                                type="submit"
+                                name="action"
+                                value="hide"
+                                onclick="return confirm('Ẩn bình luận này khỏi trang khách hàng?');">
+                          Ẩn bình luận
+                        </button>
+                      </c:otherwise>
+                    </c:choose>
+
+                    <button class="admin-btn admin-btn--danger"
+                            type="submit"
+                            name="action"
+                            value="delete"
+                            onclick="return confirm('Xóa vĩnh viễn bình luận này? Thao tác này không thể hoàn tác.');">
+                      Xóa vĩnh viễn
+                    </button>
+
+                    <a class="admin-btn"
+                       href="${pageContext.request.contextPath}/admin/reviews">
+                      Quay lại danh sách
+                    </a>
+                  </div>
+                </form>
+              </div>
+            </section>
+
+            <section class="review-card">
+              <div class="review-card__header">
+                <div>
+                  <h2 class="review-card__title">Mốc thời gian</h2>
+                  <p class="review-card__desc">Theo dõi thời điểm gửi và duyệt.</p>
+                </div>
+              </div>
+
+              <div class="review-card__body">
+                <div class="review-timeline">
+
+                  <div class="review-timeline-item">
+                    <span class="review-timeline-label">Khách gửi bình luận</span>
+                    <fmt:formatDate value="${review.createdAtDate}" pattern="dd/MM/yyyy HH:mm"/>
+                  </div>
+
+                  <div class="review-timeline-item">
+                    <span class="review-timeline-label">Admin duyệt</span>
+                    <c:choose>
+                      <c:when test="${not empty review.approvedAtDate}">
+                        <fmt:formatDate value="${review.approvedAtDate}" pattern="dd/MM/yyyy HH:mm"/>
+                        <br>
+                        <span class="review-muted">
+                          Admin ID:
+                          <c:choose>
+                            <c:when test="${not empty review.approvedBy}">
+                              #${review.approvedBy}
+                            </c:when>
+                            <c:otherwise>
+                              Không rõ
+                            </c:otherwise>
+                          </c:choose>
+                        </span>
+                      </c:when>
+                      <c:otherwise>
+                        <span class="review-muted">Chưa duyệt</span>
+                      </c:otherwise>
+                    </c:choose>
+                  </div>
+
+                  <div class="review-timeline-item">
+                    <span class="review-timeline-label">Ghi chú hiện tại</span>
+                    <c:choose>
+                      <c:when test="${not empty review.adminNote}">
+                        <c:out value="${review.adminNote}" />
+                      </c:when>
+                      <c:otherwise>
+                        <span class="review-muted">Chưa có ghi chú.</span>
+                      </c:otherwise>
+                    </c:choose>
+                  </div>
+
+                </div>
+              </div>
+            </section>
+
+          </aside>
+
         </div>
 
       </c:otherwise>
