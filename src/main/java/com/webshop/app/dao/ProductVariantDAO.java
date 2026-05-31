@@ -77,4 +77,31 @@ public class ProductVariantDAO {
 
         return v;
     }
+
+    public void deleteByProductId(int productId) {
+        String sql = "DELETE FROM store_product_variant WHERE product_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, productId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Lỗi khi xóa biến thể cũ", e);
+        }
+    }
+
+    public void insert(ProductVariant v) {
+        String sql = "INSERT INTO store_product_variant (product_id, size, type, extra_price, stock, active, created_at) VALUES (?, ?, ?, ?, ?, 1, NOW())";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, v.getProductId());
+            ps.setString(2, v.getSize());
+            ps.setString(3, v.getType());
+            ps.setBigDecimal(4, v.getExtraPrice());
+            ps.setInt(5, v.getStock());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Lỗi khi thêm biến thể mới: " + e.getMessage(), e);
+        }
+    }
 }
