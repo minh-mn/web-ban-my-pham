@@ -144,6 +144,12 @@ public class SocialAuthServlet extends HttpServlet {
             String googleId
     ) throws IOException, MessagingException {
 
+        User existingUser = userDAO.findByEmail(email);
+        if (existingUser != null) {
+            resp.getWriter().write("{\"status\":\"error\",\"message\":\"Email này đã được đăng ký. Vui lòng chọn Đăng nhập thay vì Đăng ký.\"}");
+            return;
+        }
+
         HttpSession session = req.getSession();
 
         User pendingUser = new User();
