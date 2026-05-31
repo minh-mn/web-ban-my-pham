@@ -679,45 +679,79 @@
               <p class="account-alert-error">Email đã được sử dụng.</p>
             </c:if>
 
-            <form method="post" action="${pageContext.request.contextPath}/account/update-profile">
-
+            <form id="updateProfileForm" method="post">
               <c:if test="${not empty csrfToken}">
                 <input type="hidden" name="csrfToken" value="${fn:escapeXml(csrfToken)}" />
               </c:if>
-
               <c:if test="${empty csrfToken and not empty sessionScope.csrfToken}">
                 <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.csrfToken)}" />
               </c:if>
 
               <div class="account-form-grid">
-                <div>
-                  <label class="account-label">Email</label>
-                  <input class="account-input"
-                         name="email"
-                         type="email"
-                         value="${not empty userEmail ? fn:escapeXml(userEmail) : ''}"
-                         required />
+                <div class="form-group">
+                  <label>Họ tên</label>
+                  <input class="account-input" id="nameInput" name="fullName" value="${sessionScope.user.fullName}" required />
+                  <small id="name-error" style="display:none; color: #e53935; font-size: 13px; margin-top: 5px; font-weight: 500;"></small>
+                </div>
+
+                <div class="form-group">
+                  <label>Email</label>
+                  <input class="account-input" id="emailInput" name="email" value="${sessionScope.user.email}" required />
+                  <small id="email-error" style="display:none; color: #e53935; font-size: 13px; margin-top: 5px; font-weight: 500;"></small>
+                </div>
+
+                <div class="form-group">
+                  <label>Số điện thoại</label>
+                  <input class="account-input" id="phoneInput" name="phone" value="${sessionScope.user.phone}" required />
+                  <small id="phone-error" style="display:none; color: #e53935; font-size: 13px; margin-top: 5px; font-weight: 500;"></small>
                 </div>
 
                 <div>
-                  <label class="account-label">Số điện thoại</label>
-                  <input class="account-input"
-                         name="phone"
-                         value="${not empty userPhone ? fn:escapeXml(userPhone) : ''}"
-                         required />
+                  <label>Ngày sinh</label>
+                  <input class="account-input" type="date" name="birthDate" value="${sessionScope.user.birthDate}" />
                 </div>
+
+                <div>
+                  <label>Giới tính</label>
+                  <select class="account-input" name="gender">
+                    <option value="Male" ${sessionScope.user.gender == 'Male' ? 'selected' : ''}>Nam</option>
+                    <option value="Female" ${sessionScope.user.gender == 'Female' ? 'selected' : ''}>Nữ</option>
+                  </select>
+                </div>
+              </div> <div style="margin-top:15px">
+              <label>Địa chỉ</label>
+              <div style="display:flex; gap:10px">
+                <input type="text" name="address" value="${sessionScope.user.address}" class="account-input">
+                <button type="button" class="account-btn" onclick="getLocation()">Lấy vị trí</button>
               </div>
+            </div>
 
-              <button class="account-submit ${sessionScope.user.admin ? '' : 'user-mode-submit'}" type="submit">
-                Lưu thông tin
-              </button>
+              <button type="submit" class="btn-save" id="saveProfileBtn" style="margin-top: 20px;">Lưu thay đổi</button>
             </form>
+          </div>
+        </div>
+
+        <div id="otpModal" class="modal-overlay">
+          <div class="modal-content">
+            <h3>Xác thực OTP</h3>
+            <p>Vui lòng nhập mã OTP đã gửi về email của bạn</p>
+            <input type="text" id="otp_input" placeholder="000000" maxlength="6">
+            <button onclick="xacThucOtp()" class="btn-save">Xác nhận</button>
+            <button onclick="dongPopupOtp()" style="background:none; border:none; color:#777; margin-top:10px; cursor:pointer;">Hủy bỏ</button>
           </div>
         </div>
 
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
         <script>
+          function getLocation() {
+            navigator.geolocation.getCurrentPosition(async (pos) => {
+              const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`;
+              const res = await fetch(url).then(r => r.json());
+              document.getElementById('addressInput').value = res.display_name;
+            });
+          }
+
           function copyCouponCode(code) {
             if (!code) {
               return;
@@ -742,6 +776,7 @@
             bar.style.width = safeProgress + "%";
           });
         </script>
+
 
         <!-- USER SPENDING CHART -->
         <c:if test="${not sessionScope.user.admin and not empty chart_labels and not empty chart_values}">
@@ -867,3 +902,252 @@
 
   </div>
 </section>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<div id="otpModal" class="modal-overlay">
+  <div class="modal-content">
+    <h3>Xác thực OTP</h3>
+    <p>Hệ thống đã gửi một mã OTP gồm 6 chữ số đến Email của bạn.</p>
+    <input type="text" id="otp_input" placeholder="******" maxlength="6">
+    <button type="button" onclick="xacThucOtp()" class="btn-save">Xác nhận</button>
+    <button type="button" onclick="dongPopupOtp()" style="background:none; border:none; color:#777; margin-top:10px; cursor:pointer;">Hủy bỏ</button>
+  </div>
+</div>
+
+<script>
+  // ==========================================
+  // 1. CÁC HÀM TIỆN ÍCH KIỂM TRA TRỰC TIẾP
+  // ==========================================
+  function showError(input, errorElement, message) {
+    input.style.borderColor = "#e53935"; // Viền đỏ
+    input.classList.add("is-invalid"); // Đánh dấu lỗi để chặn form
+    errorElement.innerText = message;
+    errorElement.style.display = "block";
+  }
+
+  function showSuccess(input, errorElement) {
+    input.style.borderColor = "#43a047"; // Viền xanh lá
+    input.classList.remove("is-invalid");
+    errorElement.style.display = "none";
+  }
+
+  function resetState(input, errorElement) {
+    input.style.borderColor = "#ddd"; // Khôi phục viền gốc
+    input.classList.remove("is-invalid");
+    errorElement.style.display = "none";
+  }
+
+  // ==========================================
+  // 2. LẤY CÁC ELEMENT TỪ GIAO DIỆN
+  // ==========================================
+  const nameInput = document.getElementById("nameInput");
+  const nameError = document.getElementById("name-error");
+  const emailInput = document.getElementById("emailInput");
+  const emailError = document.getElementById("email-error");
+  const phoneInput = document.getElementById("phoneInput");
+  const phoneError = document.getElementById("phone-error");
+
+  // Bắt sự kiện gõ phím ở ô Họ Tên
+  if (nameInput) {
+    nameInput.addEventListener("input", () => {
+      const value = nameInput.value.trim();
+      resetState(nameInput, nameError);
+      if (value.length < 4) {
+        showError(nameInput, nameError, "Họ và tên tối thiểu 4 ký tự.");
+        return;
+      }
+      showSuccess(nameInput, nameError);
+    });
+  }
+
+  // Bắt sự kiện gõ phím ở ô Email
+  if (emailInput) {
+    emailInput.addEventListener("input", () => {
+      const value = emailInput.value.trim();
+      resetState(emailInput, emailError);
+      const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!regex.test(value)) {
+        showError(emailInput, emailError, "Định dạng email không hợp lệ (vd: abc@gmail.com).");
+        return;
+      }
+      showSuccess(emailInput, emailError);
+    });
+  }
+
+  // Bắt sự kiện gõ phím ở ô Số điện thoại
+  if (phoneInput) {
+    phoneInput.addEventListener("input", () => {
+      const value = phoneInput.value.trim();
+      resetState(phoneInput, phoneError);
+      const regex = /^(03|05|07|08|09)\d{8}$/;
+      if (!regex.test(value)) {
+        showError(phoneInput, phoneError, "Số điện thoại gồm 10 số, bắt đầu 03/05/07/08/09.");
+        return;
+      }
+      showSuccess(phoneInput, phoneError);
+    });
+  }
+
+  // ==========================================
+  // 3. XỬ LÝ KHI NHẤN NÚT "LƯU THAY ĐỔI"
+  // ==========================================
+  const updateForm = document.getElementById('updateProfileForm');
+  if (updateForm) {
+    updateForm.addEventListener('submit', function(e) {
+      e.preventDefault(); // CHẶN LỖI 405 Ở ĐÂY (Ngăn form tự chuyển trang)
+
+      // Kích hoạt kiểm tra lại toàn bộ form (phòng khi user chưa gõ gì mà bấm Lưu luôn)
+      if (nameInput) nameInput.dispatchEvent(new Event('input'));
+      if (emailInput) emailInput.dispatchEvent(new Event('input'));
+      if (phoneInput) phoneInput.dispatchEvent(new Event('input'));
+
+      // Kiểm tra xem có ô nào bị dính class "is-invalid" (bị lỗi báo đỏ) không
+      const invalidInputs = updateForm.querySelectorAll('.is-invalid');
+      if (invalidInputs.length > 0) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Thông tin chưa hợp lệ',
+          text: 'Vui lòng kiểm tra và chỉnh sửa lại các trường bị báo đỏ!'
+        });
+        return; // Dừng, không gửi dữ liệu lên server
+      }
+
+      // HIỂN THỊ POPUP ĐANG GỬI OTP
+      Swal.fire({
+        title: 'Đang xử lý...',
+        text: 'Hệ thống đang gửi mã OTP đến email của bạn.',
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+      });
+
+      const formData = new URLSearchParams(new FormData(this));
+
+      // Gọi API cập nhật
+      fetch('${pageContext.request.contextPath}/account/update-profile', {
+        method: 'POST',
+        body: formData
+      })
+              .then(res => res.json())
+              .then(data => {
+                Swal.close(); // Tắt popup loading
+
+                if(data.status === 'success') {
+                  // Gửi email xong, bật Modal nhập OTP
+                  document.getElementById('otpModal').style.display = 'flex';
+                  document.getElementById('otp_input').value = "";
+                  document.getElementById('otp_input').focus();
+                } else {
+                  Swal.fire('Lỗi', data.message || 'Lỗi gửi email xác thực!', 'error');
+                }
+              })
+              .catch(err => {
+                Swal.close();
+                Swal.fire('Lỗi mạng', 'Máy chủ không phản hồi, vui lòng thử lại', 'error');
+              });
+    });
+  }
+
+  // ==========================================
+  // 4. XỬ LÝ NHẬP OTP (MODAL)
+  // ==========================================
+  function xacThucOtp() {
+    const otpValue = document.getElementById('otp_input').value.trim();
+    if (!otpValue || otpValue.length !== 6) {
+      Swal.fire({ icon: 'warning', title: 'Cảnh báo', text: 'Vui lòng nhập đúng 6 số OTP!' });
+      return;
+    }
+
+    const btnXacNhan = document.querySelector('#otpModal .btn-save');
+    btnXacNhan.innerText = "Đang xác thực...";
+    btnXacNhan.disabled = true;
+
+    fetch('${pageContext.request.contextPath}/verify-update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'otp_input=' + encodeURIComponent(otpValue)
+    })
+            .then(res => res.json())
+            .then(data => {
+              btnXacNhan.innerText = "Xác nhận";
+              btnXacNhan.disabled = false;
+
+              if(data.status === 'success') {
+                dongPopupOtp();
+                Swal.fire({
+                  icon: 'success',
+                  title: 'Thành công!',
+                  text: 'Đã lưu thông tin thay đổi thành công.',
+                  timer: 2000,
+                  showConfirmButton: false
+                }).then(() => {
+                  window.location.reload();
+                });
+              } else {
+                Swal.fire('Lỗi xác thực', data.message || 'Sai mã OTP, vui lòng thử lại!', 'error');
+              }
+            })
+            .catch(err => {
+              btnXacNhan.innerText = "Xác nhận";
+              btnXacNhan.disabled = false;
+              Swal.fire('Lỗi mạng', 'Đã xảy ra lỗi đường truyền!', 'error');
+            });
+  }
+
+  function dongPopupOtp() {
+    document.getElementById('otpModal').style.display = 'none';
+  }
+</script>
+
+<style>
+  /* Nút Lưu thay đổi */
+  .btn-save {
+    background: #ff5fa2;
+    color: white;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    width: 100%;
+  }
+
+  .btn-save:hover {
+    background: #e04a8a;
+  }
+
+  /* Modal Overlay */
+  .modal-overlay {
+    display: none; /* Mặc định ẩn */
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+
+  .modal-content {
+    background: #fff;
+    padding: 30px;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  }
+
+  .modal-content h3 { margin-bottom: 15px; color: #ff5fa2; }
+  .modal-content input {
+    width: 100%;
+    padding: 10px;
+    margin: 15px 0;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 18px;
+    letter-spacing: 5px;
+  }
+</style>
