@@ -50,6 +50,8 @@ public class User {
     private String birthDate;  // yyyy-MM-dd
     private String gender;
 
+    private String address;
+
     public User() {
         this.role = ROLE_USER;
         this.active = true;
@@ -543,5 +545,13 @@ public class User {
                 ", birthDate='" + birthDate + '\'' +
                 ", gender='" + gender + '\'' +
                 '}';
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
     }
 }
