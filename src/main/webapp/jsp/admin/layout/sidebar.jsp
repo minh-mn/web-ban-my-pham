@@ -124,11 +124,11 @@
         <span class="admin-nav__meta">/admin/events</span>
       </a>
 
-      <div class="admin-nav__section">System</div>
+      <div class="admin-nav__section">Hệ thống &amp; phân quyền</div>
 
       <a class="${activeMenu == 'users' ? 'is-active' : ''}"
          href="${pageContext.request.contextPath}/admin/users">
-        <span>Users</span>
+        <span>Quản lí user</span>
         <span class="admin-nav__meta">/admin/users</span>
       </a>
 
