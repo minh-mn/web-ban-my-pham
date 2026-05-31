@@ -1247,4 +1247,5 @@ public class ProductDAO {
 				12              // pageSize
 		);
 	}
+	
 }
