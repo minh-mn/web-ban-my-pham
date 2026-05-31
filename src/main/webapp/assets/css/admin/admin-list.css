@@ -1993,6 +1993,19 @@ td.product-actions {
   overflow: hidden;
 }
 
+.admin-review-filter-card {
+  margin-bottom: 22px;
+}
+
+.admin-review-filter-card .admin-card__body {
+  padding: 18px 18px 16px;
+  gap: 14px;
+}
+
+.admin-review-list-card .admin-card__body {
+  padding: 18px;
+}
+
 .admin-review-section-head {
   display: flex;
   justify-content: space-between;
@@ -2002,7 +2015,9 @@ td.product-actions {
 }
 
 .admin-review-section-head--list {
-  margin-bottom: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.07);
 }
 
 .admin-review-section-title {
@@ -2028,13 +2043,14 @@ td.product-actions {
 
 .admin-review-filter-form {
   display: grid;
-  gap: 12px;
+  gap: 14px;
+  padding-top: 2px;
 }
 
 .admin-review-filter-main {
   display: grid;
-  grid-template-columns: minmax(280px, 1.6fr) repeat(5, minmax(118px, 0.7fr));
-  gap: 10px;
+  grid-template-columns: minmax(300px, 1.7fr) repeat(5, minmax(120px, 0.7fr));
+  gap: 12px;
   align-items: end;
 }
 
@@ -2062,7 +2078,8 @@ td.product-actions {
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
-  padding-top: 2px;
+  padding-top: 12px;
+  border-top: 1px dashed rgba(15, 23, 42, 0.10);
 }
 
 .admin-review-filter-btn {
@@ -2123,19 +2140,28 @@ td.product-actions {
 .admin-review-table-wrap {
   width: 100%;
   overflow-x: auto;
+  border: 1px solid rgba(15, 23, 42, 0.07);
   border-radius: 16px;
+  background: #fff;
 }
 
 .admin-review-table {
   width: 100%;
-  min-width: 1260px;
+  min-width: 1300px;
   table-layout: fixed;
+  border-left: 0;
+  border-right: 0;
+  border-radius: 0;
 }
 
 .admin-review-table th,
 .admin-review-table td {
-  padding: 10px 8px;
+  padding: 12px 10px;
   vertical-align: top;
+}
+
+.admin-review-table tbody tr + tr td {
+  border-top: 1px solid rgba(15, 23, 42, 0.06);
 }
 
 .admin-review-table th {
@@ -2195,7 +2221,7 @@ td.product-actions {
 }
 
 .admin-review-col-actions {
-  width: 126px;
+  width: 154px;
 }
 
 .admin-review-id-cell {
@@ -2404,13 +2430,20 @@ td.product-actions {
 
 .admin-review-action-cell {
   white-space: nowrap;
+  vertical-align: top;
 }
 
 .admin-review-actions {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px;
-  align-items: center;
+  grid-template-columns: repeat(2, minmax(68px, 1fr));
+  gap: 8px;
+  align-items: stretch;
+  width: 100%;
+  max-width: 150px;
+}
+
+.admin-review-actions > a.admin-review-action-btn {
+  grid-column: 1 / -1;
 }
 
 .admin-review-actions form,
@@ -2422,12 +2455,21 @@ td.product-actions {
 
 .admin-review-action-btn {
   width: 100%;
-  min-height: 32px;
-  padding: 0 8px;
+  min-height: 34px;
+  padding: 0 9px;
   justify-content: center;
-  border-radius: 10px;
+  border-radius: 11px;
   font-size: 12px;
   font-weight: 900;
+  line-height: 1;
+}
+
+.admin-review-actions .admin-btn--danger {
+  background: #fff7f7;
+}
+
+.admin-review-actions .admin-btn--ok {
+  box-shadow: 0 8px 18px rgba(22, 163, 74, 0.14);
 }
 
 @media (max-width: 1500px) {
