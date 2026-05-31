@@ -22,7 +22,7 @@
 			</a>
 		</div>
 
-		<div class="auth-divider">HOẶC</div>
+		<div class="auth-divider"></div>
 
 		<form method="post" action="${pageContext.request.contextPath}/login" class="auth-form">
 			<input type="hidden" name="csrf_token" value="<c:out value='${sessionScope.CSRF_TOKEN}'/>">
