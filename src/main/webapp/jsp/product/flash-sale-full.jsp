@@ -7,33 +7,13 @@
 <c:set var="selectedSlot" value="${empty param.slot ? '09:00' : param.slot}" />
 <c:set var="selectedCategory" value="${empty param.category ? 'TOP_PICK' : param.category}" />
 
-<c:set var="dealProducts" value="${flashSaleProducts}" />
-<c:if test="${empty dealProducts && not empty deepDiscountProducts}">
-  <c:set var="dealProducts" value="${deepDiscountProducts}" />
-</c:if>
-<c:if test="${empty dealProducts && not empty products}">
-  <c:set var="dealProducts" value="${products}" />
-</c:if>
-<c:if test="${empty dealProducts && not empty featuredProducts}">
-  <c:set var="dealProducts" value="${featuredProducts}" />
-</c:if>
-
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Flash Deal - MyCosmetic</title>
-  <link rel="stylesheet" href="${ctx}/assets/css/flash-sale.css?v=20260531-final">
-</head>
-<body>
-
-<jsp:include page="/jsp/common/header.jsp" />
-
-<main class="flash-page">
+<!--
+Không include header/footer ở file này vì FlashSaleServlet đã render qua base.jsp.
+Nếu include header/footer ở đây sẽ bị 2 thanh menu.
+-->
+<section class="flash-page">
   <div class="flash-container">
 
-    <!-- HERO GIỐNG MẪU THAM KHẢO -->
     <section class="flash-hero">
       <div class="flash-hero__brand">MyCosmetic</div>
 
@@ -62,15 +42,12 @@
       </div>
     </section>
 
-    <!-- COUNTDOWN -->
     <section class="flash-countdown-section">
       <div class="flash-countdown-label">KẾT THÚC TRONG</div>
 
       <div class="flash-countdown"
            id="flashCountdown"
-           data-hours="${requestScope.countdownHours != null ? requestScope.countdownHours : 1}"
-           data-minutes="${requestScope.countdownMinutes != null ? requestScope.countdownMinutes : 17}"
-           data-seconds="${requestScope.countdownSeconds != null ? requestScope.countdownSeconds : 45}">
+           data-end-time="${not empty activeFlashSale ? activeFlashSale.endTime.time : 0}">
         <span id="cdHours">00</span>
         <b>:</b>
         <span id="cdMinutes">00</span>
@@ -79,59 +56,68 @@
       </div>
     </section>
 
-    <!-- KHUNG GIỜ -->
-    <section class="flash-time-slots">
-      <a class="flash-time-slot ${selectedSlot eq '09:00' ? 'active' : ''}"
-         href="${ctx}/flash-sale?slot=09:00&category=${selectedCategory}">
-        <strong>09:00</strong>
-        <span>${selectedSlot eq '09:00' ? 'Đang Diễn Ra' : 'Sắp Diễn Ra'}</span>
-      </a>
+    <div id="flash-control-panel" class="flash-control-panel">
+      <section class="flash-time-slots">
+        <a class="flash-time-slot ${selectedSlot eq '09:00' ? 'active' : ''}"
+           href="${ctx}/flash-sale?slot=09:00&category=${selectedCategory}"
+           data-flash-nav>
+          <strong>09:00</strong>
+          <span>${selectedSlot eq '09:00' ? 'Đang Diễn Ra' : 'Sắp Diễn Ra'}</span>
+        </a>
 
-      <a class="flash-time-slot ${selectedSlot eq '12:00' ? 'active' : ''}"
-         href="${ctx}/flash-sale?slot=12:00&category=${selectedCategory}">
-        <strong>12:00</strong>
-        <span>${selectedSlot eq '12:00' ? 'Đang Diễn Ra' : 'Sắp Diễn Ra'}</span>
-      </a>
+        <a class="flash-time-slot ${selectedSlot eq '12:00' ? 'active' : ''}"
+           href="${ctx}/flash-sale?slot=12:00&category=${selectedCategory}"
+           data-flash-nav>
+          <strong>12:00</strong>
+          <span>${selectedSlot eq '12:00' ? 'Đang Diễn Ra' : 'Sắp Diễn Ra'}</span>
+        </a>
 
-      <a class="flash-time-slot ${selectedSlot eq '15:00' ? 'active' : ''}"
-         href="${ctx}/flash-sale?slot=15:00&category=${selectedCategory}">
-        <strong>15:00</strong>
-        <span>${selectedSlot eq '15:00' ? 'Đang Diễn Ra' : 'Sắp Diễn Ra'}</span>
-      </a>
+        <a class="flash-time-slot ${selectedSlot eq '15:00' ? 'active' : ''}"
+           href="${ctx}/flash-sale?slot=15:00&category=${selectedCategory}"
+           data-flash-nav>
+          <strong>15:00</strong>
+          <span>${selectedSlot eq '15:00' ? 'Đang Diễn Ra' : 'Sắp Diễn Ra'}</span>
+        </a>
 
-      <a class="flash-time-slot ${selectedSlot eq '21:00' ? 'active' : ''}"
-         href="${ctx}/flash-sale?slot=21:00&category=${selectedCategory}">
-        <strong>21:00</strong>
-        <span>${selectedSlot eq '21:00' ? 'Đang Diễn Ra' : 'Sắp Diễn Ra'}</span>
-      </a>
-    </section>
+        <a class="flash-time-slot ${selectedSlot eq '21:00' ? 'active' : ''}"
+           href="${ctx}/flash-sale?slot=21:00&category=${selectedCategory}"
+           data-flash-nav>
+          <strong>21:00</strong>
+          <span>${selectedSlot eq '21:00' ? 'Đang Diễn Ra' : 'Sắp Diễn Ra'}</span>
+        </a>
+      </section>
 
-    <!-- TAB DANH MỤC -->
-    <section class="flash-category-tabs">
-      <a class="flash-category-tab ${selectedCategory eq 'TOP_PICK' ? 'active' : ''}"
-         href="${ctx}/flash-sale?slot=${selectedSlot}&category=TOP_PICK">TOP PICK</a>
+      <section class="flash-category-tabs">
+        <a class="flash-category-tab ${selectedCategory eq 'TOP_PICK' ? 'active' : ''}"
+           href="${ctx}/flash-sale?slot=${selectedSlot}&category=TOP_PICK"
+           data-flash-nav>TOP PICK</a>
 
-      <a class="flash-category-tab ${selectedCategory eq 'MUA_LA_CO_QUA' ? 'active' : ''}"
-         href="${ctx}/flash-sale?slot=${selectedSlot}&category=MUA_LA_CO_QUA">MUA LÀ CÓ QUÀ</a>
+        <a class="flash-category-tab ${selectedCategory eq 'MUA_LA_CO_QUA' ? 'active' : ''}"
+           href="${ctx}/flash-sale?slot=${selectedSlot}&category=MUA_LA_CO_QUA"
+           data-flash-nav>MUA LÀ CÓ QUÀ</a>
 
-      <a class="flash-category-tab ${selectedCategory eq 'SKINCARE' ? 'active' : ''}"
-         href="${ctx}/flash-sale?slot=${selectedSlot}&category=SKINCARE">SKINCARE</a>
+        <a class="flash-category-tab ${selectedCategory eq 'SKINCARE' ? 'active' : ''}"
+           href="${ctx}/flash-sale?slot=${selectedSlot}&category=SKINCARE"
+           data-flash-nav>SKINCARE</a>
 
-      <a class="flash-category-tab ${selectedCategory eq 'MAKEUP' ? 'active' : ''}"
-         href="${ctx}/flash-sale?slot=${selectedSlot}&category=MAKEUP">MAKEUP</a>
+        <a class="flash-category-tab ${selectedCategory eq 'MAKEUP' ? 'active' : ''}"
+           href="${ctx}/flash-sale?slot=${selectedSlot}&category=MAKEUP"
+           data-flash-nav>MAKEUP</a>
 
-      <a class="flash-category-tab ${selectedCategory eq 'QUA_TANG' ? 'active' : ''}"
-         href="${ctx}/flash-sale?slot=${selectedSlot}&category=QUA_TANG">QUÀ TẶNG</a>
-    </section>
+        <a class="flash-category-tab ${selectedCategory eq 'QUA_TANG' ? 'active' : ''}"
+           href="${ctx}/flash-sale?slot=${selectedSlot}&category=QUA_TANG"
+           data-flash-nav>QUÀ TẶNG</a>
+      </section>
+    </div>
 
-    <!-- DANH SÁCH SẢN PHẨM -->
     <section class="flash-products-section">
       <c:choose>
-        <c:when test="${not empty dealProducts}">
+        <c:when test="${not empty fsItems}">
           <div class="flash-products-grid">
-            <c:forEach var="product" items="${dealProducts}">
-              <article class="flash-product-card">
+            <c:forEach var="item" items="${fsItems}">
+              <c:set var="product" value="${item.product}" />
 
+              <article class="flash-product-card">
                 <c:choose>
                   <c:when test="${not empty product.slug}">
                     <c:set var="productUrl" value="${ctx}/products/${product.slug}" />
@@ -178,30 +164,24 @@
                 </h3>
 
                 <div class="flash-price-row">
-                  <c:choose>
-                    <c:when test="${product.discountPercent > 0}">
-                      <strong>
-                        <fmt:formatNumber value="${product.finalPrice}" type="number" groupingUsed="true"/>đ
-                      </strong>
-                      <del>
-                        <fmt:formatNumber value="${product.price}" type="number" groupingUsed="true"/>đ
-                      </del>
-                    </c:when>
-                    <c:otherwise>
-                      <strong>
-                        <fmt:formatNumber value="${product.price}" type="number" groupingUsed="true"/>đ
-                      </strong>
-                    </c:otherwise>
-                  </c:choose>
+                  <strong>
+                    <fmt:formatNumber value="${item.flashPrice}" type="number" groupingUsed="true"/>đ
+                  </strong>
+
+                  <c:if test="${product.price > item.flashPrice}">
+                    <del>
+                      <fmt:formatNumber value="${product.price}" type="number" groupingUsed="true"/>đ
+                    </del>
+                  </c:if>
                 </div>
 
                 <div class="flash-product-bottom">
                   <div class="flash-progress-wrap">
                     <div class="flash-progress">
-                      <span style="width: ${empty product.saleProgressPercent ? 75 : product.saleProgressPercent}%;"></span>
+                      <span style="width: ${item.soldPercent <= 0 ? 75 : item.soldPercent}%;"></span>
                     </div>
                     <div class="flash-progress-text">
-                      ĐANG DIỄN RA ${empty product.saleProgressPercent ? 75 : product.saleProgressPercent}%
+                      ĐANG DIỄN RA ${item.soldPercent <= 0 ? 75 : item.soldPercent}%
                     </div>
                   </div>
 
@@ -224,18 +204,12 @@
     </section>
 
   </div>
-</main>
-
-<jsp:include page="/jsp/common/footer.jsp" />
+</section>
 
 <script>
   (function () {
     const countdown = document.getElementById("flashCountdown");
     if (!countdown) return;
-
-    let hours = parseInt(countdown.getAttribute("data-hours") || "0", 10);
-    let minutes = parseInt(countdown.getAttribute("data-minutes") || "0", 10);
-    let seconds = parseInt(countdown.getAttribute("data-seconds") || "0", 10);
 
     const hEl = document.getElementById("cdHours");
     const mEl = document.getElementById("cdMinutes");
@@ -246,44 +220,66 @@
     }
 
     function render() {
+      const rawEndTime = parseInt(countdown.getAttribute("data-end-time") || "0", 10);
+      const fallbackEnd = new Date();
+      fallbackEnd.setHours(23, 59, 59, 999);
+
+      const endTime = rawEndTime > 0 ? rawEndTime : fallbackEnd.getTime();
+      let distance = endTime - Date.now();
+
+      if (distance < 0) {
+        distance = 0;
+      }
+
+      const hours = Math.floor(distance / (1000 * 60 * 60));
+      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
       hEl.textContent = pad(hours);
       mEl.textContent = pad(minutes);
       sEl.textContent = pad(seconds);
     }
 
-    function tick() {
-      if (hours === 0 && minutes === 0 && seconds === 0) {
-        render();
-        return;
-      }
+    render();
+    setInterval(render, 1000);
+  })();
 
-      if (seconds > 0) {
-        seconds--;
-      } else {
-        seconds = 59;
+  /*
+      Fix giật màn hình:
+      - Không dùng #hash.
+      - Không scrollIntoView smooth sau reload.
+      - Lưu vị trí hiện tại trước khi bấm tab/khung giờ.
+      - Khi trang load lại, trả về đúng vị trí cũ ngay lập tức.
+  */
+  (function () {
+    const STORAGE_KEY = "flashSaleScrollY";
 
-        if (minutes > 0) {
-          minutes--;
-        } else {
-          minutes = 59;
-
-          if (hours > 0) {
-            hours--;
-          } else {
-            hours = 0;
-            minutes = 0;
-            seconds = 0;
-          }
-        }
-      }
-
-      render();
+    if ("scrollRestoration" in history) {
+      history.scrollRestoration = "manual";
     }
 
-    render();
-    setInterval(tick, 1000);
+    document.querySelectorAll("[data-flash-nav]").forEach(function (link) {
+      link.addEventListener("click", function () {
+        sessionStorage.setItem(STORAGE_KEY, String(window.scrollY || window.pageYOffset || 0));
+      });
+    });
+
+    window.addEventListener("load", function () {
+      const savedY = sessionStorage.getItem(STORAGE_KEY);
+      if (savedY === null) return;
+
+      sessionStorage.removeItem(STORAGE_KEY);
+
+      const targetY = parseInt(savedY, 10);
+      if (Number.isNaN(targetY)) return;
+
+      requestAnimationFrame(function () {
+        window.scrollTo({
+          top: targetY,
+          left: 0,
+          behavior: "auto"
+        });
+      });
+    });
   })();
 </script>
-
-</body>
-</html>
