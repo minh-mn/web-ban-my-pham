@@ -96,21 +96,18 @@
                                         <span class="skin-discount-bubble">-${product.discountPercent}%</span>
                                     </c:if>
 
-                                    <c:if test="${isFlashSection}">
-                                        <span class="skin-card-label">FREESHIP TQ</span>
-                                    </c:if>
 
                                     <c:choose>
                                         <c:when test="${not empty product.imageUrl}">
                                             <c:choose>
                                                 <c:when test="${fn:startsWith(product.imageUrl, 'http')}">
-                                                    <img src="${product.imageUrl}" alt="${product.title}">
+                                                    <img src="${product.imageUrl}" alt="${product.title}" loading="lazy" onerror="this.style.display='none'; this.closest('.skin-product-image').classList.add('image-error');">
                                                 </c:when>
                                                 <c:when test="${fn:startsWith(product.imageUrl, '/')}">
-                                                    <img src="${ctx}${product.imageUrl}" alt="${product.title}">
+                                                    <img src="${ctx}${product.imageUrl}" alt="${product.title}" loading="lazy" onerror="this.style.display='none'; this.closest('.skin-product-image').classList.add('image-error');">
                                                 </c:when>
                                                 <c:otherwise>
-                                                    <img src="${ctx}/uploads/product/${product.imageUrl}" alt="${product.title}">
+                                                    <img src="${ctx}/uploads/product/${product.imageUrl}" alt="${product.title}" loading="lazy" onerror="this.style.display='none'; this.closest('.skin-product-image').classList.add('image-error');">
                                                 </c:otherwise>
                                             </c:choose>
                                         </c:when>
@@ -697,6 +694,112 @@
                 min-width: 42px;
                 height: 42px;
                 font-size: 20px;
+            }
+        }
+
+
+        /* =========================================================
+           OVERRIDE 2026-05-31
+           Fix card Flash Deal trang chủ: không mất chữ, ảnh không làm vỡ layout,
+           card cao đều và chuyển slide mượt hơn.
+        ========================================================= */
+        .skin-product-section.is-flash .skin-flash-viewport {
+            overflow: hidden;
+            padding: 2px 0 18px;
+        }
+
+        .skin-product-section.is-flash .skin-product-scroll.flash-scroll {
+            align-items: stretch;
+            transition: transform .46s cubic-bezier(.22, .61, .36, 1);
+        }
+
+        .skin-product-section.is-flash .skin-product-card.flash-card {
+            min-height: 486px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .skin-product-section.is-flash .skin-product-image {
+            aspect-ratio: auto;
+            height: 220px;
+            display: block;
+            background: linear-gradient(135deg, #f8fbff 0%, #fff6fa 100%);
+        }
+
+        .skin-product-section.is-flash .skin-product-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            padding: 10px;
+        }
+
+        .skin-product-section.is-flash .skin-product-image.image-error::after {
+            content: "MyCosmetic";
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #b0003a;
+            font-size: 22px;
+            font-weight: 1000;
+            letter-spacing: .04em;
+        }
+
+        .skin-product-section.is-flash .skin-product-body {
+            min-height: 252px;
+            display: flex;
+            flex-direction: column;
+            padding: 14px 14px 18px;
+        }
+
+        .skin-product-section.is-flash .skin-product-title {
+            min-height: 69px;
+            font-size: 15.5px;
+            line-height: 1.48;
+            -webkit-line-clamp: 3;
+        }
+
+        .skin-product-section.is-flash .skin-price-row {
+            min-height: 31px;
+        }
+
+        .skin-product-section.is-flash .skin-product-meta {
+            min-height: 26px;
+        }
+
+        .skin-product-section.is-flash .skin-progress {
+            margin-top: auto;
+        }
+
+        .skin-product-section.is-flash .skin-progress-text {
+            min-height: 18px;
+        }
+
+        @media (max-width: 1280px) {
+            .skin-product-section.is-flash .skin-product-card.flash-card {
+                flex-basis: calc((100% - 54px) / 4);
+                max-width: calc((100% - 54px) / 4);
+            }
+        }
+
+        @media (max-width: 980px) {
+            .skin-product-section.is-flash .skin-product-card.flash-card {
+                flex-basis: calc((100% - 18px) / 2);
+                max-width: calc((100% - 18px) / 2);
+            }
+        }
+
+        @media (max-width: 620px) {
+            .skin-product-section.is-flash .skin-product-card.flash-card {
+                flex-basis: 100%;
+                max-width: 100%;
+                min-height: auto;
+            }
+
+            .skin-product-section.is-flash .skin-product-image {
+                height: 245px;
             }
         }
     </style>
