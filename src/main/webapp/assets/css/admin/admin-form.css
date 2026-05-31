@@ -1768,3 +1768,356 @@
     min-height: 140px;
   }
 }
+
+/* =========================================================
+   USER EDIT FORM - ISSUE 130
+   Scope: /jsp/admin/user/user_form.jsp
+   Chức năng:
+   - Admin chỉ sửa role, trạng thái, rank thủ công
+   - Không sửa trực tiếp họ tên, email, SĐT của user
+   - Không đổi mật khẩu tài khoản khác
+   - Bảo vệ tài khoản ADMIN và tài khoản hiện tại
+========================================================= */
+
+.user-edit-page--issue130 {
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
+}
+
+.user-edit-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: start;
+  margin-bottom: 18px;
+  padding: 18px;
+  border: 1px solid rgba(255, 95, 162, 0.20);
+  border-radius: 22px;
+  background:
+          radial-gradient(circle at top left, rgba(255, 95, 162, 0.15), transparent 34%),
+          linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.055);
+}
+
+.user-edit-hero__content {
+  min-width: 0;
+}
+
+.user-edit-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 95, 162, 0.35);
+  background: rgba(255, 95, 162, 0.10);
+  color: #be185d;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.user-edit-title {
+  margin-bottom: 5px;
+}
+
+.user-edit-subtitle {
+  max-width: 850px;
+  line-height: 1.55;
+}
+
+.user-edit-hero__actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.user-edit-layout--issue130 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 18px;
+  align-items: start;
+}
+
+.user-edit-layout--issue130 .user-edit-left {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.user-edit-layout--issue130 .user-edit-card {
+  overflow: hidden;
+  border-color: #edf0f4;
+  border-radius: 20px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.045);
+}
+
+.user-edit-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.user-edit-card__head .user-edit-card__desc {
+  margin-bottom: 0;
+}
+
+.user-edit-card__head .admin-pill {
+  flex-shrink: 0;
+}
+
+.user-edit-account-card {
+  background:
+          linear-gradient(180deg, #ffffff 0%, #fffafb 100%);
+}
+
+.user-policy-note {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  margin-bottom: 16px;
+  padding: 13px 14px;
+  border: 1px solid rgba(59, 130, 246, 0.22);
+  border-radius: 16px;
+  background: rgba(59, 130, 246, 0.065);
+  color: #1e3a8a;
+}
+
+.user-policy-note--warning {
+  border-color: rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.095);
+  color: #92400e;
+}
+
+.user-policy-note--success {
+  border-color: rgba(16, 185, 129, 0.32);
+  background: rgba(16, 185, 129, 0.08);
+  color: #065f46;
+}
+
+.user-policy-note__icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  font-size: 15px;
+  font-weight: 950;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.055);
+}
+
+.user-policy-note strong {
+  display: block;
+  margin-bottom: 4px;
+  color: currentColor;
+  font-size: 13px;
+  font-weight: 950;
+  line-height: 1.35;
+}
+
+.user-policy-note p {
+  margin: 0;
+  color: currentColor;
+  opacity: 0.92;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.user-form-grid--readonly .admin-input[disabled],
+.user-readonly {
+  border-color: #eef1f5 !important;
+  background: #f9fafb !important;
+  color: #4b5563 !important;
+  -webkit-text-fill-color: #4b5563;
+  cursor: not-allowed;
+}
+
+.user-permission-form {
+  display: grid;
+  gap: 16px;
+}
+
+.user-permission-form .admin-select:disabled,
+.user-permission-form .admin-input:disabled,
+.user-permission-form button:disabled {
+  cursor: not-allowed;
+  opacity: 0.68;
+}
+
+.user-rank-status {
+  margin-top: 12px;
+  border-color: rgba(255, 95, 162, 0.30);
+  background: #fff7fb;
+  gap: 8px;
+}
+
+.user-login-status-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.user-login-status-item {
+  padding: 13px 14px;
+  border: 1px solid #edf0f4;
+  border-radius: 16px;
+  background: #fbfcff;
+}
+
+.user-login-status-item span {
+  display: block;
+  margin-bottom: 6px;
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: 0.035em;
+}
+
+.user-login-status-item strong {
+  display: block;
+  color: #111827;
+  font-size: 14px;
+  font-weight: 950;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.user-password-form {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(15, 23, 42, 0.07);
+}
+
+.user-password-form .user-policy-note {
+  margin-bottom: 0;
+}
+
+.user-password-input-row {
+  grid-template-columns: minmax(0, 1fr) 76px;
+}
+
+.user-password-input-row .admin-btn {
+  justify-content: center;
+}
+
+.user-summary-card--issue130 {
+  top: 18px;
+  border-radius: 22px;
+  border-color: #edf0f4;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.06);
+}
+
+.user-avatar--large {
+  width: 68px;
+  height: 68px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #ff5fa2, #ff8fb7);
+  color: #fff;
+  box-shadow: 0 12px 26px rgba(255, 95, 162, 0.26);
+}
+
+.user-summary-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.user-summary-card--issue130 .user-summary-list {
+  margin-top: 18px;
+}
+
+.user-summary-card--issue130 .user-summary-item {
+  grid-template-columns: 116px minmax(0, 1fr);
+}
+
+.user-summary-card--issue130 .user-summary-value {
+  overflow-wrap: anywhere;
+}
+
+.user-form-actions .admin-btn[disabled],
+.user-form-actions button[disabled] {
+  pointer-events: none;
+}
+
+@media (max-width: 1180px) {
+  .user-edit-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .user-edit-hero__actions {
+    justify-content: flex-start;
+  }
+
+  .user-edit-layout--issue130 {
+    grid-template-columns: 1fr;
+  }
+
+  .user-summary-card--issue130 {
+    position: static;
+  }
+}
+
+@media (max-width: 760px) {
+  .user-edit-hero {
+    padding: 15px;
+    border-radius: 18px;
+  }
+
+  .user-edit-hero__actions {
+    width: 100%;
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .user-edit-hero__actions .admin-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .user-edit-card__head {
+    flex-direction: column;
+  }
+
+  .user-policy-note,
+  .user-login-status-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .user-policy-note__icon {
+    width: 34px;
+    height: 34px;
+  }
+
+  .user-summary-badges .admin-pill {
+    width: 100%;
+  }
+}
+
+@media (max-width: 560px) {
+  .user-edit-page--issue130 {
+    max-width: 100%;
+  }
+
+  .user-edit-layout--issue130 .user-edit-card,
+  .user-summary-card--issue130 {
+    padding: 14px;
+  }
+
+  .user-form-actions .admin-btn,
+  .user-form-actions button {
+    width: 100%;
+    justify-content: center;
+  }
+}
