@@ -1,15 +1,11 @@
 package com.webshop.app.controller.AdminController;
 
 import com.webshop.app.config.UploadConfig;
-import com.webshop.app.dao.BrandDAO;
-import com.webshop.app.dao.CategoryDAO;
-import com.webshop.app.dao.NotificationDAO;
-import com.webshop.app.dao.ProductDAO;
-import com.webshop.app.dao.ProductImageDAO;
-import com.webshop.app.dao.ProductMediaDAO;
+import com.webshop.app.dao.*;
 import com.webshop.app.model.Brand;
 import com.webshop.app.model.Category;
 import com.webshop.app.model.Product;
+import com.webshop.app.model.ProductVariant;
 import com.webshop.app.utils.DBConnection;
 
 import java.io.IOException;
@@ -59,8 +55,8 @@ public class AdminProductServlet extends HttpServlet {
 	private final CategoryDAO categoryDAO = new CategoryDAO();
 	private final BrandDAO brandDAO = new BrandDAO();
 
-	// DAO gửi thông báo cho người dùng khi sản phẩm trong wishlist được giảm giá
 	private final NotificationDAO notificationDAO = new NotificationDAO();
+	private final ProductVariantDAO productVariantDAO = new ProductVariantDAO();
 
 	private static final String JSP_FORM = "/jsp/admin/products/product_form.jsp";
 	private static final String JSP_LIST = "/jsp/admin/products/product_list.jsp";
@@ -120,6 +116,8 @@ public class AdminProductServlet extends HttpServlet {
 				// Issue 123: load media chi tiết ảnh/video để hiển thị ở form sửa
 				req.setAttribute("productMediaList", productMediaDAO.findByProductId(product.getId()));
 
+				req.setAttribute("variants", productVariantDAO.findActiveByProductId(id));
+
 				loadDropdowns(req);
 				req.getRequestDispatcher(JSP_FORM).forward(req, resp);
 				return;
@@ -172,6 +170,9 @@ public class AdminProductServlet extends HttpServlet {
 					}
 
 					int newId = productDAO.create(product);
+
+					// LƯU BIẾN THỂ CHO SẢN PHẨM MỚI
+					saveVariants(req, newId);
 
 					/*
 					 * Gallery ảnh của sản phẩm.
@@ -249,21 +250,21 @@ public class AdminProductServlet extends HttpServlet {
 					 */
 					boolean isUpdated = productDAO.update(product);
 
-					/*
-					 * Gửi thông báo cho người dùng có sản phẩm trong wishlist khi sản phẩm được giảm giá.
-					 * Chạy nền để không làm treo màn hình Admin.
-					 */
-					if (isUpdated && product.getDiscountPercent() > 0) {
-						final int pId = product.getId();
-						final String pName = product.getTitle();
+					saveVariants(req, id);
 
-						new Thread(() -> {
-							try {
+					// "BẪY" GỬI THÔNG BÁO GIẢM GIÁ (Thêm mới)
+					if (isUpdated) {
+						// Kiểm tra điều kiện giảm giá (Thay getDiscountPercent() bằng getter thực tế của bạn)
+						if (product.getDiscountPercent() > 0) {
+
+							// Dùng Thread để chạy ngầm, không làm treo màn hình Admin
+							final int pId = product.getId();
+							final String pName = product.getTitle();
+
+							new Thread(() -> {
 								notificationDAO.sendWishlistDiscountNotification(pId, pName);
-							} catch (Exception e) {
-								e.printStackTrace();
-							}
-						}, "wishlist-discount-notification-" + pId).start();
+							}).start();
+						}
 					}
 
 					/*
@@ -823,8 +824,8 @@ public class AdminProductServlet extends HttpServlet {
 	/* ===================== PRODUCT FILE DELETE HELPERS ===================== */
 
 	private void deleteProductPhysicalFiles(String mainImageUrl,
-											List<String> galleryUrls,
-											List<String> mediaUrls) {
+	                                        List<String> galleryUrls,
+	                                        List<String> mediaUrls) {
 
 		UploadConfig.deleteProductFileByUrl(mainImageUrl);
 
@@ -879,7 +880,7 @@ public class AdminProductServlet extends HttpServlet {
 						"WHERE product_id = ?";
 
 		try (Connection conn = DBConnection.getConnection();
-			 PreparedStatement ps = conn.prepareStatement(sql)) {
+		     PreparedStatement ps = conn.prepareStatement(sql)) {
 
 			ps.setInt(1, productId);
 
@@ -903,7 +904,7 @@ public class AdminProductServlet extends HttpServlet {
 						"WHERE id = ? AND product_id = ?";
 
 		try (Connection conn = DBConnection.getConnection();
-			 PreparedStatement ps = conn.prepareStatement(sql)) {
+		     PreparedStatement ps = conn.prepareStatement(sql)) {
 
 			ps.setInt(1, imageId);
 			ps.setInt(2, productId);
@@ -927,7 +928,7 @@ public class AdminProductServlet extends HttpServlet {
 						"WHERE id = ? AND product_id = ?";
 
 		try (Connection conn = DBConnection.getConnection();
-			 PreparedStatement ps = conn.prepareStatement(sql)) {
+		     PreparedStatement ps = conn.prepareStatement(sql)) {
 
 			ps.setInt(1, imageId);
 			ps.setInt(2, productId);
@@ -948,7 +949,7 @@ public class AdminProductServlet extends HttpServlet {
 						"WHERE product_id = ?";
 
 		try (Connection conn = DBConnection.getConnection();
-			 PreparedStatement ps = conn.prepareStatement(sql)) {
+		     PreparedStatement ps = conn.prepareStatement(sql)) {
 
 			ps.setInt(1, productId);
 
@@ -972,7 +973,7 @@ public class AdminProductServlet extends HttpServlet {
 						"WHERE id = ? AND product_id = ?";
 
 		try (Connection conn = DBConnection.getConnection();
-			 PreparedStatement ps = conn.prepareStatement(sql)) {
+		     PreparedStatement ps = conn.prepareStatement(sql)) {
 
 			ps.setInt(1, mediaId);
 			ps.setInt(2, productId);
@@ -996,7 +997,7 @@ public class AdminProductServlet extends HttpServlet {
 						"WHERE id = ? AND product_id = ?";
 
 		try (Connection conn = DBConnection.getConnection();
-			 PreparedStatement ps = conn.prepareStatement(sql)) {
+		     PreparedStatement ps = conn.prepareStatement(sql)) {
 
 			ps.setInt(1, mediaId);
 			ps.setInt(2, productId);
@@ -1091,5 +1092,35 @@ public class AdminProductServlet extends HttpServlet {
 
 	private String safe(String s) {
 		return s == null ? "" : s.trim();
+	}
+
+	private void saveVariants(HttpServletRequest req, int productId) {
+		// 1. Xóa các biến thể cũ để cập nhật lại danh sách mới
+		productVariantDAO.deleteByProductId(productId);
+
+		// 2. Lấy dữ liệu từ Request
+		String[] sizes = req.getParameterValues("v_size[]");
+		String[] types = req.getParameterValues("v_type[]");
+		String[] prices = req.getParameterValues("v_price[]");
+		String[] stocks = req.getParameterValues("v_stock[]");
+
+		// 3. Insert biến thể mới
+		if (sizes != null && sizes.length > 0) {
+			for (int i = 0; i < sizes.length; i++) {
+				// Bỏ qua nếu cả size và type đều bị người dùng để trống
+				if ((sizes[i] != null && !sizes[i].trim().isEmpty()) || (types[i] != null && !types[i].trim().isEmpty())) {
+					ProductVariant v = new ProductVariant();
+					v.setProductId(productId);
+					v.setSize(sizes[i]);
+					v.setType(types[i]);
+
+					// Parse an toàn để tránh lỗi NumberFormatException nếu ô bị bỏ trống
+					v.setExtraPrice(parseBigDecimal(prices[i], BigDecimal.ZERO));
+					v.setStock(parseInt(stocks[i], 0));
+
+					productVariantDAO.insert(v);
+				}
+			}
+		}
 	}
 }
