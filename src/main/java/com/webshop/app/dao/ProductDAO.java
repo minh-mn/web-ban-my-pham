@@ -1247,5 +1247,114 @@ public class ProductDAO {
 				12              // pageSize
 		);
 	}
+
+	/**
+	 * Lấy danh sách sản phẩm và giữ nguyên thứ tự sắp xếp của List ID truyền vào
+	 */
+	public List<Product> findByIdsOrdered(List<Integer> ids) {
+		if (ids == null || ids.isEmpty()) {
+			return new ArrayList<>();
+		}
+
+		String placeholders = ids.stream().map(id -> "?").collect(Collectors.joining(","));
+		String sql = "SELECT * FROM store_product WHERE id IN (" + placeholders + ") " +
+				"ORDER BY FIELD(id, " + placeholders + ")";
+
+		List<Product> products = new ArrayList<>();
+		try (Connection conn = DBConnection.getConnection();
+		     PreparedStatement ps = conn.prepareStatement(sql)) {
+
+			int size = ids.size();
+			for (int i = 0; i < size; i++) {
+				ps.setInt(i + 1, ids.get(i));
+			}
+			for (int i = 0; i < size; i++) {
+				ps.setInt(size + i + 1, ids.get(i));
+			}
+
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					products.add(mapRowToProduct(rs));
+				}
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return products;
+	}
+
+	/**
+	 * Lấy sản phẩm liên quan cùng danh mục
+	 */
+	public List<Product> findRelatedByCategory(int categoryId, int excludeId, int limit) {
+		List<Product> products = new ArrayList<>();
+		String sql = "SELECT * FROM store_product WHERE category_id = ? AND id != ? AND stock > 0 AND is_active = 1 LIMIT ?";
+
+		try (Connection conn = DBConnection.getConnection();
+		     PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, categoryId);
+			ps.setInt(2, excludeId);
+			ps.setInt(3, limit);
+
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					products.add(mapRowToProduct(rs));
+				}
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return products;
+	}
+
+	/**
+	 * Lấy sản phẩm liên quan dựa theo Tag tương đồng
+	 */
+	public List<Product> findRelatedByTag(int productId, int limit) {
+		List<Product> products = new ArrayList<>();
+		String sql = "SELECT p.*, COUNT(*) as score " +
+				"FROM store_product p " +
+				"JOIN store_product_tag pt ON p.id = pt.product_id " +
+				"WHERE pt.tag_id IN (" +
+				"    SELECT tag_id FROM store_product_tag WHERE product_id = ?" +
+				") " +
+				"AND p.id != ? AND p.stock > 0 AND p.is_active = 1 " +
+				"GROUP BY p.id " +
+				"ORDER BY score DESC " +
+				"LIMIT ?";
+
+		try (Connection conn = DBConnection.getConnection();
+		     PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, productId);
+			ps.setInt(2, productId);
+			ps.setInt(3, limit);
+
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					products.add(mapRowToProduct(rs));
+				}
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return products;
+	}
+
+	/**
+	 * Tiện ích map dữ liệu từ DB sang Đối tượng Object (Đã fix lỗi setId và setImageUrl)
+	 */
+	private Product mapRowToProduct(ResultSet rs) throws SQLException {
+		Product p = new Product();
+		p.setId(rs.getInt("id")); // Đã sửa từ getLong thành getInt
+		p.setTitle(rs.getString("title"));
+		p.setSlug(rs.getString("slug"));
+		p.setPrice(rs.getBigDecimal("price"));
+		p.setImage(rs.getString("image")); // Đã sửa sang setImage theo đúng model của bạn
+		p.setStock(rs.getInt("stock"));
+		if (rs.getMetaData().getColumnCount() >= 7) {
+			try { p.setCategoryId(rs.getInt("category_id")); } catch (Exception ignored) {}
+		}
+		return p;
+	}
 	
 }
