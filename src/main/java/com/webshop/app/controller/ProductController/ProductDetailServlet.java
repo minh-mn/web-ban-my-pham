@@ -14,6 +14,7 @@ import com.webshop.app.model.ProductVariant;
 import com.webshop.app.model.Review;
 import com.webshop.app.model.User;
 import com.webshop.app.service.ProductPricingFacade;
+import com.webshop.app.service.RecommendationService;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -36,6 +37,9 @@ public class ProductDetailServlet extends HttpServlet {
     private final ProductVariantDAO productVariantDAO = new ProductVariantDAO();
     private final ReviewDAO reviewDAO = new ReviewDAO();
     private final ProductPricingFacade pricingFacade = new ProductPricingFacade();
+    
+    private final OrderItemDAO orderItemDAO = new OrderItemDAO();
+    private final RecommendationService recommendationService = new RecommendationService(orderItemDAO, productDAO);
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
@@ -109,6 +113,12 @@ public class ProductDetailServlet extends HttpServlet {
 
         product.setAvgRating(avgRating);
         product.setFinalPrice(pricingFacade.getFinalPrice(product));
+
+        List<Product> boughtTogether = recommendationService.getFrequentlyBought(product.getId(), (int) product.getCategoryId());
+        List<Product> related = recommendationService.getRelatedProducts(product.getId(), (int) product.getCategoryId());
+
+        req.setAttribute("boughtTogetherProducts", boughtTogether);
+        req.setAttribute("relatedProducts", related);
 
         req.setAttribute("product", product);
         req.setAttribute("productMediaList", productMediaList);
