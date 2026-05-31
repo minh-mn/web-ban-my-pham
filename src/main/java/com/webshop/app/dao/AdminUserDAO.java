@@ -30,7 +30,13 @@ public class AdminUserDAO {
         List<Object> params = new ArrayList<>();
 
         if (q != null && !q.isBlank()) {
-            sql.append("AND (username LIKE ? OR full_name LIKE ? OR email LIKE ? OR phone LIKE ?) ");
+            sql.append("AND (");
+            sql.append("CAST(id AS CHAR) LIKE ? ");
+            sql.append("OR username LIKE ? ");
+            sql.append("OR full_name LIKE ? ");
+            sql.append("OR email LIKE ? ");
+            sql.append("OR phone LIKE ? ");
+            sql.append(") ");
 
             String keyword = "%" + q.trim() + "%";
 
@@ -38,11 +44,13 @@ public class AdminUserDAO {
             params.add(keyword);
             params.add(keyword);
             params.add(keyword);
+            params.add(keyword);
         }
 
-        if (role != null && !role.isBlank()) {
+        String normalizedRole = normalizeRoleFilter(role);
+        if (normalizedRole != null) {
             sql.append("AND role = ? ");
-            params.add(role.trim().toUpperCase());
+            params.add(normalizedRole);
         }
 
         /*
@@ -64,7 +72,9 @@ public class AdminUserDAO {
             params.add(active);
         }
 
-        sql.append("ORDER BY id DESC");
+        sql.append("ORDER BY ");
+        sql.append("CASE WHEN role = 'ADMIN' THEN 0 ELSE 1 END ASC, ");
+        sql.append("id DESC");
 
         try (Connection connection = DBConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql.toString())) {
@@ -120,13 +130,26 @@ public class AdminUserDAO {
         return null;
     }
 
+    /*
+     * Issue 130:
+     * Tên hàm giữ nguyên để tương thích AdminUserServlet/user_form.jsp cũ.
+     * Tuy nhiên DAO không cập nhật full_name, email, phone nữa.
+     *
+     * Admin chỉ được cập nhật các trường quản trị:
+     * - role
+     * - active
+     * - manual_rank_code
+     *
+     * Thông tin cá nhân của user phải do user tự chỉnh hoặc xử lý qua luồng yêu cầu riêng.
+     */
     public boolean updateInfoAdmin(User user) {
+        if (user == null || user.getId() <= 0) {
+            return false;
+        }
+
         String sql = """
                 UPDATE users
                 SET
-                    full_name = ?,
-                    email = ?,
-                    phone = ?,
                     role = ?,
                     active = ?,
                     manual_rank_code = ?
@@ -136,15 +159,10 @@ public class AdminUserDAO {
         try (Connection connection = DBConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            statement.setString(1, user.getFullName());
-            statement.setString(2, user.getEmail());
-            statement.setString(3, user.getPhone());
-            statement.setString(4, user.getRole());
-            statement.setInt(5, user.isActive() ? 1 : 0);
-
-            setNullableRank(statement, 6, user.getManualRankCode());
-
-            statement.setInt(7, user.getId());
+            statement.setString(1, normalizeRole(user.getRole()));
+            statement.setInt(2, user.isActive() ? 1 : 0);
+            setNullableRank(statement, 3, user.getManualRankCode());
+            statement.setInt(4, user.getId());
 
             return statement.executeUpdate() > 0;
 
@@ -153,7 +171,15 @@ public class AdminUserDAO {
         }
     }
 
+    /*
+     * Chỉ nên gọi khi đổi mật khẩu chính tài khoản đang đăng nhập
+     * hoặc sau này có luồng user yêu cầu reset mật khẩu riêng.
+     */
     public boolean updatePasswordAdmin(int id, String newPlainPassword) {
+        if (id <= 0 || newPlainPassword == null || newPlainPassword.isBlank()) {
+            return false;
+        }
+
         String sql = """
                 UPDATE users
                 SET password = ?
@@ -173,11 +199,19 @@ public class AdminUserDAO {
         }
     }
 
+    /*
+     * Không cho đổi rank thủ công của tài khoản ADMIN ở tầng DAO.
+     */
     public boolean updateManualRank(int id, String manualRankCode) {
+        if (id <= 0) {
+            return false;
+        }
+
         String sql = """
                 UPDATE users
                 SET manual_rank_code = ?
                 WHERE id = ?
+                  AND role <> 'ADMIN'
                 """;
 
         try (Connection connection = DBConnection.getConnection();
@@ -193,11 +227,21 @@ public class AdminUserDAO {
         }
     }
 
+    /*
+     * Khóa tài khoản mềm bằng active = 0.
+     * Không xóa dữ liệu để bảo toàn đơn hàng, bình luận, lịch sử thanh toán.
+     * Không khóa tài khoản ADMIN ở tầng DAO.
+     */
     public boolean disableById(int id) {
+        if (id <= 0) {
+            return false;
+        }
+
         String sql = """
                 UPDATE users
                 SET active = 0
                 WHERE id = ?
+                  AND role <> 'ADMIN'
                 """;
 
         try (Connection connection = DBConnection.getConnection();
@@ -211,10 +255,63 @@ public class AdminUserDAO {
         }
     }
 
+    /*
+     * Giữ tên hàm để không vỡ code cũ.
+     * Không DELETE cứng nữa, chỉ chuyển thành khóa tài khoản.
+     */
     public boolean deleteById(int id) {
+        return disableById(id);
+    }
+
+    /*
+     * Cho phép đổi role USER <-> ADMIN với user thường.
+     * Không cho cập nhật trực tiếp tài khoản đang là ADMIN ở tầng DAO.
+     * Servlet sẽ kiểm tra thêm không cho admin tự đổi role chính mình.
+     */
+    public boolean updateRole(int id, String role) {
+        if (id <= 0) {
+            return false;
+        }
+
+        String normalizedRole = normalizeRole(role);
+
         String sql = """
-                DELETE FROM users
+                UPDATE users
+                SET role = ?
                 WHERE id = ?
+                  AND role <> 'ADMIN'
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, normalizedRole);
+            statement.setInt(2, id);
+
+            return statement.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("AdminUserDAO.updateRole error", e);
+        }
+    }
+
+    /*
+     * Bảng users đang dùng active nên toggleLock sẽ toggle active.
+     * active = 1: mở tài khoản
+     * active = 0: khóa tài khoản
+     *
+     * Không thao tác với tài khoản ADMIN ở tầng DAO.
+     */
+    public boolean toggleLock(int id) {
+        if (id <= 0) {
+            return false;
+        }
+
+        String sql = """
+                UPDATE users
+                SET active = CASE WHEN active = 1 THEN 0 ELSE 1 END
+                WHERE id = ?
+                  AND role <> 'ADMIN'
                 """;
 
         try (Connection connection = DBConnection.getConnection();
@@ -224,33 +321,75 @@ public class AdminUserDAO {
             return statement.executeUpdate() > 0;
 
         } catch (SQLException e) {
-            throw new RuntimeException("AdminUserDAO.deleteById error", e);
+            throw new RuntimeException("AdminUserDAO.toggleLock error", e);
         }
     }
 
-    public void updateRole(int id, String role) {
+    public boolean setActive(int id, boolean active) {
+        if (id <= 0) {
+            return false;
+        }
+
         String sql = """
                 UPDATE users
-                SET role = ?
+                SET active = ?
                 WHERE id = ?
+                  AND role <> 'ADMIN'
                 """;
 
         try (Connection connection = DBConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            statement.setString(1, normalizeRole(role));
+            statement.setInt(1, active ? 1 : 0);
             statement.setInt(2, id);
-            statement.executeUpdate();
+
+            return statement.executeUpdate() > 0;
 
         } catch (SQLException e) {
-            throw new RuntimeException("AdminUserDAO.updateRole error", e);
+            throw new RuntimeException("AdminUserDAO.setActive error", e);
         }
     }
 
-    public void toggleLock(int id) {
-        throw new UnsupportedOperationException(
-                "toggleLock chưa hỗ trợ vì bảng users chưa xác nhận có cột is_locked."
-        );
+    public boolean existsById(int id) {
+        if (id <= 0) {
+            return false;
+        }
+
+        String sql = "SELECT 1 FROM users WHERE id = ? LIMIT 1";
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setInt(1, id);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                return resultSet.next();
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("AdminUserDAO.existsById error", e);
+        }
+    }
+
+    public boolean isAdminUser(int id) {
+        if (id <= 0) {
+            return false;
+        }
+
+        String sql = "SELECT role FROM users WHERE id = ? LIMIT 1";
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setInt(1, id);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                return resultSet.next() && "ADMIN".equalsIgnoreCase(resultSet.getString("role"));
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("AdminUserDAO.isAdminUser error", e);
+        }
     }
 
     private User mapRow(ResultSet resultSet) throws SQLException {
@@ -311,6 +450,20 @@ public class AdminUserDAO {
 
         if (!"ADMIN".equals(normalized) && !"USER".equals(normalized)) {
             return "USER";
+        }
+
+        return normalized;
+    }
+
+    private String normalizeRoleFilter(String role) {
+        if (role == null || role.isBlank() || "ALL".equalsIgnoreCase(role)) {
+            return null;
+        }
+
+        String normalized = role.trim().toUpperCase();
+
+        if (!"ADMIN".equals(normalized) && !"USER".equals(normalized)) {
+            return null;
         }
 
         return normalized;
