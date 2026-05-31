@@ -99,20 +99,20 @@
             <span class="admin-chip">/admin/orders</span>
           </a>
 
-          <!-- REVIEWS / COMMENTS -->
+          <!-- REVIEWS -->
           <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/reviews">
-            <div class="admin-menu-card__title">Quản lí bình luận</div>
-            <p class="admin-menu-card__desc">
-              Xem nội dung bình luận, mã sản phẩm, ID user, thời gian gửi, duyệt/ẩn/xóa
-              và kiểm tra thông tin chi tiết người bình luận.
-            </p>
+            <div class="admin-menu-card__title">Reviews</div>
+            <p class="admin-menu-card__desc">Quản lý đánh giá và phản hồi của khách hàng.</p>
             <span class="admin-chip">/admin/reviews</span>
           </a>
 
-          <!-- USERS -->
+          <!-- USERS - ISSUE 130 -->
           <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/users">
-            <div class="admin-menu-card__title">Users</div>
-            <p class="admin-menu-card__desc">Quản lý tài khoản người dùng, vai trò và trạng thái hoạt động.</p>
+            <div class="admin-menu-card__title">Quản lí user</div>
+            <p class="admin-menu-card__desc">
+              Xem tên tài khoản, role, rank và trạng thái; chỉ cho admin chỉnh quyền, rank,
+              khóa/mở khóa tài khoản theo cơ chế bảo vệ, không tự ý sửa thông tin cá nhân user.
+            </p>
             <span class="admin-chip">/admin/users</span>
           </a>
 
