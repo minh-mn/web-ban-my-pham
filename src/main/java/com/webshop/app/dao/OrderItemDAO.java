@@ -310,4 +310,32 @@ public class OrderItemDAO {
              */
         }
     }
+
+    public List<Integer> findFrequentlyBoughtTogether(int productId) {
+        List<Integer> productIds = new ArrayList<>();
+        String sql = "SELECT oi2.product_id, SUM(oi1.quantity * oi2.quantity) AS score " +
+                "FROM store_orderitem oi1 " +
+                "JOIN store_orderitem oi2 ON oi1.order_id = oi2.order_id " +
+                "WHERE oi1.product_id = ? " +
+                "AND oi2.product_id != ? " +
+                "GROUP BY oi2.product_id " +
+                "ORDER BY score DESC " +
+                "LIMIT 8";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, productId);
+            ps.setInt(2, productId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    productIds.add(rs.getInt("product_id"));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return productIds;
+    }
 }
