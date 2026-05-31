@@ -3,13 +3,12 @@ package com.webshop.app.dao;
 import com.webshop.app.model.Review;
 import com.webshop.app.utils.DBConnection;
 
-import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -20,22 +19,32 @@ import java.util.Locale;
 public class AdminReviewDAO {
 
     public List<Review> search(Integer rating, Long productId, Long authorId) {
-        return search(rating, productId, authorId, null, null);
+        return search(rating, productId, authorId, null, null, null);
     }
 
     public List<Review> search(Integer rating, Long productId, Long authorId, String status, String mediaType) {
+        return search(rating, productId, authorId, status, mediaType, null);
+    }
+
+    public List<Review> search(Integer rating, Long productId, Long authorId, String status, String mediaType, String keyword) {
         List<Review> reviews = new ArrayList<>();
 
         StringBuilder sql = new StringBuilder();
-        sql.append("SELECT r.id, r.rating, r.comment, r.created_at, r.author_id, r.product_id, ");
+        sql.append("SELECT r.id, r.rating, r.comment, r.created_at, COALESCE(r.author_id, r.user_id) AS reviewer_id, r.product_id, ");
         sql.append("       r.order_id, r.order_item_id, r.has_emoji, r.sentiment, r.status, r.is_hidden, ");
         sql.append("       r.admin_note, r.approved_at, r.approved_by, r.voucher_awarded, ");
-        sql.append("       u.username AS author_name, p.title AS product_name, p.slug AS product_slug, p.image AS product_image, ");
-        sql.append("       COALESCE(m.media_count, 0) AS media_count, ");
-        sql.append("       COALESCE(m.has_image, 0) AS has_image, COALESCE(m.has_video, 0) AS has_video, ");
-        sql.append("       m.image_url, m.video_url ");
+        sql.append("       u.username AS author_name, u.full_name AS author_full_name, u.email AS author_email, ");
+        sql.append("       u.phone AS author_phone, u.role AS author_role, u.active AS author_active, ");
+        sql.append("       COALESCE(u.manual_rank_code, 'MEMBER') AS author_rank_code, ");
+        sql.append("       COALESCE(rank_table.name, u.manual_rank_code, 'Thành viên') AS author_rank_name, ");
+        sql.append("       u.created_at AS author_created_at, ");
+        sql.append("       CAST(p.id AS CHAR) AS product_code, ");
+        sql.append("       COALESCE(NULLIF(p.title, ''), p.name, CONCAT('Sản phẩm #', p.id)) AS product_name, ");
+        sql.append("       p.slug AS product_slug, p.image AS product_image, ");
+        sql.append(mediaSelectSql());
         sql.append("FROM store_review r ");
-        sql.append("LEFT JOIN users u ON u.id = r.author_id ");
+        sql.append("LEFT JOIN users u ON u.id = COALESCE(r.author_id, r.user_id) ");
+        sql.append("LEFT JOIN store_rank rank_table ON rank_table.code = u.manual_rank_code ");
         sql.append("LEFT JOIN store_product p ON p.id = r.product_id ");
         sql.append(mediaAggregateSql());
         sql.append("WHERE 1 = 1 ");
@@ -53,7 +62,7 @@ public class AdminReviewDAO {
         }
 
         if (authorId != null) {
-            sql.append("AND r.author_id = ? ");
+            sql.append("AND COALESCE(r.author_id, r.user_id) = ? ");
             params.add(authorId);
         }
 
@@ -69,14 +78,30 @@ public class AdminReviewDAO {
 
         String normalizedMedia = normalizeMediaType(mediaType);
         if ("IMAGE".equals(normalizedMedia)) {
-            sql.append("AND COALESCE(m.has_image, 0) = 1 ");
+            sql.append("AND ").append(hasImageSql()).append(" ");
         } else if ("VIDEO".equals(normalizedMedia)) {
-            sql.append("AND COALESCE(m.has_video, 0) = 1 ");
+            sql.append("AND ").append(hasVideoSql()).append(" ");
         } else if ("MEDIA".equals(normalizedMedia)) {
-            sql.append("AND COALESCE(m.media_count, 0) > 0 ");
+            sql.append("AND (").append(hasImageSql()).append(" OR ").append(hasVideoSql()).append(") ");
         }
 
-        sql.append("ORDER BY FIELD(r.status, 'PENDING', 'REJECTED', 'APPROVED'), r.created_at DESC, r.id DESC");
+        String normalizedKeyword = normalizeKeyword(keyword);
+        if (normalizedKeyword != null) {
+            sql.append("AND (r.comment LIKE ? ");
+            sql.append("OR CAST(r.id AS CHAR) LIKE ? ");
+            sql.append("OR CAST(r.product_id AS CHAR) LIKE ? ");
+            sql.append("OR CAST(COALESCE(r.author_id, r.user_id) AS CHAR) LIKE ? ");
+            sql.append("OR p.title LIKE ? OR p.name LIKE ? ");
+            sql.append("OR u.username LIKE ? OR u.full_name LIKE ? OR u.email LIKE ? OR u.phone LIKE ?) ");
+
+            String like = "%" + normalizedKeyword + "%";
+            for (int i = 0; i < 10; i++) {
+                params.add(like);
+            }
+        }
+
+        sql.append("ORDER BY FIELD(r.status, 'PENDING', 'REJECTED', 'APPROVED'), ");
+        sql.append("COALESCE(r.is_hidden, 0) ASC, r.created_at DESC, r.id DESC");
 
         try (Connection connection = DBConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql.toString())) {
@@ -98,32 +123,28 @@ public class AdminReviewDAO {
 
     public Review findById(long id) {
         String sql = """
-                SELECT r.id, r.rating, r.comment, r.created_at, r.author_id, r.product_id,
+                SELECT r.id, r.rating, r.comment, r.created_at, COALESCE(r.author_id, r.user_id) AS reviewer_id, r.product_id,
                        r.order_id, r.order_item_id, r.has_emoji, r.sentiment, r.status, r.is_hidden,
                        r.admin_note, r.approved_at, r.approved_by, r.voucher_awarded,
                        u.username AS author_name,
-                       p.title AS product_name,
+                       u.full_name AS author_full_name,
+                       u.email AS author_email,
+                       u.phone AS author_phone,
+                       u.role AS author_role,
+                       u.active AS author_active,
+                       COALESCE(u.manual_rank_code, 'MEMBER') AS author_rank_code,
+                       COALESCE(rank_table.name, u.manual_rank_code, 'Thành viên') AS author_rank_name,
+                       u.created_at AS author_created_at,
+                       CAST(p.id AS CHAR) AS product_code,
+                       COALESCE(NULLIF(p.title, ''), p.name, CONCAT('Sản phẩm #', p.id)) AS product_name,
                        p.slug AS product_slug,
                        p.image AS product_image,
-                       COALESCE(m.media_count, 0) AS media_count,
-                       COALESCE(m.has_image, 0) AS has_image,
-                       COALESCE(m.has_video, 0) AS has_video,
-                       m.image_url,
-                       m.video_url
+                """ + mediaSelectSql() + """
                 FROM store_review r
-                LEFT JOIN users u ON u.id = r.author_id
+                LEFT JOIN users u ON u.id = COALESCE(r.author_id, r.user_id)
+                LEFT JOIN store_rank rank_table ON rank_table.code = u.manual_rank_code
                 LEFT JOIN store_product p ON p.id = r.product_id
-                LEFT JOIN (
-                    SELECT
-                        review_id,
-                        COUNT(*) AS media_count,
-                        MAX(CASE WHEN media_type = 'IMAGE' THEN 1 ELSE 0 END) AS has_image,
-                        MAX(CASE WHEN media_type = 'VIDEO' THEN 1 ELSE 0 END) AS has_video,
-                        MAX(CASE WHEN media_type = 'IMAGE' THEN media_url ELSE NULL END) AS image_url,
-                        MAX(CASE WHEN media_type = 'VIDEO' THEN media_url ELSE NULL END) AS video_url
-                    FROM store_review_media
-                    GROUP BY review_id
-                ) m ON m.review_id = r.id
+                """ + mediaAggregateSql() + """
                 WHERE r.id = ?
                 """;
 
@@ -259,7 +280,7 @@ public class AdminReviewDAO {
         }
 
         String code = buildRewardCode(reviewId, data.authorId);
-        Integer couponId = findCouponIdByCode(connection, code);
+        Long couponId = findCouponIdByCode(connection, code);
         if (couponId == null) {
             couponId = createRewardCoupon(connection, code, reviewId);
         }
@@ -269,7 +290,7 @@ public class AdminReviewDAO {
     }
 
     private ReviewData findReviewDataForReward(Connection connection, long reviewId) throws SQLException {
-        String sql = "SELECT id, author_id, voucher_awarded FROM store_review WHERE id = ?";
+        String sql = "SELECT id, COALESCE(author_id, user_id) AS reviewer_id, voucher_awarded FROM store_review WHERE id = ?";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setLong(1, reviewId);
             try (ResultSet rs = statement.executeQuery()) {
@@ -277,33 +298,33 @@ public class AdminReviewDAO {
                     return null;
                 }
                 ReviewData data = new ReviewData();
-                data.authorId = rs.getInt("author_id");
+                data.authorId = rs.getInt("reviewer_id");
                 data.voucherAwarded = rs.getBoolean("voucher_awarded");
                 return data;
             }
         }
     }
 
-    private Integer findCouponIdByCode(Connection connection, String code) throws SQLException {
+    private Long findCouponIdByCode(Connection connection, String code) throws SQLException {
         String sql = "SELECT id FROM store_coupon WHERE code = ? LIMIT 1";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, code);
             try (ResultSet rs = statement.executeQuery()) {
-                return rs.next() ? rs.getInt(1) : null;
+                return rs.next() ? rs.getLong(1) : null;
             }
         }
     }
 
-    private Integer createRewardCoupon(Connection connection, String code, long reviewId) throws SQLException {
+    private Long createRewardCoupon(Connection connection, String code, long reviewId) throws SQLException {
         LocalDate today = LocalDate.now();
         LocalDate end = today.plusDays(60);
 
         String sql = """
                 INSERT INTO store_coupon
-                (code, discount_percent, start_date, end_date, used_count, is_active,
+                (code, discount_percent, discount_type, discount_value, start_date, end_date, used_count, is_active,
                  max_uses, max_discount_amount, min_order_amount, min_rank_code, type, description,
                  created_at, updated_at)
-                VALUES (?, 5, ?, ?, 0, 1, 1, 30000.00, 0.00, 'MEMBER', 'REVIEW_REWARD', ?, NOW(), NOW())
+                VALUES (?, 5, 'PERCENT', 5.00, ?, ?, 0, 1, 1, 30000.00, 0.00, 'MEMBER', 'REVIEW_REWARD', ?, NOW(), NOW())
                 """;
 
         try (PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -315,12 +336,12 @@ public class AdminReviewDAO {
 
             try (ResultSet keys = statement.getGeneratedKeys()) {
                 if (keys.next()) {
-                    return keys.getInt(1);
+                    return keys.getLong(1);
                 }
             }
         }
 
-        Integer existing = findCouponIdByCode(connection, code);
+        Long existing = findCouponIdByCode(connection, code);
         if (existing != null) {
             return existing;
         }
@@ -328,7 +349,7 @@ public class AdminReviewDAO {
         throw new SQLException("Cannot create review reward coupon");
     }
 
-    private void saveCouponForUser(Connection connection, int userId, int couponId) throws SQLException {
+    private void saveCouponForUser(Connection connection, int userId, long couponId) throws SQLException {
         String sql = """
                 INSERT INTO user_coupon (user_id, coupon_id, saved_at, is_used)
                 VALUES (?, ?, NOW(), 0)
@@ -337,7 +358,7 @@ public class AdminReviewDAO {
 
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setInt(1, userId);
-            statement.setInt(2, couponId);
+            statement.setLong(2, couponId);
             statement.executeUpdate();
         }
     }
@@ -353,8 +374,9 @@ public class AdminReviewDAO {
     private Review mapRow(ResultSet resultSet) throws SQLException {
         Review review = new Review();
         review.setId(safeToInt(resultSet.getLong("id")));
-        review.setAuthorId(safeToInt(resultSet.getLong("author_id")));
+        review.setAuthorId(safeToInt(resultSet.getLong("reviewer_id")));
         review.setProductId(safeToInt(resultSet.getLong("product_id")));
+        review.setProductCode(resultSet.getString("product_code"));
         review.setOrderId(getNullableInt(resultSet, "order_id"));
         review.setOrderItemId(getNullableInt(resultSet, "order_item_id"));
         review.setRating(resultSet.getInt("rating"));
@@ -368,16 +390,40 @@ public class AdminReviewDAO {
         review.setApprovedBy(getNullableInt(resultSet, "approved_by"));
         review.setVoucherAwarded(resultSet.getBoolean("voucher_awarded"));
         review.setCreatedAt(toLocalDateTime(resultSet.getTimestamp("created_at")));
+
         review.setAuthorName(resultSet.getString("author_name"));
+        review.setAuthorFullName(resultSet.getString("author_full_name"));
+        review.setAuthorEmail(resultSet.getString("author_email"));
+        review.setAuthorPhone(resultSet.getString("author_phone"));
+        review.setAuthorRole(resultSet.getString("author_role"));
+        review.setAuthorActive(getNullableBoolean(resultSet, "author_active"));
+        review.setAuthorRankCode(resultSet.getString("author_rank_code"));
+        review.setAuthorRankName(resultSet.getString("author_rank_name"));
+        review.setAuthorCreatedAt(toLocalDateTime(resultSet.getTimestamp("author_created_at")));
+
         review.setProductName(resultSet.getString("product_name"));
         review.setProductSlug(resultSet.getString("product_slug"));
         review.setProductImage(resultSet.getString("product_image"));
+
         review.setMediaCount(resultSet.getInt("media_count"));
         review.setHasImage(resultSet.getBoolean("has_image"));
         review.setHasVideo(resultSet.getBoolean("has_video"));
         review.setImageUrl(resultSet.getString("image_url"));
         review.setVideoUrl(resultSet.getString("video_url"));
+
         return review;
+    }
+
+    private String mediaSelectSql() {
+        return """
+                       (COALESCE(m.media_count, 0)
+                           + CASE WHEN NULLIF(TRIM(r.review_image), '') IS NULL THEN 0 ELSE 1 END
+                           + CASE WHEN NULLIF(TRIM(r.review_video), '') IS NULL THEN 0 ELSE 1 END) AS media_count,
+                       GREATEST(COALESCE(m.has_image, 0), CASE WHEN NULLIF(TRIM(r.review_image), '') IS NULL THEN 0 ELSE 1 END) AS has_image,
+                       GREATEST(COALESCE(m.has_video, 0), CASE WHEN NULLIF(TRIM(r.review_video), '') IS NULL THEN 0 ELSE 1 END) AS has_video,
+                       COALESCE(m.image_url, NULLIF(TRIM(r.review_image), '')) AS image_url,
+                       COALESCE(m.video_url, NULLIF(TRIM(r.review_video), '')) AS video_url
+                """;
     }
 
     private String mediaAggregateSql() {
@@ -394,6 +440,14 @@ public class AdminReviewDAO {
                     GROUP BY review_id
                 ) m ON m.review_id = r.id
                 """;
+    }
+
+    private String hasImageSql() {
+        return "(COALESCE(m.has_image, 0) = 1 OR NULLIF(TRIM(r.review_image), '') IS NOT NULL)";
+    }
+
+    private String hasVideoSql() {
+        return "(COALESCE(m.has_video, 0) = 1 OR NULLIF(TRIM(r.review_video), '') IS NOT NULL)";
     }
 
     private void bindParams(PreparedStatement statement, List<Object> params) throws SQLException {
@@ -413,6 +467,11 @@ public class AdminReviewDAO {
 
     private Integer getNullableInt(ResultSet rs, String column) throws SQLException {
         int value = rs.getInt(column);
+        return rs.wasNull() ? null : value;
+    }
+
+    private Boolean getNullableBoolean(ResultSet rs, String column) throws SQLException {
+        boolean value = rs.getBoolean(column);
         return rs.wasNull() ? null : value;
     }
 
@@ -446,11 +505,21 @@ public class AdminReviewDAO {
         if (mediaType == null || mediaType.trim().isEmpty()) {
             return null;
         }
+
         String value = mediaType.trim().toUpperCase(Locale.ROOT);
         return switch (value) {
             case "IMAGE", "VIDEO", "MEDIA" -> value;
             default -> null;
         };
+    }
+
+    private String normalizeKeyword(String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return null;
+        }
+
+        String value = keyword.trim();
+        return value.length() > 120 ? value.substring(0, 120) : value;
     }
 
     private String normalizeToEmpty(String value) {
