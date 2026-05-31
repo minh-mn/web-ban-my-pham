@@ -12,11 +12,21 @@ public class Review {
 
     private int id;
     private int productId;
+    private String productCode;
     private int authorId;
     private Integer orderId;
     private Integer orderItemId;
 
     private String authorName;
+    private String authorFullName;
+    private String authorEmail;
+    private String authorPhone;
+    private String authorRole;
+    private String authorRankCode;
+    private String authorRankName;
+    private Boolean authorActive;
+    private LocalDateTime authorCreatedAt;
+
     private String productName;
     private String productSlug;
     private String productImage;
@@ -57,12 +67,32 @@ public class Review {
         this.productId = Math.max(productId, 0);
     }
 
+    public String getProductCode() {
+        return productCode;
+    }
+
+    public void setProductCode(String productCode) {
+        this.productCode = normalize(productCode);
+    }
+
+    public String getProductDisplayCode() {
+        return productCode != null ? productCode : String.valueOf(productId);
+    }
+
     public int getAuthorId() {
         return authorId;
     }
 
     public void setAuthorId(int authorId) {
         this.authorId = Math.max(authorId, 0);
+    }
+
+    public int getUserId() {
+        return authorId;
+    }
+
+    public void setUserId(int userId) {
+        setAuthorId(userId);
     }
 
     public Integer getOrderId() {
@@ -87,6 +117,111 @@ public class Review {
 
     public void setAuthorName(String authorName) {
         this.authorName = normalize(authorName);
+    }
+
+    public String getAuthorFullName() {
+        return authorFullName;
+    }
+
+    public void setAuthorFullName(String authorFullName) {
+        this.authorFullName = normalize(authorFullName);
+    }
+
+    public String getAuthorEmail() {
+        return authorEmail;
+    }
+
+    public void setAuthorEmail(String authorEmail) {
+        this.authorEmail = normalize(authorEmail);
+    }
+
+    public String getAuthorPhone() {
+        return authorPhone;
+    }
+
+    public void setAuthorPhone(String authorPhone) {
+        this.authorPhone = normalize(authorPhone);
+    }
+
+    public String getAuthorRole() {
+        return authorRole;
+    }
+
+    public void setAuthorRole(String authorRole) {
+        this.authorRole = normalize(authorRole);
+    }
+
+    public String getAuthorRankCode() {
+        return authorRankCode;
+    }
+
+    public void setAuthorRankCode(String authorRankCode) {
+        this.authorRankCode = normalize(authorRankCode);
+    }
+
+    public String getAuthorRankName() {
+        return authorRankName;
+    }
+
+    public void setAuthorRankName(String authorRankName) {
+        this.authorRankName = normalize(authorRankName);
+    }
+
+    public Boolean getAuthorActive() {
+        return authorActive;
+    }
+
+    public void setAuthorActive(Boolean authorActive) {
+        this.authorActive = authorActive;
+    }
+
+    public LocalDateTime getAuthorCreatedAt() {
+        return authorCreatedAt;
+    }
+
+    public void setAuthorCreatedAt(LocalDateTime authorCreatedAt) {
+        this.authorCreatedAt = authorCreatedAt;
+    }
+
+    public String getAuthorDisplayName() {
+        if (authorFullName != null) {
+            return authorFullName;
+        }
+        if (authorName != null) {
+            return authorName;
+        }
+        return authorId > 0 ? "User #" + authorId : "Khách hàng";
+    }
+
+    public String getAuthorRankDisplay() {
+        if (authorRankName != null && authorRankCode != null) {
+            return authorRankName + " (" + authorRankCode + ")";
+        }
+        if (authorRankName != null) {
+            return authorRankName;
+        }
+        if (authorRankCode != null) {
+            return authorRankCode;
+        }
+        return "Chưa có hạng";
+    }
+
+    public String getAuthorStatusLabel() {
+        if (authorActive == null) {
+            return "Không rõ";
+        }
+        return authorActive ? "Đang hoạt động" : "Bị khóa / Ngừng hoạt động";
+    }
+
+    public String getAuthorStatusCssClass() {
+        if (authorActive == null) {
+            return "admin-pill--warning";
+        }
+        return authorActive ? "admin-pill--ok" : "admin-pill--danger";
+    }
+
+    public Date getAuthorCreatedAtDate() {
+        return toDate(authorCreatedAt);
     }
 
     public String getProductName() {
