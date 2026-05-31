@@ -1,128 +1,211 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 
-<c:set var="pageTitle" value="ADMIN | Users" scope="request"/>
+<c:set var="pageTitle" value="ADMIN | Quản lí user" scope="request"/>
 <c:set var="activeMenu" value="users" scope="request"/>
 <c:set var="pageCss" value="/assets/css/admin/admin-list.css" scope="request"/>
 
 <jsp:include page="/jsp/admin/layout/header.jsp"/>
 <jsp:include page="/jsp/admin/layout/sidebar.jsp"/>
 
-<style>
-  .user-toolbar-form {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    align-items: center;
-  }
+<c:set var="currentAdminId" value="0"/>
+<c:choose>
+  <c:when test="${not empty sessionScope.user}">
+    <c:set var="currentAdminId" value="${sessionScope.user.id}"/>
+  </c:when>
+  <c:when test="${not empty sessionScope.authUser}">
+    <c:set var="currentAdminId" value="${sessionScope.authUser.id}"/>
+  </c:when>
+  <c:when test="${not empty sessionScope.currentUser}">
+    <c:set var="currentAdminId" value="${sessionScope.currentUser.id}"/>
+  </c:when>
+</c:choose>
 
-  .user-toolbar-form .admin-input {
-    min-width: 260px;
-  }
+<c:set var="totalUsers" value="0"/>
+<c:set var="adminUsers" value="0"/>
+<c:set var="activeUsers" value="0"/>
+<c:set var="lockedUsers" value="0"/>
+<c:set var="manualRankUsers" value="0"/>
 
-  .user-table-wrap {
-    width: 100%;
-    overflow-x: auto;
-  }
+<c:forEach var="u" items="${users}">
+  <c:set var="totalUsers" value="${totalUsers + 1}"/>
 
-  .user-table {
-    min-width: 980px;
-  }
+  <c:if test="${u.role == 'ADMIN'}">
+    <c:set var="adminUsers" value="${adminUsers + 1}"/>
+  </c:if>
 
-  .user-main-info {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
+  <c:choose>
+    <c:when test="${u.active}">
+      <c:set var="activeUsers" value="${activeUsers + 1}"/>
+    </c:when>
+    <c:otherwise>
+      <c:set var="lockedUsers" value="${lockedUsers + 1}"/>
+    </c:otherwise>
+  </c:choose>
 
-  .user-name-link {
-    color: inherit;
-    text-decoration: none;
-    font-weight: 850;
-  }
-
-  .user-name-link:hover {
-    text-decoration: underline;
-  }
-
-  .user-sub-info {
-    color: #6b7280;
-    font-size: 13px;
-    line-height: 1.35;
-  }
-
-  .user-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    align-items: center;
-  }
-
-  .user-danger-btn {
-    background: #e53935 !important;
-    border-color: #e53935 !important;
-    color: #fff !important;
-  }
-
-  .user-self-disabled {
-    opacity: .55;
-    cursor: not-allowed;
-  }
-</style>
+  <c:if test="${not empty u.manualRankCode}">
+    <c:set var="manualRankUsers" value="${manualRankUsers + 1}"/>
+  </c:if>
+</c:forEach>
 
 <main class="admin-main">
-  <div class="admin-container">
+  <div class="admin-container admin-user-page">
 
-    <div class="admin-topbar">
-      <div>
-        <h1 class="admin-h1">Users</h1>
-        <p class="admin-subtext">
-          Quản lý tài khoản, vai trò, trạng thái và rank khách hàng.
+    <section class="admin-user-hero">
+      <div class="admin-user-hero__content">
+        <span class="admin-user-eyebrow">Issue 130</span>
+        <h1 class="admin-h1 admin-user-title">Quản lí user</h1>
+        <p class="admin-subtext admin-user-subtitle">
+          Hiển thị tên tài khoản, role, rank, trạng thái và thông tin liên hệ.
+          Admin chỉ được quản trị role, rank và trạng thái; không tự ý sửa thông tin cá nhân nếu user chưa yêu cầu.
         </p>
       </div>
-    </div>
+
+      <div class="admin-user-hero__actions">
+        <a class="admin-btn" href="${pageContext.request.contextPath}/admin/users">
+          Làm mới
+        </a>
+      </div>
+    </section>
+
+    <c:if test="${not empty success}">
+      <div class="admin-alert admin-alert--success">
+        <c:out value="${success}"/>
+      </div>
+    </c:if>
+
+    <c:if test="${not empty successMessage and empty success}">
+      <div class="admin-alert admin-alert--success">
+        <c:out value="${successMessage}"/>
+      </div>
+    </c:if>
+
+    <c:if test="${not empty error}">
+      <div class="admin-alert admin-alert--danger">
+        <c:out value="${error}"/>
+      </div>
+    </c:if>
+
+    <c:if test="${not empty errorMessage and empty error}">
+      <div class="admin-alert admin-alert--danger">
+        <c:out value="${errorMessage}"/>
+      </div>
+    </c:if>
 
     <c:if test="${param.msg == 'deleted'}">
-      <div class="admin-alert admin-alert--ok" style="margin-bottom:12px;">
-        Đã xóa user.
+      <div class="admin-alert admin-alert--success">
+        Đã khóa tài khoản user. Hệ thống không xóa cứng dữ liệu để bảo toàn lịch sử đơn hàng.
       </div>
     </c:if>
 
     <c:if test="${param.err == 'delete_failed'}">
-      <div class="admin-alert admin-alert--danger" style="margin-bottom:12px;">
-        Không thể xóa user. Có thể user đang có dữ liệu liên quan như đơn hàng hoặc token.
-        Nên khóa hoặc disable tài khoản thay vì xóa vĩnh viễn.
+      <div class="admin-alert admin-alert--danger">
+        Không thể xử lý tài khoản. Hãy kiểm tra quyền thao tác hoặc trạng thái user.
       </div>
     </c:if>
 
     <c:if test="${param.err == 'cannot_delete_self'}">
-      <div class="admin-alert admin-alert--danger" style="margin-bottom:12px;">
-        Bạn không thể tự xóa tài khoản đang đăng nhập.
+      <div class="admin-alert admin-alert--danger">
+        Admin không thể tự xóa hoặc khóa tài khoản đang đăng nhập.
       </div>
     </c:if>
 
-    <div class="admin-card">
+    <section class="admin-user-stats">
+      <div class="admin-user-stat admin-user-stat--total">
+        <span class="admin-user-stat__label">Tổng user</span>
+        <strong class="admin-user-stat__value">${totalUsers}</strong>
+        <span class="admin-user-stat__note">Theo bộ lọc hiện tại</span>
+      </div>
+
+      <div class="admin-user-stat admin-user-stat--admin">
+        <span class="admin-user-stat__label">Admin</span>
+        <strong class="admin-user-stat__value">${adminUsers}</strong>
+        <span class="admin-user-stat__note">Tài khoản được bảo vệ</span>
+      </div>
+
+      <div class="admin-user-stat admin-user-stat--active">
+        <span class="admin-user-stat__label">Đang hoạt động</span>
+        <strong class="admin-user-stat__value">${activeUsers}</strong>
+        <span class="admin-user-stat__note">Có thể đăng nhập</span>
+      </div>
+
+      <div class="admin-user-stat admin-user-stat--locked">
+        <span class="admin-user-stat__label">Đã khóa</span>
+        <strong class="admin-user-stat__value">${lockedUsers}</strong>
+        <span class="admin-user-stat__note">Không thể đăng nhập</span>
+      </div>
+
+      <div class="admin-user-stat admin-user-stat--rank">
+        <span class="admin-user-stat__label">Rank thủ công</span>
+        <strong class="admin-user-stat__value">${manualRankUsers}</strong>
+        <span class="admin-user-stat__note">Admin chỉ định</span>
+      </div>
+    </section>
+
+    <section class="admin-card admin-user-filter-card">
       <div class="admin-card__body">
+        <div class="admin-user-section-head">
+          <div>
+            <h2 class="admin-user-section-title">Bộ lọc user</h2>
+            <p class="admin-user-section-desc">
+              Tìm theo ID, username, họ tên, email, SĐT và lọc theo role, rank, trạng thái.
+            </p>
+          </div>
 
-        <div class="admin-toolbar">
-          <form method="get"
-                action="${pageContext.request.contextPath}/admin/users"
-                class="admin-toolbar__form user-toolbar-form">
+          <c:if test="${not empty f_q || not empty f_role || not empty f_rank || not empty f_active}">
+            <div class="admin-user-active-filters">
+              <c:if test="${not empty f_q}">
+                <span class="admin-chip">Từ khóa: <strong><c:out value="${f_q}"/></strong></span>
+              </c:if>
+              <c:if test="${not empty f_role}">
+                <span class="admin-chip">Role: <strong><c:out value="${f_role}"/></strong></span>
+              </c:if>
+              <c:if test="${not empty f_rank}">
+                <span class="admin-chip">Rank: <strong><c:out value="${f_rank}"/></strong></span>
+              </c:if>
+              <c:if test="${not empty f_active}">
+                <span class="admin-chip">
+                  Trạng thái:
+                  <strong>
+                    <c:choose>
+                      <c:when test="${f_active == '1'}">ACTIVE</c:when>
+                      <c:otherwise>INACTIVE</c:otherwise>
+                    </c:choose>
+                  </strong>
+                </span>
+              </c:if>
+            </div>
+          </c:if>
+        </div>
 
+        <form method="get"
+              action="${pageContext.request.contextPath}/admin/users"
+              class="admin-user-filter-form">
+
+          <label class="admin-user-filter-field admin-user-filter-field--keyword">
+            <span>Tìm kiếm</span>
             <input class="admin-input"
                    type="text"
                    name="q"
                    value="${f_q}"
-                   placeholder="Tìm username, tên, email, SĐT...">
+                   placeholder="Nhập ID, username, họ tên, email hoặc SĐT...">
+          </label>
 
-            <select class="admin-select" name="role" style="width:150px;">
+          <label class="admin-user-filter-field">
+            <span>Role</span>
+            <select class="admin-select" name="role">
               <option value="" ${empty f_role ? 'selected' : ''}>Tất cả role</option>
               <option value="USER" ${f_role == 'USER' ? 'selected' : ''}>USER</option>
               <option value="ADMIN" ${f_role == 'ADMIN' ? 'selected' : ''}>ADMIN</option>
             </select>
+          </label>
 
-            <select class="admin-select" name="rank" style="width:190px;">
+          <label class="admin-user-filter-field">
+            <span>Rank</span>
+            <select class="admin-select" name="rank">
               <option value="" ${empty f_rank ? 'selected' : ''}>Tất cả rank</option>
+              <option value="AUTO" ${f_rank == 'AUTO' ? 'selected' : ''}>AUTO</option>
 
               <c:forEach var="r" items="${ranks}">
                 <option value="${r.code}" ${f_rank == r.code ? 'selected' : ''}>
@@ -130,145 +213,254 @@
                 </option>
               </c:forEach>
             </select>
+          </label>
 
-            <select class="admin-select" name="active" style="width:170px;">
+          <label class="admin-user-filter-field">
+            <span>Trạng thái</span>
+            <select class="admin-select" name="active">
               <option value="" ${empty f_active ? 'selected' : ''}>Tất cả trạng thái</option>
-              <option value="1" ${f_active == '1' ? 'selected' : ''}>ACTIVE</option>
-              <option value="0" ${f_active == '0' ? 'selected' : ''}>INACTIVE</option>
+              <option value="1" ${f_active == '1' ? 'selected' : ''}>Đang hoạt động</option>
+              <option value="0" ${f_active == '0' ? 'selected' : ''}>Đã khóa</option>
             </select>
+          </label>
 
-            <button class="admin-btn" type="submit">Lọc</button>
+          <div class="admin-user-filter-actions">
+            <button class="admin-btn admin-user-filter-btn" type="submit">
+              Lọc
+            </button>
 
-            <c:if test="${not empty f_q || not empty f_role || not empty f_rank || not empty f_active}">
-              <a class="admin-btn" href="${pageContext.request.contextPath}/admin/users">
-                Xóa lọc
-              </a>
-            </c:if>
+            <a class="admin-btn admin-user-filter-btn"
+               href="${pageContext.request.contextPath}/admin/users">
+              Xóa lọc
+            </a>
+          </div>
+        </form>
+      </div>
+    </section>
 
-          </form>
+    <section class="admin-card admin-user-list-card">
+      <div class="admin-card__body">
+
+        <div class="admin-user-section-head admin-user-section-head--list">
+          <div>
+            <h2 class="admin-user-section-title">Danh sách user</h2>
+            <p class="admin-user-section-desc">
+              Đang hiển thị <strong>${totalUsers}</strong> tài khoản.
+              Tài khoản ADMIN và tài khoản hiện tại được bảo vệ khỏi thao tác khóa/xóa.
+            </p>
+          </div>
         </div>
 
         <c:choose>
           <c:when test="${empty users}">
-            <div class="admin-empty">Chưa có user phù hợp.</div>
+            <div class="admin-user-empty">
+              <div class="admin-user-empty__icon">👤</div>
+              <div>
+                <h3>Chưa có user phù hợp</h3>
+                <p>Thử thay đổi từ khóa hoặc bỏ bớt bộ lọc để xem thêm tài khoản.</p>
+                <a class="admin-btn" href="${pageContext.request.contextPath}/admin/users">
+                  Xóa bộ lọc
+                </a>
+              </div>
+            </div>
           </c:when>
 
           <c:otherwise>
-            <div class="user-table-wrap">
-              <table class="admin-table user-table">
+            <div class="admin-user-table-wrap">
+              <table class="admin-table admin-user-table">
                 <thead>
                 <tr>
-                  <th style="width:70px;">ID</th>
-                  <th>Thông tin user</th>
-                  <th style="width:120px;">Role</th>
-                  <th style="width:150px;">Rank hiện tại</th>
-                  <th style="width:130px;">Trạng thái</th>
-                  <th style="width:220px;">Thao tác</th>
+                  <th class="admin-user-col-id">ID</th>
+                  <th class="admin-user-col-account">Tài khoản</th>
+                  <th class="admin-user-col-contact">Liên hệ</th>
+                  <th class="admin-user-col-role">Role</th>
+                  <th class="admin-user-col-rank">Rank</th>
+                  <th class="admin-user-col-status">Trạng thái</th>
+                  <th class="admin-user-col-created">Ngày tạo</th>
+                  <th class="admin-user-col-actions">Thao tác</th>
                 </tr>
                 </thead>
 
                 <tbody>
                 <c:forEach var="u" items="${users}">
-                  <tr>
-                    <td>#${u.id}</td>
+                  <c:set var="isSelf" value="${currentAdminId == u.id}"/>
+                  <c:set var="isProtectedAdmin" value="${u.role == 'ADMIN'}"/>
+                  <c:set var="canModerate" value="${not isSelf and not isProtectedAdmin}"/>
+
+                  <tr class="${u.active ? '' : 'admin-user-row--locked'} ${isProtectedAdmin ? 'admin-user-row--admin' : ''}">
+                    <td class="admin-user-id-cell">
+                      <strong>#${u.id}</strong>
+                    </td>
 
                     <td>
-                      <div class="user-main-info">
-                        <a class="user-name-link"
-                           href="${pageContext.request.contextPath}/admin/users?action=detail&id=${u.id}">
-                          <c:out value="${u.username}"/>
-                        </a>
+                      <div class="admin-user-account">
+                        <div class="admin-user-avatar">
+                          #${u.id}
+                        </div>
 
-                        <c:if test="${not empty u.fullName}">
-                          <div class="user-sub-info">
-                            <c:out value="${u.fullName}"/>
-                          </div>
-                        </c:if>
+                        <div class="admin-user-account__body">
+                          <a class="admin-user-name"
+                             href="${pageContext.request.contextPath}/admin/users?action=detail&id=${u.id}">
+                            <c:out value="${u.username}"/>
+                          </a>
 
-                        <c:if test="${not empty u.email}">
-                          <div class="user-sub-info">
-                            <c:out value="${u.email}"/>
+                          <div class="admin-user-subline">
+                            <c:choose>
+                              <c:when test="${not empty u.fullName}">
+                                <c:out value="${u.fullName}"/>
+                              </c:when>
+                              <c:otherwise>
+                                <span class="admin-muted">Chưa cập nhật họ tên</span>
+                              </c:otherwise>
+                            </c:choose>
                           </div>
-                        </c:if>
 
-                        <c:if test="${not empty u.phone}">
-                          <div class="user-sub-info">
-                            <c:out value="${u.phone}"/>
+                          <div class="admin-user-chip-row">
+                            <c:if test="${isSelf}">
+                              <span class="admin-pill admin-pill--warning">Tài khoản của bạn</span>
+                            </c:if>
+
+                            <c:if test="${isProtectedAdmin}">
+                              <span class="admin-pill admin-pill--danger">Được bảo vệ</span>
+                            </c:if>
                           </div>
-                        </c:if>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td>
+                      <div class="admin-user-contact">
+                        <c:choose>
+                          <c:when test="${not empty u.email}">
+                            <span>Email: <strong><c:out value="${u.email}"/></strong></span>
+                          </c:when>
+                          <c:otherwise>
+                            <span>Email: <em>Chưa cập nhật</em></span>
+                          </c:otherwise>
+                        </c:choose>
+
+                        <c:choose>
+                          <c:when test="${not empty u.phone}">
+                            <span>SĐT: <strong><c:out value="${u.phone}"/></strong></span>
+                          </c:when>
+                          <c:otherwise>
+                            <span>SĐT: <em>Chưa cập nhật</em></span>
+                          </c:otherwise>
+                        </c:choose>
                       </div>
                     </td>
 
                     <td>
                       <c:choose>
                         <c:when test="${u.role == 'ADMIN'}">
-                          <span class="admin-pill admin-pill--ok">ADMIN</span>
+                          <span class="admin-pill admin-pill--danger">ADMIN</span>
                         </c:when>
                         <c:otherwise>
-                          <span class="admin-pill">USER</span>
+                          <span class="admin-pill admin-pill--info">USER</span>
                         </c:otherwise>
                       </c:choose>
                     </td>
 
                     <td>
-                      <span class="admin-pill admin-pill--ok">
-                        <c:out value="${u.displayRankCode}"/>
-                      </span>
+                      <div class="admin-user-rank">
+                        <span class="admin-pill admin-pill--ok">
+                          <c:out value="${u.displayRankCode}"/>
+                        </span>
+
+                        <span class="admin-user-rank__name">
+                          <c:out value="${u.displayRankName}"/>
+                        </span>
+
+                        <span class="admin-user-rank__mode">
+                          <c:choose>
+                            <c:when test="${not empty u.manualRankCode}">
+                              MANUAL
+                            </c:when>
+                            <c:otherwise>
+                              AUTO
+                            </c:otherwise>
+                          </c:choose>
+                        </span>
+                      </div>
                     </td>
 
                     <td>
-                      <c:choose>
-                        <c:when test="${u.active}">
-                          <span class="admin-pill admin-pill--ok">ACTIVE</span>
-                        </c:when>
-                        <c:otherwise>
-                          <span class="admin-pill admin-pill--danger">INACTIVE</span>
-                        </c:otherwise>
-                      </c:choose>
+                      <div class="admin-user-status">
+                        <c:choose>
+                          <c:when test="${u.active}">
+                            <span class="admin-pill admin-pill--ok">Đang hoạt động</span>
+                            <span class="admin-user-status__hint">Có thể đăng nhập</span>
+                          </c:when>
+                          <c:otherwise>
+                            <span class="admin-pill admin-pill--danger">Đã khóa</span>
+                            <span class="admin-user-status__hint">Không thể đăng nhập</span>
+                          </c:otherwise>
+                        </c:choose>
+                      </div>
                     </td>
 
                     <td>
-                      <div class="user-actions">
-                        <a class="admin-btn"
-                           href="${pageContext.request.contextPath}/admin/users?action=edit&id=${u.id}">
-                          Sửa
-                        </a>
+                      <div class="admin-user-created">
+                        <c:choose>
+                          <c:when test="${not empty u.createdAt}">
+                            <fmt:formatDate value="${u.createdAt}" pattern="dd/MM/yyyy"/>
+                            <span>
+                              <fmt:formatDate value="${u.createdAt}" pattern="HH:mm"/>
+                            </span>
+                          </c:when>
+                          <c:otherwise>
+                            <span class="admin-muted">Không rõ</span>
+                          </c:otherwise>
+                        </c:choose>
+                      </div>
+                    </td>
 
-                        <a class="admin-btn"
+                    <td class="admin-user-action-cell">
+                      <div class="admin-user-actions">
+
+                        <a class="admin-btn admin-user-action-btn admin-user-action-btn--view"
                            href="${pageContext.request.contextPath}/admin/users?action=detail&id=${u.id}">
                           Chi tiết
+                        </a>
+
+                        <a class="admin-btn admin-user-action-btn"
+                           href="${pageContext.request.contextPath}/admin/users?action=edit&id=${u.id}">
+                          Sửa quyền
                         </a>
 
                         <form method="post"
                               action="${pageContext.request.contextPath}/admin/users"
                               class="admin-inline"
-                              onsubmit="return confirm('Xóa user #${u.id} (${u.username})? Hành động này không thể hoàn tác.');">
-
+                              onsubmit="return confirm('${u.active ? 'Khóa tài khoản user này?' : 'Mở khóa tài khoản user này?'}');">
                           <%@ include file="/jsp/common/csrf.jspf" %>
 
-                          <input type="hidden" name="action" value="delete"/>
+                          <input type="hidden" name="action" value="toggleLock"/>
                           <input type="hidden" name="id" value="${u.id}"/>
 
                           <c:choose>
-                            <c:when test="${not empty sessionScope.user and sessionScope.user.id == u.id}">
-                              <button class="admin-btn user-self-disabled"
-                                      type="button"
-                                      disabled>
-                                Xóa
+                            <c:when test="${canModerate}">
+                              <button class="admin-btn admin-user-action-btn ${u.active ? 'admin-btn--danger' : 'admin-btn--ok'}"
+                                      type="submit">
+                                <c:choose>
+                                  <c:when test="${u.active}">Khóa</c:when>
+                                  <c:otherwise>Mở khóa</c:otherwise>
+                                </c:choose>
                               </button>
                             </c:when>
 
                             <c:otherwise>
-                              <button class="admin-btn user-danger-btn"
-                                      type="submit">
-                                Xóa
+                              <button class="admin-btn admin-user-action-btn admin-user-action-btn--disabled"
+                                      type="button"
+                                      disabled
+                                      title="Không thể khóa/xóa tài khoản ADMIN hoặc tài khoản đang đăng nhập">
+                                Bảo vệ
                               </button>
                             </c:otherwise>
                           </c:choose>
                         </form>
+
                       </div>
                     </td>
-
                   </tr>
                 </c:forEach>
                 </tbody>
@@ -278,7 +470,7 @@
         </c:choose>
 
       </div>
-    </div>
+    </section>
 
   </div>
 </main>
