@@ -4,7 +4,7 @@
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
 <c:set var="ctx" value="${pageContext.request.contextPath}" />
-<script src="${pageContext.request.contextPath}/assets/js/main.js"></script>
+<script src="${ctx}/assets/js/main.js"></script>
 
 <!-- =========================================================
 HOME HERO / BANNER
@@ -70,7 +70,7 @@ banner rộng, section sale rõ, card sản phẩm dày thông tin.
 					<span>FLASH</span>
 					<strong>Deal đang chạy</strong>
 					<small>Ưu tiên các sản phẩm giảm sâu, bán tốt</small>
-					<a href="${ctx}/products?sort=discount-desc">Xem ngay</a>
+					<a href="${ctx}/flash-sale">Xem ngay</a>
 				</div>
 				<div class="skin-side-card">
 					<span>HOT CATE</span>
@@ -172,51 +172,6 @@ VOUCHER STRIP
 		</div>
 	</section>
 </c:if>
-									</div>
-								</div>
-
-								<div class="skin-voucher-code-row">
-									<strong>${voucher.code}</strong>
-
-									<button type="button"
-											class="skin-save-voucher"
-											onclick="saveVoucher(this)"
-											data-code="${voucher.code}"
-											data-loggedin="${not empty sessionScope.user}">
-										Lưu
-									</button>
-								</div>
-
-								<div class="skin-voucher-discount">
-									<c:choose>
-										<c:when test="${voucher.type == 'FREESHIP'}">
-											Miễn phí vận chuyển
-										</c:when>
-										<c:otherwise>
-											Giảm <b>${voucher.discountPercent}%</b>
-										</c:otherwise>
-									</c:choose>
-								</div>
-
-								<div class="skin-voucher-meta">
-									<span>
-										Đơn từ
-										<b>
-											<fmt:formatNumber value="${voucher.minOrderAmount}" type="number" groupingUsed="true"/>đ
-										</b>
-									</span>
-									<span class="dot"></span>
-									<span>HSD ${voucher.endDate}</span>
-								</div>
-							</div>
-						</article>
-					</c:forEach>
-				</div>
-
-			</div>
-		</div>
-	</section>
-</c:if>
 
 <!-- =========================================================
 FLASH DEAL - dùng deepDiscountProducts
@@ -224,7 +179,8 @@ FLASH DEAL - dùng deepDiscountProducts
 <c:set var="homeSectionProducts" value="${deepDiscountProducts}" scope="request"/>
 <c:set var="homeSectionTitle" value="FLASH DEAL" scope="request"/>
 <c:set var="homeSectionDesc" value="Deal nổi bật, giá tốt, số lượng có hạn trong hôm nay." scope="request"/>
-<c:set var="homeSectionLink" value="/products?sort=discount-desc" scope="request"/>
+<c:set var="homeSectionLink" value="/flash-sale" scope="request"/>
+<c:set var="homeSectionViewAllText" value="XEM TẤT CẢ DEAL" scope="request"/>
 <c:set var="homeSectionMode" value="flash" scope="request"/>
 <c:set var="homeSectionShowSold" value="${true}" scope="request"/>
 <c:set var="homeSectionShowViews" value="${false}" scope="request"/>
@@ -347,6 +303,7 @@ PRODUCT GROUPS
 
 <button type="button" class="skin-backtop" aria-label="Lên đầu trang">↑</button>
 
+
 <script>
 	window.APP_CTX = "${ctx}";
 
@@ -354,6 +311,7 @@ PRODUCT GROUPS
 		initSkinHero();
 		initDealCountdown();
 		initBackTop();
+		initWishlistForms();
 	});
 
 	function initSkinHero() {
@@ -361,6 +319,7 @@ PRODUCT GROUPS
 		const dots = document.querySelectorAll(".skin-hero-dot");
 		const prev = document.querySelector(".skin-hero-prev");
 		const next = document.querySelector(".skin-hero-next");
+
 		if (!slides.length) return;
 
 		let index = 0;
@@ -368,8 +327,13 @@ PRODUCT GROUPS
 		function showSlide(i) {
 			slides.forEach(s => s.classList.remove("active"));
 			dots.forEach(d => d.classList.remove("active"));
+
 			slides[i].classList.add("active");
-			if (dots[i]) dots[i].classList.add("active");
+
+			if (dots[i]) {
+				dots[i].classList.add("active");
+			}
+
 			index = i;
 		}
 
@@ -381,9 +345,17 @@ PRODUCT GROUPS
 			showSlide((index - 1 + slides.length) % slides.length);
 		}
 
-		if (next) next.addEventListener("click", nextSlide);
-		if (prev) prev.addEventListener("click", prevSlide);
-		dots.forEach((dot, i) => dot.addEventListener("click", () => showSlide(i)));
+		if (next) {
+			next.addEventListener("click", nextSlide);
+		}
+
+		if (prev) {
+			prev.addEventListener("click", prevSlide);
+		}
+
+		dots.forEach((dot, i) => {
+			dot.addEventListener("click", () => showSlide(i));
+		});
 
 		if (slides.length > 1) {
 			setInterval(nextSlide, 5000);
@@ -392,6 +364,7 @@ PRODUCT GROUPS
 
 	function initDealCountdown() {
 		const boxes = document.querySelectorAll("[data-deal-countdown]");
+
 		if (!boxes.length) return;
 
 		function pad(num) {
@@ -401,19 +374,27 @@ PRODUCT GROUPS
 		function render() {
 			const now = new Date();
 			const end = new Date();
+
 			end.setHours(23, 59, 59, 999);
 
 			let distance = end.getTime() - now.getTime();
-			if (distance < 0) distance = 0;
+
+			if (distance < 0) {
+				distance = 0;
+			}
 
 			const hours = Math.floor(distance / (1000 * 60 * 60));
 			const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
 			const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
 			boxes.forEach(box => {
-				box.querySelector("[data-hh]").innerText = pad(hours);
-				box.querySelector("[data-mm]").innerText = pad(minutes);
-				box.querySelector("[data-ss]").innerText = pad(seconds);
+				const hh = box.querySelector("[data-hh]");
+				const mm = box.querySelector("[data-mm]");
+				const ss = box.querySelector("[data-ss]");
+
+				if (hh) hh.innerText = pad(hours);
+				if (mm) mm.innerText = pad(minutes);
+				if (ss) ss.innerText = pad(seconds);
 			});
 		}
 
@@ -423,6 +404,7 @@ PRODUCT GROUPS
 
 	function initBackTop() {
 		const btn = document.querySelector(".skin-backtop");
+
 		if (!btn) return;
 
 		window.addEventListener("scroll", function () {
@@ -430,24 +412,59 @@ PRODUCT GROUPS
 		});
 
 		btn.addEventListener("click", function () {
-			window.scrollTo({ top: 0, behavior: "smooth" });
+			window.scrollTo({
+				top: 0,
+				behavior: "smooth"
+			});
 		});
 	}
 
 	function showCustomAlert(title, message, isSuccess) {
 		const modal = document.createElement("div");
 		modal.className = "custom-alert-modal";
-		const icon = isSuccess ? "🎉" : "⚠️";
+
 		const color = isSuccess ? "#9b0012" : "#e53935";
 
-		modal.innerHTML =
-				'<div class="custom-alert-box">' +
-				'<div style="font-size: 40px; margin-bottom: 10px;">' + icon + '</div>' +
-				'<h3 style="color:' + color + '; margin-bottom: 10px; font-size: 20px;">' + title + '</h3>' +
-				'<p style="color: #555; margin-bottom: 20px; line-height: 1.5;">' + message + '</p>' +
-				'<button onclick="this.closest(\'.custom-alert-modal\').remove()" ' +
-				'style="background: ' + color + '; color: #fff; border: none; padding: 10px 24px; border-radius: 999px; cursor: pointer; font-weight: bold; width: 100%;">Đóng</button>' +
-				'</div>';
+		const box = document.createElement("div");
+		box.className = "custom-alert-box";
+
+		const iconEl = document.createElement("div");
+		iconEl.style.fontSize = "40px";
+		iconEl.style.marginBottom = "10px";
+		iconEl.textContent = isSuccess ? "🎉" : "⚠️";
+
+		const titleEl = document.createElement("h3");
+		titleEl.style.color = color;
+		titleEl.style.marginBottom = "10px";
+		titleEl.style.fontSize = "20px";
+		titleEl.textContent = title;
+
+		const messageEl = document.createElement("p");
+		messageEl.style.color = "#555";
+		messageEl.style.marginBottom = "20px";
+		messageEl.style.lineHeight = "1.5";
+		messageEl.textContent = message;
+
+		const closeBtn = document.createElement("button");
+		closeBtn.type = "button";
+		closeBtn.textContent = "Đóng";
+		closeBtn.style.background = color;
+		closeBtn.style.color = "#fff";
+		closeBtn.style.border = "none";
+		closeBtn.style.padding = "10px 24px";
+		closeBtn.style.borderRadius = "999px";
+		closeBtn.style.cursor = "pointer";
+		closeBtn.style.fontWeight = "bold";
+		closeBtn.style.width = "100%";
+		closeBtn.addEventListener("click", function () {
+			modal.remove();
+		});
+
+		box.appendChild(iconEl);
+		box.appendChild(titleEl);
+		box.appendChild(messageEl);
+		box.appendChild(closeBtn);
+		modal.appendChild(box);
 
 		document.body.appendChild(modal);
 	}
@@ -468,10 +485,15 @@ PRODUCT GROUPS
 				.then(res => res.json())
 				.then(data => {
 					const msg = data.message ? data.message.toLowerCase() : "";
+
 					if (data.success || msg.includes("đã sở hữu") || msg.includes("đã lưu")) {
 						btn.innerText = "Đã lưu";
 						btn.classList.add("saved");
-						showCustomAlert("Thông báo", data.success ? "Lưu mã thành công!" : "Mã này đã có trong ví của bạn.", true);
+						showCustomAlert(
+								"Thông báo",
+								data.success ? "Lưu mã thành công!" : "Mã này đã có trong ví của bạn.",
+								true
+						);
 					} else {
 						btn.disabled = false;
 						btn.innerText = "Lưu";
@@ -485,7 +507,6 @@ PRODUCT GROUPS
 				});
 	}
 
-	// Hàm tương thích với giao diện voucher cũ nếu còn nút Xem chi tiết trong fragment khác
 	function showVoucherDetailFromEl(btn) {
 		const code = btn.getAttribute("data-code") || "Không rõ";
 		const desc = btn.getAttribute("data-desc") || "Không có mô tả cụ thể.";
@@ -493,7 +514,8 @@ PRODUCT GROUPS
 		const end = btn.getAttribute("data-end");
 
 		let minText = "0 ₫";
-		if (min && parseInt(min) > 0) {
+
+		if (min && parseInt(min, 10) > 0) {
 			minText = Number(min).toLocaleString("vi-VN") + " ₫";
 		}
 
@@ -501,28 +523,88 @@ PRODUCT GROUPS
 
 		const modal = document.createElement("div");
 		modal.className = "custom-alert-modal";
-		modal.innerHTML =
-				'<div class="custom-alert-box" style="text-align: left;">' +
-				'<div style="font-size: 32px; text-align: center; margin-bottom: 10px;">🎟️</div>' +
-				'<h3 style="color: #9b0012; margin-bottom: 15px; font-size: 20px; text-align: center;">Chi tiết ưu đãi</h3>' +
-				'<div style="color: #444; line-height: 1.6; font-size: 14px; margin-bottom: 24px; padding: 15px; background: #fff0f6; border-radius: 12px;">' +
-				'<p style="margin: 0 0 8px 0;"><strong>Mã code:</strong> <span style="color: #9b0012; font-weight: bold; font-size: 16px;">' + code + '</span></p>' +
-				'<p style="margin: 0 0 8px 0;"><strong>Mô tả:</strong> ' + desc + '</p>' +
-				'<p style="margin: 0 0 8px 0;"><strong>Đơn tối thiểu:</strong> ' + minText + '</p>' +
-				'<p style="margin: 0;"><strong>Hạn sử dụng:</strong> ' + endText + '</p>' +
-				'</div>' +
-				'<button onclick="this.closest(\'.custom-alert-modal\').remove()" ' +
-				'style="background: linear-gradient(135deg, #8f001f, #d44d79); color: #fff; border: none; padding: 12px 24px; border-radius: 999px; cursor: pointer; font-weight: bold; width: 100%;">' +
-				'Đã hiểu' +
-				'</button>' +
-				'</div>';
+
+		const box = document.createElement("div");
+		box.className = "custom-alert-box";
+		box.style.textAlign = "left";
+
+		const icon = document.createElement("div");
+		icon.style.fontSize = "32px";
+		icon.style.textAlign = "center";
+		icon.style.marginBottom = "10px";
+		icon.textContent = "🎟️";
+
+		const title = document.createElement("h3");
+		title.style.color = "#9b0012";
+		title.style.marginBottom = "15px";
+		title.style.fontSize = "20px";
+		title.style.textAlign = "center";
+		title.textContent = "Chi tiết ưu đãi";
+
+		const detail = document.createElement("div");
+		detail.style.color = "#444";
+		detail.style.lineHeight = "1.6";
+		detail.style.fontSize = "14px";
+		detail.style.marginBottom = "24px";
+		detail.style.padding = "15px";
+		detail.style.background = "#fff0f6";
+		detail.style.borderRadius = "12px";
+
+		const rows = [
+			["Mã code:", code],
+			["Mô tả:", desc],
+			["Đơn tối thiểu:", minText],
+			["Hạn sử dụng:", endText]
+		];
+
+		rows.forEach(function (row) {
+			const p = document.createElement("p");
+			p.style.margin = "0 0 8px 0";
+
+			const label = document.createElement("strong");
+			label.textContent = row[0] + " ";
+
+			const value = document.createElement("span");
+			value.textContent = row[1];
+
+			if (row[0] === "Mã code:") {
+				value.style.color = "#9b0012";
+				value.style.fontWeight = "bold";
+				value.style.fontSize = "16px";
+			}
+
+			p.appendChild(label);
+			p.appendChild(value);
+			detail.appendChild(p);
+		});
+
+		const closeBtn = document.createElement("button");
+		closeBtn.type = "button";
+		closeBtn.textContent = "Đã hiểu";
+		closeBtn.style.background = "linear-gradient(135deg, #8f001f, #d44d79)";
+		closeBtn.style.color = "#fff";
+		closeBtn.style.border = "none";
+		closeBtn.style.padding = "12px 24px";
+		closeBtn.style.borderRadius = "999px";
+		closeBtn.style.cursor = "pointer";
+		closeBtn.style.fontWeight = "bold";
+		closeBtn.style.width = "100%";
+		closeBtn.addEventListener("click", function () {
+			modal.remove();
+		});
+
+		box.appendChild(icon);
+		box.appendChild(title);
+		box.appendChild(detail);
+		box.appendChild(closeBtn);
+		modal.appendChild(box);
 
 		document.body.appendChild(modal);
 	}
 
-	// Giữ lại AJAX wishlist từ file cũ để các product card cũ hoặc fragment khác vẫn hoạt động
-	document.addEventListener("DOMContentLoaded", function () {
+	function initWishlistForms() {
 		const wishlistForms = document.querySelectorAll(".wishlist-form");
+
 		if (!wishlistForms.length) return;
 
 		wishlistForms.forEach(form => {
@@ -534,7 +616,9 @@ PRODUCT GROUPS
 
 				fetch(this.action, {
 					method: "POST",
-					headers: { "Content-Type": "application/x-www-form-urlencoded" },
+					headers: {
+						"Content-Type": "application/x-www-form-urlencoded"
+					},
 					body: formData
 				})
 						.then(response => {
@@ -542,14 +626,21 @@ PRODUCT GROUPS
 								if (typeof showLoginModal === "function") {
 									showLoginModal();
 								} else {
-									showCustomAlert("Chưa đăng nhập", "Vui lòng đăng nhập để thêm sản phẩm vào yêu thích.", false);
+									showCustomAlert(
+											"Chưa đăng nhập",
+											"Vui lòng đăng nhập để thêm sản phẩm vào yêu thích.",
+											false
+									);
 								}
+
 								throw new Error("LOGIN_REQUIRED");
 							}
+
 							return response.text();
 						})
 						.then(data => {
 							if (!btn) return;
+
 							if (data === "ADDED") {
 								btn.style.color = "red";
 								btn.classList.add("active");
@@ -565,6 +656,5 @@ PRODUCT GROUPS
 						});
 			});
 		});
-	});
-
+	}
 </script>
