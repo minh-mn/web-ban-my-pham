@@ -38,7 +38,6 @@
 
     <div class="admin-review-hero">
       <div class="admin-review-hero__content">
-        <span class="admin-review-eyebrow">Issue 129</span>
         <h1 class="admin-h1 admin-review-title">Quản lí bình luận</h1>
         <p class="admin-subtext admin-review-subtitle">
           Kiểm duyệt bình luận sản phẩm, xem nội dung, mã sản phẩm, ID user, thời gian gửi,
