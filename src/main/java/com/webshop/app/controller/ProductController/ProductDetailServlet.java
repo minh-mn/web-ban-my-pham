@@ -117,6 +117,12 @@ public class ProductDetailServlet extends HttpServlet {
         req.setAttribute("reviewSort", reviewSort);
         req.setAttribute("reviewRating", reviewRating);
         req.setAttribute("reviewMedia", reviewMedia);
+        req.setAttribute(
+                "basePrice",
+                product.getFinalPrice() != null
+                        ? product.getFinalPrice()
+                        : product.getPrice()
+        );
 
         HttpSession session = req.getSession(false);
         User user = session == null ? null : (User) session.getAttribute("user");
