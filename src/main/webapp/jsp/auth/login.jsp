@@ -288,4 +288,29 @@ function handleGoogleLogin(response) {
     Swal.fire("Lỗi", "Không thể kết nối server", "error");
   });
 }
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    // Logic Toggle Password
+    var toggleBtns = document.getElementsByClassName("toggle-btn");
+
+    for (var i = 0; i < toggleBtns.length; i++) {
+        toggleBtns[i].addEventListener("click", function () {
+            // Tìm container chứa input
+            var container = this.closest('.form-group') || this.parentElement;
+            var inp = container.querySelector("input");
+
+            if (!inp) return;
+
+            // Đảo trạng thái hiển thị
+            if (inp.type === "password") {
+                inp.type = "text";
+                this.textContent = "👁️";
+            } else {
+                inp.type = "password";
+                this.textContent = "🙈";
+            }
+        });
+    }
+});
 </script>
