@@ -1577,4 +1577,13 @@ public class OrderDAO {
 
         return order;
     }
+
+    public void updateOrderStatus(Connection conn, long orderId, String newStatus) throws SQLException {
+        String sql = "UPDATE store_order SET status = ? WHERE id = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, newStatus);
+            ps.setLong(2, orderId);
+            ps.executeUpdate();
+        }
+    }
 }
