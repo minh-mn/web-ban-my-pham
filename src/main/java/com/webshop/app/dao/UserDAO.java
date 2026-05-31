@@ -33,7 +33,8 @@ public class UserDAO {
             facebook_id,
             birth_date,
             gender,
-            manual_rank_code
+            manual_rank_code,
+            address
             """;
 
     /* ================= INTERNAL MAPPER ================= */
@@ -62,6 +63,11 @@ public class UserDAO {
 
         try {
             user.setPhone(rs.getString("phone"));
+        } catch (SQLException ignored) {
+        }
+
+        try {
+            user.setAddress(rs.getString("address"));
         } catch (SQLException ignored) {
         }
 
@@ -890,5 +896,23 @@ public class UserDAO {
 
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    public void updateFullProfile(User user) {
+        String sql = "UPDATE users SET full_name = ?, email = ?, phone = ?, address = ? WHERE id = ?";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, user.getFullName());
+            ps.setString(2, user.getEmail());
+            ps.setString(3, user.getPhone());
+            ps.setString(4, user.getAddress());
+            ps.setInt(5, user.getId());
+
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 }
