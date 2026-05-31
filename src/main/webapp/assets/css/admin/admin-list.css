@@ -1853,6 +1853,13 @@ td.product-actions {
    Scope: /jsp/admin/review/review_list.jsp - issue 129
 ========================================================= */
 
+.admin-main > .admin-container.admin-review-page {
+  width: 100%;
+  max-width: none !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
 .admin-review-page {
   width: 100%;
 }
@@ -2109,6 +2116,10 @@ td.product-actions {
   line-height: 1.5;
 }
 
+.admin-review-list-card .admin-card__body {
+  overflow-x: visible;
+}
+
 .admin-review-table-wrap {
   width: 100%;
   overflow-x: auto;
@@ -2116,13 +2127,14 @@ td.product-actions {
 }
 
 .admin-review-table {
-  min-width: 1480px;
+  width: 100%;
+  min-width: 1260px;
   table-layout: fixed;
 }
 
 .admin-review-table th,
 .admin-review-table td {
-  padding: 12px 10px;
+  padding: 10px 8px;
   vertical-align: top;
 }
 
@@ -2151,39 +2163,39 @@ td.product-actions {
 }
 
 .admin-review-col-id {
-  width: 70px;
+  width: 54px;
 }
 
 .admin-review-col-status {
-  width: 150px;
+  width: 116px;
 }
 
 .admin-review-col-rating {
-  width: 108px;
+  width: 80px;
 }
 
 .admin-review-col-product {
-  width: 235px;
+  width: 180px;
 }
 
 .admin-review-col-user {
-  width: 285px;
+  width: 240px;
 }
 
 .admin-review-col-comment {
-  width: 350px;
+  width: 280px;
 }
 
 .admin-review-col-media {
-  width: 120px;
+  width: 86px;
 }
 
 .admin-review-col-time {
-  width: 112px;
+  width: 92px;
 }
 
 .admin-review-col-actions {
-  width: 150px;
+  width: 126px;
 }
 
 .admin-review-id-cell {
@@ -2397,7 +2409,7 @@ td.product-actions {
 .admin-review-actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 7px;
+  gap: 6px;
   align-items: center;
 }
 
@@ -2411,7 +2423,7 @@ td.product-actions {
 .admin-review-action-btn {
   width: 100%;
   min-height: 32px;
-  padding: 0 9px;
+  padding: 0 8px;
   justify-content: center;
   border-radius: 10px;
   font-size: 12px;
@@ -2449,7 +2461,7 @@ td.product-actions {
 
 @media (max-width: 900px) {
   .admin-review-table {
-    min-width: 1400px;
+    min-width: 1260px;
   }
 
   .admin-review-filter-main {
