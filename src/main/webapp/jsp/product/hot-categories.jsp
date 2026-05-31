@@ -7,8 +7,14 @@
 <section class="skin-hot-categories" id="hot-categories">
   <div class="skin-container">
     <div class="skin-section-top skin-hot-category-head">
-      <div>
-        <h2>DANH MỤC HOT</h2>
+      <div class="hot-category-heading-wrap">
+        <span class="hot-category-eyebrow">HOT CATEGORY</span>
+
+        <h2 class="hot-category-heading" aria-label="Danh mục hot">
+          <span class="hot-category-word hot-category-word-left">Danh mục</span>
+          <span class="hot-category-icon" aria-hidden="true">✦</span>
+          <span class="hot-category-word hot-category-word-right">Hot</span>
+        </h2>
       </div>
     </div>
 
