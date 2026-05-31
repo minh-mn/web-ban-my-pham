@@ -9,11 +9,14 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class CategoryDAO {
 
@@ -138,6 +141,226 @@ public class CategoryDAO {
         }
 
         return productCountMap;
+    }
+
+
+    /**
+     * Lấy danh mục hot cho trang chủ.
+     * Luôn hiển thị đủ 13 mục theo mẫu, dùng ảnh tĩnh trong assets/images/categories
+     * để không bị mất hình khi danh mục chưa có sản phẩm hoặc chưa gán image_url trong database.
+     */
+    public List<Category> findHotCategoriesForHome(int limit) {
+        int safeLimit = limit <= 0 ? 13 : Math.min(limit, 13);
+        List<Category> rawCategories = new ArrayList<>();
+
+        String sql = """
+                SELECT
+                    c.id,
+                    c.name,
+                    c.slug,
+                    c.parent_id,
+                    c.is_active,
+                    COUNT(p.id) AS product_count,
+                    (
+                        SELECT COALESCE(NULLIF(TRIM(p2.image), ''), first_img.image)
+                        FROM store_product p2
+                        LEFT JOIN (
+                            SELECT spi.product_id, spi.image
+                            FROM store_productimage spi
+                            INNER JOIN (
+                                SELECT product_id, MIN(id) AS min_id
+                                FROM store_productimage
+                                GROUP BY product_id
+                            ) x ON x.product_id = spi.product_id AND x.min_id = spi.id
+                        ) first_img ON first_img.product_id = p2.id
+                        WHERE p2.category_id = c.id
+                          AND p2.is_active = 1
+                        ORDER BY p2.discount_percent DESC, p2.stock DESC, p2.id DESC
+                        LIMIT 1
+                    ) AS hot_image_url
+                FROM store_category c
+                LEFT JOIN store_product p ON p.category_id = c.id AND p.is_active = 1
+                WHERE c.is_active = 1
+                  AND c.parent_id IS NOT NULL
+                GROUP BY c.id, c.name, c.slug, c.parent_id, c.is_active
+                ORDER BY c.name ASC, c.id ASC
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet resultSet = statement.executeQuery()) {
+
+            while (resultSet.next()) {
+                Category category = mapCategory(resultSet);
+                category.setParentId(getNullableInteger(resultSet, "parent_id"));
+                category.setProductCount(resultSet.getInt("product_count"));
+                category.setHotImageUrl(resultSet.getString("hot_image_url"));
+                rawCategories.add(category);
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("CategoryDAO.findHotCategoriesForHome error", e);
+        }
+
+        List<Category> sourceCategories = new ArrayList<>();
+        for (Category category : rawCategories) {
+            if (!isExcludedHotCategory(category.getName()) && !isExcludedHotCategory(category.getSlug())) {
+                sourceCategories.add(category);
+            }
+        }
+
+        List<HotCategoryTarget> targets = buildHotCategoryTargets();
+        List<Category> result = new ArrayList<>();
+        Set<Integer> usedIds = new LinkedHashSet<>();
+
+        for (HotCategoryTarget target : targets) {
+            Category matched = findBestHotCategoryMatch(sourceCategories, usedIds, target);
+
+            if (matched != null) {
+                matched.setName(target.displayName);
+                matched.setHighlightLabel(target.badgeLabel);
+
+                // Ưu tiên ảnh danh mục cố định để layout giống mẫu và không bị mất hình.
+                matched.setHotImageUrl(target.imageUrl);
+
+                result.add(matched);
+                usedIds.add(matched.getId());
+            } else {
+                result.add(createFallbackHotCategory(target));
+            }
+
+            if (result.size() >= safeLimit) {
+                break;
+            }
+        }
+
+        return result;
+    }
+
+    private List<HotCategoryTarget> buildHotCategoryTargets() {
+        List<HotCategoryTarget> targets = new ArrayList<>();
+        targets.add(new HotCategoryTarget("Son Môi", "LIP", "/assets/images/categories/son-moi.png", "son-moi", "son moi", "son duong", "duong moi", "lip"));
+        targets.add(new HotCategoryTarget("Má Hồng", "MAKE", "/assets/images/categories/ma-hong.png", "ma-hong", "ma hong", "blush"));
+        targets.add(new HotCategoryTarget("Phấn Mắt", "MAKE", "/assets/images/categories/phan-mat.png", "phan-mat", "phan mat", "mat makeup", "eye", "eyeshadow"));
+        targets.add(new HotCategoryTarget("Phấn Nước", "MAKE", "/assets/images/categories/phan-nuoc.png", "phan-nuoc", "phan nuoc", "cushion"));
+        targets.add(new HotCategoryTarget("Xịt Khóa Nền", "MAKE", "/assets/images/categories/xit-khoa-nen.png", "xit-khoa-nen", "xit khoa nen", "khoa nen", "setting spray"));
+        targets.add(new HotCategoryTarget("Phụ Kiện", "ACC", "/assets/images/categories/phu-kien.png", "phu-kien", "phu kien", "accessories"));
+        targets.add(new HotCategoryTarget("Tẩy Trang", "CLEAN", "/assets/images/categories/tay-trang.png", "tay-trang", "tay trang", "makeup remover", "micellar"));
+        targets.add(new HotCategoryTarget("Kem Chống Nắng", "SPF", "/assets/images/categories/kem-chong-nang.png", "kem-chong-nang", "chong-nang", "kem chong nang", "sunscreen", "sun care"));
+        targets.add(new HotCategoryTarget("Sữa Rửa Mặt", "FOAM", "/assets/images/categories/sua-rua-mat.png", "sua-rua-mat", "sua rua mat", "cleanser", "face wash"));
+        targets.add(new HotCategoryTarget("Nước Hoa Hồng", "SKIN", "/assets/images/categories/nuoc-hoa-hong.png", "nuoc-hoa-hong", "toner-lotion", "nuoc hoa hong", "toner", "lotion"));
+        targets.add(new HotCategoryTarget("Tinh Chất Dưỡng", "CARE", "/assets/images/categories/tinh-chat-duong.png", "tinh-chat-duong", "serum-essence", "tinh chat duong", "serum", "essence"));
+        targets.add(new HotCategoryTarget("Kem Dưỡng", "SKIN", "/assets/images/categories/kem-duong.png", "kem-duong", "gel-duong", "kem duong", "duong am", "moisturizer", "cream"));
+        targets.add(new HotCategoryTarget("Mặt Nạ", "MASK", "/assets/images/categories/mat-na.png", "mat-na", "mat na", "mask"));
+        return targets;
+    }
+
+    private Category findBestHotCategoryMatch(List<Category> categories, Set<Integer> usedIds, HotCategoryTarget target) {
+        Category bestCategory = null;
+        int bestScore = Integer.MIN_VALUE;
+
+        for (Category category : categories) {
+            if (usedIds.contains(category.getId())) {
+                continue;
+            }
+
+            int score = scoreHotCategory(category, target);
+            if (score > bestScore) {
+                bestScore = score;
+                bestCategory = category;
+            }
+        }
+
+        return bestScore > 0 ? bestCategory : null;
+    }
+
+    private int scoreHotCategory(Category category, HotCategoryTarget target) {
+        String normalizedName = normalizeCategoryText(category.getName());
+        String normalizedSlug = normalizeCategoryText(category.getSlug());
+
+        int score = 0;
+
+        for (int i = 0; i < target.keywords.length; i++) {
+            String keyword = target.keywords[i];
+            int weight = Math.max(40 - (i * 3), 10);
+
+            if (normalizedSlug.equals(keyword)) {
+                score += weight + 80;
+            } else if (normalizedSlug.contains(keyword)) {
+                score += weight + 55;
+            }
+
+            if (normalizedName.equals(keyword)) {
+                score += weight + 60;
+            } else if (normalizedName.contains(keyword)) {
+                score += weight + 35;
+            }
+        }
+
+        if (category.getProductCount() > 0) {
+            score += 8;
+        }
+        if (category.getHotImageUrl() != null && !category.getHotImageUrl().isBlank()) {
+            score += 12;
+        }
+
+        return score;
+    }
+
+    private Category createFallbackHotCategory(HotCategoryTarget target) {
+        Category category = new Category();
+        category.setId(0);
+        category.setName(target.displayName);
+        category.setSlug(buildSlug(target.displayName));
+        category.setActive(true);
+        category.setProductCount(0);
+        category.setHotImageUrl(target.imageUrl);
+        category.setHighlightLabel(target.badgeLabel);
+        return category;
+    }
+
+    private boolean isExcludedHotCategory(String value) {
+        String normalized = normalizeCategoryText(value);
+        return normalized.contains("blind box")
+                || normalized.contains("hop mu")
+                || normalized.contains("hop blind")
+                || normalized.contains("mystery box");
+    }
+
+    private String normalizeCategoryText(String value) {
+        if (value == null) {
+            return "";
+        }
+
+        String normalized = Normalizer.normalize(value, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}+", "")
+                .toLowerCase()
+                .trim();
+
+        normalized = normalized.replace('đ', 'd');
+        normalized = normalized.replaceAll("[^a-z0-9\\s-]", " ");
+        normalized = normalized.replaceAll("\\s+", " ");
+
+        return normalized;
+    }
+
+    private String buildSlug(String value) {
+        String normalized = normalizeCategoryText(value);
+        return normalized.replace(' ', '-');
+    }
+
+    private static class HotCategoryTarget {
+        private final String displayName;
+        private final String badgeLabel;
+        private final String imageUrl;
+        private final String[] keywords;
+
+        private HotCategoryTarget(String displayName, String badgeLabel, String imageUrl, String... keywords) {
+            this.displayName = displayName;
+            this.badgeLabel = badgeLabel;
+            this.imageUrl = imageUrl;
+            this.keywords = keywords;
+        }
     }
 
     /* =====================================================
