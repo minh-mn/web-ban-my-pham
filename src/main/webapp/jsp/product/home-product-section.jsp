@@ -26,10 +26,14 @@
                 <div>
                     <c:choose>
                         <c:when test="${isFlashSection}">
-                            <div class="skin-flash-title">
-                                <span class="flash-word">FLASH</span>
-                                <span class="bolt">⚡</span>
-                                <span class="deal-word">DEAL</span>
+                            <div class="flash-deal-heading-wrap">
+                                <span class="flash-deal-eyebrow">HOT DEAL TODAY</span>
+
+                                <h2 class="flash-deal-heading" aria-label="Flash Deal">
+                                    <span class="flash-word flash-word-left">Flash</span>
+                                    <span class="flash-icon" aria-hidden="true">⚡</span>
+                                    <span class="flash-word flash-word-right">Deal</span>
+                                </h2>
                             </div>
                         </c:when>
                         <c:otherwise>
@@ -39,7 +43,7 @@
                     </c:choose>
 
                     <c:if test="${not empty homeSectionDesc}">
-                        <p>${homeSectionDesc}</p>
+                        <p class="${isFlashSection ? 'flash-deal-subtitle' : ''}">${homeSectionDesc}</p>
                     </c:if>
                 </div>
 
@@ -240,22 +244,131 @@
             white-space: nowrap;
         }
 
-        .skin-product-section.is-flash .skin-flash-title {
+        .skin-product-section.is-flash .flash-deal-heading-wrap {
             display: flex;
-            align-items: center;
-            gap: 22px;
-            color: #b30024;
-            font-size: clamp(38px, 4vw, 62px);
-            font-weight: 1000;
-            letter-spacing: .14em;
-            line-height: 1;
-            text-transform: uppercase;
+            flex-direction: column;
+            gap: 11px;
         }
 
-        .skin-product-section.is-flash .skin-flash-title .bolt {
-            color: #ff9b3d;
-            letter-spacing: 0;
-            filter: drop-shadow(0 8px 14px rgba(255, 142, 38, .22));
+        .skin-product-section.is-flash .flash-deal-eyebrow {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            width: fit-content;
+            min-height: 30px;
+            padding: 7px 16px 7px 36px;
+            border: 1px solid rgba(196, 0, 62, .16);
+            border-radius: 999px;
+            background: linear-gradient(135deg, #fff7fb 0%, #ffe3ec 100%);
+            color: #b0003a;
+            font-size: 12px;
+            line-height: 1;
+            font-weight: 950;
+            letter-spacing: 2.2px;
+            text-transform: uppercase;
+            box-shadow: 0 10px 24px rgba(196, 0, 62, .10);
+        }
+
+        .skin-product-section.is-flash .flash-deal-eyebrow::before {
+            content: "";
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ffb000;
+            box-shadow: 0 0 0 5px rgba(255, 176, 0, .18);
+            transform: translateY(-50%);
+        }
+
+        .skin-product-section.is-flash .flash-deal-heading {
+            position: relative;
+            width: fit-content;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            line-height: .95;
+        }
+
+        .skin-product-section.is-flash .flash-deal-heading::after {
+            content: "";
+            position: absolute;
+            left: 4px;
+            right: 4px;
+            bottom: -10px;
+            height: 12px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, rgba(255, 54, 122, .16), rgba(255, 176, 0, .28), rgba(255, 54, 122, .05));
+            filter: blur(.2px);
+            z-index: -1;
+        }
+
+        .skin-product-section.is-flash .flash-word {
+            color: #b0003a;
+            font-size: clamp(42px, 5.2vw, 76px);
+            font-weight: 1000;
+            letter-spacing: .095em;
+            line-height: .95;
+            text-transform: uppercase;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        .skin-product-section.is-flash .flash-word-left {
+            background: linear-gradient(135deg, #ff5b9b 0%, #d90049 42%, #99002c 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 16px 34px rgba(217, 0, 73, .16);
+        }
+
+        .skin-product-section.is-flash .flash-word-right {
+            background: linear-gradient(135deg, #8d001f 0%, #c4003f 48%, #ff6ca6 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 16px 34px rgba(141, 0, 31, .18);
+        }
+
+        .skin-product-section.is-flash .flash-icon {
+            position: relative;
+            isolation: isolate;
+            flex: 0 0 auto;
+            width: clamp(48px, 4.8vw, 68px);
+            height: clamp(48px, 4.8vw, 68px);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 22px;
+            background: radial-gradient(circle at 30% 20%, #fff2a7 0%, #ffd25f 26%, #ff9f1a 62%, #ff7a00 100%);
+            color: #fff;
+            font-size: clamp(25px, 3vw, 38px);
+            font-weight: 1000;
+            line-height: 1;
+            box-shadow: 0 15px 30px rgba(255, 150, 25, .30), inset 0 1px 0 rgba(255, 255, 255, .55);
+            transform: rotate(-8deg);
+        }
+
+        .skin-product-section.is-flash .flash-icon::after {
+            content: "";
+            position: absolute;
+            inset: -7px;
+            border-radius: inherit;
+            background: rgba(255, 176, 0, .16);
+            z-index: -1;
+            filter: blur(4px);
+        }
+
+        .skin-product-section.is-flash .flash-deal-subtitle {
+            max-width: 760px;
+            margin: 18px 0 0;
+            color: #6b7280;
+            font-size: 18px;
+            line-height: 1.65;
+            font-weight: 600;
+            letter-spacing: .01em;
         }
 
         .skin-product-section.is-flash .skin-countdown {
@@ -560,9 +673,24 @@
                 max-width: 100%;
             }
 
-            .skin-product-section.is-flash .skin-flash-title {
+            .skin-product-section.is-flash .flash-word {
                 font-size: 34px;
+                letter-spacing: .06em;
+            }
+
+            .skin-product-section.is-flash .flash-deal-heading {
                 gap: 10px;
+            }
+
+            .skin-product-section.is-flash .flash-icon {
+                width: 46px;
+                height: 46px;
+                border-radius: 16px;
+                font-size: 24px;
+            }
+
+            .skin-product-section.is-flash .flash-deal-subtitle {
+                font-size: 15px;
             }
 
             .skin-product-section.is-flash .skin-countdown span {
