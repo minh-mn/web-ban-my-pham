@@ -36,7 +36,7 @@ public class UserDAO {
             manual_rank_code
             """;
 
-    /* ================= INTERNAL MAPPER (users table) ================= */
+    /* ================= INTERNAL MAPPER ================= */
 
     private User mapUser(ResultSet rs) throws SQLException {
         User user = new User();
@@ -45,10 +45,6 @@ public class UserDAO {
         user.setUsername(rs.getString("username"));
         user.setRole(rs.getString("role"));
 
-        /*
-         * Bọc try-catch để an toàn nếu một vài câu SELECT cũ/rút gọn
-         * không lấy đủ toàn bộ cột.
-         */
         try {
             user.setPassword(rs.getString("password"));
         } catch (SQLException ignored) {
@@ -101,10 +97,6 @@ public class UserDAO {
         } catch (SQLException ignored) {
         }
 
-        /*
-         * Quan trọng cho Ưu tiên 2:
-         * Admin gán manual_rank_code thì User object phải giữ được giá trị này.
-         */
         try {
             user.setManualRankCode(normalizeRankCode(rs.getString("manual_rank_code")));
         } catch (SQLException ignored) {
@@ -113,7 +105,7 @@ public class UserDAO {
         return user;
     }
 
-    /* ================= FIND BY USERNAME (users) ================= */
+    /* ================= FIND BY USERNAME ================= */
 
     public User findByUsername(String username) {
         String sql = """
@@ -140,7 +132,7 @@ public class UserDAO {
         }
     }
 
-    /* ================= FIND BY ID (users.id) ================= */
+    /* ================= FIND BY ID ================= */
 
     public User findById(int id) {
         String sql = """
@@ -230,7 +222,7 @@ public class UserDAO {
         }
     }
 
-    /* ================= CHECK PASSWORD (BY USERNAME) ================= */
+    /* ================= CHECK PASSWORD ================= */
 
     public boolean checkPasswordByUsername(String username, String plainPassword) {
         String sql = """
@@ -256,8 +248,6 @@ public class UserDAO {
             throw new RuntimeException("UserDAO.checkPasswordByUsername error", e);
         }
     }
-
-    /* ================= CHECK PASSWORD (BY users.id) ================= */
 
     public boolean checkPassword(int userId, String plainPassword) {
         String sql = """
@@ -287,6 +277,10 @@ public class UserDAO {
     /* ================= UPDATE PASSWORD ================= */
 
     public void updatePassword(int userId, String newPlainPassword) {
+        if (userId <= 0 || newPlainPassword == null || newPlainPassword.isBlank()) {
+            return;
+        }
+
         String sql = """
                 UPDATE users
                 SET password = ?
@@ -305,7 +299,15 @@ public class UserDAO {
         }
     }
 
+    /*
+     * Giữ lại để tương thích code cũ.
+     * AdminUserServlet mới đã chặn admin đổi mật khẩu tài khoản khác.
+     */
     public boolean updatePasswordAdmin(int userId, String newPlainPassword) {
+        if (userId <= 0 || newPlainPassword == null || newPlainPassword.isBlank()) {
+            return false;
+        }
+
         String sql = """
                 UPDATE users
                 SET password = ?
@@ -325,15 +327,33 @@ public class UserDAO {
         }
     }
 
-    /* ================= UPDATE INFO (ADMIN) ================= */
+    /* ================= UPDATE INFO ADMIN - ISSUE 130 ================= */
 
+    /*
+     * Issue 130:
+     * Tên hàm giữ nguyên để không làm vỡ code cũ.
+     *
+     * Nhưng hàm này KHÔNG cập nhật thông tin cá nhân nữa:
+     * - full_name
+     * - email
+     * - phone
+     *
+     * Admin chỉ được cập nhật các trường quản trị:
+     * - role
+     * - active
+     * - manual_rank_code
+     *
+     * Nếu user yêu cầu sửa thông tin cá nhân, nên xử lý bằng luồng request riêng
+     * hoặc để user tự sửa trong trang tài khoản.
+     */
     public boolean updateInfoAdmin(User user) {
+        if (user == null || user.getId() <= 0) {
+            return false;
+        }
+
         String sql = """
                 UPDATE users
-                SET full_name = ?,
-                    email = ?,
-                    phone = ?,
-                    role = ?,
+                SET role = ?,
                     active = ?,
                     manual_rank_code = ?
                 WHERE id = ?
@@ -342,13 +362,10 @@ public class UserDAO {
         try (Connection connection = DBConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            statement.setString(1, user.getFullName());
-            statement.setString(2, user.getEmail());
-            statement.setString(3, user.getPhone());
-            statement.setString(4, user.getRole());
-            statement.setBoolean(5, user.isActive());
-            statement.setString(6, normalizeNullableRankCode(user.getManualRankCode()));
-            statement.setInt(7, user.getId());
+            statement.setString(1, normalizeRole(user.getRole()));
+            statement.setBoolean(2, user.isActive());
+            statement.setString(3, normalizeNullableRankCode(user.getManualRankCode()));
+            statement.setInt(4, user.getId());
 
             return statement.executeUpdate() > 0;
 
@@ -359,12 +376,18 @@ public class UserDAO {
 
     /*
      * Dùng khi chỉ muốn cập nhật rank thủ công mà không đụng thông tin user khác.
+     * Không cập nhật rank thủ công cho tài khoản ADMIN ở tầng DAO.
      */
     public boolean updateManualRankCode(int userId, String manualRankCode) {
+        if (userId <= 0) {
+            return false;
+        }
+
         String sql = """
                 UPDATE users
                 SET manual_rank_code = ?
                 WHERE id = ?
+                  AND role <> 'ADMIN'
                 """;
 
         try (Connection connection = DBConnection.getConnection();
@@ -409,6 +432,201 @@ public class UserDAO {
         }
     }
 
+    /* ================= USER SELF UPDATE ================= */
+
+    /*
+     * User tự cập nhật thông tin cá nhân.
+     * Hàm này phục vụ trang tài khoản của chính user, không dùng cho admin sửa tùy ý.
+     */
+    public boolean updateProfileSelf(int userId,
+                                     String fullName,
+                                     String email,
+                                     String phone,
+                                     String birthDate,
+                                     String gender) {
+        if (userId <= 0) {
+            return false;
+        }
+
+        String sql = """
+                UPDATE users
+                SET full_name = ?,
+                    email = ?,
+                    phone = ?,
+                    birth_date = ?,
+                    gender = ?
+                WHERE id = ?
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, nullify(fullName));
+            statement.setString(2, nullify(email));
+            statement.setString(3, nullify(phone));
+
+            String normalizedBirthDate = nullify(birthDate);
+            if (normalizedBirthDate != null) {
+                statement.setDate(4, java.sql.Date.valueOf(normalizedBirthDate));
+            } else {
+                statement.setNull(4, java.sql.Types.DATE);
+            }
+
+            statement.setString(5, normalizeGender(gender));
+            statement.setInt(6, userId);
+
+            return statement.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("UserDAO.updateProfileSelf error", e);
+        }
+    }
+
+    public boolean updateContact(int userId, String email, String phone) {
+        if (userId <= 0) {
+            return false;
+        }
+
+        String sql = """
+                UPDATE users
+                SET email = ?,
+                    phone = ?
+                WHERE id = ?
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, nullify(email));
+            statement.setString(2, nullify(phone));
+            statement.setInt(3, userId);
+
+            return statement.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("UserDAO.updateContact error", e);
+        }
+    }
+
+    public boolean updateFullName(int userId, String fullName) {
+        if (userId <= 0) {
+            return false;
+        }
+
+        String sql = """
+                UPDATE users
+                SET full_name = ?
+                WHERE id = ?
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, nullify(fullName));
+            statement.setInt(2, userId);
+
+            return statement.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("UserDAO.updateFullName error", e);
+        }
+    }
+
+    /* ================= ACCOUNT STATUS ================= */
+
+    public boolean setActive(int userId, boolean active) {
+        if (userId <= 0) {
+            return false;
+        }
+
+        String sql = """
+                UPDATE users
+                SET active = ?
+                WHERE id = ?
+                  AND role <> 'ADMIN'
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setBoolean(1, active);
+            statement.setInt(2, userId);
+
+            return statement.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("UserDAO.setActive error", e);
+        }
+    }
+
+    public boolean disableById(int userId) {
+        return setActive(userId, false);
+    }
+
+    public boolean enableById(int userId) {
+        return setActive(userId, true);
+    }
+
+    /*
+     * Giữ tên hàm để tương thích code cũ.
+     * Không xóa cứng user, chỉ khóa mềm bằng active = 0.
+     */
+    public boolean deleteById(int userId) {
+        return disableById(userId);
+    }
+
+    public boolean isAdminUser(int userId) {
+        if (userId <= 0) {
+            return false;
+        }
+
+        String sql = """
+                SELECT role
+                FROM users
+                WHERE id = ?
+                LIMIT 1
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setInt(1, userId);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                return resultSet.next() && "ADMIN".equalsIgnoreCase(resultSet.getString("role"));
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("UserDAO.isAdminUser error", e);
+        }
+    }
+
+    public boolean existsById(int userId) {
+        if (userId <= 0) {
+            return false;
+        }
+
+        String sql = """
+                SELECT 1
+                FROM users
+                WHERE id = ?
+                LIMIT 1
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setInt(1, userId);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                return resultSet.next();
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("UserDAO.existsById error", e);
+        }
+    }
+
     /* ================= REGISTER ================= */
 
     public void create(User user, String plainPassword) {
@@ -432,10 +650,10 @@ public class UserDAO {
 
             statement.setString(1, user.getUsername());
             statement.setString(2, PasswordUtils.hash(plainPassword));
-            statement.setString(3, user.getRole() != null ? user.getRole() : DEFAULT_ROLE);
-            statement.setString(4, user.getFullName());
-            statement.setString(5, user.getEmail());
-            statement.setString(6, user.getPhone());
+            statement.setString(3, normalizeRole(user.getRole()));
+            statement.setString(4, nullify(user.getFullName()));
+            statement.setString(5, nullify(user.getEmail()));
+            statement.setString(6, nullify(user.getPhone()));
             statement.setBoolean(7, user.isActive());
             statement.setString(8, normalizeNullableRankCode(user.getManualRankCode()));
 
@@ -474,28 +692,6 @@ public class UserDAO {
 
         } catch (SQLException e) {
             throw new RuntimeException("UserDAO.findByEmail error", e);
-        }
-    }
-
-    public boolean updateContact(int userId, String email, String phone) {
-        String sql = """
-                UPDATE users
-                SET email = ?,
-                    phone = ?
-                WHERE id = ?
-                """;
-
-        try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-
-            statement.setString(1, email);
-            statement.setString(2, phone);
-            statement.setInt(3, userId);
-
-            return statement.executeUpdate() > 0;
-
-        } catch (SQLException e) {
-            throw new RuntimeException("UserDAO.updateContact error", e);
         }
     }
 
@@ -550,8 +746,8 @@ public class UserDAO {
 
             statement.setString(1, user.getUsername());
             statement.setString(2, DEFAULT_ROLE);
-            statement.setString(3, user.getFullName());
-            statement.setString(4, user.getEmail());
+            statement.setString(3, nullify(user.getFullName()));
+            statement.setString(4, nullify(user.getEmail()));
             statement.setBoolean(5, true);
             statement.setString(6, socialId);
             statement.setString(7, normalizeNullableRankCode(user.getManualRankCode()));
@@ -614,10 +810,10 @@ public class UserDAO {
 
             statement.setString(1, user.getUsername());
             statement.setString(2, PasswordUtils.hash(user.getPassword()));
-            statement.setString(3, user.getFullName());
-            statement.setString(4, user.getEmail());
-            statement.setString(5, user.getPhone());
-            statement.setString(6, user.getRole() != null ? user.getRole() : DEFAULT_ROLE);
+            statement.setString(3, nullify(user.getFullName()));
+            statement.setString(4, nullify(user.getEmail()));
+            statement.setString(5, nullify(user.getPhone()));
+            statement.setString(6, normalizeRole(user.getRole()));
             statement.setBoolean(7, user.isActive());
 
             statement.setString(8, null);
@@ -629,7 +825,7 @@ public class UserDAO {
                 statement.setNull(10, java.sql.Types.DATE);
             }
 
-            statement.setString(11, user.getGender());
+            statement.setString(11, normalizeGender(user.getGender()));
             statement.setString(12, normalizeNullableRankCode(user.getManualRankCode()));
 
             return statement.executeUpdate() > 0;
@@ -640,6 +836,20 @@ public class UserDAO {
     }
 
     /* ================= HELPERS ================= */
+
+    private String normalizeRole(String role) {
+        if (role == null || role.isBlank()) {
+            return DEFAULT_ROLE;
+        }
+
+        String normalized = role.trim().toUpperCase();
+
+        if (!"ADMIN".equals(normalized) && !"USER".equals(normalized)) {
+            return DEFAULT_ROLE;
+        }
+
+        return normalized;
+    }
 
     private String normalizeRankCode(String rankCode) {
         if (rankCode == null || rankCode.isBlank()) {
@@ -656,5 +866,29 @@ public class UserDAO {
 
     private String normalizeNullableRankCode(String rankCode) {
         return normalizeRankCode(rankCode);
+    }
+
+    private String normalizeGender(String gender) {
+        String value = nullify(gender);
+
+        if (value == null) {
+            return null;
+        }
+
+        value = value.toUpperCase();
+
+        return switch (value) {
+            case "MALE", "FEMALE", "OTHER", "NAM", "NU", "NỮ", "KHAC", "KHÁC" -> value;
+            default -> null;
+        };
+    }
+
+    private String nullify(String value) {
+        if (value == null) {
+            return null;
+        }
+
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }
