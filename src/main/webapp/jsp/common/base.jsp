@@ -6,34 +6,54 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width,initial-scale=1">
 
-<title><c:choose>
-		<c:when test="${not empty pageTitle}">
-      ${pageTitle}
-    </c:when>
-		<c:otherwise>
-      MyCosmetic Shop
-    </c:otherwise>
-	</c:choose></title>
+	<title>
+		<c:choose>
+			<c:when test="${not empty pageTitle}">
+				<c:out value="${pageTitle}" />
+			</c:when>
+			<c:otherwise>MyCosmetic Shop</c:otherwise>
+		</c:choose>
+	</title>
 
-<!-- GLOBAL CSS -->
-<link rel="stylesheet"
-	href="${pageContext.request.contextPath}/assets/css/base.css">
-
-<!-- PAGE CSS -->
-<c:if test="${not empty pageCss}">
+	<!-- GLOBAL CSS -->
 	<link rel="stylesheet"
-		href="${pageContext.request.contextPath}/assets/css/${pageCss}">
-</c:if>
+		  href="${pageContext.request.contextPath}/assets/css/base.css?v=20260531">
 
-<script>
-	window.APP_CTX = "${pageContext.request.contextPath}";
-</script>
+	<!-- PAGE CSS -->
+	<c:if test="${not empty pageCss}">
+		<c:choose>
+			<%-- Trường hợp servlet truyền: /assets/css/home.css --%>
+			<c:when test="${fn:startsWith(pageCss, '/assets/')}">
+				<link rel="stylesheet"
+					  href="${pageContext.request.contextPath}${pageCss}?v=20260531">
+			</c:when>
 
-<!-- GLOBAL JS -->
-<script defer src="${pageContext.request.contextPath}/assets/js/main.js"></script>
+			<%-- Trường hợp servlet truyền: assets/css/home.css --%>
+			<c:when test="${fn:startsWith(pageCss, 'assets/')}">
+				<link rel="stylesheet"
+					  href="${pageContext.request.contextPath}/${pageCss}?v=20260531">
+			</c:when>
+
+			<%-- Trường hợp servlet truyền: /home.css --%>
+			<c:when test="${fn:startsWith(pageCss, '/')}">
+				<link rel="stylesheet"
+					  href="${pageContext.request.contextPath}/assets/css${pageCss}?v=20260531">
+			</c:when>
+
+			<%-- Trường hợp servlet truyền: home.css hoặc admin/admin-list.css --%>
+			<c:otherwise>
+				<link rel="stylesheet"
+					  href="${pageContext.request.contextPath}/assets/css/${pageCss}?v=20260531">
+			</c:otherwise>
+		</c:choose>
+	</c:if>
+
+	<script>
+		window.APP_CTX = "${pageContext.request.contextPath}";
+	</script>
 </head>
 
 <body class="site-body">
@@ -49,7 +69,11 @@
 				<div class="search-wrapper">
 					<form action="${pageContext.request.contextPath}/search" method="get" class="search-form">
 						<span class="search-icon">🔍</span>
-						<input id="search-input" name="q" placeholder="Tìm sản phẩm..." autocomplete="off" value="${param.q}">
+						<input id="search-input"
+							   name="q"
+							   placeholder="Tìm sản phẩm..."
+							   autocomplete="off"
+							   value="${param.q}">
 					</form>
 					<div id="search-results" class="search-results"></div>
 				</div>
@@ -59,19 +83,28 @@
 						<c:when test="${not empty sessionScope.user}">
 							<div class="user-dropdown">
 								<button class="user-btn" type="button" aria-haspopup="menu" aria-expanded="false">
-									<span class="user-icon">👤</span> <span class="user-name">${sessionScope.user.username}</span>
+									<span class="user-icon">👤</span>
+									<span class="user-name">
+										<c:out value="${sessionScope.user.username}" />
+									</span>
 								</button>
+
 								<div class="user-menu">
 									<a href="${pageContext.request.contextPath}/account">👤 Tài khoản</a>
 									<a href="${pageContext.request.contextPath}/orders">📦 Đơn hàng</a>
+
 									<div class="menu-divider"></div>
+
 									<form method="post" action="${pageContext.request.contextPath}/logout">
-										<input type="hidden" name="csrf_token" value="<c:out value='${sessionScope.CSRF_TOKEN}'/>">
+										<input type="hidden"
+											   name="csrf_token"
+											   value="<c:out value='${sessionScope.CSRF_TOKEN}'/>">
 										<button type="submit" class="logout-btn">🚪 Đăng xuất</button>
 									</form>
 								</div>
 							</div>
 						</c:when>
+
 						<c:otherwise>
 							<div class="auth-buttons">
 								<a href="${pageContext.request.contextPath}/login" class="btn-login">Đăng nhập</a>
@@ -81,41 +114,59 @@
 					</c:choose>
 				</div>
 
-				<a href="${pageContext.request.contextPath}/cart" class="cart-icon" style="font-size: 24px; text-decoration: none; position: relative; margin-left: 10px;">
+				<a href="${pageContext.request.contextPath}/cart"
+				   class="cart-icon"
+				   style="font-size: 24px; text-decoration: none; position: relative; margin-left: 10px;">
 					🛒
+
 					<c:if test="${not empty sessionScope.CART}">
 						<c:set var="cartQty" value="0" />
+
 						<c:forEach var="e" items="${sessionScope.CART}">
 							<c:set var="cartQty" value="${cartQty + e.value.quantity}" />
 						</c:forEach>
+
 						<c:if test="${cartQty > 0}">
-							<span class="cart-badge" style="position: absolute; top: -8px; right: -12px; background: var(--pink-main); color: white; border-radius: 50%; padding: 2px 6px; font-size: 11px; font-weight: bold;">${cartQty}</span>
+							<span class="cart-badge"
+								  style="position: absolute; top: -8px; right: -12px; background: var(--pink-main); color: white; border-radius: 50%; padding: 2px 6px; font-size: 11px; font-weight: bold;">
+								${cartQty}
+							</span>
 						</c:if>
 					</c:if>
 				</a>
 
-				<div class="notification-container" style="position: relative; margin-left: 15px; display: flex; align-items: center; justify-content: center; height: 100%;">
+				<div class="notification-container"
+					 style="position: relative; margin-left: 15px; display: flex; align-items: center; justify-content: center; height: 100%;">
 
-					<button id="notifBellBtn" style="background: none; border: none; cursor: pointer; position: relative; padding: 5px; display: flex; align-items: center; justify-content: center; font-size: 22px; transition: transform 0.2s ease; outline: none;"
-					        onmouseover="this.style.transform='scale(1.15)'"
-					        onmouseout="this.style.transform='scale(1)'">
+					<button id="notifBellBtn"
+							type="button"
+							style="background: none; border: none; cursor: pointer; position: relative; padding: 5px; display: flex; align-items: center; justify-content: center; font-size: 22px; transition: transform 0.2s ease; outline: none;"
+							onmouseover="this.style.transform='scale(1.15)'"
+							onmouseout="this.style.transform='scale(1)'">
 						🔔
+
 						<c:if test="${not empty requestScope.unreadCount && requestScope.unreadCount > 0}">
-								<span class="notif-badge" style="position: absolute; top: -1px; right: -4px; background: #ff5fa2; color: white; border-radius: 50%; padding: 1px 5px; font-size: 10px; font-weight: bold; min-width: 16px; text-align: center; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); font-family: Arial, sans-serif;">
-										${requestScope.unreadCount}
-								</span>
+							<span class="notif-badge"
+								  style="position: absolute; top: -1px; right: -4px; background: #ff5fa2; color: white; border-radius: 50%; padding: 1px 5px; font-size: 10px; font-weight: bold; min-width: 16px; text-align: center; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); font-family: Arial, sans-serif;">
+								${requestScope.unreadCount}
+							</span>
 						</c:if>
 					</button>
 
-					<div class="notif-dropdown" id="notifDropdown" style="display: none; position: absolute; right: 0; top: 45px; width: 340px; background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); border: 1px solid #eaeaea; z-index: 9999; overflow: hidden;">
+					<div class="notif-dropdown"
+						 id="notifDropdown"
+						 style="display: none; position: absolute; right: 0; top: 45px; width: 340px; background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); border: 1px solid #eaeaea; z-index: 9999; overflow: hidden;">
 
 						<c:choose>
-							<%-- TH 1: NGƯỜI DÙNG ĐÃ ĐĂNG NHẬP -> XUẤT DATA ĐỘNG --%>
 							<c:when test="${not empty sessionScope.user}">
 								<div style="padding: 14px 16px; font-weight: bold; border-bottom: 1px solid #f0f0f0; background: #fff0f6; color: #ff5fa2; display: flex; justify-content: space-between; align-items: center;">
 									<span style="font-size: 14px;">Thông báo mới nhận</span>
+
 									<c:if test="${requestScope.unreadCount > 0}">
-										<a href="${pageContext.request.contextPath}/notifications?action=readAll" style="font-size: 12px; color: #666; text-decoration: none; font-weight: normal;">Đánh dấu đã đọc</a>
+										<a href="${pageContext.request.contextPath}/notifications?action=readAll"
+										   style="font-size: 12px; color: #666; text-decoration: none; font-weight: normal;">
+											Đánh dấu đã đọc
+										</a>
 									</c:if>
 								</div>
 
@@ -123,11 +174,8 @@
 									<c:choose>
 										<c:when test="${not empty requestScope.notifications}">
 											<c:forEach var="notif" items="${requestScope.notifications}">
-
-												<%-- Tách riêng logic màu nền của 2 trường hợp để bảo vệ cú pháp dấu nháy --%>
 												<c:set var="bgDefault" value="${notif.read ? 'transparent' : '#fafafa'}" />
 
-												<%-- Cập nhật đường dẫn đi qua Servlet trung gian để click vào là đánh dấu Đã đọc --%>
 												<a href="${pageContext.request.contextPath}/notifications/read?id=${notif.id}&redirect=${notif.targetUrl}"
 												   style="display: flex; padding: 12px 16px; text-decoration: none; border-bottom: 1px solid #f9f9f9; transition: background 0.2s; gap: 12px; background: ${bgDefault};"
 												   onmouseover="this.style.background='#fff5f8'"
@@ -145,6 +193,7 @@
 														<h4 style="margin: 0 0 4px 0; color: #222; font-size: 13.5px; font-weight: ${notif.read ? '500' : 'bold'}; line-height: 1.4;">
 															<c:out value="${notif.title}" />
 														</h4>
+
 														<p style="margin: 0; color: #666; font-size: 12px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
 															<c:out value="${notif.message}" />
 														</p>
@@ -152,6 +201,7 @@
 												</a>
 											</c:forEach>
 										</c:when>
+
 										<c:otherwise>
 											<div style="padding: 40px 20px; text-align: center; color: #999;">
 												<div style="font-size: 32px; margin-bottom: 10px;">🔔</div>
@@ -161,19 +211,26 @@
 									</c:choose>
 								</div>
 
-								<a href="${pageContext.request.contextPath}/notifications" style="display: block; padding: 12px; text-align: center; font-weight: bold; text-decoration: none; color: #ff5fa2; border-top: 1px solid #f0f0f0; background: #fffafc; font-size: 13px;">
+								<a href="${pageContext.request.contextPath}/notifications"
+								   style="display: block; padding: 12px; text-align: center; font-weight: bold; text-decoration: none; color: #ff5fa2; border-top: 1px solid #f0f0f0; background: #fffafc; font-size: 13px;">
 									Xem tất cả thông báo
 								</a>
 							</c:when>
 
-							<%-- TH 2: KHÁCH VÃNG LAI CHƯA ĐĂNG NHẬP -> ĐIỀU HƯỚNG LOGIN --%>
 							<c:otherwise>
 								<div style="padding: 35px 24px; text-align: center; color: #555; background: #ffffff;">
 									<div style="font-size: 40px; margin-bottom: 12px;">🔔</div>
-									<h4 style="margin: 0 0 8px 0; color: #222; font-size: 15px; font-weight: bold;">Bạn có thông báo mới không?</h4>
-									<p style="font-size: 12.5px; color: #777; margin: 0 0 20px 0; line-height: 1.5;">Đăng nhập ngay để xem các thông báo sự kiện khuyến mãi, quà tặng voucher và theo dõi hành trình đơn hàng nhé!</p>
+
+									<h4 style="margin: 0 0 8px 0; color: #222; font-size: 15px; font-weight: bold;">
+										Bạn có thông báo mới không?
+									</h4>
+
+									<p style="font-size: 12.5px; color: #777; margin: 0 0 20px 0; line-height: 1.5;">
+										Đăng nhập ngay để xem các thông báo sự kiện khuyến mãi, quà tặng voucher và theo dõi hành trình đơn hàng nhé!
+									</p>
+
 									<a href="${pageContext.request.contextPath}/login"
-									   style="display: inline-block; padding: 10px 24px; background: #ff5fa2; color: white; text-decoration: none; border-radius: 25px; font-size: 13px; font-weight: bold; box-width: 100px; box-shadow: 0 4px 12px rgba(255,95,162,0.3); transition: all 0.2s;">
+									   style="display: inline-block; padding: 10px 24px; background: #ff5fa2; color: white; text-decoration: none; border-radius: 25px; font-size: 13px; font-weight: bold; min-width: 100px; box-shadow: 0 4px 12px rgba(255,95,162,0.3); transition: all 0.2s;">
 										Đăng nhập ngay
 									</a>
 								</div>
@@ -192,45 +249,42 @@
 	<main class="site-main">
 		<c:choose>
 			<c:when test="${not empty pageContent}">
-				<!-- ✅ Flag: đánh dấu đang render trong base.jsp -->
 				<c:set var="__IN_BASE__" value="true" scope="request" />
-
 				<c:import url="${pageContent}" />
 			</c:when>
 
 			<c:otherwise>
-				<div class="container"
-					style="padding: 40px 0; color: #666; text-align: center;">
-					Chưa có nội dung để hiển thị.</div>
+				<div class="container" style="padding: 40px 0; color: #666; text-align: center;">
+					Chưa có nội dung để hiển thị.
+				</div>
 			</c:otherwise>
 		</c:choose>
 	</main>
-	
+
 	<jsp:include page="/jsp/common/footer.jsp" />
 
-	<script defer src="${pageContext.request.contextPath}/assets/js/main.js"></script>
+	<!-- GLOBAL JS: chỉ load 1 lần -->
+	<script defer src="${pageContext.request.contextPath}/assets/js/main.js?v=20260531"></script>
+
+	<script>
+		document.addEventListener("DOMContentLoaded", function () {
+			const bellBtn = document.getElementById("notifBellBtn");
+			const dropdown = document.getElementById("notifDropdown");
+
+			if (bellBtn && dropdown) {
+				bellBtn.addEventListener("click", function (e) {
+					e.stopPropagation();
+					dropdown.style.display = dropdown.style.display === "none" ? "block" : "none";
+				});
+
+				document.addEventListener("click", function (e) {
+					if (!dropdown.contains(e.target) && !bellBtn.contains(e.target)) {
+						dropdown.style.display = "none";
+					}
+				});
+			}
+		});
+	</script>
 
 </body>
 </html>
-
-<script>
-	document.addEventListener("DOMContentLoaded", function() {
-		const bellBtn = document.getElementById("notifBellBtn");
-		const dropdown = document.getElementById("notifDropdown");
-
-		if(bellBtn && dropdown) {
-			// Click vào chuông để Bật / Tắt dropdown
-			bellBtn.addEventListener("click", function(e) {
-				e.stopPropagation();
-				dropdown.style.display = dropdown.style.display === "none" ? "block" : "none";
-			});
-
-			// Click ra ngoài vùng dropdown thì tự động đóng bảng lại
-			document.addEventListener("click", function(e) {
-				if (!dropdown.contains(e.target) && e.target !== bellBtn) {
-					dropdown.style.display = "none";
-				}
-			});
-		}
-	});
-</script>
