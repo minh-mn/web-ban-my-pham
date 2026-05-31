@@ -61,10 +61,21 @@ public class AdminOrderUpdateStatusServlet extends HttpServlet {
         }
 
         try {
+
             Order order = orderDAO.findById(orderId);
 
             if (order == null) {
                 resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Order not found");
+                return;
+            }
+
+            // tránh tạo thông báo trùng
+            if (status.equalsIgnoreCase(order.getStatus())) {
+
+                String returnUrl = req.getParameter("returnUrl");
+                String target = safeReturnUrl(returnUrl, req.getContextPath());
+
+                resp.sendRedirect(req.getContextPath() + target);
                 return;
             }
 
@@ -73,13 +84,34 @@ public class AdminOrderUpdateStatusServlet extends HttpServlet {
                     order.getPaymentStatus()
             );
 
-            orderDAO.updateStatusAndPaymentStatus(orderId, status, paymentStatus);
+            orderDAO.updateStatusAndPaymentStatus(
+                    orderId,
+                    status,
+                    paymentStatus
+            );
+
+            // tạo notification cho khách
+            try (Connection conn = DBConnection.getConnection()) {
+
+                notificationDAO.createOrderNotification(
+                        conn,
+                        order.getUserId(),
+                        order.getId(),
+                        status
+                );
+
+            }
 
         } catch (Exception e) {
             e.printStackTrace();
-            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Update failed");
+
+            resp.sendError(
+                    HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                    "Update failed"
+            );
             return;
         }
+
 
         String returnUrl = req.getParameter("returnUrl");
         String target = safeReturnUrl(returnUrl, req.getContextPath());
