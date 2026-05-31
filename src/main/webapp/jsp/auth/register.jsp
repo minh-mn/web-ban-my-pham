@@ -30,7 +30,7 @@
         </button>
 
         <div class="auth-separator">
-          <span>HOẶC</span>
+          HOẶC
         </div>
 
         <div class="social-login-stack">
