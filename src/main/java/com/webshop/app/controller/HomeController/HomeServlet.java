@@ -46,7 +46,6 @@ public class HomeServlet extends HttpServlet {
     private final EventDAO eventDAO = new EventDAO();
     private final CategoryDAO categoryDAO = new CategoryDAO();
     private final BrandDAO brandDAO = new BrandDAO();
-    private final WishlistDAO wishlistDAO = new WishlistDAO();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
@@ -59,78 +58,66 @@ public class HomeServlet extends HttpServlet {
         List<Banner> banners = bannerDAO.findActiveBanners();
         req.setAttribute("banners", banners);
 
-        // 2. Danh mục + thương hiệu
+        // 2. Menu / danh mục / thương hiệu
         try {
             List<Category> categories = categoryDAO.findActiveTree();
-            List<Brand> brands = brandDAO.findAllWithProductCount();
-
             req.setAttribute("categories", categories);
+
+            List<Brand> brands = brandDAO.findAllWithProductCount();
             req.setAttribute("brands", brands);
+
+            // Danh mục hot: cố định theo bộ 13 mục, loại bỏ Blind Box / Hộp Mù.
+            List<Category> hotCategories = categoryDAO.findHotCategoriesForHome(13);
+            req.setAttribute("hotCategories", hotCategories);
         } catch (Exception e) {
             e.printStackTrace();
         }
 
         // 3. Voucher
-        List<Coupon> vouchers = couponDAO.findActiveCouponsForHome();
-        req.setAttribute("vouchers", vouchers);
-
-        // 4. Sản phẩm nổi bật / fallback cho các section trang chủ
-        List<Product> featuredProducts;
-
         try {
-            featuredProducts = productDAO.findFeaturedTop12BestSellerDeepDiscount();
-        } catch (RuntimeException ex) {
-            featuredProducts = productDAO.findFeaturedTop12DeepDiscount();
+            List<Coupon> vouchers = couponDAO.findActiveCouponsForHome();
+            req.setAttribute("vouchers", vouchers);
+        } catch (Exception e) {
+            e.printStackTrace();
+            req.setAttribute("vouchers", new ArrayList<Coupon>());
         }
 
+        // 4. Sản phẩm trang chủ
+        List<Product> featuredProducts = loadFeaturedProducts();
+
+        // Các section bên dưới dùng các biến này. Nếu DAO chưa tách riêng từng nhóm,
+        // dùng featuredProducts làm fallback để tránh section bị mất khỏi trang chủ.
         req.setAttribute("products", featuredProducts);
         req.setAttribute("featuredProducts", featuredProducts);
         req.setAttribute("bestSellingProducts", featuredProducts);
         req.setAttribute("mostViewedProducts", featuredProducts);
         req.setAttribute("newProducts", featuredProducts);
 
-        // 5. Flash Sale thật: lấy từ flash_sales + flash_sale_items
-        FlashSale activeFlashSale = flashSaleDAO.findActiveFlashSale();
-        List<FlashSaleItem> fsItems = new ArrayList<>();
-        List<Product> flashSaleProducts = new ArrayList<>();
+        // 5. Flash Deal ở trang chủ
+        List<Product> flashSaleProducts = loadFlashSaleProducts(req);
 
-        if (activeFlashSale != null) {
-            fsItems = flashSaleItemDAO.findByFlashSale(activeFlashSale.getId());
-
-            for (FlashSaleItem item : fsItems) {
-                Product product = item.getProduct();
-
-                if (product == null) {
-                    continue;
-                }
-
-                applyFlashSaleInfoToProduct(product, item);
-                flashSaleProducts.add(product);
-            }
+        if (!flashSaleProducts.isEmpty()) {
+            req.setAttribute("flashSaleProducts", flashSaleProducts);
+            req.setAttribute("deepDiscountProducts", flashSaleProducts);
+        } else {
+            // Fallback để block FLASH DEAL không biến mất khi chưa có active flash_sale_items.
+            req.setAttribute("flashSaleProducts", featuredProducts);
+            req.setAttribute("deepDiscountProducts", featuredProducts);
         }
 
-        req.setAttribute("activeFlashSale", activeFlashSale);
-        req.setAttribute("fsItems", fsItems);
-        req.setAttribute("flashSaleProducts", flashSaleProducts);
-
-        // Giữ lại tên biến cũ để JSP cũ không bị rỗng nếu còn gọi deepDiscountProducts
-        req.setAttribute("deepDiscountProducts", flashSaleProducts);
-
-        // 6. Sự kiện
-        List<Event> recentEvents = eventDAO.getRecentEvents(2);
-        req.setAttribute("recentEvents", recentEvents);
-
-        // 7. Wishlist của user đang đăng nhập
-        User user = (User) req.getSession().getAttribute("user");
-        Set<Integer> wishlistIds = new HashSet<>();
-
-        if (user != null) {
-            wishlistIds = new HashSet<>(wishlistDAO.findProductIdsByUser(user.getId()));
+        // 6. Sự kiện hot
+        try {
+            List<Event> recentEvents = eventDAO.getRecentEvents(2);
+            req.setAttribute("recentEvents", recentEvents);
+        } catch (Exception e) {
+            e.printStackTrace();
+            req.setAttribute("recentEvents", new ArrayList<Event>());
         }
 
-        req.setAttribute("wishlistIds", wishlistIds);
+        // 7. Wishlist state
+        loadWishlistIds(req);
 
-        // 8. Meta + layout
+        // 8. Meta / layout
         req.setAttribute("pageTitle", "MyCosmetic | Trang chủ");
         req.setAttribute("pageCss", "home.css");
         req.setAttribute("pageContent", "/jsp/home/home.jsp");
@@ -138,25 +125,86 @@ public class HomeServlet extends HttpServlet {
         req.getRequestDispatcher("/jsp/common/base.jsp").forward(req, resp);
     }
 
-    private void applyFlashSaleInfoToProduct(Product product, FlashSaleItem item) {
-        BigDecimal originalPrice = product.getPrice();
-        BigDecimal flashPrice = BigDecimal.valueOf(item.getFlashPrice());
-
-        product.setFinalPrice(flashPrice);
-        product.setSoldQuantity(item.getSoldQuantity());
-        product.setStock(Math.max(item.getQuantity() - item.getSoldQuantity(), 0));
-
-        if (originalPrice != null
-                && originalPrice.compareTo(BigDecimal.ZERO) > 0
-                && flashPrice.compareTo(originalPrice) < 0) {
-
-            int discountPercent = originalPrice
-                    .subtract(flashPrice)
-                    .multiply(BigDecimal.valueOf(100))
-                    .divide(originalPrice, 0, RoundingMode.HALF_UP)
-                    .intValue();
-
-            product.setDiscountPercent(discountPercent);
+    private List<Product> loadFeaturedProducts() {
+        try {
+            return productDAO.findFeaturedTop12BestSellerDeepDiscount();
+        } catch (RuntimeException ex) {
+            try {
+                return productDAO.findFeaturedTop12DeepDiscount();
+            } catch (RuntimeException nestedEx) {
+                nestedEx.printStackTrace();
+                return new ArrayList<>();
+            }
         }
+    }
+
+    private List<Product> loadFlashSaleProducts(HttpServletRequest req) {
+        List<Product> flashSaleProducts = new ArrayList<>();
+        List<FlashSaleItem> fsItems = new ArrayList<>();
+
+        try {
+            FlashSale activeFlashSale = flashSaleDAO.findActiveFlashSale();
+            req.setAttribute("activeFlashSale", activeFlashSale);
+
+            if (activeFlashSale == null) {
+                req.setAttribute("fsItems", fsItems);
+                return flashSaleProducts;
+            }
+
+            fsItems = flashSaleItemDAO.findByFlashSale(activeFlashSale.getId());
+            req.setAttribute("fsItems", fsItems);
+
+            for (FlashSaleItem item : fsItems) {
+                if (item == null || item.getProduct() == null) {
+                    continue;
+                }
+
+                Product product = item.getProduct();
+                BigDecimal originalPrice = product.getPrice();
+                BigDecimal flashPrice = BigDecimal.valueOf(item.getFlashPrice());
+
+                if (flashPrice.compareTo(BigDecimal.ZERO) <= 0) {
+                    flashPrice = originalPrice;
+                }
+
+                product.setFinalPrice(flashPrice);
+                product.setSoldQuantity(item.getSoldQuantity());
+
+                if (originalPrice.compareTo(BigDecimal.ZERO) > 0
+                        && flashPrice.compareTo(originalPrice) < 0) {
+
+                    int discountPercent = originalPrice
+                            .subtract(flashPrice)
+                            .multiply(BigDecimal.valueOf(100))
+                            .divide(originalPrice, 0, RoundingMode.HALF_UP)
+                            .intValue();
+
+                    product.setDiscountPercent(discountPercent);
+                }
+
+                flashSaleProducts.add(product);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return flashSaleProducts;
+    }
+
+    private void loadWishlistIds(HttpServletRequest req) {
+        Set<Integer> wishlistIds = new HashSet<>();
+
+        try {
+            User user = (User) req.getSession().getAttribute("user");
+
+            if (user != null) {
+                WishlistDAO wishlistDAO = new WishlistDAO();
+                wishlistIds = new HashSet<>(wishlistDAO.findProductIdsByUser(user.getId()));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        req.setAttribute("wishlistIds", wishlistIds);
     }
 }
