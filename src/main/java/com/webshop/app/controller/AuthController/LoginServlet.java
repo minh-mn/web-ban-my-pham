@@ -5,6 +5,7 @@ import java.io.IOException;
 import com.webshop.app.dao.UserDAO;
 import com.webshop.app.model.User;
 import com.webshop.app.service.RememberMeService;
+import com.webshop.app.utils.CartUtil;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -50,11 +51,7 @@ public class LoginServlet extends HttpServlet {
 
         String username = req.getParameter("username");
         String password = req.getParameter("password");
-
-        // Checkbox name="remember"
         String remember = req.getParameter("remember");
-
-        // Redirect back after login, ví dụ: /checkout
         String redirect = req.getParameter("redirect");
 
         if (username == null || username.isBlank() || password == null || password.isBlank()) {
@@ -75,7 +72,6 @@ public class LoginServlet extends HttpServlet {
             return;
         }
 
-        // user.id phải tồn tại trong bảng users
         if (user.getId() <= 0) {
             req.setAttribute("error", "Tài khoản không hợp lệ, không tìm thấy users.id.");
             req.setAttribute("pageTitle", "MyCosmetic | Đăng nhập");
@@ -84,12 +80,16 @@ public class LoginServlet extends HttpServlet {
             return;
         }
 
-        // ===== SET SESSION =====
         HttpSession session = req.getSession(true);
         session.setAttribute("user", user);
 
-        // ===== REMEMBER ME - NEW VERSION =====
-        // Cơ chế mới dùng bảng remember_tokens và cookie REMEMBER_ME
+        /*
+         * Issue 132:
+         * Sau khi đăng nhập thành công, gộp giỏ hàng đã lưu trong database
+         * với giỏ hàng hiện có trong session.
+         */
+        CartUtil.mergeDatabaseCartIntoSession(session, user.getId());
+
         boolean rememberMe = "on".equalsIgnoreCase(remember) || "true".equalsIgnoreCase(remember);
 
         if (rememberMe) {
@@ -98,16 +98,11 @@ public class LoginServlet extends HttpServlet {
             rememberMeService.clearCookie(resp);
         }
 
-        // ===== CLEAR LEGACY COOKIE ONLY =====
-        // Không còn dùng bảng user_tokens.
-        // Chỉ xóa cookie cũ REMEMBER_TOKEN nếu trình duyệt còn lưu.
         clearLegacyRememberToken(resp, req.getContextPath());
 
-        // ===== REDIRECT =====
         String ctx = req.getContextPath();
 
         if (redirect != null && !redirect.isBlank()) {
-            // Chặn open redirect: chỉ cho redirect nội bộ
             if (redirect.startsWith("/") && !redirect.startsWith("//")) {
                 resp.sendRedirect(ctx + redirect);
                 return;
@@ -118,14 +113,12 @@ public class LoginServlet extends HttpServlet {
     }
 
     private void clearLegacyRememberToken(HttpServletResponse resp, String contextPath) {
-        // Cookie cũ có thể từng được set path = "/"
         Cookie ck = new Cookie("REMEMBER_TOKEN", "");
         ck.setHttpOnly(true);
         ck.setMaxAge(0);
         ck.setPath("/");
         resp.addCookie(ck);
 
-        // Cookie cũ cũng có thể từng được set path = contextPath
         Cookie ck2 = new Cookie("REMEMBER_TOKEN", "");
         ck2.setHttpOnly(true);
         ck2.setMaxAge(0);
