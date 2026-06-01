@@ -1505,7 +1505,7 @@ public class ProductDAO {
 						"ORDER BY FIELD(p.id, " + fieldPlaceholders + ")";
 
 		try (Connection conn = DBConnection.getConnection();
-		     PreparedStatement ps = conn.prepareStatement(sql)) {
+			 PreparedStatement ps = conn.prepareStatement(sql)) {
 
 			int idx = 1;
 
@@ -1560,7 +1560,7 @@ public class ProductDAO {
 						"LIMIT ?";
 
 		try (Connection conn = DBConnection.getConnection();
-		     PreparedStatement ps = conn.prepareStatement(sql)) {
+			 PreparedStatement ps = conn.prepareStatement(sql)) {
 
 			ps.setInt(1, categoryId);
 			ps.setInt(2, excludeId);
@@ -1584,13 +1584,17 @@ public class ProductDAO {
 	/**
 	 * Lấy sản phẩm liên quan dựa theo tag tương đồng.
 	 *
-	 * Bản an toàn:
-	 * - Nếu bảng store_product_tag đã tồn tại: lấy sản phẩm có tag giống sản phẩm hiện tại.
-	 * - Nếu database chưa có bảng store_product_tag: trả danh sách rỗng để trang chi tiết không bị HTTP 500.
-	 * - RecommendationService có thể tiếp tục fallback sang sản phẩm cùng danh mục.
+	 * Lưu ý:
+	 * - Một số database cũ chưa có bảng store_product_tag.
+	 * - Trang chi tiết sản phẩm không được lỗi 500 chỉ vì thiếu bảng tag.
+	 * - Nếu thiếu bảng tag, trả về danh sách rỗng để RecommendationService dùng sản phẩm cùng danh mục.
 	 */
 	public List<Product> findRelatedByTag(int productId, int limit) {
 		if (productId <= 0 || limit <= 0) {
+			return new ArrayList<>();
+		}
+
+		if (!tableExists("store_product_tag")) {
 			return new ArrayList<>();
 		}
 
@@ -1617,11 +1621,11 @@ public class ProductDAO {
 						"GROUP BY p.id, p.title, p.slug, p.description, " +
 						"p.price, p.discount_percent, p.stock, p.image, p.created_at, p.is_active, " +
 						"c.id, c.name, b.id, b.name " +
-						"ORDER BY tag_score DESC, p.created_at DESC " +
+						"ORDER BY tag_score DESC, p.created_at DESC, p.id DESC " +
 						"LIMIT ?";
 
 		try (Connection conn = DBConnection.getConnection();
-		     PreparedStatement ps = conn.prepareStatement(sql)) {
+			 PreparedStatement ps = conn.prepareStatement(sql)) {
 
 			ps.setInt(1, productId);
 			ps.setInt(2, productId);
@@ -1636,21 +1640,43 @@ public class ProductDAO {
 			}
 
 		} catch (SQLException e) {
-			/*
-			 * Không để lỗi phần "Sản phẩm liên quan" làm sập trang chi tiết sản phẩm.
-			 *
-			 * Lỗi thường gặp:
-			 * Table 'mycosmetic_shop.store_product_tag' doesn't exist
-			 *
-			 * Khi thiếu bảng tag, trả list rỗng để RecommendationService fallback
-			 * sang findRelatedByCategory hoặc hiển thị trang chi tiết bình thường.
-			 */
-			System.out.println("[ProductDAO] findRelatedByTag skipped: " + e.getMessage());
-			return new ArrayList<>();
+			if (isMissingTableError(e, "store_product_tag")) {
+				return new ArrayList<>();
+			}
+			throw new RuntimeException("ProductDAO.findRelatedByTag error", e);
 		}
 
 		return products;
 	}
 
+	private boolean tableExists(String tableName) {
+		String sql =
+				"SELECT COUNT(*) " +
+						"FROM information_schema.tables " +
+						"WHERE table_schema = DATABASE() " +
+						"AND table_name = ?";
+
+		try (Connection conn = DBConnection.getConnection();
+			 PreparedStatement ps = conn.prepareStatement(sql)) {
+
+			ps.setString(1, tableName);
+
+			try (ResultSet rs = ps.executeQuery()) {
+				return rs.next() && rs.getInt(1) > 0;
+			}
+
+		} catch (SQLException e) {
+			return false;
+		}
+	}
+
+	private boolean isMissingTableError(SQLException e, String tableName) {
+		String message = e.getMessage();
+		return message != null
+				&& message.toLowerCase(Locale.ROOT).contains(tableName.toLowerCase(Locale.ROOT))
+				&& (message.toLowerCase(Locale.ROOT).contains("doesn't exist")
+				|| message.toLowerCase(Locale.ROOT).contains("does not exist")
+				|| message.toLowerCase(Locale.ROOT).contains("unknown table"));
+	}
 
 }
