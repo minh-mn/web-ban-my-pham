@@ -4,49 +4,203 @@
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
 <c:set var="ctx" value="${pageContext.request.contextPath}" />
-<script src="${pageContext.request.contextPath}/assets/js/main.js"></script>
 
 <link rel="stylesheet" href="${ctx}/assets/css/base.css">
 <link rel="stylesheet" href="${ctx}/assets/css/product-list.css">
 
-<!-- ================= PAGE HEADER ================= -->
-<section class="section">
-  <div class="container page-header" style="text-align:center; max-width:760px;">
-    <h2 class="section-title">Tất cả sản phẩm</h2>
+<script>
+  (function () {
+    try {
+      window.history.scrollRestoration = "manual";
+      if (sessionStorage.getItem("mycosmetic_product_list_scroll_y")) {
+        document.documentElement.classList.add("is-restoring-product-scroll");
+      }
+    } catch (e) {
+      // ignore
+    }
+  })();
+</script>
 
-    <p style="color:#666; font-size:16px; line-height:1.7;">
-      Tại đây, bạn có thể khám phá toàn bộ danh mục sản phẩm chăm sóc da chính hãng
-      được hệ thống MyCosmetic tổng hợp và phân loại rõ ràng theo từng nhu cầu sử dụng.
-      Các sản phẩm được lựa chọn dựa trên tiêu chí an toàn, nguồn gốc minh bạch và hiệu quả
-      đã được người dùng đánh giá thực tế.
+
+<c:url var="sortDefaultUrl" value="/products">
+  <c:if test="${not empty param.q}">
+    <c:param name="q" value="${param.q}" />
+  </c:if>
+  <c:if test="${not empty selectedCategoryList}">
+    <c:forEach var="cid" items="${selectedCategoryList}">
+      <c:param name="category" value="${cid}" />
+    </c:forEach>
+  </c:if>
+  <c:if test="${not empty selectedBrandList}">
+    <c:forEach var="bid" items="${selectedBrandList}">
+      <c:param name="brand" value="${bid}" />
+    </c:forEach>
+  </c:if>
+  <c:if test="${not empty priceRangeList}">
+    <c:forEach var="pr" items="${priceRangeList}">
+      <c:param name="priceRange" value="${pr}" />
+    </c:forEach>
+  </c:if>
+  <c:if test="${minRating != null}">
+    <c:param name="rating" value="${minRating}" />
+  </c:if>
+</c:url>
+
+<c:url var="sortNewestUrl" value="/products">
+  <c:if test="${not empty param.q}">
+    <c:param name="q" value="${param.q}" />
+  </c:if>
+  <c:if test="${not empty selectedCategoryList}">
+    <c:forEach var="cid" items="${selectedCategoryList}">
+      <c:param name="category" value="${cid}" />
+    </c:forEach>
+  </c:if>
+  <c:if test="${not empty selectedBrandList}">
+    <c:forEach var="bid" items="${selectedBrandList}">
+      <c:param name="brand" value="${bid}" />
+    </c:forEach>
+  </c:if>
+  <c:if test="${not empty priceRangeList}">
+    <c:forEach var="pr" items="${priceRangeList}">
+      <c:param name="priceRange" value="${pr}" />
+    </c:forEach>
+  </c:if>
+  <c:if test="${minRating != null}">
+    <c:param name="rating" value="${minRating}" />
+  </c:if>
+  <c:param name="sort" value="created_desc" />
+</c:url>
+
+<c:url var="sortBestSellingUrl" value="/products">
+  <c:if test="${not empty param.q}">
+    <c:param name="q" value="${param.q}" />
+  </c:if>
+  <c:if test="${not empty selectedCategoryList}">
+    <c:forEach var="cid" items="${selectedCategoryList}">
+      <c:param name="category" value="${cid}" />
+    </c:forEach>
+  </c:if>
+  <c:if test="${not empty selectedBrandList}">
+    <c:forEach var="bid" items="${selectedBrandList}">
+      <c:param name="brand" value="${bid}" />
+    </c:forEach>
+  </c:if>
+  <c:if test="${not empty priceRangeList}">
+    <c:forEach var="pr" items="${priceRangeList}">
+      <c:param name="priceRange" value="${pr}" />
+    </c:forEach>
+  </c:if>
+  <c:if test="${minRating != null}">
+    <c:param name="rating" value="${minRating}" />
+  </c:if>
+  <c:param name="sort" value="best_selling" />
+</c:url>
+
+<c:url var="sortPriceAscUrl" value="/products">
+  <c:if test="${not empty param.q}">
+    <c:param name="q" value="${param.q}" />
+  </c:if>
+  <c:if test="${not empty selectedCategoryList}">
+    <c:forEach var="cid" items="${selectedCategoryList}">
+      <c:param name="category" value="${cid}" />
+    </c:forEach>
+  </c:if>
+  <c:if test="${not empty selectedBrandList}">
+    <c:forEach var="bid" items="${selectedBrandList}">
+      <c:param name="brand" value="${bid}" />
+    </c:forEach>
+  </c:if>
+  <c:if test="${not empty priceRangeList}">
+    <c:forEach var="pr" items="${priceRangeList}">
+      <c:param name="priceRange" value="${pr}" />
+    </c:forEach>
+  </c:if>
+  <c:if test="${minRating != null}">
+    <c:param name="rating" value="${minRating}" />
+  </c:if>
+  <c:param name="sort" value="price_asc" />
+</c:url>
+
+<c:url var="sortPriceDescUrl" value="/products">
+  <c:if test="${not empty param.q}">
+    <c:param name="q" value="${param.q}" />
+  </c:if>
+  <c:if test="${not empty selectedCategoryList}">
+    <c:forEach var="cid" items="${selectedCategoryList}">
+      <c:param name="category" value="${cid}" />
+    </c:forEach>
+  </c:if>
+  <c:if test="${not empty selectedBrandList}">
+    <c:forEach var="bid" items="${selectedBrandList}">
+      <c:param name="brand" value="${bid}" />
+    </c:forEach>
+  </c:if>
+  <c:if test="${not empty priceRangeList}">
+    <c:forEach var="pr" items="${priceRangeList}">
+      <c:param name="priceRange" value="${pr}" />
+    </c:forEach>
+  </c:if>
+  <c:if test="${minRating != null}">
+    <c:param name="rating" value="${minRating}" />
+  </c:if>
+  <c:param name="sort" value="price_desc" />
+</c:url>
+
+<section class="mc-category-hero-wrap">
+  <div class="mc-category-hero">
+    <div class="mc-category-hero__label">Danh mục</div>
+
+    <h1 class="mc-category-hero__title">
+      <c:out value="${empty collectionTitle ? 'Sản phẩm theo danh mục' : collectionTitle}" />
+    </h1>
+
+    <p class="mc-category-hero__desc">
+      <c:out value="${empty collectionDesc
+                ? 'Đang hiển thị sản phẩm thuộc danh mục đã chọn. Bạn có thể lọc thêm theo thương hiệu, mức giá và đánh giá.'
+                : collectionDesc}" />
     </p>
   </div>
 </section>
 
-<!-- ================= PRODUCT LIST ================= -->
-<section class="section">
-  <div class="container">
-    <div class="product-page">
+<section class="section collection-body-section">
+  <div class="container collection-container">
+    <div class="product-page collection-layout">
 
-      <!-- ================= SIDEBAR FILTER ================= -->
-      <aside class="filter-sidebar">
+      <aside class="filter-sidebar collection-filter-sidebar">
         <jsp:include page="/jsp/product/category_filter.jsp" />
       </aside>
 
-      <!-- ================= MAIN CONTENT ================= -->
-      <div class="product-main">
+      <main class="product-main collection-main" id="collectionResults">
 
-        <!-- ================= FILTER SUMMARY ================= -->
-        <div class="product-list-head">
-          <div>
-            <h3 class="product-list-title">Danh sách sản phẩm</h3>
+        <div class="collection-toolbar" id="collectionToolbar">
+          <nav class="collection-toolbar__sorts" aria-label="Sắp xếp sản phẩm">
+            <a href="${sortDefaultUrl}#collectionResults"
+               class="collection-sort-tab ${empty param.sort ? 'active' : ''}">
+              Phổ biến
+            </a>
 
-            <p class="product-list-desc">
-              Lọc sản phẩm theo danh mục, thương hiệu, mức giá và đánh giá để tìm sản phẩm phù hợp hơn.
-            </p>
-          </div>
+            <a href="${sortNewestUrl}#collectionResults"
+               class="collection-sort-tab ${param.sort == 'created_desc' ? 'active' : ''}">
+              Mới nhất
+            </a>
 
-          <div class="product-list-count">
+            <a href="${sortBestSellingUrl}#collectionResults"
+               class="collection-sort-tab ${param.sort == 'best_selling' ? 'active' : ''}">
+              Bán chạy
+            </a>
+
+            <a href="${sortPriceAscUrl}#collectionResults"
+               class="collection-sort-tab ${param.sort == 'price_asc' ? 'active' : ''}">
+              Giá thấp
+            </a>
+
+            <a href="${sortPriceDescUrl}#collectionResults"
+               class="collection-sort-tab ${param.sort == 'price_desc' ? 'active' : ''}">
+              Giá cao
+            </a>
+          </nav>
+
+          <div class="collection-toolbar__count">
             <c:choose>
               <c:when test="${total != null}">
                 ${total} sản phẩm
@@ -58,55 +212,87 @@
           </div>
         </div>
 
-        <!-- ================= ACTIVE FILTER TAGS - ALWAYS VISIBLE ================= -->
-        <div class="product-filter-tags">
-
+        <div class="product-filter-tags collection-filter-tags">
           <span class="product-filter-tags__label">Đang lọc:</span>
 
           <c:choose>
             <c:when test="${not empty activeFilterTags}">
               <c:forEach var="filterTag" items="${activeFilterTags}">
-                <span class="product-filter-tag product-filter-tag--removable">
-                  <strong>
-                    <c:out value="${filterTag.label}" />
-                  </strong>
+                                <span class="product-filter-tag product-filter-tag--removable">
+                                    <strong>
+                                        <c:out value="${filterTag.label}" />
+                                    </strong>
 
-                  <a class="product-filter-tag__remove"
-                     href="${filterTag.removeUrl}"
-                     title="Xóa bộ lọc này"
-                     aria-label="Xóa bộ lọc này">
-                    ×
-                  </a>
-                </span>
+                                    <a class="product-filter-tag__remove"
+                                       href="${filterTag.removeUrl}"
+                                       title="Xóa bộ lọc này"
+                                       aria-label="Xóa bộ lọc này">
+                                        ×
+                                    </a>
+                                </span>
               </c:forEach>
 
-              <a class="product-filter-clear" href="${ctx}/products">
+              <a class="product-filter-clear" href="${ctx}/products#collectionResults">
                 Xóa bộ lọc
               </a>
             </c:when>
 
             <c:otherwise>
-              <span class="product-filter-tag product-filter-tag--muted">
-                <strong>Tất cả sản phẩm</strong>
-              </span>
+                            <span class="product-filter-tag product-filter-tag--muted">
+                                <strong>Tất cả sản phẩm</strong>
+                            </span>
             </c:otherwise>
           </c:choose>
-
         </div>
 
-        <!-- ================= PRODUCT GRID ================= -->
-        <div class="product-grid">
+        <div class="product-grid collection-grid">
           <c:choose>
-
             <c:when test="${not empty products}">
               <c:forEach var="product" items="${products}">
-                <c:set var="productCategoryTags"
-                       value="${categoryTagsByCategoryId[product.category.id]}" />
+                <c:set var="rawImage" value="${product.imageUrl}" />
 
-                <div class="product-card">
-                  <!-- SALE BADGE -->
+                <c:choose>
+                  <c:when test="${not empty rawImage and fn:startsWith(rawImage, 'http')}">
+                    <c:set var="productImageSrc" value="${rawImage}" />
+                    <c:set var="productImageAlt" value="" />
+                  </c:when>
+
+                  <c:when test="${not empty rawImage and fn:startsWith(rawImage, '/')}">
+                    <c:set var="productImageSrc" value="${ctx}${rawImage}" />
+                    <c:set var="productImageAlt" value="" />
+                  </c:when>
+
+                  <c:when test="${not empty rawImage and fn:startsWith(rawImage, 'uploads/')}">
+                    <c:set var="productImageSrc" value="${ctx}/${rawImage}" />
+                    <c:set var="productImageAlt" value="" />
+                  </c:when>
+
+                  <c:when test="${not empty rawImage and fn:startsWith(rawImage, 'assets/')}">
+                    <c:set var="productImageSrc" value="${ctx}/${rawImage}" />
+                    <c:set var="productImageAlt" value="" />
+                  </c:when>
+
+                  <c:when test="${not empty rawImage and fn:startsWith(rawImage, 'products/')}">
+                    <c:set var="imageFileName" value="${fn:substringAfter(rawImage, 'products/')}" />
+                    <c:set var="productImageSrc" value="${ctx}/uploads/product/${imageFileName}" />
+                    <c:set var="productImageAlt" value="${ctx}/${rawImage}" />
+                  </c:when>
+
+                  <c:when test="${not empty rawImage}">
+                    <c:set var="productImageSrc" value="${ctx}/uploads/product/${rawImage}" />
+                    <c:set var="productImageAlt" value="${ctx}/${rawImage}" />
+                  </c:when>
+
+                  <c:otherwise>
+                    <c:set var="productImageSrc" value="" />
+                    <c:set var="productImageAlt" value="" />
+                  </c:otherwise>
+                </c:choose>
+
+                <article class="product-card collection-card">
+
                   <c:if test="${product.finalPrice lt product.price}">
-                    <div class="badge-sale">
+                    <div class="badge-sale collection-card__discount">
                       <c:choose>
                         <c:when test="${product.discountPercent > 0}">
                           -${product.discountPercent}%
@@ -116,125 +302,86 @@
                     </div>
                   </c:if>
 
-                  <!-- IMAGE -->
-                  <a class="product-img-link"
+                  <a class="product-img-link collection-card__image-link"
                      href="${ctx}/product/${product.slug}"
                      aria-label="Xem chi tiết ${fn:escapeXml(product.title)}">
-
-                    <div class="product-img-box">
+                    <div class="product-img-box collection-card__image-box">
                       <c:choose>
-                        <c:when test="${not empty product.imageUrl}">
-                          <img
-                                  src="${ctx}${product.imageUrl}"
-                                  alt="${fn:escapeXml(product.title)}">
+                        <c:when test="${not empty productImageSrc}">
+                          <img src="${productImageSrc}"
+                               data-alt-src="${productImageAlt}"
+                               alt="${fn:escapeXml(product.title)}"
+                               onerror="if(this.dataset.altSrc){this.src=this.dataset.altSrc;this.dataset.altSrc='';}else{this.style.display='none';this.closest('.collection-card__image-box').classList.add('is-missing');}">
                         </c:when>
-
                         <c:otherwise>
-                          <div class="no-image">No image</div>
+                          <div class="collection-card__image-placeholder">
+                            MyCosmetic
+                          </div>
                         </c:otherwise>
                       </c:choose>
                     </div>
                   </a>
 
-                  <!-- TITLE -->
-                  <h3>
-                    <a class="product-title-link"
-                       href="${ctx}/product/${product.slug}">
-                      <c:out value="${product.title}" />
-                    </a>
-                  </h3>
-
-                  <!-- CATEGORY TAGS -->
-                  <c:if test="${not empty productCategoryTags}">
-                    <div class="product-card-tags">
-                      <c:forEach var="tag" items="${productCategoryTags}" varStatus="tagStatus">
-                        <c:if test="${tagStatus.index < 3}">
-                          <span class="product-card-tag">
-                            #<c:out value="${tag.name}" />
-                          </span>
-                        </c:if>
-                      </c:forEach>
+                  <div class="collection-card__body">
+                    <div class="collection-card__brand">
+                      <c:choose>
+                        <c:when test="${not empty product.brandName}">
+                          <c:out value="${product.brandName}" />
+                        </c:when>
+                        <c:otherwise>MYCOSMETIC</c:otherwise>
+                      </c:choose>
                     </div>
-                  </c:if>
 
-                  <!-- RATING -->
-                  <div class="rating-wrap">
-                    <div class="rating-stars">
-                      <c:forEach begin="1" end="5" var="i">
+                    <h3 class="collection-card__title">
+                      <a class="product-title-link" href="${ctx}/product/${product.slug}">
+                        <c:out value="${product.title}" />
+                      </a>
+                    </h3>
+
+                    <div class="collection-card__price-wrap">
+                      <c:choose>
+                        <c:when test="${product.finalPrice lt product.price}">
+                          <div class="collection-card__price-line">
+                                                        <span class="collection-card__sale-price">
+                                                            <fmt:formatNumber value="${product.finalPrice}" type="number" groupingUsed="true"/>₫
+                                                        </span>
+
+                            <span class="collection-card__old-price">
+                                                            <fmt:formatNumber value="${product.price}" type="number" groupingUsed="true"/>₫
+                                                        </span>
+                          </div>
+                        </c:when>
+
+                        <c:otherwise>
+                          <div class="collection-card__price-line">
+                                                        <span class="collection-card__sale-price">
+                                                            <fmt:formatNumber value="${product.price}" type="number" groupingUsed="true"/>₫
+                                                        </span>
+                          </div>
+                        </c:otherwise>
+                      </c:choose>
+                    </div>
+
+                    <div class="collection-card__bottom">
+                      <div class="collection-card__meta">
                         <c:choose>
-                          <c:when test="${i <= product.avgRating}">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="#ffb400" aria-hidden="true">
-                              <path d="M12 17.3l6.2 3.7-1.6-7 5.4-4.7-7.1-.6L12 2 9.1 8.7l-7.1.6 5.4 4.7-1.6 7z"/>
-                            </svg>
+                          <c:when test="${product.soldQuantity > 0}">
+                            ${product.soldQuantity} đã bán
                           </c:when>
-
                           <c:otherwise>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="#e0e0e0" aria-hidden="true">
-                              <path d="M12 17.3l6.2 3.7-1.6-7 5.4-4.7-7.1-.6L12 2 9.1 8.7l-7.1.6 5.4 4.7-1.6 7z"/>
-                            </svg>
+                            ${product.reviewCount} đánh giá
                           </c:otherwise>
                         </c:choose>
-                      </c:forEach>
+                      </div>
+
+                      <a href="${ctx}/product/${product.slug}"
+                         class="collection-card__heart"
+                         aria-label="Xem chi tiết sản phẩm">
+                        ♡
+                      </a>
                     </div>
-
-                    <span class="rating-count">
-                      (<c:out value="${product.reviewCount}" /> đánh giá)
-                    </span>
                   </div>
-
-                  <!-- PRICE -->
-                  <c:choose>
-                    <c:when test="${product.finalPrice lt product.price}">
-                      <p class="price">
-                        <span class="old-price">
-                          <fmt:formatNumber value="${product.price}" type="number" groupingUsed="true"/> ₫
-                        </span>
-
-                        <span class="sale-price">
-                          <fmt:formatNumber value="${product.finalPrice}" type="number" groupingUsed="true"/> ₫
-                        </span>
-                      </p>
-                    </c:when>
-
-                    <c:otherwise>
-                      <p class="price">
-                        <fmt:formatNumber value="${product.price}" type="number" groupingUsed="true"/> ₫
-                      </p>
-                    </c:otherwise>
-                  </c:choose>
-
-                  <!-- STOCK -->
-                  <c:choose>
-                    <c:when test="${product.stock == 0}">
-                      <div class="badge-out">Hết hàng</div>
-                    </c:when>
-
-                    <c:when test="${product.stock <= 5}">
-                      <div class="badge-low">Sắp hết</div>
-                    </c:when>
-
-                    <c:otherwise>
-                      <div class="stock-ok">Còn hàng</div>
-                    </c:otherwise>
-                  </c:choose>
-
-                  <!-- DETAIL -->
-                  <a href="${ctx}/product/${product.slug}" class="btn-outline">
-                    Xem chi tiết
-                  </a>
-
-                  <form method="post" action="${ctx}/wishlist/toggle" class="wishlist-form" style="margin: 0; display: flex;">
-                    <input type="hidden" name="productId" value="${product.id}" />
-
-                    <c:set var="inWishlist" value="${wishlistIds != null && wishlistIds.contains(product.id)}" />
-
-                    <button type="submit" class="wishlist-btn ${inWishlist ? 'active' : ''}" title="Thêm vào yêu thích"
-                            style="background: #ffffff; width: 44px; border-radius: 8px; border: 1px solid var(--pink-main, #ff5fa2); font-size: 20px; cursor: pointer; color: ${inWishlist ? 'red' : '#ccc'}; transition: all 0.2s; display: flex; align-items: center; justify-content: center; padding: 0; flex-shrink: 0;">
-                      ❤
-                    </button>
-                  </form>
-
-                </div>
+                </article>
               </c:forEach>
             </c:when>
 
@@ -246,215 +393,239 @@
                   Hãy thử chọn danh mục khác, bỏ bớt bộ lọc hoặc quay lại danh sách tất cả sản phẩm.
                 </div>
 
-                <a class="btn-outline" href="${ctx}/products">
+                <a class="btn-outline" href="${ctx}/products#collectionResults">
                   Xem tất cả sản phẩm
                 </a>
               </div>
             </c:otherwise>
-
           </c:choose>
         </div>
 
-        <!-- ================= PAGINATION ================= -->
         <c:if test="${totalPages != null && totalPages > 1}">
-          <div class="pagination">
+          <div class="pagination-wrap">
+            <div class="pagination">
 
-            <!-- Prev URL -->
-            <c:url var="prevPageUrl" value="/products">
-              <c:param name="page" value="${page - 1}" />
+              <c:url var="prevPageUrl" value="/products">
+                <c:param name="page" value="${page - 1}" />
 
-              <c:if test="${not empty param.q}">
-                <c:param name="q" value="${param.q}" />
-              </c:if>
+                <c:if test="${not empty param.q}">
+                  <c:param name="q" value="${param.q}" />
+                </c:if>
 
-              <c:if test="${not empty param.sort}">
-                <c:param name="sort" value="${param.sort}" />
-              </c:if>
+                <c:if test="${not empty param.sort}">
+                  <c:param name="sort" value="${param.sort}" />
+                </c:if>
 
-              <c:if test="${not empty paramValues.priceRange}">
-                <c:forEach var="priceRangeItem" items="${paramValues.priceRange}">
-                  <c:param name="priceRange" value="${priceRangeItem}" />
-                </c:forEach>
-              </c:if>
+                <c:if test="${not empty priceRangeList}">
+                  <c:forEach var="pr" items="${priceRangeList}">
+                    <c:param name="priceRange" value="${pr}" />
+                  </c:forEach>
+                </c:if>
 
-              <c:if test="${not empty paramValues.category}">
-                <c:forEach var="categoryItem" items="${paramValues.category}">
-                  <c:param name="category" value="${categoryItem}" />
-                </c:forEach>
-              </c:if>
+                <c:if test="${not empty selectedCategoryList}">
+                  <c:forEach var="cid" items="${selectedCategoryList}">
+                    <c:param name="category" value="${cid}" />
+                  </c:forEach>
+                </c:if>
 
-              <c:if test="${not empty paramValues.brand}">
-                <c:forEach var="brandItem" items="${paramValues.brand}">
-                  <c:param name="brand" value="${brandItem}" />
-                </c:forEach>
-              </c:if>
+                <c:if test="${not empty selectedBrandList}">
+                  <c:forEach var="bid" items="${selectedBrandList}">
+                    <c:param name="brand" value="${bid}" />
+                  </c:forEach>
+                </c:if>
 
-              <c:if test="${not empty param.rating}">
-                <c:param name="rating" value="${param.rating}" />
-              </c:if>
-            </c:url>
+                <c:if test="${minRating != null}">
+                  <c:param name="rating" value="${minRating}" />
+                </c:if>
+              </c:url>
 
-            <!-- Next URL -->
-            <c:url var="nextPageUrl" value="/products">
-              <c:param name="page" value="${page + 1}" />
+              <c:url var="nextPageUrl" value="/products">
+                <c:param name="page" value="${page + 1}" />
 
-              <c:if test="${not empty param.q}">
-                <c:param name="q" value="${param.q}" />
-              </c:if>
+                <c:if test="${not empty param.q}">
+                  <c:param name="q" value="${param.q}" />
+                </c:if>
 
-              <c:if test="${not empty param.sort}">
-                <c:param name="sort" value="${param.sort}" />
-              </c:if>
+                <c:if test="${not empty param.sort}">
+                  <c:param name="sort" value="${param.sort}" />
+                </c:if>
 
-              <c:if test="${not empty paramValues.priceRange}">
-                <c:forEach var="priceRangeItem" items="${paramValues.priceRange}">
-                  <c:param name="priceRange" value="${priceRangeItem}" />
-                </c:forEach>
-              </c:if>
+                <c:if test="${not empty priceRangeList}">
+                  <c:forEach var="pr" items="${priceRangeList}">
+                    <c:param name="priceRange" value="${pr}" />
+                  </c:forEach>
+                </c:if>
 
-              <c:if test="${not empty paramValues.category}">
-                <c:forEach var="categoryItem" items="${paramValues.category}">
-                  <c:param name="category" value="${categoryItem}" />
-                </c:forEach>
-              </c:if>
+                <c:if test="${not empty selectedCategoryList}">
+                  <c:forEach var="cid" items="${selectedCategoryList}">
+                    <c:param name="category" value="${cid}" />
+                  </c:forEach>
+                </c:if>
 
-              <c:if test="${not empty paramValues.brand}">
-                <c:forEach var="brandItem" items="${paramValues.brand}">
-                  <c:param name="brand" value="${brandItem}" />
-                </c:forEach>
-              </c:if>
+                <c:if test="${not empty selectedBrandList}">
+                  <c:forEach var="bid" items="${selectedBrandList}">
+                    <c:param name="brand" value="${bid}" />
+                  </c:forEach>
+                </c:if>
 
-              <c:if test="${not empty param.rating}">
-                <c:param name="rating" value="${param.rating}" />
-              </c:if>
-            </c:url>
+                <c:if test="${minRating != null}">
+                  <c:param name="rating" value="${minRating}" />
+                </c:if>
+              </c:url>
 
-            <!-- Prev -->
-            <c:choose>
-              <c:when test="${page != null && page > 1}">
-                <a class="pg-btn" href="${prevPageUrl}">
-                  ‹
-                </a>
-              </c:when>
-
-              <c:otherwise>
-                <span class="pg-btn disabled">‹</span>
-              </c:otherwise>
-            </c:choose>
-
-            <!-- Pages -->
-            <c:forEach begin="1" end="${totalPages}" var="p">
               <c:choose>
-                <c:when test="${p == page}">
-                  <span class="pg-num active">${p}</span>
+                <c:when test="${page != null && page > 1}">
+                  <a class="pg-btn" href="${prevPageUrl}#collectionResults">‹</a>
                 </c:when>
-
                 <c:otherwise>
-                  <c:url var="pageUrl" value="/products">
-                    <c:param name="page" value="${p}" />
-
-                    <c:if test="${not empty param.q}">
-                      <c:param name="q" value="${param.q}" />
-                    </c:if>
-
-                    <c:if test="${not empty param.sort}">
-                      <c:param name="sort" value="${param.sort}" />
-                    </c:if>
-
-                    <c:if test="${not empty paramValues.priceRange}">
-                      <c:forEach var="priceRangeItem" items="${paramValues.priceRange}">
-                        <c:param name="priceRange" value="${priceRangeItem}" />
-                      </c:forEach>
-                    </c:if>
-
-                    <c:if test="${not empty paramValues.category}">
-                      <c:forEach var="categoryItem" items="${paramValues.category}">
-                        <c:param name="category" value="${categoryItem}" />
-                      </c:forEach>
-                    </c:if>
-
-                    <c:if test="${not empty paramValues.brand}">
-                      <c:forEach var="brandItem" items="${paramValues.brand}">
-                        <c:param name="brand" value="${brandItem}" />
-                      </c:forEach>
-                    </c:if>
-
-                    <c:if test="${not empty param.rating}">
-                      <c:param name="rating" value="${param.rating}" />
-                    </c:if>
-                  </c:url>
-
-                  <a class="pg-num" href="${pageUrl}">
-                      ${p}
-                  </a>
+                  <span class="pg-btn disabled">‹</span>
                 </c:otherwise>
               </c:choose>
-            </c:forEach>
 
-            <!-- Next -->
-            <c:choose>
-              <c:when test="${page != null && page < totalPages}">
-                <a class="pg-btn" href="${nextPageUrl}">
-                  ›
-                </a>
-              </c:when>
+              <c:forEach begin="1" end="${totalPages}" var="p">
+                <c:choose>
+                  <c:when test="${p == page}">
+                    <span class="pg-num active">${p}</span>
+                  </c:when>
 
-              <c:otherwise>
-                <span class="pg-btn disabled">›</span>
-              </c:otherwise>
-            </c:choose>
+                  <c:otherwise>
+                    <c:url var="pageUrl" value="/products">
+                      <c:param name="page" value="${p}" />
 
+                      <c:if test="${not empty param.q}">
+                        <c:param name="q" value="${param.q}" />
+                      </c:if>
+
+                      <c:if test="${not empty param.sort}">
+                        <c:param name="sort" value="${param.sort}" />
+                      </c:if>
+
+                      <c:if test="${not empty priceRangeList}">
+                        <c:forEach var="pr" items="${priceRangeList}">
+                          <c:param name="priceRange" value="${pr}" />
+                        </c:forEach>
+                      </c:if>
+
+                      <c:if test="${not empty selectedCategoryList}">
+                        <c:forEach var="cid" items="${selectedCategoryList}">
+                          <c:param name="category" value="${cid}" />
+                        </c:forEach>
+                      </c:if>
+
+                      <c:if test="${not empty selectedBrandList}">
+                        <c:forEach var="bid" items="${selectedBrandList}">
+                          <c:param name="brand" value="${bid}" />
+                        </c:forEach>
+                      </c:if>
+
+                      <c:if test="${minRating != null}">
+                        <c:param name="rating" value="${minRating}" />
+                      </c:if>
+                    </c:url>
+
+                    <a class="pg-num" href="${pageUrl}#collectionResults">${p}</a>
+                  </c:otherwise>
+                </c:choose>
+              </c:forEach>
+
+              <c:choose>
+                <c:when test="${page != null && page < totalPages}">
+                  <a class="pg-btn" href="${nextPageUrl}#collectionResults">›</a>
+                </c:when>
+                <c:otherwise>
+                  <span class="pg-btn disabled">›</span>
+                </c:otherwise>
+              </c:choose>
+            </div>
           </div>
         </c:if>
-
-      </div>
+      </main>
     </div>
   </div>
 </section>
 
 <script>
-  document.addEventListener("DOMContentLoaded", function() {
-    const wishlistForms = document.querySelectorAll(".wishlist-form");
+  (function () {
+    const SCROLL_KEY = "mycosmetic_product_list_scroll_y";
 
-    wishlistForms.forEach(form => {
-      form.addEventListener("submit", function(e) {
-        e.preventDefault(); // Ngăn form tải lại trang
+    try {
+      window.history.scrollRestoration = "manual";
+    } catch (e) {
+      // ignore
+    }
 
-        const btn = this.querySelector(".wishlist-btn");
-        const formData = new URLSearchParams(new FormData(this));
+    function shouldRememberScroll(target) {
+      if (!target) {
+        return false;
+      }
 
-        // Gửi request bằng AJAX
-        fetch(this.action, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded"
-          },
-          body: formData
-        })
-                .then(response => {
-                  // Bắt lỗi 401 từ WishlistToggleServlet
-                  if (response.status === 401) {
-                    showLoginModal();
-                    throw new Error("LOGIN_REQUIRED");
-                  }
-                  return response.text();
-                })
-                .then(data => {
-                  // Cập nhật giao diện nút tim dựa trên phản hồi
-                  if (data === "ADDED") {
-                    btn.style.color = "red";
-                    btn.classList.add("active");
-                  } else if (data === "REMOVED") {
-                    btn.style.color = "#ccc";
-                    btn.classList.remove("active");
-                  }
-                })
-                .catch(error => {
-                  if(error.message !== "LOGIN_REQUIRED"){
-                    console.error("Lỗi khi thêm vào wishlist:", error);
-                  }
-                });
+      return Boolean(
+              target.closest(".collection-toolbar") ||
+              target.closest(".collection-filter-sidebar") ||
+              target.closest(".collection-filter-tags") ||
+              target.closest(".pagination")
+      );
+    }
+
+    function saveScrollPosition() {
+      try {
+        sessionStorage.setItem(SCROLL_KEY, String(window.scrollY || window.pageYOffset || 0));
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    document.addEventListener("click", function (event) {
+      const link = event.target.closest("a");
+
+      if (link && link.href && link.href.indexOf("/products") !== -1 && shouldRememberScroll(link)) {
+        saveScrollPosition();
+      }
+    }, true);
+
+    document.addEventListener("change", function (event) {
+      if (event.target && event.target.closest("#filterForm")) {
+        saveScrollPosition();
+      }
+    }, true);
+
+    document.addEventListener("submit", function (event) {
+      if (event.target && event.target.matches("#filterForm")) {
+        saveScrollPosition();
+      }
+    }, true);
+
+    function restoreScroll() {
+      let savedY = null;
+
+      try {
+        savedY = sessionStorage.getItem(SCROLL_KEY);
+        sessionStorage.removeItem(SCROLL_KEY);
+      } catch (e) {
+        savedY = null;
+      }
+
+      if (!savedY) {
+        document.documentElement.classList.remove("is-restoring-product-scroll");
+        return;
+      }
+
+      const y = parseInt(savedY, 10) || 0;
+
+      requestAnimationFrame(function () {
+        window.scrollTo(0, y);
+
+        requestAnimationFrame(function () {
+          window.scrollTo(0, y);
+          document.documentElement.classList.remove("is-restoring-product-scroll");
+        });
       });
-    });
-  });
+    }
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", restoreScroll);
+    } else {
+      restoreScroll();
+    }
+  })();
 </script>
