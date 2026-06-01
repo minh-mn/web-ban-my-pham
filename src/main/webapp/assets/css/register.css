@@ -401,3 +401,42 @@ input::-ms-clear {
   position: absolute;
   left: 12px;
 }
+
+/* 1. Loại bỏ đường viền khung hình chữ nhật khi click */
+input[type="radio"]:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* 2. Style cho container chứa giới tính */
+.gender-wrapper {
+  display: flex;
+  gap: 15px;
+  margin-top: 10px;
+}
+
+/* 3. Ẩn nút radio mặc định (hình tròn nhỏ xíu) để tự vẽ lại */
+.gender-option input[type="radio"] {
+  display: none;
+}
+
+/* 4. Style cho label (bề ngoài của nút chọn) */
+.gender-option label {
+  display: block;
+  padding: 10px 25px;
+  border: 2px solid #eee;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 600;
+  color: #555;
+  background: #fff;
+}
+
+/* 5. Style khi đã được TICK chọn (Ôm trọn bằng màu hồng) */
+.gender-option input[type="radio"]:checked + label {
+  border-color: #ff5fa2;
+  background-color: #fff1f7;
+  color: #ff5fa2;
+  box-shadow: 0 4px 10px rgba(255, 95, 162, 0.2); 
+}
