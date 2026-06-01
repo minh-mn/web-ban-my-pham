@@ -10,9 +10,7 @@ import java.util.List;
 public class PageDAO {
 
     public List<Page> findAll() {
-
         String sql = "SELECT * FROM pages ORDER BY created_at DESC";
-
         List<Page> list = new ArrayList<>();
 
         try (Connection conn = DBConnection.getConnection();
@@ -20,27 +18,21 @@ public class PageDAO {
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
-
                 Page p = new Page();
                 p.setId(rs.getInt("id"));
                 p.setTitle(rs.getString("title"));
                 p.setSlug(rs.getString("slug"));
                 p.setType(rs.getString("type"));
-
                 list.add(p);
             }
-
         } catch (Exception e) {
             e.printStackTrace();
         }
-
         return list;
     }
 
     public void save(Page p) {
-
         boolean isUpdate = p.getId() > 0;
-
         String sql;
 
         if (isUpdate) {
@@ -68,23 +60,18 @@ public class PageDAO {
             if (isUpdate) {
                 ps.setInt(6, p.getId());
             }
-
             ps.executeUpdate();
-
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
     public Page findById(int id) {
-
         String sql = "SELECT * FROM pages WHERE id=?";
-
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, id);
-
             ResultSet rs = ps.executeQuery();
 
             if (rs.next()) {
@@ -97,83 +84,76 @@ public class PageDAO {
                 p.setType(rs.getString("type"));
                 return p;
             }
-
         } catch (Exception e) {
             e.printStackTrace();
         }
-
         return null;
     }
 
+    // 🌟 ĐÃ SỬA: Hàm lấy chi tiết bài viết theo Slug URL
     public Page findBySlug(String slug) {
-
         String sql = "SELECT * FROM pages WHERE slug=?";
-
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, slug);
-
             ResultSet rs = ps.executeQuery();
 
             if (rs.next()) {
                 Page p = new Page();
+
+                // Bổ sung đầy đủ các trường dữ liệu bị thiếu
+                p.setId(rs.getInt("id"));
                 p.setTitle(rs.getString("title"));
+                p.setSlug(rs.getString("slug"));
                 p.setContent(rs.getString("content"));
+                p.setType(rs.getString("type"));
+
+                // 🚀 QUAN TRỌNG NHẤT: Lấy chuỗi đường dẫn ảnh từ DB gán vào Model
+                p.setThumbnail(rs.getString("thumbnail"));
+
                 return p;
             }
-
         } catch (Exception e) {
             e.printStackTrace();
         }
-
         return null;
     }
 
     public List<Page> getByType(String type) {
-
         String sql = "SELECT * FROM pages WHERE type=? ORDER BY id DESC";
-
         List<Page> list = new ArrayList<>();
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, type);
-
             ResultSet rs = ps.executeQuery();
 
             while (rs.next()) {
-
                 Page p = new Page();
-
                 p.setId(rs.getInt("id"));
                 p.setTitle(rs.getString("title"));
                 p.setSlug(rs.getString("slug"));
                 p.setContent(rs.getString("content"));
                 p.setThumbnail(rs.getString("thumbnail"));
                 p.setType(rs.getString("type"));
-
                 list.add(p);
             }
-
         } catch (Exception e) {
             throw new RuntimeException("PageDAO.getByType error", e);
         }
-
         return list;
     }
 
     public List<Page> getFooterPages() {
-
         String sql = """
-        SELECT id, title, slug, type
-        FROM pages
-        WHERE status='published'
-          AND type='policy'
-        ORDER BY id DESC
-    """;
-
+            SELECT id, title, slug, type
+            FROM pages
+            WHERE status='published'
+              AND type='policy'
+            ORDER BY id DESC
+        """;
         List<Page> list = new ArrayList<>();
 
         try (Connection conn = DBConnection.getConnection();
@@ -181,21 +161,29 @@ public class PageDAO {
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
-
                 Page p = new Page();
-
                 p.setId(rs.getInt("id"));
                 p.setTitle(rs.getString("title"));
                 p.setSlug(rs.getString("slug"));
                 p.setType(rs.getString("type"));
-
                 list.add(p);
             }
-
         } catch (Exception e) {
             throw new RuntimeException("PageDAO.getFooterPages error", e);
         }
-
         return list;
+    }
+
+    public void delete(int id) {
+        String sql = "DELETE FROM pages WHERE id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, id);
+            ps.executeUpdate();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Lỗi khi xóa Page trong PageDAO", e);
+        }
     }
 }
