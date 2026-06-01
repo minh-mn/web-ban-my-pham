@@ -5,7 +5,6 @@ import com.webshop.app.dao.OrderDAO;
 import com.webshop.app.model.CancelRequest;
 import com.webshop.app.model.Order;
 import com.webshop.app.model.User;
-import com.webshop.app.service.OrderNotificationService;
 import com.webshop.app.utils.DBConnection;
 
 import java.io.IOException;
@@ -29,7 +28,6 @@ public class CancelOrderServlet extends HttpServlet {
 
     private final OrderDAO orderDAO = new OrderDAO();
     private final CancelRequestDAO cancelRequestDAO = new CancelRequestDAO();
-    private final OrderNotificationService notificationService = new OrderNotificationService();
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
@@ -111,8 +109,12 @@ public class CancelOrderServlet extends HttpServlet {
                 cancelRequest.setRefundAmount(paidVnpay ? order.getTotal() : BigDecimal.ZERO);
                 cancelRequest.setRefundMethod(paidVnpay ? "VNPAY" : null);
 
+                /*
+                 * Issue 114:
+                 * Notification được tạo tập trung trong CancelRequestDAO.create(...)
+                 * để tránh servlet và DAO cùng tạo thông báo làm bị trùng.
+                 */
                 cancelRequestDAO.create(connection, cancelRequest);
-                notificationService.notifyCancelRequestedSafely(connection, orderId, user, reason);
 
                 connection.commit();
 
