@@ -55,12 +55,13 @@
         </a>
       </li>
 
-      <li>
-        <a href="${pageContext.request.contextPath}/promotions"
-           class="menu-link-item">
-          KHUYẾN MÃI
-        </a>
-      </li>
+       <c:if test="${isFlashSaleActive}">
+        <li>
+          <a href="${pageContext.request.contextPath}/flash-sale" class="menu-link-item hot-menu">
+            FLASH SALE
+          </a>
+        </li>
+      </c:if>
 
       <li>
         <a href="${pageContext.request.contextPath}/blog" class="menu-link-item">
