@@ -63,13 +63,31 @@
     gap: 6px;
   }
 
+  /* BỔ SUNG: CSS cho khu vực hiển thị hình ảnh đại diện (Thumbnail) */
+  .policy-thumbnail-container {
+    width: 100%;
+    max-height: 450px;
+    overflow: hidden;
+    border-radius: 14px;
+    margin-bottom: 35px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
+    display: flex;
+    justify-content: center;
+    background-color: #f9fafb;
+  }
+  .policy-thumbnail-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Giúp ảnh tự co giãn vừa vặn khung hình không bị méo */
+  }
+
   /* VÙNG CHỨA NỘI DUNG CHÍNH (Từ Admin nhập vào) */
   .policy-article-content {
     font-size: 16px;
     color: #444444;
     line-height: 1.8;
     text-align: justify;
-    /* QUAN TRỌNG: Giữ nguyên định dạng xuống dòng và khoảng cách từ Admin gõ */
+    /* Giữ nguyên định dạng xuống dòng và khoảng cách từ Admin gõ */
     white-space: pre-line;
   }
 
@@ -124,8 +142,17 @@
       <span>📅 Điều khoản áp dụng chính thức | Hệ thống MyCosmetic Shop</span>
     </div>
 
+    <c:if test="${not empty page.thumbnail}">
+      <div class="policy-banner" style="margin: 25px 0; text-align: center; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.04);">
+        <img src="${page.thumbnail}"
+             onerror="this.onerror=null; this.src='${pageContext.request.contextPath}/assets/images/pages/default-thumbnail.png';"
+             alt="${page.title}"
+             style="max-width: 100%; height: auto; max-height: 380px; object-fit: cover; border-radius: 10px;">
+      </div>
+    </c:if>
+
     <div class="policy-article-content">
-      <c:out value="${page.content}" />
+      ${page.content}
     </div>
 
     <div class="policy-action-bottom">
