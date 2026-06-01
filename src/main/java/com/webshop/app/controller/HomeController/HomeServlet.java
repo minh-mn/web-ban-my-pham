@@ -59,11 +59,13 @@ public class HomeServlet extends HttpServlet {
         req.setAttribute("banners", banners);
 
         // 2. Menu / danh mục / thương hiệu
+        List<Brand> brands = new ArrayList<>();
+
         try {
             List<Category> categories = categoryDAO.findActiveTree();
             req.setAttribute("categories", categories);
 
-            List<Brand> brands = brandDAO.findAllWithProductCount();
+            brands = brandDAO.findAllWithProductCount();
             req.setAttribute("brands", brands);
 
             // Danh mục hot: cố định theo bộ 13 mục, loại bỏ Blind Box / Hộp Mù.
@@ -85,11 +87,13 @@ public class HomeServlet extends HttpServlet {
         // 4. Sản phẩm trang chủ
         List<Product> featuredProducts = loadFeaturedProducts();
         List<Product> discoverProducts = loadDiscoverProducts(featuredProducts);
+        List<Product> featuredBrandProducts = loadFeaturedBrandProducts(brands, featuredProducts);
 
         // Các section bên dưới dùng các biến này. Nếu DAO chưa tách riêng từng nhóm,
         // dùng featuredProducts làm fallback để tránh section bị mất khỏi trang chủ.
         req.setAttribute("products", featuredProducts);
         req.setAttribute("featuredProducts", featuredProducts);
+        req.setAttribute("featuredBrandProducts", featuredBrandProducts);
         req.setAttribute("discoverProducts", discoverProducts);
         req.setAttribute("bestSellingProducts", featuredProducts);
         req.setAttribute("mostViewedProducts", featuredProducts);
@@ -146,6 +150,42 @@ public class HomeServlet extends HttpServlet {
 
             if (discoverProducts != null && !discoverProducts.isEmpty()) {
                 return discoverProducts;
+            }
+        } catch (RuntimeException ex) {
+            ex.printStackTrace();
+        }
+
+        return fallbackProducts != null ? fallbackProducts : new ArrayList<>();
+    }
+
+    private List<Product> loadFeaturedBrandProducts(List<Brand> brands, List<Product> fallbackProducts) {
+        if (brands == null || brands.isEmpty()) {
+            return fallbackProducts != null ? fallbackProducts : new ArrayList<>();
+        }
+
+        List<Integer> brandIds = new ArrayList<>();
+
+        for (Brand brand : brands) {
+            if (brand == null || brand.getId() <= 0) {
+                continue;
+            }
+
+            brandIds.add(brand.getId());
+
+            if (brandIds.size() >= 6) {
+                break;
+            }
+        }
+
+        if (brandIds.isEmpty()) {
+            return fallbackProducts != null ? fallbackProducts : new ArrayList<>();
+        }
+
+        try {
+            List<Product> products = productDAO.findFeaturedProductsByBrandIds(brandIds, 36);
+
+            if (products != null && !products.isEmpty()) {
+                return products;
             }
         } catch (RuntimeException ex) {
             ex.printStackTrace();
