@@ -3,6 +3,7 @@ package com.webshop.app.controller.AuthController;
 import java.io.IOException;
 
 import com.webshop.app.service.RememberMeService;
+import com.webshop.app.utils.CartUtil;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -26,6 +27,21 @@ public class LogoutServlet extends HttpServlet {
         req.setCharacterEncoding("UTF-8");
         resp.setCharacterEncoding("UTF-8");
 
+        HttpSession session = req.getSession(false);
+
+        /*
+         * Issue 132:
+         * Trước khi invalidate session, lưu lại giỏ hàng hiện tại xuống database.
+         *
+         * Lưu ý:
+         * - Chỉ lưu khi session đang có CART.
+         * - Không gọi getCart() ở đây để tránh tạo cart rỗng rồi ghi đè làm mất
+         *   dữ liệu cart_items cũ nếu user đăng nhập nhưng chưa mở/thao tác giỏ hàng.
+         */
+        if (session != null && session.getAttribute(CartUtil.CART_SESSION_KEY) != null) {
+            CartUtil.saveCartForLoggedUser(session);
+        }
+
         // =====================
         // 1) LOGOUT NEW REMEMBER ME
         // =====================
@@ -44,8 +60,6 @@ public class LogoutServlet extends HttpServlet {
         // =====================
         // 3) INVALIDATE SESSION
         // =====================
-        HttpSession session = req.getSession(false);
-
         if (session != null) {
             session.invalidate();
         }
