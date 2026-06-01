@@ -2,6 +2,8 @@ package com.webshop.app.controller.CartController;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
@@ -10,6 +12,8 @@ import com.webshop.app.dao.ProductVariantDAO;
 import com.webshop.app.model.CartItem;
 import com.webshop.app.model.Product;
 import com.webshop.app.model.ProductVariant;
+import com.webshop.app.model.User;
+import com.webshop.app.service.FlashSaleLimitService;
 import com.webshop.app.utils.CartUtil;
 
 import jakarta.servlet.annotation.WebServlet;
@@ -25,6 +29,7 @@ public class CartServlet extends HttpServlet {
 
     private final ProductDAO productDAO = new ProductDAO();
     private final ProductVariantDAO variantDAO = new ProductVariantDAO();
+    private final FlashSaleLimitService flashSaleLimitService = new FlashSaleLimitService();
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
@@ -98,6 +103,35 @@ public class CartServlet extends HttpServlet {
         HttpSession session = req.getSession();
         Map<String, CartItem> cart = CartUtil.getCart(session);
 
+        /*
+         * Issue 139:
+         * Chặn mua quá số lượng Flash Sale ngay khi thêm vào giỏ.
+         *
+         * Lưu ý:
+         * - Kiểm tra theo productId, không theo cartKey, để user không thể vượt giới hạn
+         *   bằng cách thêm cùng sản phẩm nhưng khác variant.
+         * - Nếu user chưa đăng nhập, service vẫn giới hạn số lượng trong giỏ hiện tại.
+         * - CheckoutService vẫn phải kiểm tra lại lần cuối để tránh bypass request.
+         */
+        int userId = getCurrentUserId(session);
+        FlashSaleLimitService.LimitResult limitResult =
+                flashSaleLimitService.checkCanAdd(userId, cart, productId, quantity);
+
+        if (!limitResult.isAllowed()) {
+            session.setAttribute("cartError", limitResult.getMessage());
+            session.setAttribute("flashSaleLimitError", limitResult.getMessage());
+
+            String query = "flashLimit=1&message=" + urlEncode(limitResult.getMessage());
+
+            if (quickAdd) {
+                resp.sendRedirect(req.getContextPath() + "/cart?" + query);
+            } else {
+                resp.sendRedirect(productDetailUrl(req, product, query));
+            }
+
+            return;
+        }
+
         int realVariantId = selectedVariant != null ? selectedVariant.getId() : 0;
         String cartKey = CartUtil.buildKey(productId, realVariantId);
 
@@ -156,6 +190,17 @@ public class CartServlet extends HttpServlet {
             }
         }
 
+        /*
+         * Gắn thông tin giới hạn Flash Sale vào CartItem để cart.jsp có thể:
+         * - Hiển thị "Flash Sale: giới hạn X sản phẩm/khách"
+         * - Khóa nút tăng số lượng khi đã đạt giới hạn
+         */
+        try {
+            flashSaleLimitService.enrichCartItems(userId, cart);
+        } catch (Exception e) {
+            System.out.println("[CartServlet] enrich flash sale limit skipped: " + e.getMessage());
+        }
+
         resp.sendRedirect(req.getContextPath() + "/cart?added=1");
     }
 
@@ -189,6 +234,36 @@ public class CartServlet extends HttpServlet {
         }
 
         return url.toString();
+    }
+
+    private int getCurrentUserId(HttpSession session) {
+        if (session == null) {
+            return 0;
+        }
+
+        Object rawUser = session.getAttribute("user");
+
+        if (!(rawUser instanceof User)) {
+            rawUser = session.getAttribute("currentUser");
+        }
+
+        if (!(rawUser instanceof User)) {
+            rawUser = session.getAttribute("authUser");
+        }
+
+        if (rawUser instanceof User) {
+            return ((User) rawUser).getId();
+        }
+
+        return 0;
+    }
+
+    private String urlEncode(String value) {
+        if (value == null || value.isBlank()) {
+            return "";
+        }
+
+        return URLEncoder.encode(value, StandardCharsets.UTF_8);
     }
 
     private BigDecimal safeMoney(BigDecimal value) {
