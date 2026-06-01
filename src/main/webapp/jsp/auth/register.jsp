@@ -73,16 +73,19 @@
 
         <div class="form-group">
           <label>Giới tính</label>
-          <div class="input-group" style="display: flex; gap: 24px; padding: 10px 5px; border: none; background: transparent;">
-            <label style="font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px;">
-              <input type="radio" name="gender" value="Male" checked> Nam
-            </label>
-            <label style="font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px;">
-              <input type="radio" name="gender" value="Female"> Nữ
-            </label>
-            <label style="font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px;">
-              <input type="radio" name="gender" value="Other"> Khác
-            </label>
+          <div class="gender-wrapper">
+            <div class="gender-option">
+              <input type="radio" name="gender" id="gender-male" value="male">
+              <label for="gender-male">Nam</label>
+            </div>
+            <div class="gender-option">
+              <input type="radio" name="gender" id="gender-female" value="female">
+              <label for="gender-female">Nữ</label>
+            </div>
+            <div class="gender-option">
+              <input type="radio" name="gender" id="gender-other" value="other">
+              <label for="gender-other">Khác</label>
+            </div>
           </div>
         </div>
 
@@ -554,40 +557,61 @@
   };
 
   function handleGoogleRegister(response) {
-    fetch(contextPath + '/social-auth', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-    provider: 'google',
-    credential: response.credential,
-    mode: 'register'
-  })
-  })
-  .then(res => res.json())
-  .then(data => {
-      if (data.status === 'otp_required') {
-        Swal.fire({ icon: 'success', title: 'Đã gửi OTP', text: 'Vui lòng kiểm tra Gmail' })
-      .then(() => window.location.href = contextPath + data.redirectUrl);
-      } else {
-        Swal.fire({ icon: 'error', title: 'Lỗi', text: data.message });
-      }
+    // Hiển thị loading
+    Swal.fire({
+      title: 'Đang kiểm tra...',
+      allowOutsideClick: false,
+      didOpen: () => { Swal.showLoading(); }
     });
+
+    fetch(contextPath + '/social-auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        provider: 'google',
+        credential: response.credential,
+        mode: 'register'
+      })
+    })
+            .then(res => res.json())
+            .then(data => {
+              Swal.close(); // Tắt loading
+
+              if (data.status === 'otp_required') {
+                // Trường hợp đăng ký mới thành công (cần OTP)
+                Swal.fire({
+                  icon: 'success',
+                  title: 'Đã gửi mã!',
+                  text: 'Vui lòng kiểm tra Gmail để lấy mã OTP.'
+                }).then(() => window.location.href = contextPath + data.redirectUrl);
+
+              } else if (data.status === 'error') {
+                // TRƯỜNG HỢP TÀI KHOẢN ĐÃ TỒN TẠI
+                Swal.fire({
+                  icon: 'error',
+                  title: 'Lỗi',
+                  text: data.message // Sẽ hiển thị: "Tài khoản đã tồn tại"
+                });
+              }
+            })
+            .catch(err => {
+              Swal.close();
+              Swal.fire({ icon: 'error', title: 'Lỗi', text: 'Không thể kết nối server' });
+            });
   }
 
-document.addEventListener("DOMContentLoaded", function () {
+  document.addEventListener("DOMContentLoaded", function () {
 
-    // Logic Toggle Password
-    var toggleBtns = document.getElementsByClassName("toggle-btn");
+    var toggleBtns = document.getElementsByClassName("toggle-password");
 
     for (var i = 0; i < toggleBtns.length; i++) {
       toggleBtns[i].addEventListener("click", function () {
-        // Tìm container chứa input
-        var container = this.closest('.form-group') || this.parentElement;
+        var container = this.closest('.input-group');
         var inp = container.querySelector("input");
 
         if (!inp) return;
 
-        // Đảo trạng thái hiển thị
+
         if (inp.type === "password") {
           inp.type = "text";
           this.textContent = "👁️";
