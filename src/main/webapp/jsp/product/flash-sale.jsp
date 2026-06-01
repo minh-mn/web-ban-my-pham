@@ -177,11 +177,31 @@ Nếu include header/footer ở đây sẽ bị 2 thanh menu.
 
                 <div class="flash-product-bottom">
                   <div class="flash-progress-wrap">
-                    <div class="flash-progress">
-                      <span style="width: ${item.soldPercent <= 0 ? 75 : item.soldPercent}%;"></span>
+                    <c:set var="flashSoldPercent" value="${empty item.soldPercent ? 0 : item.soldPercent}" />
+
+                    <div class="flash-progress flash-stock-progress"
+                         role="progressbar"
+                         aria-label="Tiến độ đã bán"
+                         aria-valuemin="0"
+                         aria-valuemax="100"
+                         aria-valuenow="${flashSoldPercent}">
+                      <span style="width: ${flashSoldPercent}%;"></span>
                     </div>
-                    <div class="flash-progress-text">
-                      ĐANG DIỄN RA ${item.soldPercent <= 0 ? 75 : item.soldPercent}%
+
+                    <div class="flash-progress-text flash-stock-progress-text"
+                         data-progress-text
+                         data-percent="${flashSoldPercent}">
+                      <c:choose>
+                        <c:when test="${flashSoldPercent >= 100}">
+                          Đã bán hết
+                        </c:when>
+                        <c:when test="${flashSoldPercent <= 0}">
+                          Vừa mở bán
+                        </c:when>
+                        <c:otherwise>
+                          Đã bán ${flashSoldPercent}%
+                        </c:otherwise>
+                      </c:choose>
                     </div>
                   </div>
 
