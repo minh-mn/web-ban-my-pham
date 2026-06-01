@@ -258,8 +258,10 @@
                     </td>
 
                     <td class="admin-order-id-cell">
-                      <strong>#${o.id}</strong>
-                      <span>User ${o.userId}</span>
+                      <div class="admin-order-id-content">
+                        <strong>#${o.id}</strong>
+                        <span>User ${o.userId}</span>
+                      </div>
                     </td>
 
                     <td>
@@ -271,9 +273,13 @@
                     </td>
 
                     <td class="admin-order-total-cell">
-                      <strong><fmt:formatNumber value="${o.total}" type="number" groupingUsed="true" maxFractionDigits="0"/></strong>
-                      <span>₫</span>
-                      <small>Ship: <fmt:formatNumber value="${o.shippingFee}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫</small>
+                      <div class="admin-order-total-content">
+                        <div class="admin-order-money">
+                          <strong><fmt:formatNumber value="${o.total}" type="number" groupingUsed="true" maxFractionDigits="0"/></strong>
+                          <span>₫</span>
+                        </div>
+                        <small>Ship: <fmt:formatNumber value="${o.shippingFee}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫</small>
+                      </div>
                     </td>
 
                     <td>
@@ -477,7 +483,7 @@
                 <c:forEach var="p" begin="${pageStart}" end="${pageEnd}">
                   <a class="admin-order-page-link ${p eq currentPage ? 'is-active' : ''}"
                      href="${pageContext.request.contextPath}/admin/orders?${filterQueryString}&page=${p}">
-                    ${p}
+                      ${p}
                   </a>
                 </c:forEach>
 
