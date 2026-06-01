@@ -84,11 +84,13 @@ public class HomeServlet extends HttpServlet {
 
         // 4. Sản phẩm trang chủ
         List<Product> featuredProducts = loadFeaturedProducts();
+        List<Product> discoverProducts = loadDiscoverProducts(featuredProducts);
 
         // Các section bên dưới dùng các biến này. Nếu DAO chưa tách riêng từng nhóm,
         // dùng featuredProducts làm fallback để tránh section bị mất khỏi trang chủ.
         req.setAttribute("products", featuredProducts);
         req.setAttribute("featuredProducts", featuredProducts);
+        req.setAttribute("discoverProducts", discoverProducts);
         req.setAttribute("bestSellingProducts", featuredProducts);
         req.setAttribute("mostViewedProducts", featuredProducts);
         req.setAttribute("newProducts", featuredProducts);
@@ -136,6 +138,20 @@ public class HomeServlet extends HttpServlet {
                 return new ArrayList<>();
             }
         }
+    }
+
+    private List<Product> loadDiscoverProducts(List<Product> fallbackProducts) {
+        try {
+            List<Product> discoverProducts = productDAO.findHomeDiscoverProducts();
+
+            if (discoverProducts != null && !discoverProducts.isEmpty()) {
+                return discoverProducts;
+            }
+        } catch (RuntimeException ex) {
+            ex.printStackTrace();
+        }
+
+        return fallbackProducts != null ? fallbackProducts : new ArrayList<>();
     }
 
     private List<Product> loadFlashSaleProducts(HttpServletRequest req) {
