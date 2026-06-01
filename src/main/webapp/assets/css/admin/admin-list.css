@@ -3196,3 +3196,432 @@ td.product-actions {
   }
 }
 
+/* =========================================================
+   Flash Sale Management List - ISSUE 139
+   Scope: /jsp/admin/flashsale/flashsale-list.jsp
+   Chức năng:
+   - Danh sách Flash Sale
+   - Điều hướng quản lý sản phẩm Flash Sale
+   - Nhắc cấu hình max_quantity_per_user theo từng item
+========================================================= */
+
+.admin-main > .admin-container.admin-flashsale-page {
+  width: 100%;
+  max-width: none !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+.admin-flashsale-page {
+  width: 100%;
+}
+
+.admin-flashsale-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: start;
+  margin-bottom: 16px;
+  padding: 18px;
+  border: 1px solid rgba(255, 95, 162, 0.20);
+  border-radius: 22px;
+  background:
+          radial-gradient(circle at top left, rgba(255, 95, 162, 0.15), transparent 34%),
+          linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #fff 100%);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.055);
+}
+
+.admin-flashsale-hero__content {
+  min-width: 0;
+}
+
+.admin-flashsale-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 95, 162, 0.35);
+  background: rgba(255, 95, 162, 0.10);
+  color: #be185d;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.admin-flashsale-title {
+  margin-bottom: 5px;
+}
+
+.admin-flashsale-subtitle {
+  max-width: 900px;
+  line-height: 1.55;
+}
+
+.admin-flashsale-hero__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.admin-flashsale-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.admin-flashsale-stat {
+  position: relative;
+  overflow: hidden;
+  padding: 15px;
+  border: 1px solid var(--admin-border);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: var(--admin-shadow-sm);
+}
+
+.admin-flashsale-stat::after {
+  content: "";
+  position: absolute;
+  right: -24px;
+  top: -24px;
+  width: 72px;
+  height: 72px;
+  border-radius: 999px;
+  background: rgba(255, 95, 162, 0.10);
+}
+
+.admin-flashsale-stat--active::after {
+  background: rgba(16, 185, 129, 0.14);
+}
+
+.admin-flashsale-stat--limit::after {
+  background: rgba(245, 158, 11, 0.15);
+}
+
+.admin-flashsale-stat__label {
+  display: block;
+  color: var(--admin-muted);
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
+.admin-flashsale-stat__value {
+  display: block;
+  margin-top: 8px;
+  color: var(--admin-text);
+  font-size: 28px;
+  line-height: 1;
+  font-weight: 950;
+  letter-spacing: -0.035em;
+}
+
+.admin-flashsale-stat__note {
+  display: block;
+  margin-top: 8px;
+  color: var(--admin-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.admin-flashsale-list-card {
+  overflow: hidden;
+}
+
+.admin-flashsale-list-card .admin-card__body {
+  padding: 18px;
+  overflow-x: visible;
+}
+
+.admin-flashsale-section-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.07);
+}
+
+.admin-flashsale-section-title {
+  margin: 0;
+  color: var(--admin-text);
+  font-size: 17px;
+  line-height: 1.25;
+  font-weight: 950;
+  letter-spacing: -0.02em;
+}
+
+.admin-flashsale-section-desc {
+  margin: 5px 0 0;
+  color: var(--admin-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.admin-flashsale-section-desc strong {
+  color: var(--admin-text);
+  font-weight: 900;
+}
+
+.admin-flashsale-empty {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  padding: 22px;
+  border: 1px dashed var(--admin-border);
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.018);
+}
+
+.admin-flashsale-empty__icon {
+  width: 58px;
+  height: 58px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 95, 162, 0.10);
+  font-size: 26px;
+}
+
+.admin-flashsale-empty h3 {
+  margin: 0 0 5px;
+  color: var(--admin-text);
+  font-size: 16px;
+  font-weight: 950;
+}
+
+.admin-flashsale-empty p {
+  margin: 0 0 12px;
+  color: var(--admin-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.admin-flashsale-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid rgba(15, 23, 42, 0.07);
+  border-radius: 16px;
+  background: #fff;
+}
+
+.admin-flashsale-table {
+  width: 100%;
+  min-width: 1120px;
+  table-layout: fixed;
+  border-left: 0;
+  border-right: 0;
+  border-radius: 0;
+}
+
+.admin-flashsale-table th,
+.admin-flashsale-table td {
+  padding: 12px 10px;
+  vertical-align: top;
+}
+
+.admin-flashsale-table tbody tr + tr td {
+  border-top: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.admin-flashsale-table th {
+  color: rgba(15, 23, 42, 0.66);
+  font-size: 12px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.admin-flashsale-table tbody tr {
+  transition: background 0.15s ease;
+}
+
+.admin-flashsale-table tbody tr:hover {
+  background: rgba(255, 95, 162, 0.028);
+}
+
+.admin-flashsale-row--inactive {
+  background: rgba(15, 23, 42, 0.018);
+}
+
+.admin-flashsale-col-id {
+  width: 70px;
+}
+
+.admin-flashsale-col-title {
+  width: 260px;
+}
+
+.admin-flashsale-col-period {
+  width: 150px;
+}
+
+.admin-flashsale-col-status {
+  width: 116px;
+}
+
+.admin-flashsale-col-limit {
+  width: 220px;
+}
+
+.admin-flashsale-col-actions {
+  width: 176px;
+}
+
+.admin-flashsale-id-cell {
+  color: var(--admin-text);
+  font-size: 13px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.admin-flashsale-program {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.admin-flashsale-program strong {
+  color: var(--admin-text);
+  font-size: 14px;
+  line-height: 1.35;
+  font-weight: 950;
+  overflow-wrap: anywhere;
+}
+
+.admin-flashsale-program span {
+  color: var(--admin-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.admin-flashsale-period {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.admin-flashsale-period span {
+  display: inline-flex;
+  width: fit-content;
+  min-height: 20px;
+  padding: 0 7px;
+  align-items: center;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.045);
+  color: var(--admin-muted);
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.admin-flashsale-period strong {
+  color: var(--admin-text);
+  font-size: 12px;
+  line-height: 1.4;
+  font-weight: 850;
+  overflow-wrap: anywhere;
+}
+
+.admin-flashsale-limit-summary {
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+}
+
+.admin-flashsale-limit-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.10);
+  color: #92400e;
+  font-size: 11px;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.admin-flashsale-limit-summary small {
+  color: var(--admin-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.admin-flashsale-action-cell {
+  white-space: nowrap;
+  vertical-align: top;
+}
+
+.admin-flashsale-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(76px, 1fr));
+  gap: 8px;
+  align-items: stretch;
+  width: 100%;
+  max-width: 170px;
+}
+
+.admin-flashsale-action-btn {
+  width: 100%;
+  min-height: 34px;
+  padding: 0 9px;
+  justify-content: center;
+  border-radius: 11px;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+@media (max-width: 1180px) {
+  .admin-flashsale-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-flashsale-hero__actions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 900px) {
+  .admin-flashsale-table {
+    min-width: 1080px;
+  }
+
+  .admin-flashsale-stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .admin-flashsale-hero {
+    padding: 15px;
+    border-radius: 18px;
+  }
+
+  .admin-flashsale-hero__actions {
+    width: 100%;
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-flashsale-hero__actions .admin-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .admin-flashsale-empty {
+    grid-template-columns: 1fr;
+    text-align: center;
+    justify-items: center;
+  }
+}
