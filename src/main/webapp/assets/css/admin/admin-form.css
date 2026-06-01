@@ -2635,3 +2635,256 @@
     font-size: 19px;
   }
 }
+
+/* =========================================================
+   FLASH SALE ITEMS ADMIN - ISSUE 139
+   Dùng cho: /jsp/admin/flashsale/flashsale-items.jsp
+   Chức năng:
+   - Admin cấu hình max_quantity_per_user cho từng sản phẩm Flash Sale
+   - Hiển thị giới hạn mua, số lượng còn lại và tiến độ đã bán
+========================================================= */
+
+.flashsale-items-page {
+  display: grid;
+  gap: 18px;
+}
+
+.flashsale-items-topbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.flashsale-item-form-card {
+  margin-bottom: 0;
+}
+
+.flashsale-item-form {
+  gap: 16px;
+}
+
+.admin-form-grid--4.flashsale-item-form-grid {
+  grid-template-columns: minmax(260px, 1.6fr) repeat(3, minmax(150px, 1fr));
+  gap: 14px;
+}
+
+.flashsale-product-field {
+  min-width: 0;
+}
+
+.flashsale-limit-field .admin-input {
+  font-weight: 900;
+  color: #be185d;
+}
+
+.flashsale-limit-note {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  padding: 13px 14px;
+  border: 1px solid rgba(245, 158, 11, 0.32);
+  border-radius: 16px;
+  background: rgba(245, 158, 11, 0.08);
+  color: #92400e;
+}
+
+.flashsale-limit-note__icon {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: #fff;
+  color: #b45309;
+  font-size: 16px;
+  font-weight: 1000;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.055);
+}
+
+.flashsale-limit-note strong {
+  display: block;
+  margin-bottom: 4px;
+  color: currentColor;
+  font-size: 13px;
+  font-weight: 950;
+  line-height: 1.35;
+}
+
+.flashsale-limit-note span {
+  display: block;
+  color: currentColor;
+  opacity: 0.94;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.flashsale-limit-note code {
+  padding: 2px 6px;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.78);
+  color: #7c2d12;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.flashsale-items-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.flashsale-items-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius, 14px);
+  background: #fff;
+}
+
+.flashsale-items-table {
+  width: 100%;
+  min-width: 1040px;
+  border-collapse: collapse;
+}
+
+.flashsale-items-table th,
+.flashsale-items-table td {
+  padding: 12px 10px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  vertical-align: middle;
+  text-align: left;
+}
+
+.flashsale-items-table th {
+  background: rgba(15, 23, 42, 0.025);
+  color: rgba(15, 23, 42, 0.68);
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.flashsale-items-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.flashsale-items-table tbody tr:hover {
+  background: rgba(255, 95, 162, 0.025);
+}
+
+.flashsale-product-cell {
+  min-width: 240px;
+}
+
+.flashsale-product-cell strong {
+  display: block;
+  color: var(--admin-text);
+  font-size: 13px;
+  line-height: 1.4;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.flashsale-product-cell span {
+  display: block;
+  margin-top: 3px;
+  color: var(--admin-muted);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.flashsale-price-cell {
+  color: #be185d;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.flashsale-limit-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(255, 95, 162, 0.10);
+  color: #be185d;
+  font-size: 12px;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.flashsale-progress-cell {
+  min-width: 150px;
+}
+
+.flashsale-admin-progress {
+  width: 100%;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #f3dfe6;
+  box-shadow: inset 0 1px 2px rgba(120, 0, 38, 0.08);
+}
+
+.flashsale-admin-progress span {
+  display: block;
+  height: 100%;
+  min-width: 6px;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ff7ab1 0%, #f00061 48%, #9b0012 100%);
+}
+
+.flashsale-progress-cell small {
+  display: block;
+  margin-top: 5px;
+  color: #9b002f;
+  font-size: 12px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.flashsale-delete-form {
+  margin: 0;
+}
+
+.flashsale-delete-form .admin-btn {
+  min-height: 34px;
+  padding: 0 12px;
+}
+
+@media (max-width: 1180px) {
+  .admin-form-grid--4.flashsale-item-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .flashsale-product-field {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 760px) {
+  .flashsale-items-topbar {
+    flex-direction: column;
+  }
+
+  .flashsale-items-topbar .admin-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .admin-form-grid--4.flashsale-item-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .flashsale-limit-note {
+    grid-template-columns: 1fr;
+  }
+
+  .flashsale-limit-note__icon {
+    width: 34px;
+    height: 34px;
+  }
+}
