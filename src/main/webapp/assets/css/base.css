@@ -292,7 +292,7 @@ a { text-decoration: none; color: inherit; }
   font-weight: 700;
   font-size: 13px;
   color: #fff;
-  background: linear-gradient(135deg, var(--pink-main), var(--pink-dark));
+  background: linear-gradient(135deg,#ff5fa2,#ff86c3);
   display: inline-block;
   margin-left: 10px;
 }
