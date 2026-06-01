@@ -24,7 +24,7 @@
           <c:forEach var="category" items="${hotCategories}">
             <c:choose>
               <c:when test="${category.id > 0}">
-                <c:set var="categoryUrl" value="${ctx}/products?categoryIds=${category.id}" />
+                <c:set var="categoryUrl" value="${ctx}/products?category=${category.id}" />
               </c:when>
               <c:otherwise>
                 <c:set var="categoryUrl" value="${ctx}/products" />
