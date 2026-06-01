@@ -1072,6 +1072,7 @@ public class ProductDAO {
 	}
 
 
+
 	public List<Product> findFeaturedProductsByBrandIds(List<Integer> brandIds, int limit) {
 		List<Product> list = new ArrayList<>();
 
@@ -1079,8 +1080,7 @@ public class ProductDAO {
 			return list;
 		}
 
-		int safeLimit = Math.max(limit, brandIds.size() * 4);
-		String brandPlaceholders = placeholders(brandIds.size());
+		int perBrandLimit = limit > 0 ? limit : 9;
 
 		String sql =
 				"SELECT p.id, p.title, p.slug, p.description, " +
@@ -1105,38 +1105,34 @@ public class ProductDAO {
 						"GROUP BY oi.product_id " +
 						") sd ON sd.product_id = p.id " +
 						"WHERE p.is_active = 1 " +
-						"AND p.brand_id IN (" + brandPlaceholders + ") " +
-						"ORDER BY FIELD(p.brand_id, " + brandPlaceholders + "), " +
-						"COALESCE(sd.sold_qty, 0) DESC, p.discount_percent DESC, p.created_at DESC " +
+						"AND p.brand_id = ? " +
+						"ORDER BY COALESCE(sd.sold_qty, 0) DESC, p.discount_percent DESC, p.created_at DESC " +
 						"LIMIT ?";
 
-		try (Connection c = DBConnection.getConnection();
-			 PreparedStatement ps = c.prepareStatement(sql)) {
-
-			int idx = 1;
-
+		try (Connection c = DBConnection.getConnection()) {
 			for (Integer brandId : brandIds) {
-				ps.setInt(idx++, brandId);
-			}
+				if (brandId == null || brandId <= 0) {
+					continue;
+				}
 
-			for (Integer brandId : brandIds) {
-				ps.setInt(idx++, brandId);
-			}
+				try (PreparedStatement ps = c.prepareStatement(sql)) {
+					ps.setInt(1, brandId);
+					ps.setInt(2, perBrandLimit);
 
-			ps.setInt(idx, safeLimit);
-
-			try (ResultSet rs = ps.executeQuery()) {
-				while (rs.next()) {
-					list.add(mapRowList(rs));
+					try (ResultSet rs = ps.executeQuery()) {
+						while (rs.next()) {
+							list.add(mapRowList(rs));
+						}
+					}
 				}
 			}
-
 		} catch (SQLException e) {
 			throw new RuntimeException("ProductDAO.findFeaturedProductsByBrandIds error", e);
 		}
 
 		return list;
 	}
+
 
     /* =========================================================
        PROMOTION PRODUCT PICKER
