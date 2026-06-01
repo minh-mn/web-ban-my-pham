@@ -4,15 +4,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.webshop.app.dao.AdminStatsDAO;
 import com.webshop.app.dao.CouponDAO;
 import com.webshop.app.dao.OrderDAO;
+import com.webshop.app.dao.SearchHistoryDAO;
 import com.webshop.app.dao.UserCouponDAO;
 import com.webshop.app.dao.UserDAO;
 import com.webshop.app.model.User;
+import com.webshop.app.model.UserSearchHistory;
 import com.webshop.app.service.UserRankService;
 
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import jakarta.servlet.ServletException;
@@ -32,6 +35,7 @@ public class AccountServlet extends HttpServlet {
     private final UserRankService userRankService = new UserRankService();
     private final UserCouponDAO userCouponDAO = new UserCouponDAO();
     private final CouponDAO couponDAO = new CouponDAO();
+    private final SearchHistoryDAO searchHistoryDAO = new SearchHistoryDAO();
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -161,6 +165,15 @@ public class AccountServlet extends HttpServlet {
         req.setAttribute("savedCoupons", couponDAO.findSavedCouponsByUserId(user.getId()));
 
         /*
+         * =========================
+         * USER SEARCH HISTORY
+         * =========================
+         * Issue 133:
+         * Hiển thị lịch sử tìm kiếm gần đây của tài khoản.
+         */
+        setSearchHistoryAttributes(req, user);
+
+        /*
          * Chart.js cần JSON hợp lệ.
          * Nếu DAO trả về List thì convert sang JSON.
          * Nếu DAO đã trả JSON string dạng [] thì giữ nguyên.
@@ -187,6 +200,44 @@ public class AccountServlet extends HttpServlet {
         req.setAttribute("pageContent", "/jsp/account/account.jsp");
 
         req.getRequestDispatcher("/jsp/common/base.jsp").forward(req, resp);
+    }
+
+
+    private void setSearchHistoryAttributes(HttpServletRequest req, User user) {
+
+        if (user == null || user.getId() <= 0) {
+            req.setAttribute("searchHistories", Collections.emptyList());
+            req.setAttribute("recentSearchHistories", Collections.emptyList());
+            req.setAttribute("userSearchHistories", Collections.emptyList());
+            req.setAttribute("searchHistoryCount", 0);
+            return;
+        }
+
+        try {
+            List<UserSearchHistory> searchHistories =
+                    searchHistoryDAO.findRecentByUserId(user.getId(), 10);
+
+            int searchHistoryCount = searchHistoryDAO.countByUserId(user.getId());
+
+            /*
+             * Đặt nhiều alias để JSP dễ dùng và tránh lệch tên attribute.
+             */
+            req.setAttribute("searchHistories", searchHistories);
+            req.setAttribute("recentSearchHistories", searchHistories);
+            req.setAttribute("userSearchHistories", searchHistories);
+            req.setAttribute("searchHistoryCount", searchHistoryCount);
+
+        } catch (RuntimeException e) {
+            /*
+             * Nếu chưa chạy SQL tạo bảng user_search_history,
+             * trang account vẫn phải hiển thị bình thường.
+             */
+            req.setAttribute("searchHistories", Collections.emptyList());
+            req.setAttribute("recentSearchHistories", Collections.emptyList());
+            req.setAttribute("userSearchHistories", Collections.emptyList());
+            req.setAttribute("searchHistoryCount", 0);
+            e.printStackTrace();
+        }
     }
 
     private void setAdminStatistics(HttpServletRequest req) throws IOException {
@@ -280,6 +331,14 @@ public class AccountServlet extends HttpServlet {
          * Default cho Issue 110.
          */
         req.setAttribute("availableCoupons", Collections.emptyList());
+
+        /*
+         * Default cho Issue 133.
+         */
+        req.setAttribute("searchHistories", Collections.emptyList());
+        req.setAttribute("recentSearchHistories", Collections.emptyList());
+        req.setAttribute("userSearchHistories", Collections.emptyList());
+        req.setAttribute("searchHistoryCount", 0);
     }
 
     private String normalizeRankCode(String rankCode) {
