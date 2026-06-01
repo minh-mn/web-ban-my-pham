@@ -225,32 +225,17 @@ Thay thế block SỰ KIỆN HOT bằng sản phẩm khám phá theo layout danh
 
 <!-- =========================================================
 THƯƠNG HIỆU NỔI BẬT
-Các thương hiệu chọn được và lọc đúng sản phẩm ngay trong section.
+Layout theo mẫu: banner lớn bên trái, logo thương hiệu + sản phẩm nổi bật bên phải.
 ========================================================= -->
-<c:if test="${not empty brands}">
-	<c:choose>
-		<c:when test="${not empty featuredHomeBrands}">
-			<c:set var="featuredBrandList" value="${featuredHomeBrands}" />
-		</c:when>
-		<c:otherwise>
-			<c:set var="featuredBrandList" value="${brands}" />
-		</c:otherwise>
-	</c:choose>
+<c:set var="featuredBrandList" value="${not empty featuredHomeBrands ? featuredHomeBrands : brands}" />
+<c:set var="featuredBrandProductList" value="${not empty featuredBrandProducts ? featuredBrandProducts : featuredProducts}" />
 
-	<c:choose>
-		<c:when test="${not empty featuredBrandProducts}">
-			<c:set var="brandSectionProducts" value="${featuredBrandProducts}" />
-		</c:when>
-		<c:otherwise>
-			<c:set var="brandSectionProducts" value="${featuredProducts}" />
-		</c:otherwise>
-	</c:choose>
-
-	<section class="skin-featured-brand-section" id="featured-brands" data-featured-brand-section>
+<c:if test="${not empty featuredBrandList}">
+	<section class="skin-featured-brand-section" id="featured-brands">
 		<style>
 			.skin-featured-brand-section {
 				padding: 52px 0 58px;
-				background: #fff;
+				background: linear-gradient(180deg, #fff 0%, #fff7fa 100%);
 			}
 
 			.skin-featured-brand-layout {
@@ -266,9 +251,9 @@ Các thương hiệu chọn được và lọc đúng sản phẩm ngay trong se
 				display: block;
 				min-height: 620px;
 				overflow: hidden;
-				background: linear-gradient(135deg, #ffe1eb 0%, #fff7fa 48%, #ffd4e3 100%);
+				background: linear-gradient(135deg, #ffe1eb 0%, #fff7fa 46%, #ffd0e2 100%);
 				text-decoration: none;
-				box-shadow: 0 18px 45px rgba(157, 0, 45, .10);
+				box-shadow: 0 18px 45px rgba(176, 18, 57, .14);
 			}
 
 			.skin-featured-brand-banner img {
@@ -320,17 +305,23 @@ Các thương hiệu chọn được và lọc đúng sản phẩm ngay trong se
 
 			.skin-featured-brand-title {
 				margin: 0;
-				color: #161616;
+				display: inline-block;
+				width: fit-content;
+				padding: 6px 0;
+				color: #111;
 				font-size: clamp(24px, 2.4vw, 38px);
 				font-weight: 950;
 				letter-spacing: .075em;
-				line-height: 1.2;
+				line-height: 1.25;
 				text-transform: uppercase;
+				background: none;
+				-webkit-text-fill-color: currentColor;
+				text-shadow: none;
 			}
 
 			.skin-featured-brand-more {
 				flex: 0 0 auto;
-				color: #8d001f;
+				color: #b01239;
 				font-size: 17px;
 				font-weight: 850;
 				text-decoration: none;
@@ -347,36 +338,50 @@ Các thương hiệu chọn được và lọc đúng sản phẩm ngay trong se
 				align-items: center;
 				min-height: 76px;
 				overflow: hidden;
-				border: 3px solid #8d001f;
+				border: 3px solid #b01239;
 				border-radius: 999px;
-				background: #fff;
-				box-shadow: 0 12px 28px rgba(141, 0, 31, .08);
+				background: #fff7fa;
+				box-shadow: 0 12px 28px rgba(176, 18, 57, .10);
 			}
 
 			.skin-featured-brand-logo {
+				appearance: none;
+				-webkit-appearance: none;
 				min-width: 0;
+				width: 100%;
 				height: 76px;
 				display: flex;
 				align-items: center;
 				justify-content: center;
 				padding: 12px 16px;
 				border: 0;
-				border-right: 1px solid rgba(141, 0, 31, .10);
+				border-right: 1px solid rgba(176, 18, 57, .12);
 				background: #fff;
-				color: #161616;
-				font-family: inherit;
-				font-size: 20px;
+				color: #b01239;
+				font: inherit;
+				font-size: 18px;
 				font-weight: 950;
 				letter-spacing: .04em;
 				text-align: center;
 				text-decoration: none;
 				text-transform: uppercase;
 				cursor: pointer;
-				transition: background .2s ease, color .2s ease, box-shadow .2s ease;
+				transition: background .2s ease, color .2s ease, box-shadow .2s ease, transform .2s ease;
 			}
 
 			.skin-featured-brand-logo:last-child {
 				border-right: 0;
+			}
+
+			.skin-featured-brand-logo.is-active,
+			.skin-featured-brand-logo:hover {
+				background: #b01239;
+				color: #fff;
+				box-shadow: inset 0 0 0 999px rgba(255, 255, 255, .02), 0 10px 22px rgba(176, 18, 57, .18);
+			}
+
+			.skin-featured-brand-logo:hover {
+				transform: translateY(-1px);
 			}
 
 			.skin-featured-brand-logo img {
@@ -387,38 +392,11 @@ Các thương hiệu chọn được và lọc đúng sản phẩm ngay trong se
 				filter: grayscale(1) contrast(1.1);
 				transition: filter .22s ease, transform .22s ease;
 			}
-			.skin-featured-brand-logo:hover {
-				background: #fff4f7;
-				color: #9b001c;
-				box-shadow: inset 0 -4px 0 #9b001c;
-			}
 
+			.skin-featured-brand-logo.is-active img,
 			.skin-featured-brand-logo:hover img {
-				filter: grayscale(0) contrast(1);
-				transform: scale(1.06);
-			}
-
-			.skin-featured-brand-logo.is-active {
-				position: relative;
-				background: #9b001c;
-				color: #fff;
-				box-shadow: inset 0 0 0 2px #9b001c, 0 12px 24px rgba(155, 0, 28, .18);
-			}
-
-			.skin-featured-brand-logo.is-active::after {
-				content: "";
-				position: absolute;
-				left: 50%;
-				bottom: -9px;
-				width: 18px;
-				height: 18px;
-				background: #9b001c;
-				transform: translateX(-50%) rotate(45deg);
-			}
-
-			.skin-featured-brand-logo.is-active img {
-				filter: brightness(0) invert(1);
-				transform: scale(1.06);
+				filter: grayscale(0) contrast(1) brightness(0) invert(1);
+				transform: scale(1.04);
 			}
 
 			.skin-featured-brand-logo-fallback {
@@ -428,41 +406,13 @@ Các thương hiệu chọn được và lọc đúng sản phẩm ngay trong se
 				-webkit-box-orient: vertical;
 			}
 
-			.skin-featured-brand-filter-note {
-				min-height: 26px;
-				margin-top: 12px;
-				color: #6b7280;
-				font-size: 14px;
-				font-weight: 650;
-			}
-
-			.skin-featured-brand-filter-note b {
-				color: #9b001c;
-				font-weight: 900;
-			}
-
 			.skin-featured-brand-products {
 				display: grid;
 				grid-template-columns: repeat(4, minmax(0, 1fr));
 				margin-top: 16px;
-				border-top: 1px solid #ececec;
-				border-left: 1px solid #ececec;
-			}
-
-			.skin-featured-brand-products.is-filtering {
-				animation: skinBrandFilterFade .18s ease;
-			}
-
-			@keyframes skinBrandFilterFade {
-				from {
-					opacity: .55;
-					transform: translateY(4px);
-				}
-
-				to {
-					opacity: 1;
-					transform: translateY(0);
-				}
+				border-top: 1px solid #f0d1db;
+				border-left: 1px solid #f0d1db;
+				background: #fff;
 			}
 
 			.skin-featured-brand-card {
@@ -470,19 +420,20 @@ Các thương hiệu chọn được và lọc đúng sản phẩm ngay trong se
 				min-width: 0;
 				padding-bottom: 18px;
 				background: #fff;
-				border-right: 1px solid #ececec;
-				border-bottom: 1px solid #ececec;
-				transition: box-shadow .22s ease, transform .22s ease;
+				border-right: 1px solid #f0d1db;
+				border-bottom: 1px solid #f0d1db;
+				transition: box-shadow .22s ease, transform .22s ease, border-color .22s ease;
 			}
 
-			.skin-featured-brand-card.is-hidden {
+			.skin-featured-brand-card.is-hidden-by-brand {
 				display: none;
 			}
 
 			.skin-featured-brand-card:hover {
 				z-index: 2;
 				transform: translateY(-3px);
-				box-shadow: 0 18px 36px rgba(15, 23, 42, .10);
+				border-color: #efc3cf;
+				box-shadow: 0 18px 36px rgba(176, 18, 57, .12);
 			}
 
 			.skin-featured-brand-image {
@@ -490,7 +441,7 @@ Các thương hiệu chọn được và lọc đúng sản phẩm ngay trong se
 				display: block;
 				height: 190px;
 				overflow: hidden;
-				background: #f7fbff;
+				background: radial-gradient(circle at 50% 32%, rgba(255, 229, 238, .95), transparent 42%), #fff7fa;
 			}
 
 			.skin-featured-brand-image img {
@@ -500,20 +451,24 @@ Các thương hiệu chọn được và lọc đúng sản phẩm ngay trong se
 				display: block;
 			}
 
-			.skin-featured-brand-discount {
+			.skin-featured-brand-section .skin-featured-brand-discount {
 				position: absolute;
 				right: 12px;
 				bottom: 12px;
+				z-index: 3;
 				width: 48px;
 				height: 48px;
 				display: inline-flex;
 				align-items: center;
 				justify-content: center;
 				border-radius: 999px;
-				background: #a8d83f;
-				color: #fff;
+				background: linear-gradient(135deg, #ff4f97 0%, #d9154f 48%, #a4041b 100%) !important;
+				background-color: #d9154f !important;
+				color: #fff !important;
+				border: 2px solid rgba(255, 255, 255, .95);
 				font-size: 13px;
 				font-weight: 950;
+				box-shadow: 0 10px 20px rgba(176, 18, 57, .22);
 			}
 
 			.skin-featured-brand-body {
@@ -523,11 +478,10 @@ Các thương hiệu chọn được và lọc đúng sản phẩm ngay trong se
 			.skin-featured-brand-name {
 				display: block;
 				margin-bottom: 7px;
-				color: #171717;
+				color: #b01239;
 				font-size: 15px;
 				font-weight: 950;
 				letter-spacing: .05em;
-				text-decoration: none;
 				text-transform: uppercase;
 			}
 
@@ -545,7 +499,7 @@ Các thương hiệu chọn được và lọc đúng sản phẩm ngay trong se
 			}
 
 			.skin-featured-brand-product-title:hover {
-				color: #9b001c;
+				color: #b01239;
 			}
 
 			.skin-featured-brand-price {
@@ -574,39 +528,103 @@ Các thương hiệu chọn được và lọc đúng sản phẩm ngay trong se
 				font-weight: 650;
 			}
 
+			.skin-featured-brand-actions {
+				display: grid;
+				grid-template-columns: 1fr 1fr;
+				gap: 10px;
+				margin-top: 14px;
+			}
+
+			.skin-featured-brand-view-btn,
+			.skin-featured-brand-cart-btn {
+				width: 100%;
+				min-height: 40px;
+				display: inline-flex;
+				align-items: center;
+				justify-content: center;
+				padding: 9px 10px;
+				border-radius: 999px;
+				font-size: 13px;
+				font-weight: 900;
+				text-align: center;
+				text-decoration: none;
+				cursor: pointer;
+				transition: background .2s ease, color .2s ease, border-color .2s ease, opacity .2s ease;
+			}
+
+			.skin-featured-brand-view-btn {
+				border: 1px solid rgba(176, 18, 57, .18);
+				background: #fff;
+				color: #b01239;
+			}
+
+			.skin-featured-brand-view-btn:hover {
+				background: #fff4f8;
+				color: #9a0027;
+				transform: translateY(-1px);
+			}
+
+			.skin-featured-brand-cart-form {
+				margin: 0;
+			}
+
+			.skin-featured-brand-cart-btn {
+				border: 0;
+				background: linear-gradient(135deg, #ff4f97 0%, #d9154f 48%, #a4041b 100%);
+				color: #fff;
+				box-shadow: 0 10px 20px rgba(176, 18, 57, .18);
+			}
+
+			.skin-featured-brand-cart-btn:hover {
+				transform: translateY(-1px);
+				box-shadow: 0 14px 26px rgba(176, 18, 57, .24);
+			}
+
+			.skin-featured-brand-cart-btn:disabled {
+				opacity: .45;
+				cursor: not-allowed;
+			}
+
 			.skin-featured-brand-empty {
 				display: none;
 				margin-top: 16px;
-				padding: 24px;
-				border: 1px dashed #e5b3c1;
-				border-radius: 18px;
-				background: #fff8fb;
+				padding: 22px;
+				border: 1px dashed #efc3cf;
+				background: #fff7fa;
 				color: #8d001f;
-				font-size: 15px;
-				font-weight: 750;
+				font-weight: 850;
 				text-align: center;
 			}
 
-			.skin-featured-brand-empty.is-show {
-				display: block;
-			}
-
 			.skin-featured-brand-view-more {
-				display: flex;
+				display: none;
 				justify-content: center;
 				margin-top: 24px;
 			}
 
+			.skin-featured-brand-view-more.is-show {
+				display: flex;
+			}
+
 			.skin-featured-brand-view-more a {
-				color: #8d001f;
-				font-size: 18px;
-				font-weight: 850;
+				min-width: 190px;
+				min-height: 44px;
+				display: inline-flex;
+				align-items: center;
+				justify-content: center;
+				padding: 10px 24px;
+				border-radius: 999px;
+				background: linear-gradient(135deg, #ff4f97 0%, #d9154f 48%, #a4041b 100%);
+				color: #fff;
+				font-size: 16px;
+				font-weight: 900;
 				text-decoration: none;
+				box-shadow: 0 12px 24px rgba(176, 18, 57, .20);
 			}
 
 			.skin-featured-brand-view-more a:hover {
-				text-decoration: underline;
-				text-underline-offset: 4px;
+				transform: translateY(-1px);
+				box-shadow: 0 16px 28px rgba(176, 18, 57, .26);
 			}
 
 			@media (max-width: 1180px) {
@@ -632,10 +650,6 @@ Các thương hiệu chọn được và lọc đúng sản phẩm ngay trong se
 					border-radius: 28px;
 				}
 
-				.skin-featured-brand-logo {
-					border-bottom: 1px solid rgba(141, 0, 31, .10);
-				}
-
 				.skin-featured-brand-products {
 					grid-template-columns: repeat(2, minmax(0, 1fr));
 				}
@@ -653,6 +667,10 @@ Các thương hiệu chọn được và lọc đúng sản phẩm ngay trong se
 
 				.skin-featured-brand-logo-row,
 				.skin-featured-brand-products {
+					grid-template-columns: 1fr;
+				}
+
+				.skin-featured-brand-actions {
 					grid-template-columns: 1fr;
 				}
 			}
@@ -676,20 +694,16 @@ Các thương hiệu chọn được và lọc đúng sản phẩm ngay trong se
 			<div class="skin-featured-brand-main">
 				<div class="skin-featured-brand-head">
 					<h2 class="skin-featured-brand-title">THƯƠNG HIỆU NỔI BẬT</h2>
-					<a class="skin-featured-brand-more" href="${ctx}/brands">Xem thêm →</a>
 				</div>
 
-				<div class="skin-featured-brand-logo-row" role="tablist" aria-label="Lọc sản phẩm theo thương hiệu">
-					<c:forEach var="brand" items="${featuredBrandList}" begin="0" end="5">
-						<div class="skin-featured-brand-logo"
-							 data-brand-filter="${brand.id}"
-							 data-brand-name="${brand.name}"
-							 role="tab"
-							 tabindex="0"
-							 onclick="return window.myCosmeticFilterFeaturedBrand ? window.myCosmeticFilterFeaturedBrand(this, event) : false;"
-							 onkeydown="if(event.key === 'Enter' || event.key === ' '){return window.myCosmeticFilterFeaturedBrand ? window.myCosmeticFilterFeaturedBrand(this, event) : false;}"
-							 aria-selected="false"
-							 title="${brand.name}">
+				<div class="skin-featured-brand-logo-row" data-brand-tabs>
+					<c:forEach var="brand" items="${featuredBrandList}" begin="0" end="5" varStatus="brandStatus">
+						<button type="button"
+								class="skin-featured-brand-logo ${brandStatus.first ? 'is-active' : ''}"
+								data-brand-filter="${brand.id}"
+								data-brand-name="${brand.name}"
+								aria-pressed="${brandStatus.first ? 'true' : 'false'}"
+								title="${brand.name}">
 							<c:choose>
 								<c:when test="${not empty brand.imageUrl}">
 									<c:choose>
@@ -708,14 +722,12 @@ Các thương hiệu chọn được và lọc đúng sản phẩm ngay trong se
 									<span class="skin-featured-brand-logo-fallback">${brand.name}</span>
 								</c:otherwise>
 							</c:choose>
-						</div>
+						</button>
 					</c:forEach>
 				</div>
 
-				<div class="skin-featured-brand-filter-note" data-brand-note></div>
-
 				<div class="skin-featured-brand-products" data-brand-products>
-					<c:forEach var="product" items="${brandSectionProducts}">
+					<c:forEach var="product" items="${featuredBrandProductList}">
 						<c:choose>
 							<c:when test="${not empty product.slug}">
 								<c:set var="brandProductUrl" value="${ctx}/product/${product.slug}?id=${product.id}" />
@@ -727,8 +739,7 @@ Các thương hiệu chọn được và lọc đúng sản phẩm ngay trong se
 
 						<article class="skin-featured-brand-card"
 								 data-brand-product
-								 data-brand-id="${product.brandId}"
-								 data-brand-name="${product.brandName}">
+								 data-brand-id="${product.brandId}">
 							<a class="skin-featured-brand-image" href="${brandProductUrl}">
 								<c:if test="${product.discountPercent > 0}">
 									<span class="skin-featured-brand-discount">-${product.discountPercent}%</span>
@@ -778,136 +789,167 @@ Các thương hiệu chọn được và lọc đúng sản phẩm ngay trong se
 								<c:if test="${product.soldQuantity > 0}">
 									<div class="skin-featured-brand-sold">${product.soldQuantity} đã bán</div>
 								</c:if>
+
+								<div class="skin-featured-brand-actions">
+									<a class="skin-featured-brand-view-btn" href="${brandProductUrl}">
+										Xem sản phẩm
+									</a>
+
+									<form method="post" action="${ctx}/cart/add" class="skin-featured-brand-cart-form">
+										<input type="hidden" name="csrf_token" value="${sessionScope.CSRF_TOKEN}">
+										<input type="hidden" name="productId" value="${product.id}">
+										<input type="hidden" name="quantity" value="1">
+										<input type="hidden" name="quickAdd" value="1">
+										<button type="submit" class="skin-featured-brand-cart-btn" ${product.stock <= 0 ? 'disabled' : ''}>
+											Thêm giỏ
+										</button>
+									</form>
+								</div>
 							</div>
 						</article>
 					</c:forEach>
 				</div>
 
 				<div class="skin-featured-brand-empty" data-brand-empty>
-					Chưa có sản phẩm phù hợp cho thương hiệu này trong danh sách nổi bật.
+					Thương hiệu này hiện chưa có sản phẩm nổi bật.
 				</div>
 
-				<div class="skin-featured-brand-view-more">
-					<a href="${ctx}/brands">Xem thêm →</a>
+				<div class="skin-featured-brand-view-more" data-brand-view-more>
+					<a href="${ctx}/products" data-brand-more-link>Xem thêm →</a>
 				</div>
 			</div>
 		</div>
 
 		<script>
 			(function () {
-				function getSection(control) {
-					return control ? control.closest("[data-featured-brand-section]") : null;
-				}
+				const SECTION_SELECTOR = ".skin-featured-brand-section";
+				const BRAND_SELECTOR = "[data-brand-filter]";
+				const PRODUCT_SELECTOR = "[data-brand-product]";
+				const MAX_VISIBLE = 8;
 
-				function getBrandProductCount(section, brandId) {
-					const cards = Array.from(section.querySelectorAll("[data-brand-product]"));
-
-					return cards.filter(function (card) {
-						return String(card.dataset.brandId || "") === String(brandId || "");
-					}).length;
-				}
-
-				window.myCosmeticFilterFeaturedBrand = function (control, event) {
-					if (event) {
-						event.preventDefault();
-						event.stopPropagation();
-						if (typeof event.stopImmediatePropagation === "function") {
-							event.stopImmediatePropagation();
-						}
+				function stopNavigation(event) {
+					if (!event) {
+						return;
 					}
 
-					const section = getSection(control);
+					event.preventDefault();
+					event.stopPropagation();
+
+					if (typeof event.stopImmediatePropagation === "function") {
+						event.stopImmediatePropagation();
+					}
+				}
+
+				function setActiveBrand(section, activeBrand) {
+					section.querySelectorAll(BRAND_SELECTOR).forEach(function (brand) {
+						const isActive = brand === activeBrand;
+						brand.classList.toggle("is-active", isActive);
+						brand.setAttribute("aria-pressed", isActive ? "true" : "false");
+					});
+				}
+
+				function updateProducts(section, activeBrand) {
+					const brandId = activeBrand ? String(activeBrand.dataset.brandFilter || "") : "";
+					const products = Array.from(section.querySelectorAll(PRODUCT_SELECTOR));
+					const emptyBox = section.querySelector("[data-brand-empty]");
+					const moreBox = section.querySelector("[data-brand-view-more]");
+					const moreLink = section.querySelector("[data-brand-more-link]");
+
+					let matchedCount = 0;
+
+					products.forEach(function (product) {
+						const productBrandId = String(product.dataset.brandId || "");
+						const isMatch = brandId !== "" && productBrandId === brandId;
+
+						if (!isMatch) {
+							product.classList.add("is-hidden-by-brand");
+							return;
+						}
+
+						matchedCount += 1;
+
+						if (matchedCount <= MAX_VISIBLE) {
+							product.classList.remove("is-hidden-by-brand");
+						} else {
+							product.classList.add("is-hidden-by-brand");
+						}
+					});
+
+					if (emptyBox) {
+						emptyBox.style.display = matchedCount === 0 ? "block" : "none";
+					}
+
+					if (moreBox && moreLink) {
+						if (matchedCount > MAX_VISIBLE) {
+							moreLink.href = "${ctx}/products?brand=" + encodeURIComponent(brandId);
+							moreBox.classList.add("is-show");
+						} else {
+							moreBox.classList.remove("is-show");
+						}
+					}
+				}
+
+				function chooseBrand(brand, event) {
+					stopNavigation(event);
+
+					if (!brand) {
+						return false;
+					}
+
+					const section = brand.closest(SECTION_SELECTOR);
 
 					if (!section) {
 						return false;
 					}
 
-					const buttons = Array.from(section.querySelectorAll("[data-brand-filter]"));
-					const cards = Array.from(section.querySelectorAll("[data-brand-product]"));
-					const note = section.querySelector("[data-brand-note]");
-					const empty = section.querySelector("[data-brand-empty]");
-					const productGrid = section.querySelector("[data-brand-products]");
-					const brandId = String(control.dataset.brandFilter || "");
-					const brandName = control.dataset.brandName || "thương hiệu";
-					let visibleCount = 0;
-
-					buttons.forEach(function (button) {
-						const isActive = button === control;
-						button.classList.toggle("is-active", isActive);
-						button.setAttribute("aria-selected", isActive ? "true" : "false");
-					});
-
-					cards.forEach(function (card) {
-						const matched = String(card.dataset.brandId || "") === brandId;
-						card.classList.toggle("is-hidden", !matched);
-
-						if (matched) {
-							visibleCount++;
-						}
-					});
-
-					if (productGrid) {
-						productGrid.classList.remove("is-filtering");
-						void productGrid.offsetWidth;
-						productGrid.classList.add("is-filtering");
-					}
-
-					if (note) {
-						note.innerHTML = "Đang hiển thị <b>" + visibleCount + "</b> sản phẩm của thương hiệu <b>" + brandName + "</b>.";
-					}
-
-					if (empty) {
-						empty.classList.toggle("is-show", visibleCount === 0);
-					}
+					setActiveBrand(section, brand);
+					updateProducts(section, brand);
 
 					return false;
-				};
-
-				function initFeaturedBrandFilter() {
-					const sections = document.querySelectorAll("[data-featured-brand-section]");
-
-					sections.forEach(function (section) {
-						const buttons = Array.from(section.querySelectorAll("[data-brand-filter]"));
-
-						if (!buttons.length) {
-							return;
-						}
-
-						buttons.forEach(function (button) {
-							button.addEventListener("click", function (event) {
-								window.myCosmeticFilterFeaturedBrand(button, event);
-							});
-
-							button.addEventListener("keydown", function (event) {
-								if (event.key === "Enter" || event.key === " ") {
-									window.myCosmeticFilterFeaturedBrand(button, event);
-								}
-							});
-						});
-
-						const defaultButton = buttons.find(function (button) {
-							return getBrandProductCount(section, button.dataset.brandFilter || "") > 0;
-						}) || buttons[0];
-
-						window.myCosmeticFilterFeaturedBrand(defaultButton, null);
-					});
 				}
 
-				document.addEventListener("click", function (event) {
-					const brandControl = event.target.closest("[data-brand-filter]");
+				function countProductsForBrand(section, brandId) {
+					const value = String(brandId || "");
+					let count = 0;
 
-					if (!brandControl) {
+					section.querySelectorAll(PRODUCT_SELECTOR).forEach(function (product) {
+						if (String(product.dataset.brandId || "") === value) {
+							count += 1;
+						}
+					});
+
+					return count;
+				}
+
+				function initFeaturedBrandSection(section) {
+					const brands = Array.from(section.querySelectorAll(BRAND_SELECTOR));
+
+					if (!brands.length) {
 						return;
 					}
 
-					window.myCosmeticFilterFeaturedBrand(brandControl, event);
-				}, true);
+					brands.forEach(function (brand) {
+						brand.addEventListener("click", function (event) {
+							chooseBrand(brand, event);
+						});
 
-				if (document.readyState === "loading") {
-					document.addEventListener("DOMContentLoaded", initFeaturedBrandFilter);
-				} else {
-					initFeaturedBrandFilter();
+						brand.addEventListener("keydown", function (event) {
+							if (event.key === "Enter" || event.key === " ") {
+								chooseBrand(brand, event);
+							}
+						});
+					});
+
+					let firstBrandWithProducts = brands.find(function (brand) {
+						return countProductsForBrand(section, brand.dataset.brandFilter) > 0;
+					});
+
+					chooseBrand(firstBrandWithProducts || brands[0], null);
 				}
+
+				document.addEventListener("DOMContentLoaded", function () {
+					document.querySelectorAll(SECTION_SELECTOR).forEach(initFeaturedBrandSection);
+				});
 			})();
 		</script>
 	</section>
