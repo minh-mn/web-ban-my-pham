@@ -3,11 +3,9 @@ package com.webshop.app.controller.AdminController;
 import java.io.IOException;
 
 import com.webshop.app.dao.AdminOrderDAO;
-import com.webshop.app.dao.NotificationDAO;
 import com.webshop.app.dao.OrderDAO;
 import com.webshop.app.model.Order;
 import com.webshop.app.model.User;
-import com.webshop.app.utils.DBConnection;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -23,7 +21,6 @@ public class AdminOrderUpdateStatusServlet extends HttpServlet {
 
     private final OrderDAO orderDAO = new OrderDAO();
     private final AdminOrderDAO adminOrderDAO = new AdminOrderDAO();
-    private final NotificationDAO notificationDAO = new NotificationDAO();
 
     private static final String CSRF_SESSION_KEY = "CSRF_TOKEN";
     private static final String CSRF_PARAM = "csrf_token";
@@ -109,8 +106,11 @@ public class AdminOrderUpdateStatusServlet extends HttpServlet {
                 return;
             }
 
-            createNotificationSafely(order, result.notificationStatus());
-
+            /*
+             * Issue 114:
+             * Notification được tạo tập trung trong AdminOrderDAO.updateShippingStatus(...)
+             * để tránh servlet và DAO cùng tạo thông báo làm bị trùng.
+             */
             setFlashSuccess(session, result.message());
             resp.sendRedirect(req.getContextPath() + returnUrl);
 
@@ -411,27 +411,6 @@ public class AdminOrderUpdateStatusServlet extends HttpServlet {
     /* =========================================================
        NOTIFICATION / SHIPPING
     ========================================================= */
-
-    private void createNotificationSafely(Order order, String notificationStatus) {
-
-        if (order == null || notificationStatus == null || notificationStatus.isBlank()) {
-            return;
-        }
-
-        try (java.sql.Connection conn = DBConnection.getConnection()) {
-            notificationDAO.createOrderNotification(
-                    conn,
-                    order.getUserId(),
-                    order.getId(),
-                    notificationStatus
-            );
-        } catch (Exception e) {
-            /*
-             * Không để lỗi notification làm hỏng workflow đơn hàng.
-             */
-            e.printStackTrace();
-        }
-    }
 
     private void updateShippingStatusSafely(
             int orderId,
