@@ -172,7 +172,7 @@
 
                                     <c:choose>
                                         <c:when test="${isFlashSection}">
-                                            <c:set var="flashSoldPercent" value="${product.saleProgressPercent}" />
+                                            <c:set var="flashSoldPercent" value="${empty product.saleProgressPercent ? 0 : product.saleProgressPercent}" />
 
                                             <div class="skin-progress skin-stock-progress"
                                                  role="progressbar"
@@ -188,6 +188,12 @@
                                                     <c:when test="${flashSoldPercent >= 100 || product.stock <= 0}">
                                                         Đã bán hết
                                                     </c:when>
+                                                    <c:otherwise>
+                                                        Đã bán ${flashSoldPercent}%
+                                                    </c:otherwise>
+                                                </c:choose>
+                                            </div>
+                                        </c:when>
 
                                         <c:otherwise>
                                             <div class="skin-stock-line">
@@ -215,6 +221,9 @@
                                             <input type="hidden" name="productId" value="${product.id}">
                                             <input type="hidden" name="quantity" value="1">
                                             <input type="hidden" name="quickAdd" value="1">
+                                            <c:if test="${not empty sessionScope['CSRF_TOKEN']}">
+                                                <input type="hidden" name="csrf_token" value="${sessionScope['CSRF_TOKEN']}">
+                                            </c:if>
                                             <button type="submit" class="skin-card-cart-btn" ${product.stock <= 0 ? 'disabled' : ''}>
                                                 Thêm giỏ
                                             </button>
