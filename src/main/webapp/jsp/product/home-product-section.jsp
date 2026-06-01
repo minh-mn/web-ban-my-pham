@@ -5,6 +5,7 @@
 
 <c:set var="ctx" value="${pageContext.request.contextPath}" />
 <c:set var="isFlashSection" value="${homeSectionMode == 'flash'}" />
+<c:set var="isDiscoverSection" value="${homeSectionMode == 'discover'}" />
 
 <c:set var="sectionViewAllText" value="${homeSectionViewAllText}" />
 <c:if test="${empty sectionViewAllText}">
@@ -19,10 +20,10 @@
 </c:if>
 
 <c:if test="${not empty homeSectionProducts}">
-    <section class="skin-product-section ${isFlashSection ? 'is-flash' : ''}">
+    <section class="skin-product-section ${isFlashSection ? 'is-flash' : ''} ${isDiscoverSection ? 'is-discover' : ''}">
         <div class="skin-container">
 
-            <div class="skin-section-top ${isFlashSection ? 'flash-top' : ''}">
+            <div class="skin-section-top ${isFlashSection ? 'flash-top' : ''} ${isDiscoverSection ? 'discover-top' : ''}">
                 <div>
                     <c:choose>
                         <c:when test="${isFlashSection}">
@@ -35,6 +36,9 @@
                                     <span class="flash-word flash-word-right">Deal</span>
                                 </h2>
                             </div>
+                        </c:when>
+                        <c:when test="${isDiscoverSection}">
+                            <h2 class="skin-discover-heading">${homeSectionTitle}</h2>
                         </c:when>
                         <c:otherwise>
                             <span class="skin-eyebrow">MYCOSMETICSHOP</span>
@@ -184,15 +188,6 @@
                                                     <c:when test="${flashSoldPercent >= 100 || product.stock <= 0}">
                                                         Đã bán hết
                                                     </c:when>
-                                                    <c:when test="${flashSoldPercent <= 0}">
-                                                        Vừa mở bán
-                                                    </c:when>
-                                                    <c:otherwise>
-                                                        Đã bán ${flashSoldPercent}%
-                                                    </c:otherwise>
-                                                </c:choose>
-                                            </div>
-                                        </c:when>
 
                                         <c:otherwise>
                                             <div class="skin-stock-line">
