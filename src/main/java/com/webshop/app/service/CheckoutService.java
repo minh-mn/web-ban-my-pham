@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.webshop.app.dao.CouponDAO;
+import com.webshop.app.dao.FlashSaleItemDAO;
 import com.webshop.app.dao.OrderDAO;
 import com.webshop.app.dao.OrderItemDAO;
 import com.webshop.app.dao.UserCouponDAO;
@@ -35,6 +36,14 @@ public class CheckoutService {
 	private final CouponDAO couponDAO = new CouponDAO();
 	private final UserCouponDAO userCouponDAO = new UserCouponDAO();
 	private final CouponService couponService = new CouponService();
+
+	/*
+	 * Issue 139:
+	 * Kiểm tra giới hạn mua Flash Sale và cập nhật sold_quantity khi đơn hàng
+	 * đã được trừ kho thành công.
+	 */
+	private final FlashSaleLimitService flashSaleLimitService = new FlashSaleLimitService();
+	private final FlashSaleItemDAO flashSaleItemDAO = new FlashSaleItemDAO();
 
 	/*
 	 * Giữ method cũ để các chỗ khác đang gọi checkout 7 tham số không bị lỗi.
@@ -178,6 +187,20 @@ public class CheckoutService {
 
 			/*
 			 * =========================
+			 * FLASH SALE PURCHASE LIMIT
+			 * =========================
+			 * Issue 139:
+			 * Kiểm tra lại giới hạn mua Flash Sale ngay trong transaction checkout.
+			 *
+			 * Đây là tầng bảo vệ cuối cùng để user không thể bypass bằng cách:
+			 * - sửa request thủ công;
+			 * - gọi thẳng checkout;
+			 * - thay đổi session cart trước khi đặt hàng.
+			 */
+			flashSaleLimitService.validateCartOrThrow(conn, userId, cart);
+
+			/*
+			 * =========================
 			 * LOCK & CHECK STOCK
 			 * =========================
 			 * Nếu item có variantId:
@@ -306,6 +329,13 @@ public class CheckoutService {
 					conn.rollback();
 					throw new IllegalStateException("Không tìm thấy chi tiết đơn hàng để hoàn tất thanh toán.");
 				}
+
+				/*
+				 * Issue 139:
+				 * Nếu vì lý do nào đó đơn VNPay chưa có order item và phải tạo lại từ cart,
+				 * vẫn kiểm tra giới hạn Flash Sale trước khi lưu chi tiết đơn.
+				 */
+				flashSaleLimitService.validateCartOrThrow(conn, order.getUserId(), cart);
 
 				lockAndValidateStock(conn, cart);
 				createOrderItemsOnly(conn, orderId, cart);
@@ -895,6 +925,12 @@ public class CheckoutService {
 			} else {
 				updateProductStock(conn, item.getProductId(), quantity);
 			}
+
+			/*
+			 * Issue 139:
+			 * COD trừ kho ngay khi tạo đơn, nên cập nhật sold_quantity của Flash Sale ngay tại đây.
+			 */
+			increaseFlashSaleSoldQuantityIfRunning(conn, item.getProductId(), quantity);
 		}
 	}
 
@@ -960,6 +996,12 @@ public class CheckoutService {
 				lockProductAndValidateStock(conn, item.getProductId(), quantity);
 				updateProductStock(conn, item.getProductId(), quantity);
 			}
+
+			/*
+			 * Issue 139:
+			 * VNPay chỉ cập nhật sold_quantity khi thanh toán thành công và stock thật sự bị trừ.
+			 */
+			increaseFlashSaleSoldQuantityIfRunning(conn, item.getProductId(), quantity);
 		}
 	}
 
@@ -1176,6 +1218,24 @@ public class CheckoutService {
 				throw new RuntimeException("Không thể cập nhật tồn kho tổng của sản phẩm ID " + productId);
 			}
 		}
+	}
+
+	/*
+	 * Issue 139:
+	 * Cập nhật số lượng đã bán của Flash Sale sau khi stock đã được trừ thành công.
+	 *
+	 * Hàm này không throw nếu sản phẩm không thuộc Flash Sale đang chạy.
+	 * Nếu productId đang không nằm trong Flash Sale active, DAO sẽ trả về updated = 0.
+	 */
+	private void increaseFlashSaleSoldQuantityIfRunning(Connection conn,
+											 int productId,
+											 int quantity) throws Exception {
+
+		if (productId <= 0 || quantity <= 0) {
+			return;
+		}
+
+		flashSaleItemDAO.increaseSoldQuantityIfRunning(conn, productId, quantity);
 	}
 
 	private Integer getCartItemVariantId(CartItem item) {
