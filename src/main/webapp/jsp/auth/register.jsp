@@ -33,10 +33,11 @@
           HOẶC
         </div>
 
-        <div class="social-login-stack">
+        <div class="social-login-stack" style="display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 10px;">
           <div id="googleRegisterBtn" style="margin-top:20px"></div>
-          <a href="javascript:void(0)" id="btn-facebook" class="social-btn">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/b/b9/2023_Facebook_icon.svg" alt="Facebook">
+
+          <a href="javascript:void(0)" id="btn-facebook" class="btn-facebook-custom">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/0/05/Facebook_Logo_%282019%29.png" alt="Facebook">
             <span>Tiếp tục bằng Facebook</span>
           </a>
         </div>
@@ -596,5 +597,63 @@ document.addEventListener("DOMContentLoaded", function () {
         }
       });
     }
+  });
+
+  // ================= CẤU HÌNH FACEBOOK REGISTER =================
+  const FACEBOOK_APP_ID = "1891459851533615";
+
+  window.fbAsyncInit = function () {
+    FB.init({
+      appId: FACEBOOK_APP_ID,
+      cookie: true,
+      xfbml: true,
+      version: "v19.0"
+    });
+  };
+
+  (function (d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s);
+    js.id = id;
+    js.src = "https://connect.facebook.net/vi_VN/sdk.js";
+    fjs.parentNode.insertBefore(js, fjs);
+  }(document, "script", "facebook-jssdk"));
+
+  document.getElementById("btn-facebook").addEventListener("click", function () {
+    FB.login(function (response) {
+      if (response.authResponse) {
+        const accessToken = response.authResponse.accessToken;
+
+        Swal.fire({
+          title: 'Đang xử lý...',
+          allowOutsideClick: false,
+          didOpen: () => { Swal.showLoading(); }
+        });
+
+        fetch(contextPath + "/social-auth", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+          },
+          body: new URLSearchParams({
+            provider: "facebook",
+            accessToken: accessToken,
+            mode: "register" // <--- Chế độ đăng ký
+          })
+        })
+                .then(res => res.json())
+                .then(data => {
+                  if (data.status === 'success') {
+                    Swal.fire({ icon: 'success', title: 'Thành công', text: 'Đăng ký và đăng nhập thành công', timer: 1500, showConfirmButton: false })
+                            .then(() => window.location.href = contextPath + data.redirectUrl);
+                  } else {
+                    Swal.fire({ icon: 'error', title: 'Lỗi', text: data.message });
+                  }
+                }).catch(() => { Swal.fire("Lỗi", "Không thể kết nối server", "error"); });
+      } else {
+        Swal.fire("Lỗi", "Bạn đã hủy đăng nhập Facebook", "error");
+      }
+    }, { scope: "public_profile,email" });
   });
 </script>
