@@ -36,6 +36,7 @@ public class CartServlet extends HttpServlet {
         int productId = parseInt(req.getParameter("productId"), -1);
         int variantId = parseInt(req.getParameter("variantId"), 0);
         int quantity = parseInt(req.getParameter("quantity"), 1);
+        boolean quickAdd = "1".equals(req.getParameter("quickAdd"));
 
         if (quantity <= 0) {
             quantity = 1;
@@ -58,34 +59,35 @@ public class CartServlet extends HttpServlet {
         boolean productHasVariants = variants != null && !variants.isEmpty();
 
         if (productHasVariants) {
-            if (variantId <= 0) {
-                resp.sendRedirect(req.getContextPath()
-                        + "/product/" + product.getSlug() + "?variantRequired=1");
-                return;
-            }
+            if (variantId > 0) {
+                selectedVariant = variantDAO.findActiveByIdAndProductId(variantId, productId);
 
-            selectedVariant = variantDAO.findActiveByIdAndProductId(variantId, productId);
+                if (selectedVariant == null) {
+                    resp.sendRedirect(productDetailUrl(req, product, "variantInvalid=1"));
+                    return;
+                }
+            } else if (quickAdd) {
+                selectedVariant = findFirstAvailableVariant(variants);
 
-            if (selectedVariant == null) {
-                resp.sendRedirect(req.getContextPath()
-                        + "/product/" + product.getSlug() + "?variantInvalid=1");
+                if (selectedVariant == null) {
+                    resp.sendRedirect(productDetailUrl(req, product, "variantOutOfStock=1"));
+                    return;
+                }
+            } else {
+                resp.sendRedirect(productDetailUrl(req, product, "variantRequired=1"));
                 return;
             }
 
             if (selectedVariant.getStock() <= 0) {
-                resp.sendRedirect(req.getContextPath()
-                        + "/product/" + product.getSlug() + "?variantOutOfStock=1");
+                resp.sendRedirect(productDetailUrl(req, product, "variantOutOfStock=1"));
                 return;
             }
         }
 
-        int maxStock = selectedVariant != null
-                ? selectedVariant.getStock()
-                : product.getStock();
+        int maxStock = selectedVariant != null ? selectedVariant.getStock() : product.getStock();
 
         if (maxStock <= 0) {
-            resp.sendRedirect(req.getContextPath()
-                    + "/product/" + product.getSlug() + "?outOfStock=1");
+            resp.sendRedirect(productDetailUrl(req, product, "outOfStock=1"));
             return;
         }
 
@@ -100,7 +102,6 @@ public class CartServlet extends HttpServlet {
         String cartKey = CartUtil.buildKey(productId, realVariantId);
 
         BigDecimal originalProductPrice = safeMoney(product.getPrice());
-
         BigDecimal finalProductPrice = product.getFinalPrice() != null
                 ? safeMoney(product.getFinalPrice())
                 : originalProductPrice;
@@ -116,7 +117,6 @@ public class CartServlet extends HttpServlet {
 
         if (item == null) {
             item = new CartItem();
-
             item.setCartKey(cartKey);
             item.setProductId(product.getId());
             item.setTitle(product.getTitle());
@@ -144,7 +144,6 @@ public class CartServlet extends HttpServlet {
 
             item.setPrice(finalUnitPrice);
             item.setOriginalPrice(originalUnitPrice);
-            item.setImageUrl(product.getImageUrl());
             item.setStock(maxStock);
             item.setQuantity(newQuantity);
 
@@ -154,25 +153,42 @@ public class CartServlet extends HttpServlet {
                 item.setVariantType(selectedVariant.getType());
                 item.setVariantName(selectedVariant.getDisplayName());
                 item.setVariantExtraPrice(variantExtraPrice);
-            } else {
-                item.setVariantId(0);
-                item.setVariantSize(null);
-                item.setVariantType(null);
-                item.setVariantName(null);
-                item.setVariantExtraPrice(BigDecimal.ZERO);
             }
         }
 
-        session.setAttribute(CartUtil.CART_SESSION_KEY, cart);
+        resp.sendRedirect(req.getContextPath() + "/cart?added=1");
+    }
 
-        /*
-         * Issue 132:
-         * Nếu user đã đăng nhập, lưu ngay giỏ hàng xuống database sau khi thêm sản phẩm.
-         * Khi logout/login lại, CartUtil có thể khôi phục giỏ hàng từ bảng cart_items.
-         */
-        CartUtil.saveCartForLoggedUser(session);
+    private ProductVariant findFirstAvailableVariant(List<ProductVariant> variants) {
+        if (variants == null || variants.isEmpty()) {
+            return null;
+        }
 
-        resp.sendRedirect(req.getContextPath() + "/cart");
+        for (ProductVariant variant : variants) {
+            if (variant != null && variant.getStock() > 0) {
+                return variant;
+            }
+        }
+
+        return null;
+    }
+
+    private String productDetailUrl(HttpServletRequest req, Product product, String query) {
+        StringBuilder url = new StringBuilder(req.getContextPath());
+
+        if (product.getSlug() != null && !product.getSlug().isBlank()) {
+            url.append("/product/").append(product.getSlug()).append("?id=").append(product.getId());
+            if (query != null && !query.isBlank()) {
+                url.append("&").append(query);
+            }
+        } else {
+            url.append("/product?id=").append(product.getId());
+            if (query != null && !query.isBlank()) {
+                url.append("&").append(query);
+            }
+        }
+
+        return url.toString();
     }
 
     private BigDecimal safeMoney(BigDecimal value) {
@@ -181,7 +197,10 @@ public class CartServlet extends HttpServlet {
 
     private int parseInt(String raw, int def) {
         try {
-            return Integer.parseInt(raw);
+            if (raw == null || raw.isBlank()) {
+                return def;
+            }
+            return Integer.parseInt(raw.trim());
         } catch (Exception e) {
             return def;
         }
