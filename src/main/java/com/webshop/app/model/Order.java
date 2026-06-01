@@ -60,7 +60,7 @@ public class Order {
 	// ================= SHIPPING / TRACKING =================
 
 	private String shippingMethod;   // ECONOMY | FAST | EXPRESS
-	private String shippingProvider; // GHTK | GHN | INTERNAL
+	private String shippingProvider; // GHTK | GHN | VIETTEL_POST | INTERNAL | OTHER
 	private BigDecimal shippingFee = BigDecimal.ZERO;
 	private String shippingCode;     // mã vận đơn
 
@@ -312,7 +312,24 @@ public class Order {
 
 	public void setShippingProvider(String shippingProvider) {
 		String value = normalizeUpper(shippingProvider);
-		this.shippingProvider = value == null ? "INTERNAL" : value;
+
+		if (value == null) {
+			this.shippingProvider = "INTERNAL";
+			return;
+		}
+
+		switch (value) {
+			case "GHTK":
+			case "GHN":
+			case "VIETTEL_POST":
+			case "INTERNAL":
+			case "OTHER":
+				this.shippingProvider = value;
+				break;
+			default:
+				this.shippingProvider = "INTERNAL";
+				break;
+		}
 	}
 
 	public BigDecimal getShippingFee() {
@@ -554,6 +571,14 @@ public class Order {
 			return "Chờ khách hàng xác nhận đã nhận hàng";
 		}
 
+		if (isDeliveryFailed()) {
+			return "Giao hàng thất bại";
+		}
+
+		if (isShippingCanceled() || isCancelled()) {
+			return "Đơn hàng đã hủy";
+		}
+
 		return "Chưa giao thành công";
 	}
 
@@ -580,6 +605,165 @@ public class Order {
 				deadline.getMinute());
 	}
 
+
+	/** JSP gọi: ${order.processing} */
+	public boolean isProcessing() {
+		return "processing".equalsIgnoreCase(status);
+	}
+
+	public boolean getProcessing() {
+		return isProcessing();
+	}
+
+	/** JSP gọi: ${order.confirmed} */
+	public boolean isConfirmed() {
+		return "confirmed".equalsIgnoreCase(status);
+	}
+
+	public boolean getConfirmed() {
+		return isConfirmed();
+	}
+
+	/** JSP gọi: ${order.orderShipping} */
+	public boolean isOrderShipping() {
+		return "shipping".equalsIgnoreCase(status);
+	}
+
+	public boolean getOrderShipping() {
+		return isOrderShipping();
+	}
+
+	/** JSP gọi: ${order.completed} */
+	public boolean isCompleted() {
+		return "completed".equalsIgnoreCase(status);
+	}
+
+	public boolean getCompleted() {
+		return isCompleted();
+	}
+
+	/** JSP gọi: ${order.cancelled} */
+	public boolean isCancelled() {
+		return "cancelled".equalsIgnoreCase(status)
+				|| "canceled".equalsIgnoreCase(status);
+	}
+
+	public boolean getCancelled() {
+		return isCancelled();
+	}
+
+	/** JSP gọi: ${order.orderStatusCssClass} */
+	public String getOrderStatusCssClass() {
+		if (isCompleted()) {
+			return "ok";
+		}
+
+		if (isCancelled()) {
+			return "danger";
+		}
+
+		if (isOrderShipping()) {
+			return "info";
+		}
+
+		if (isConfirmed()) {
+			return "primary";
+		}
+
+		return "warning";
+	}
+
+	/** JSP gọi: ${order.paymentStatusCssClass} */
+	public String getPaymentStatusCssClass() {
+		if (paymentStatus == null || paymentStatus.isBlank()) {
+			return "warning";
+		}
+
+		return switch (paymentStatus.toUpperCase(Locale.ROOT)) {
+			case "PAID" -> "ok";
+			case "FAILED", "CANCELED", "CANCELLED" -> "danger";
+			case "REFUNDED" -> "info";
+			default -> "warning";
+		};
+	}
+
+	/**
+	 * JSP gọi: ${order.orderWorkflowStep}
+	 * 1: Chờ xác nhận
+	 * 2: Đã xác nhận
+	 * 3: Đang giao
+	 * 4: Hoàn tất
+	 * -1: Đã hủy
+	 */
+	public int getOrderWorkflowStep() {
+		if (isCancelled()) {
+			return -1;
+		}
+
+		if (isCompleted()) {
+			return 4;
+		}
+
+		if (isOrderShipping()) {
+			return 3;
+		}
+
+		if (isConfirmed()) {
+			return 2;
+		}
+
+		return 1;
+	}
+
+	/** JSP gọi: ${order.stepProcessingDone} */
+	public boolean isStepProcessingDone() {
+		return getOrderWorkflowStep() >= 1;
+	}
+
+	public boolean getStepProcessingDone() {
+		return isStepProcessingDone();
+	}
+
+	/** JSP gọi: ${order.stepConfirmedDone} */
+	public boolean isStepConfirmedDone() {
+		return getOrderWorkflowStep() >= 2;
+	}
+
+	public boolean getStepConfirmedDone() {
+		return isStepConfirmedDone();
+	}
+
+	/** JSP gọi: ${order.stepShippingDone} */
+	public boolean isStepShippingDone() {
+		return getOrderWorkflowStep() >= 3
+				|| isDelivering()
+				|| isDelivered();
+	}
+
+	public boolean getStepShippingDone() {
+		return isStepShippingDone();
+	}
+
+	/** JSP gọi: ${order.stepCompletedDone} */
+	public boolean isStepCompletedDone() {
+		return getOrderWorkflowStep() >= 4
+				|| isDelivered();
+	}
+
+	public boolean getStepCompletedDone() {
+		return isStepCompletedDone();
+	}
+
+	/** JSP gọi: ${order.shippingCodeDisplay} */
+	public String getShippingCodeDisplay() {
+		if (shippingCode == null || shippingCode.isBlank()) {
+			return "Chưa có mã vận đơn";
+		}
+
+		return shippingCode;
+	}
+
+
 	/** JSP gọi: ${order.shippingMethodLabel} */
 	public String getShippingMethodLabel() {
 		if (shippingMethod == null || shippingMethod.isBlank()) {
@@ -603,7 +787,9 @@ public class Order {
 		return switch (shippingProvider.toUpperCase(Locale.ROOT)) {
 			case "GHTK" -> "Giao hàng tiết kiệm";
 			case "GHN" -> "Giao hàng nhanh";
+			case "VIETTEL_POST" -> "Viettel Post";
 			case "INTERNAL" -> "Vận chuyển nội bộ";
+			case "OTHER" -> "Đơn vị vận chuyển khác";
 			default -> shippingProvider;
 		};
 	}
