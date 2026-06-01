@@ -238,7 +238,9 @@
             </div>
           </section>
 
-          // QUẢN LÝ BIẾN SẢN PHẨM
+          <!-- =====================================================
+               QUẢN LÝ BIỂN THỂ SẢN PHẨM
+          ====================================================== -->
           <div class="admin-card" style="margin-top: 20px;">
             <div class="admin-form-section__title">
               <h2>Quản lý Biến thể sản phẩm</h2>
