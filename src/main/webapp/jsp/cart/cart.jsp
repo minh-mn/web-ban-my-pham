@@ -1,65 +1,81 @@
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ page import="java.util.Collection" %>
+<%@ page import="java.util.Map" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
-<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
-<section class="cart-section">
-    <div class="container">
+<%
+    /*
+     * FIX GIỎ HÀNG TRỐNG SAU KHI THÊM SẢN PHẨM
+     *
+     * CartUtil của project đang lưu giỏ bằng session key: "CART".
+     * CartViewServlet đang set request attribute: "cart".
+     * Vì vậy JSP phải đọc theo thứ tự:
+     * 1. requestScope.cartItems  (nếu servlet cũ có set list)
+     * 2. requestScope.cart       (CartViewServlet hiện tại set Map<String, CartItem>)
+     * 3. sessionScope.CART       (CartUtil.CART_SESSION_KEY)
+     * 4. sessionScope.cart       (fallback cho code cũ)
+     */
+    Object rawCart = request.getAttribute("cartItems");
 
+    if (rawCart == null ||
+            (rawCart instanceof Collection && ((Collection<?>) rawCart).isEmpty()) ||
+            (rawCart instanceof Map && ((Map<?, ?>) rawCart).isEmpty())) {
+        rawCart = request.getAttribute("cart");
+    }
+
+    if (rawCart == null ||
+            (rawCart instanceof Collection && ((Collection<?>) rawCart).isEmpty()) ||
+            (rawCart instanceof Map && ((Map<?, ?>) rawCart).isEmpty())) {
+        rawCart = session.getAttribute("CART");
+    }
+
+    if (rawCart == null ||
+            (rawCart instanceof Collection && ((Collection<?>) rawCart).isEmpty()) ||
+            (rawCart instanceof Map && ((Map<?, ?>) rawCart).isEmpty())) {
+        rawCart = session.getAttribute("cart");
+    }
+
+    if (rawCart instanceof Map) {
+        request.setAttribute("cartItemsView", ((Map<?, ?>) rawCart).values());
+    } else {
+        request.setAttribute("cartItemsView", rawCart);
+    }
+%>
+
+<c:set var="ctx" value="${pageContext.request.contextPath}" />
+<c:set var="cartItems" value="${requestScope.cartItemsView}" />
+
+<main class="cart-section">
+    <div class="main-container">
         <h1 class="cart-title">Giỏ hàng của bạn</h1>
 
-        <c:if test="${param.selectRequired == '1'}">
-            <div class="cart-alert">
-                Vui lòng chọn ít nhất một sản phẩm để tiếp tục thanh toán.
-            </div>
-        </c:if>
-
         <c:choose>
-            <%-- ================= GIỎ HÀNG RỖNG ================= --%>
-            <c:when test="${empty cart}">
-                <div class="cart-empty">
-                    <div class="cart-empty-icon">
-                        🛒
-                    </div>
-
+            <c:when test="${empty cartItems}">
+                <section class="cart-empty">
+                    <div class="cart-empty-icon">🛒</div>
                     <h2>Giỏ hàng của bạn đang trống</h2>
-
-                    <p>
-                        Bạn chưa có sản phẩm nào trong giỏ hàng.
-                        Hãy quay lại trang sản phẩm để tiếp tục mua sắm.
-                    </p>
+                    <p>Bạn chưa có sản phẩm nào trong giỏ hàng. Hãy quay lại trang sản phẩm để tiếp tục mua sắm.</p>
 
                     <div class="cart-empty-actions">
-                        <a href="${pageContext.request.contextPath}/products"
-                           class="btn-empty-primary">
-                            Xem sản phẩm
-                        </a>
-
-                        <a href="${pageContext.request.contextPath}/home"
-                           class="btn-empty-secondary">
-                            Về trang chủ
-                        </a>
+                        <a href="${ctx}/products" class="btn-empty-primary">Xem sản phẩm</a>
+                        <a href="${ctx}/home" class="btn-empty-secondary">Về trang chủ</a>
                     </div>
-                </div>
+                </section>
             </c:when>
 
-            <%-- ================= GIỎ HÀNG CÓ SẢN PHẨM ================= --%>
             <c:otherwise>
-                <form id="checkoutSelectForm"
-                      method="post"
-                      action="${pageContext.request.contextPath}/cart/select-checkout"></form>
+                <c:set var="calcSubtotal" value="0" />
+                <c:set var="calcDiscount" value="0" />
+                <c:set var="calcSelectedCount" value="0" />
 
-                <div class="cart-layout">
-
+                <section class="cart-layout">
                     <div class="cart-table-wrap">
                         <table class="cart-table">
                             <thead>
                             <tr>
                                 <th class="cart-select-col">
-                                    <input type="checkbox"
-                                           id="selectAllCartItems"
-                                           class="cart-check-all"
-                                           checked>
+                                    <input type="checkbox" id="cartCheckAll" class="cart-check-all" checked />
                                 </th>
                                 <th>Sản phẩm</th>
                                 <th>Biến thể</th>
@@ -71,156 +87,102 @@
                             </thead>
 
                             <tbody>
-                            <c:forEach var="entry" items="${cart}">
-                                <c:set var="item" value="${entry.value}" />
-                                <c:set var="cartKey" value="${entry.key}" />
-                                <c:set var="options" value="${variantOptions[item.productId]}" />
+                            <c:forEach var="item" items="${cartItems}">
+                                <c:set var="itemPrice" value="${empty item.price ? 0 : item.price}" />
+                                <c:set var="itemOriginalPrice" value="${empty item.originalPrice ? itemPrice : item.originalPrice}" />
+                                <c:set var="itemQuantity" value="${empty item.quantity ? 1 : item.quantity}" />
+                                <c:set var="itemSubtotal" value="${itemPrice * itemQuantity}" />
+                                <c:set var="itemOriginalSubtotal" value="${itemOriginalPrice * itemQuantity}" />
+                                <c:set var="itemDiscount" value="${itemOriginalSubtotal > itemSubtotal ? itemOriginalSubtotal - itemSubtotal : 0}" />
+                                <c:set var="itemKey" value="${empty item.cartKey ? item.productId : item.cartKey}" />
+                                <c:set var="itemTitle" value="${empty item.title ? item.productName : item.title}" />
+                                <c:set var="itemImage" value="${empty item.imageUrl ? item.image : item.imageUrl}" />
 
-                                <fmt:formatNumber var="itemSubtotalRaw"
-                                                  value="${item.subtotal}"
-                                                  pattern="0"
-                                                  groupingUsed="false" />
+                                <c:set var="calcSubtotal" value="${calcSubtotal + itemSubtotal}" />
+                                <c:set var="calcDiscount" value="${calcDiscount + itemDiscount}" />
+                                <c:set var="calcSelectedCount" value="${calcSelectedCount + 1}" />
 
-                                <fmt:formatNumber var="itemOriginalSubtotalRaw"
-                                                  value="${item.originalSubtotal}"
-                                                  pattern="0"
-                                                  groupingUsed="false" />
-
-                                <tr>
-                                        <%-- CHỌN SẢN PHẨM --%>
+                                <tr class="cart-row"
+                                    data-subtotal="${itemSubtotal}"
+                                    data-discount="${itemDiscount}">
                                     <td class="cart-select">
                                         <input type="checkbox"
                                                class="cart-item-checkbox"
-                                               form="checkoutSelectForm"
-                                               name="selectedKeys"
-                                               value="${cartKey}"
-                                               data-subtotal="${itemSubtotalRaw}"
-                                               data-original-subtotal="${itemOriginalSubtotalRaw}"
-                                               checked>
+                                               name="selectedItemIds"
+                                               value="${itemKey}"
+                                               checked />
                                     </td>
 
-                                        <%-- SẢN PHẨM --%>
                                     <td class="cart-product">
                                         <div class="cart-product-info">
                                             <div class="cart-img-box">
                                                 <c:choose>
-                                                    <c:when test="${not empty item.imageUrl}">
-                                                        <img src="${pageContext.request.contextPath}${item.imageUrl}"
-                                                             alt="${fn:escapeXml(item.title)}"
-                                                             onerror="this.onerror=null;this.src='${pageContext.request.contextPath}/assets/images/default-product.jpg';">
+                                                    <c:when test="${not empty itemImage}">
+                                                        <c:choose>
+                                                            <c:when test="${itemImage.startsWith('http') or itemImage.startsWith(ctx)}">
+                                                                <img src="${itemImage}" alt="${itemTitle}" />
+                                                            </c:when>
+                                                            <c:when test="${itemImage.startsWith('/')}">
+                                                                <img src="${ctx}${itemImage}" alt="${itemTitle}" />
+                                                            </c:when>
+                                                            <c:otherwise>
+                                                                <img src="${ctx}/${itemImage}" alt="${itemTitle}" />
+                                                            </c:otherwise>
+                                                        </c:choose>
                                                     </c:when>
-
                                                     <c:otherwise>
-                                                        <img src="${pageContext.request.contextPath}/assets/images/default-product.jpg"
-                                                             alt="default">
+                                                        <img src="${ctx}/assets/images/no-image.png" alt="No image" />
                                                     </c:otherwise>
                                                 </c:choose>
                                             </div>
 
                                             <div class="cart-product-meta">
                                                 <div class="cart-product-title">
-                                                    <c:out value="${item.title}" />
+                                                    <c:out value="${itemTitle}" />
                                                 </div>
-
                                                 <div class="cart-product-id">
-                                                    Mã SP: ${item.productId}
+                                                    Mã SP: <c:out value="${item.productId}" />
                                                 </div>
                                             </div>
                                         </div>
                                     </td>
 
-                                        <%-- BIẾN THỂ --%>
                                     <td class="cart-variant">
-                                        <c:choose>
-                                            <c:when test="${not empty options}">
-                                                <form method="post"
-                                                      action="${pageContext.request.contextPath}/cart/update-variant"
-                                                      class="variant-update-form">
-
-                                                    <input type="hidden" name="productId" value="${item.productId}">
-                                                    <input type="hidden" name="key" value="${cartKey}">
-
-                                                    <select name="variantId"
-                                                            class="cart-variant-select"
-                                                            onchange="this.form.submit()">
-
-                                                        <c:forEach var="v" items="${options}">
-                                                            <option value="${v.id}"
-                                                                ${v.id == item.variantId ? 'selected' : ''}
-                                                                ${v.stock <= 0 ? 'disabled' : ''}>
-                                                                <c:out value="${v.displayName}" />
-
-                                                                <c:if test="${v.extraPrice > 0}">
-                                                                    - +<fmt:formatNumber value="${v.extraPrice}" type="number" groupingUsed="true" /> đ
-                                                                </c:if>
-
-                                                                - Còn ${v.stock}
-                                                            </option>
-                                                        </c:forEach>
-                                                    </select>
-                                                </form>
-                                            </c:when>
-
-                                            <c:otherwise>
-                                                <span class="variant-text">
-                                                    <c:out value="${empty item.variantDisplayName ? 'Mặc định' : item.variantDisplayName}" />
-                                                </span>
-                                            </c:otherwise>
-                                        </c:choose>
+                                        <span class="variant-text">
+                                            <c:out value="${empty item.variantDisplayName ? 'Mặc định' : item.variantDisplayName}" />
+                                        </span>
                                     </td>
 
-                                        <%-- ĐƠN GIÁ --%>
                                     <td class="cart-price">
-                                        <fmt:formatNumber value="${item.price}" type="number" groupingUsed="true" /> đ
+                                        <fmt:formatNumber value="${itemPrice}" type="number" groupingUsed="true" />đ
                                     </td>
 
-                                        <%-- SỐ LƯỢNG --%>
                                     <td class="cart-quantity">
                                         <div class="cart-quantity-inner">
                                             <div class="quantity-box">
-                                                <a class="qty-btn"
-                                                   href="${pageContext.request.contextPath}/cart/decrease?productId=${item.productId}&key=${cartKey}"
-                                                   aria-label="Giảm số lượng">
-                                                    -
-                                                </a>
-
-                                                <span class="qty-value">${item.quantity}</span>
-
-                                                <a class="qty-btn"
-                                                   href="${pageContext.request.contextPath}/cart/increase?productId=${item.productId}&key=${cartKey}"
-                                                   aria-label="Tăng số lượng">
-                                                    +
-                                                </a>
+                                                <a class="qty-btn" href="${ctx}/cart/decrease?key=${itemKey}">-</a>
+                                                <span class="qty-value"><c:out value="${itemQuantity}" /></span>
+                                                <a class="qty-btn" href="${ctx}/cart/increase?key=${itemKey}">+</a>
                                             </div>
-
-                                            <div class="stock-note">
-                                                Còn ${item.stock}
-                                            </div>
+                                            <c:if test="${not empty item.stock}">
+                                                <span class="stock-note">Còn ${item.stock}</span>
+                                            </c:if>
                                         </div>
                                     </td>
 
-                                        <%-- TẠM TÍNH --%>
-                                    <td class="cart-subtotal ${item.discounted ? 'has-discount' : ''}">
-                                        <strong class="subtotal-current">
-                                            <fmt:formatNumber value="${item.subtotal}" type="number" groupingUsed="true" /> đ
-                                        </strong>
-
-                                        <c:if test="${item.discounted}">
+                                    <td class="cart-subtotal">
+                                        <span class="subtotal-current">
+                                            <fmt:formatNumber value="${itemSubtotal}" type="number" groupingUsed="true" />đ
+                                        </span>
+                                        <c:if test="${itemOriginalSubtotal > itemSubtotal}">
                                             <span class="subtotal-original">
-                                                <fmt:formatNumber value="${item.originalSubtotal}" type="number" groupingUsed="true" /> đ
+                                                <fmt:formatNumber value="${itemOriginalSubtotal}" type="number" groupingUsed="true" />đ
                                             </span>
                                         </c:if>
                                     </td>
 
-                                        <%-- XÓA --%>
                                     <td class="cart-remove">
-                                        <a href="${pageContext.request.contextPath}/cart/remove?productId=${item.productId}&key=${cartKey}"
-                                           class="remove-btn"
-                                           title="Xóa sản phẩm"
-                                           aria-label="Xóa sản phẩm"
-                                           onclick="return confirm('Xóa sản phẩm này khỏi giỏ hàng?');">
-                                            &times;
-                                        </a>
+                                        <a href="${ctx}/cart/remove?key=${itemKey}" class="remove-btn" title="Xóa sản phẩm">×</a>
                                     </td>
                                 </tr>
                             </c:forEach>
@@ -228,174 +190,127 @@
                         </table>
                     </div>
 
-                        <%-- THÔNG TIN ĐƠN HÀNG --%>
-                    <aside class="cart-summary order-summary-card">
+                    <c:set var="summarySubtotal" value="${empty requestScope.subtotal ? (empty requestScope.total ? calcSubtotal : requestScope.total) : requestScope.subtotal}" />
+                    <c:set var="summaryDiscount" value="${empty requestScope.discountAmount ? calcDiscount : requestScope.discountAmount}" />
+                    <c:set var="summaryTotal" value="${empty requestScope.totalAmount ? summarySubtotal - summaryDiscount : requestScope.totalAmount}" />
+                    <c:set var="summarySelectedCount" value="${empty requestScope.selectedCount ? calcSelectedCount : requestScope.selectedCount}" />
+
+                    <aside class="order-summary-card">
                         <h2>Thông tin đơn hàng</h2>
 
                         <div class="order-summary-lines">
                             <div class="order-summary-row">
                                 <span>Tạm tính:</span>
-                                <strong id="selectedOriginalTotal">0đ</strong>
+                                <strong id="summarySubtotal" class="summary-value-dark">
+                                    <fmt:formatNumber value="${summarySubtotal}" type="number" groupingUsed="true" />đ
+                                </strong>
                             </div>
 
                             <div class="order-summary-row">
                                 <span>Giá giảm:</span>
-                                <strong id="selectedCartDiscount">0đ</strong>
+                                <strong id="summaryDiscount" class="summary-value-dark">
+                                    <fmt:formatNumber value="${summaryDiscount}" type="number" groupingUsed="true" />đ
+                                </strong>
                             </div>
 
                             <div class="order-summary-row order-summary-total">
                                 <span>Tổng cộng:</span>
-                                <strong id="selectedCartTotal">0đ</strong>
+                                <strong id="summaryTotal" class="summary-value-total">
+                                    <fmt:formatNumber value="${summaryTotal}" type="number" groupingUsed="true" />đ
+                                </strong>
                             </div>
                         </div>
 
-                        <div class="cart-select-note" id="selectedCartNote">
-                            Chọn sản phẩm muốn mua rồi bấm thanh toán.
-                        </div>
+                        <p class="cart-select-note" id="cartSelectNote">
+                            Đã chọn <span id="selectedCountText">${summarySelectedCount}</span> sản phẩm để thanh toán.
+                        </p>
 
                         <div class="summary-actions">
-                            <button type="submit"
-                                    form="checkoutSelectForm"
-                                    class="btn-checkout"
-                                    id="selectedCheckoutBtn">
-                                Thanh toán ngay
-                            </button>
+                            <form id="checkoutForm" action="${ctx}/cart/select-checkout" method="post">
+                                <input type="hidden" name="csrf_token" value="${sessionScope.CSRF_TOKEN}" />
+                                <div id="selectedInputs"></div>
+                                <button type="submit" class="btn-checkout" id="checkoutBtn">
+                                    Thanh toán ngay
+                                </button>
+                            </form>
 
-                            <a href="${pageContext.request.contextPath}/products" class="btn-back-to-shop">
-                                ← Tiếp tục mua hàng
-                            </a>
+                            <a href="${ctx}/products" class="btn-back-to-shop">← Tiếp tục mua hàng</a>
                         </div>
                     </aside>
-
-                </div>
+                </section>
             </c:otherwise>
         </c:choose>
-
     </div>
-</section>
+</main>
 
 <script>
     (function () {
-        function ready(fn) {
-            if (document.readyState === "loading") {
-                document.addEventListener("DOMContentLoaded", fn);
-            } else {
-                fn();
+        const checkAll = document.getElementById('cartCheckAll');
+        const itemChecks = Array.from(document.querySelectorAll('.cart-item-checkbox'));
+        const subtotalEl = document.getElementById('summarySubtotal');
+        const discountEl = document.getElementById('summaryDiscount');
+        const totalEl = document.getElementById('summaryTotal');
+        const countText = document.getElementById('selectedCountText');
+        const checkoutBtn = document.getElementById('checkoutBtn');
+        const selectedInputs = document.getElementById('selectedInputs');
+
+        if (!itemChecks.length) return;
+
+        function formatMoney(value) {
+            return Math.max(0, value).toLocaleString('vi-VN') + 'đ';
+        }
+
+        function updateSummary() {
+            let subtotal = 0;
+            let discount = 0;
+            let count = 0;
+
+            selectedInputs.innerHTML = '';
+
+            itemChecks.forEach(function (checkbox) {
+                if (!checkbox.checked) return;
+
+                const row = checkbox.closest('.cart-row');
+                subtotal += Number(row.dataset.subtotal || 0);
+                discount += Number(row.dataset.discount || 0);
+                count++;
+
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'selectedItemIds';
+                input.value = checkbox.value;
+                selectedInputs.appendChild(input);
+            });
+
+            subtotalEl.textContent = formatMoney(subtotal);
+            discountEl.textContent = formatMoney(discount);
+            totalEl.textContent = formatMoney(subtotal - discount);
+            countText.textContent = count;
+
+            if (checkoutBtn) {
+                checkoutBtn.disabled = count === 0;
+                checkoutBtn.classList.toggle('disabled', count === 0);
+            }
+
+            if (checkAll) {
+                checkAll.checked = count === itemChecks.length;
+                checkAll.indeterminate = count > 0 && count < itemChecks.length;
             }
         }
 
-        ready(function () {
-            const selectAll = document.getElementById("selectAllCartItems");
-            const itemCheckboxes = Array.from(document.querySelectorAll(".cart-item-checkbox"));
-            const checkoutForm = document.getElementById("checkoutSelectForm");
-
-            const originalTotalEl = document.getElementById("selectedOriginalTotal");
-            const discountEl = document.getElementById("selectedCartDiscount");
-            const totalEl = document.getElementById("selectedCartTotal");
-            const noteEl = document.getElementById("selectedCartNote");
-            const checkoutBtn = document.getElementById("selectedCheckoutBtn");
-
-            function parseSubtotal(value) {
-                if (value === null || value === undefined) {
-                    return 0;
-                }
-
-                const number = Number(String(value).trim());
-                return Number.isFinite(number) ? number : 0;
-            }
-
-            function formatVnd(value) {
-                return new Intl.NumberFormat("en-US").format(Math.round(value)) + "đ";
-            }
-
-            function getCheckedItems() {
-                return itemCheckboxes.filter(function (checkbox) {
-                    return checkbox.checked;
+        if (checkAll) {
+            checkAll.addEventListener('change', function () {
+                itemChecks.forEach(function (checkbox) {
+                    checkbox.checked = checkAll.checked;
                 });
-            }
-
-            function syncSelectAll() {
-                if (!selectAll) {
-                    return;
-                }
-
-                const checkedCount = getCheckedItems().length;
-
-                selectAll.indeterminate = false;
-                selectAll.checked =
-                    itemCheckboxes.length > 0 && checkedCount === itemCheckboxes.length;
-            }
-
-            function updateSelectedTotal() {
-                const checkedItems = getCheckedItems();
-
-                let selectedSubtotal = 0;
-                let selectedOriginalTotal = 0;
-
-                checkedItems.forEach(function (checkbox) {
-                    const subtotal = parseSubtotal(checkbox.dataset.subtotal);
-                    const originalSubtotal = parseSubtotal(checkbox.dataset.originalSubtotal);
-
-                    selectedSubtotal += subtotal;
-                    selectedOriginalTotal += originalSubtotal > 0 ? originalSubtotal : subtotal;
-                });
-
-                const discount = Math.max(selectedOriginalTotal - selectedSubtotal, 0);
-
-                if (originalTotalEl) {
-                    originalTotalEl.textContent = formatVnd(selectedOriginalTotal);
-                }
-
-                if (discountEl) {
-                    discountEl.textContent = formatVnd(discount);
-                }
-
-                if (totalEl) {
-                    totalEl.textContent = formatVnd(selectedSubtotal);
-                }
-
-                if (noteEl) {
-                    if (checkedItems.length === 0) {
-                        noteEl.textContent = "Vui lòng chọn ít nhất một sản phẩm để thanh toán.";
-                    } else {
-                        noteEl.textContent =
-                            "Đã chọn " + checkedItems.length + " sản phẩm để thanh toán.";
-                    }
-                }
-
-                if (checkoutBtn) {
-                    const disabled = checkedItems.length === 0;
-                    checkoutBtn.disabled = disabled;
-                    checkoutBtn.classList.toggle("disabled", disabled);
-                }
-
-                syncSelectAll();
-            }
-
-            if (selectAll) {
-                selectAll.addEventListener("change", function () {
-                    itemCheckboxes.forEach(function (checkbox) {
-                        checkbox.checked = selectAll.checked;
-                    });
-
-                    updateSelectedTotal();
-                });
-            }
-
-            itemCheckboxes.forEach(function (checkbox) {
-                checkbox.addEventListener("change", updateSelectedTotal);
+                updateSummary();
             });
+        }
 
-            if (checkoutForm) {
-                checkoutForm.addEventListener("submit", function (event) {
-                    if (getCheckedItems().length === 0) {
-                        event.preventDefault();
-                        alert("Vui lòng chọn ít nhất một sản phẩm để thanh toán.");
-                    }
-                });
-            }
-
-            updateSelectedTotal();
+        itemChecks.forEach(function (checkbox) {
+            checkbox.addEventListener('change', updateSummary);
         });
+
+        updateSummary();
     })();
 </script>
