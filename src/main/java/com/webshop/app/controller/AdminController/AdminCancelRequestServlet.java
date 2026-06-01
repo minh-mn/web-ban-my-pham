@@ -3,7 +3,6 @@ package com.webshop.app.controller.AdminController;
 import com.webshop.app.dao.CancelRequestDAO;
 import com.webshop.app.model.CancelRequest;
 import com.webshop.app.model.User;
-import com.webshop.app.service.OrderNotificationService;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -25,7 +24,6 @@ public class AdminCancelRequestServlet extends HttpServlet {
     private static final String VIEW_LIST = "/jsp/admin/cancel/cancel_request_list.jsp";
 
     private final CancelRequestDAO cancelRequestDAO = new CancelRequestDAO();
-    private final OrderNotificationService notificationService = new OrderNotificationService();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -99,12 +97,11 @@ public class AdminCancelRequestServlet extends HttpServlet {
         );
 
         if (updated) {
-            notificationService.notifyCancelProcessedSafely(
-                    (int) current.getOrderId(),
-                    current.getUserId(),
-                    nextStatus,
-                    adminNote
-            );
+            /*
+             * Issue 114:
+             * Notification được tạo tập trung trong CancelRequestDAO.updateStatus(...)
+             * để tránh servlet và DAO cùng tạo thông báo làm bị trùng.
+             */
             redirect(request, response, "success", "Cập nhật yêu cầu hủy đơn thành công.");
         } else {
             redirect(request, response, "error", "Không tìm thấy yêu cầu hủy cần cập nhật.");
