@@ -64,7 +64,7 @@
 
 		<a class="logo" href="${pageContext.request.contextPath}/">MyCosmetic</a>
 
-		<div class="header-actions" style="display: flex; align-items: center; gap: 20px;">
+		<div class="header-actions">
 
 			<div class="search-wrapper search-history-wrapper">
 				<form action="${pageContext.request.contextPath}/search"
@@ -129,10 +129,11 @@
 				</c:choose>
 			</div>
 
+
 			<a href="${pageContext.request.contextPath}/cart"
 			   class="cart-icon"
-			   style="font-size: 24px; text-decoration: none; position: relative; margin-left: 10px;">
-				🛒
+			   aria-label="Giỏ hàng">
+				<span class="cart-icon__symbol">🛒</span>
 
 				<c:if test="${not empty sessionScope.CART}">
 					<c:set var="cartQty" value="0" />
@@ -142,110 +143,139 @@
 					</c:forEach>
 
 					<c:if test="${cartQty > 0}">
-							<span class="cart-badge"
-							      style="position: absolute; top: -8px; right: -12px; background: var(--pink-main); color: white; border-radius: 50%; padding: 2px 6px; font-size: 11px; font-weight: bold;">
-									${cartQty}
-							</span>
+						<span class="cart-badge">
+							<c:out value="${cartQty > 99 ? '99+' : cartQty}" />
+						</span>
 					</c:if>
 				</c:if>
 			</a>
 
-			<div class="notification-container"
-			     style="position: relative; margin-left: 15px; display: flex; align-items: center; justify-content: center; height: 100%;">
+			<c:set var="headerUnreadCount" value="0" />
+			<c:choose>
+				<c:when test="${not empty requestScope.unreadNotificationCount}">
+					<c:set var="headerUnreadCount" value="${requestScope.unreadNotificationCount}" />
+				</c:when>
+				<c:when test="${not empty requestScope.unreadCount}">
+					<c:set var="headerUnreadCount" value="${requestScope.unreadCount}" />
+				</c:when>
+			</c:choose>
 
+			<c:choose>
+				<c:when test="${not empty requestScope.latestNotifications}">
+					<c:set var="headerNotifications" value="${requestScope.latestNotifications}" />
+				</c:when>
+				<c:otherwise>
+					<c:set var="headerNotifications" value="${requestScope.notifications}" />
+				</c:otherwise>
+			</c:choose>
+
+			<div class="notification-container">
 				<button id="notifBellBtn"
+				        class="notification-bell"
 				        type="button"
-				        style="background: none; border: none; cursor: pointer; position: relative; padding: 5px; display: flex; align-items: center; justify-content: center; font-size: 22px; transition: transform 0.2s ease; outline: none;"
-				        onmouseover="this.style.transform='scale(1.15)'"
-				        onmouseout="this.style.transform='scale(1)'">
-					🔔
+				        aria-label="Thông báo"
+				        aria-haspopup="true"
+				        aria-expanded="false">
+					<span class="notification-bell__icon">🔔</span>
 
-					<c:if test="${not empty requestScope.unreadCount && requestScope.unreadCount > 0}">
-							<span class="notif-badge"
-							      style="position: absolute; top: -1px; right: -4px; background: #ff5fa2; color: white; border-radius: 50%; padding: 1px 5px; font-size: 10px; font-weight: bold; min-width: 16px; text-align: center; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); font-family: Arial, sans-serif;">
-									${requestScope.unreadCount}
-							</span>
+					<c:if test="${headerUnreadCount > 0}">
+						<span class="notif-badge">
+							<c:out value="${headerUnreadCount > 99 ? '99+' : headerUnreadCount}" />
+						</span>
 					</c:if>
 				</button>
 
 				<div class="notif-dropdown"
 				     id="notifDropdown"
-				     style="display: none; position: absolute; right: 0; top: 45px; width: 340px; background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); border: 1px solid #eaeaea; z-index: 9999; overflow: hidden;">
-
+				     aria-label="Danh sách thông báo">
 					<c:choose>
 						<c:when test="${not empty sessionScope.user}">
-							<div style="padding: 14px 16px; font-weight: bold; border-bottom: 1px solid #f0f0f0; background: #fff0f6; color: #ff5fa2; display: flex; justify-content: space-between; align-items: center;">
-								<span style="font-size: 14px;">Thông báo mới nhận</span>
+							<div class="notif-dropdown__head">
+								<span>Thông báo mới nhận</span>
 
-								<c:if test="${requestScope.unreadCount > 0}">
-									<a href="${pageContext.request.contextPath}/notifications?action=readAll"
-									   style="font-size: 12px; color: #666; text-decoration: none; font-weight: normal;">
-										Đánh dấu đã đọc
-									</a>
+								<c:if test="${headerUnreadCount > 0}">
+									<form class="notification-mark-all-form"
+									      method="post"
+									      action="${pageContext.request.contextPath}/notifications">
+										<input type="hidden" name="action" value="markAllRead">
+										<input type="hidden"
+										       name="csrf_token"
+										       value="<c:out value='${sessionScope.CSRF_TOKEN}'/>">
+										<button type="submit" class="notification-mark-all-btn">
+											Đánh dấu đã đọc
+										</button>
+									</form>
 								</c:if>
 							</div>
 
-							<div style="max-height: 380px; overflow-y: auto; scroll-behavior: smooth;">
+							<div class="notif-dropdown__body">
 								<c:choose>
-									<c:when test="${not empty requestScope.notifications}">
-										<c:forEach var="notif" items="${requestScope.notifications}">
-											<c:set var="bgDefault" value="${notif.read ? 'transparent' : '#fafafa'}" />
+									<c:when test="${not empty headerNotifications}">
+										<c:forEach var="notif" items="${headerNotifications}">
+											<c:url var="notifReadUrl" value="/notifications">
+												<c:param name="action" value="read" />
+												<c:param name="id" value="${notif.id}" />
+												<c:param name="returnUrl" value="${empty notif.targetUrl ? '/notifications' : notif.targetUrl}" />
+											</c:url>
 
-											<a href="${pageContext.request.contextPath}/notifications/read?id=${notif.id}&redirect=${notif.targetUrl}"
-											   style="display: flex; padding: 12px 16px; text-decoration: none; border-bottom: 1px solid #f9f9f9; transition: background 0.2s; gap: 12px; background: ${bgDefault};"
-											   onmouseover="this.style.background='#fff5f8'"
-											   onmouseout="this.style.background='${bgDefault}'">
-
-												<div style="font-size: 20px; margin-top: 2px;">
+											<a href="${notifReadUrl}"
+											   class="notification-item ${notif.read ? 'is-read' : 'is-unread'}">
+												<span class="notification-item__icon">
 													<c:choose>
+														<c:when test="${notif.type == 'ORDER_CREATED'}">🛒</c:when>
+														<c:when test="${notif.type == 'ORDER_CONFIRMED'}">✅</c:when>
+														<c:when test="${notif.type == 'ORDER_SHIPPING'}">🚚</c:when>
+														<c:when test="${notif.type == 'ORDER_DELIVERED'}">📦</c:when>
+														<c:when test="${notif.type == 'ORDER_DELIVERY_FAILED'}">⚠️</c:when>
+														<c:when test="${notif.type == 'ORDER_CANCELLED'}">❌</c:when>
+														<c:when test="${fn:startsWith(notif.type, 'CANCEL_REQUEST')}">📝</c:when>
+														<c:when test="${fn:startsWith(notif.type, 'RETURN_REQUEST')}">↩️</c:when>
+														<c:when test="${fn:startsWith(notif.type, 'REVIEW')}">⭐</c:when>
 														<c:when test="${notif.type == 'VOUCHER'}">🎟️</c:when>
-														<c:when test="${notif.type == 'EVENT'}">📢</c:when>
-														<c:otherwise>✨</c:otherwise>
+														<c:otherwise>🔔</c:otherwise>
 													</c:choose>
-												</div>
+												</span>
 
-												<div style="flex: 1;">
-													<h4 style="margin: 0 0 4px 0; color: #222; font-size: 13.5px; font-weight: ${notif.read ? '500' : 'bold'}; line-height: 1.4;">
-														<c:out value="${notif.title}" />
-													</h4>
+												<span class="notification-item__content">
+													<strong><c:out value="${notif.title}" /></strong>
+													<small><c:out value="${notif.message}" /></small>
+												</span>
 
-													<p style="margin: 0; color: #666; font-size: 12px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-														<c:out value="${notif.message}" />
-													</p>
-												</div>
+												<c:if test="${not notif.read}">
+													<span class="notification-item__dot" aria-hidden="true"></span>
+												</c:if>
 											</a>
 										</c:forEach>
 									</c:when>
 
 									<c:otherwise>
-										<div style="padding: 40px 20px; text-align: center; color: #999;">
-											<div style="font-size: 32px; margin-bottom: 10px;">🔔</div>
-											<p style="margin: 0; font-size: 13px;">Bạn chưa có thông báo nào mới.</p>
+										<div class="notification-empty">
+											<div class="notification-empty__icon">🔔</div>
+											<p>Bạn chưa có thông báo nào mới.</p>
 										</div>
 									</c:otherwise>
 								</c:choose>
 							</div>
 
 							<a href="${pageContext.request.contextPath}/notifications"
-							   style="display: block; padding: 12px; text-align: center; font-weight: bold; text-decoration: none; color: #ff5fa2; border-top: 1px solid #f0f0f0; background: #fffafc; font-size: 13px;">
+							   class="notification-view-all">
 								Xem tất cả thông báo
 							</a>
 						</c:when>
 
 						<c:otherwise>
-							<div style="padding: 35px 24px; text-align: center; color: #555; background: #ffffff;">
-								<div style="font-size: 40px; margin-bottom: 12px;">🔔</div>
+							<div class="notification-guest">
+								<div class="notification-guest__icon">🔔</div>
 
-								<h4 style="margin: 0 0 8px 0; color: #222; font-size: 15px; font-weight: bold;">
-									Bạn có thông báo mới không?
-								</h4>
+								<h4>Bạn có thông báo mới không?</h4>
 
-								<p style="font-size: 12.5px; color: #777; margin: 0 0 20px 0; line-height: 1.5;">
-									Đăng nhập ngay để xem các thông báo sự kiện khuyến mãi, quà tặng voucher và theo dõi hành trình đơn hàng nhé!
+								<p>
+									Đăng nhập ngay để xem các thông báo khuyến mãi,
+									voucher và theo dõi hành trình đơn hàng.
 								</p>
 
 								<a href="${pageContext.request.contextPath}/login"
-								   style="display: inline-block; padding: 10px 24px; background: #ff5fa2; color: white; text-decoration: none; border-radius: 25px; font-size: 13px; font-weight: bold; min-width: 100px; box-shadow: 0 4px 12px rgba(255,95,162,0.3); transition: all 0.2s;">
+								   class="notification-login-link">
 									Đăng nhập ngay
 								</a>
 							</div>
@@ -269,7 +299,7 @@
 		</c:when>
 
 		<c:otherwise>
-			<div class="container" style="padding: 40px 0; color: #666; text-align: center;">
+			<div class="container base-empty-content">
 				Chưa có nội dung để hiển thị.
 			</div>
 		</c:otherwise>
@@ -417,18 +447,34 @@
 		const bellBtn = document.getElementById("notifBellBtn");
 		const dropdown = document.getElementById("notifDropdown");
 
-		if (bellBtn && dropdown) {
-			bellBtn.addEventListener("click", function (e) {
-				e.stopPropagation();
-				dropdown.style.display = dropdown.style.display === "none" ? "block" : "none";
-			});
-
-			document.addEventListener("click", function (e) {
-				if (!dropdown.contains(e.target) && !bellBtn.contains(e.target)) {
-					dropdown.style.display = "none";
-				}
-			});
+		if (!bellBtn || !dropdown) {
+			return;
 		}
+
+		function closeNotificationDropdown() {
+			dropdown.classList.remove("is-open");
+			bellBtn.setAttribute("aria-expanded", "false");
+		}
+
+		bellBtn.addEventListener("click", function (event) {
+			event.preventDefault();
+			event.stopPropagation();
+
+			const isOpen = dropdown.classList.toggle("is-open");
+			bellBtn.setAttribute("aria-expanded", String(isOpen));
+		});
+
+		document.addEventListener("click", function (event) {
+			if (!dropdown.contains(event.target) && !bellBtn.contains(event.target)) {
+				closeNotificationDropdown();
+			}
+		});
+
+		document.addEventListener("keydown", function (event) {
+			if (event.key === "Escape") {
+				closeNotificationDropdown();
+			}
+		});
 	});
 </script>
 
