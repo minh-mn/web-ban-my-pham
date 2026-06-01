@@ -15,7 +15,7 @@
 
 			<a href="javascript:void(0)" id="btn-facebook" class="btn-facebook-custom">
 				<img src="https://upload.wikimedia.org/wikipedia/commons/0/05/Facebook_Logo_%282019%29.png" alt="Facebook">
-				<span>Tiếp tục bằng Facebook</span>
+				<span>Đăng nhập bằng Facebook</span>
 			</a>
 		</div>
 
