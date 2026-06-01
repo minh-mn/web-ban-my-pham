@@ -618,6 +618,135 @@
             </div>
           </div>
 
+
+          <!-- USER SEARCH HISTORY -->
+          <div class="account-card account-section-space account-search-history-card">
+            <div class="account-card-body">
+              <div class="account-card-head account-card-head-start">
+                <div>
+                  <h2 class="account-card-title">🔎 Lịch sử tìm kiếm</h2>
+                  <p class="account-muted">
+                    Lưu lại các từ khóa bạn đã tìm để có thể xem lại nhanh sản phẩm quan tâm.
+                  </p>
+                </div>
+
+                <div class="account-search-history-actions">
+                  <span class="account-chip user-chip">
+                    <c:out value="${empty searchHistoryCount ? 0 : searchHistoryCount}" /> lượt tìm
+                  </span>
+
+                  <c:if test="${not empty searchHistories}">
+                    <form method="post"
+                          action="${pageContext.request.contextPath}/account/search-history/clear"
+                          class="account-inline-form"
+                          onsubmit="return confirm('Bạn có chắc muốn xóa toàn bộ lịch sử tìm kiếm không?');">
+                      <c:if test="${not empty csrfToken}">
+                        <input type="hidden" name="csrfToken" value="${fn:escapeXml(csrfToken)}" />
+                      </c:if>
+                      <c:if test="${empty csrfToken and not empty sessionScope.csrfToken}">
+                        <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.csrfToken)}" />
+                      </c:if>
+
+                      <button type="submit" class="search-history-clear-btn">
+                        Xóa tất cả
+                      </button>
+                    </form>
+                  </c:if>
+                </div>
+              </div>
+
+              <c:if test="${param.deleteSuccess == '1'}">
+                <p class="account-alert-success">Đã xóa lịch sử tìm kiếm.</p>
+              </c:if>
+              <c:if test="${param.deleteFailed == '1'}">
+                <p class="account-alert-error">Không thể xóa lịch sử tìm kiếm này.</p>
+              </c:if>
+              <c:if test="${param.clearSuccess == '1'}">
+                <p class="account-alert-success">Đã xóa toàn bộ lịch sử tìm kiếm.</p>
+              </c:if>
+              <c:if test="${param.clearEmpty == '1'}">
+                <p class="account-alert-success">Lịch sử tìm kiếm đang trống.</p>
+              </c:if>
+
+              <c:choose>
+                <c:when test="${not empty searchHistories}">
+                  <div class="search-history-list">
+                    <c:forEach var="history" items="${searchHistories}">
+                      <c:choose>
+                        <c:when test="${not empty history.searchUrl}">
+                          <c:set var="historyHref" value="${pageContext.request.contextPath}${history.searchUrl}" />
+                        </c:when>
+                        <c:otherwise>
+                          <c:url var="historyHref" value="/search">
+                            <c:param name="q" value="${history.keyword}" />
+                          </c:url>
+                        </c:otherwise>
+                      </c:choose>
+
+                      <div class="search-history-item">
+                        <a class="search-history-main"
+                           href="${fn:escapeXml(historyHref)}"
+                           title="Tìm lại: ${fn:escapeXml(history.keyword)}">
+                          <span class="search-history-icon">🔍</span>
+
+                          <span class="search-history-content">
+                            <strong class="search-history-keyword">
+                              <c:out value="${history.keyword}" />
+                            </strong>
+
+                            <span class="search-history-meta">
+                              <span>
+                                <c:out value="${empty history.resultCount ? 0 : history.resultCount}" /> kết quả
+                              </span>
+                              <span>•</span>
+                              <span>
+                                Đã tìm <c:out value="${empty history.searchCount ? 1 : history.searchCount}" /> lần
+                              </span>
+                              <span>•</span>
+                              <span>
+                                <c:out value="${history.displayLastSearchedAt}" />
+                              </span>
+                            </span>
+                          </span>
+                        </a>
+
+                        <form method="post"
+                              action="${pageContext.request.contextPath}/account/search-history/delete"
+                              class="account-inline-form"
+                              onsubmit="return confirm('Xóa từ khóa tìm kiếm này?');">
+                          <c:if test="${not empty csrfToken}">
+                            <input type="hidden" name="csrfToken" value="${fn:escapeXml(csrfToken)}" />
+                          </c:if>
+                          <c:if test="${empty csrfToken and not empty sessionScope.csrfToken}">
+                            <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.csrfToken)}" />
+                          </c:if>
+
+                          <input type="hidden" name="id" value="${history.id}" />
+
+                          <button type="submit" class="search-history-delete-btn" title="Xóa lịch sử">
+                            ×
+                          </button>
+                        </form>
+                      </div>
+                    </c:forEach>
+                  </div>
+                </c:when>
+
+                <c:otherwise>
+                  <div class="search-history-empty">
+                    <div class="search-history-empty-icon">🕘</div>
+                    <p class="account-empty">
+                      Bạn chưa có lịch sử tìm kiếm. Hãy tìm kiếm sản phẩm để hệ thống lưu lại tại đây.
+                    </p>
+                    <a href="${pageContext.request.contextPath}/products" class="account-btn user-primary">
+                      Khám phá sản phẩm
+                    </a>
+                  </div>
+                </c:otherwise>
+              </c:choose>
+            </div>
+          </div>
+
           <!-- USER CHART -->
           <div class="account-card account-section-space">
             <div class="account-card-body">
@@ -1150,4 +1279,5 @@
     font-size: 18px;
     letter-spacing: 5px;
   }
+
 </style>
