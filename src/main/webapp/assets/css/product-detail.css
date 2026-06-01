@@ -744,3 +744,166 @@
   .pd-action-row { flex-direction: column; }
   .pd-add-cart { width: 100%; min-width: 100%; }
 }
+
+/* =========================================================
+   FINAL RESTORE - PROFESSIONAL PRODUCT DETAIL / PINK RED
+========================================================= */
+
+.pd-page {
+  padding-top: 22px;
+  background:
+          radial-gradient(circle at 8% 10%, rgba(255, 92, 162, .08), transparent 24%),
+          radial-gradient(circle at 90% 18%, rgba(176, 18, 57, .07), transparent 24%),
+          linear-gradient(180deg, #fff8fb 0%, #ffffff 42%, #fff 100%);
+}
+
+.pd-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 0 24px;
+  padding: 13px 16px;
+  border: 1px solid rgba(176, 18, 57, .08);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, .82);
+  color: #6b7280;
+  font-size: 14px;
+  line-height: 1.45;
+  box-shadow: 0 10px 24px rgba(176, 18, 57, .045);
+}
+
+.pd-breadcrumb a {
+  color: #b01239;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.pd-breadcrumb a:hover {
+  color: #e91e63;
+}
+
+.pd-breadcrumb span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.pd-layout {
+  padding: 26px;
+  border-radius: 30px;
+  background: rgba(255, 255, 255, .92);
+  border: 1px solid rgba(176, 18, 57, .08);
+  box-shadow: 0 24px 60px rgba(176, 18, 57, .08);
+}
+
+.pd-title {
+  color: #20242d;
+  font-size: clamp(28px, 2.4vw, 40px);
+  font-weight: 900;
+  letter-spacing: -.9px;
+}
+
+.pd-price-box {
+  background: linear-gradient(135deg, #fff1f6 0%, #ffe3ee 100%);
+  border: 1px solid rgba(176, 18, 57, .10);
+}
+
+.pd-sale-price {
+  color: #d7002f;
+  font-size: clamp(30px, 2.6vw, 42px);
+}
+
+.pd-save-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 6px 15px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #ff4f97 0%, #d9154f 52%, #a4041b 100%);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 900;
+  box-shadow: 0 10px 22px rgba(176, 18, 57, .20);
+}
+
+.pd-promo-strip {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 15px;
+  align-items: center;
+  margin: 18px 0 20px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #17c9c3 0%, #4068f5 64%, #7246d9 100%);
+  color: #fff;
+  box-shadow: 0 16px 32px rgba(64, 104, 245, .16);
+}
+
+.pd-promo-icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, .22);
+  font-size: 30px;
+  font-weight: 950;
+}
+
+.pd-promo-strip strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.pd-promo-strip span {
+  display: block;
+  font-size: 14px;
+  line-height: 1.55;
+  opacity: .95;
+}
+
+.pd-add-cart {
+  background: linear-gradient(135deg, #ff4f97 0%, #d9154f 48%, #a4041b 100%) !important;
+  box-shadow: 0 14px 28px rgba(176, 18, 57, .22) !important;
+}
+
+.pd-add-cart:hover {
+  box-shadow: 0 18px 34px rgba(176, 18, 57, .30) !important;
+}
+
+.pd-tag.pink,
+.pd-tag.category-tag {
+  background: linear-gradient(135deg, #fff0f7 0%, #ffe6f0 100%);
+  color: #b01239;
+  border: 1px solid rgba(176, 18, 57, .12);
+}
+
+.pd-main-image,
+.pd-thumb {
+  background: linear-gradient(135deg, #fff 0%, #fff4f8 100%);
+}
+
+@media (max-width: 1024px) {
+  .pd-layout {
+    padding: 18px;
+  }
+}
+
+@media (max-width: 640px) {
+  .pd-breadcrumb {
+    font-size: 13px;
+    overflow: hidden;
+  }
+
+  .pd-promo-strip {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .pd-promo-icon {
+    margin: 0 auto;
+  }
+}

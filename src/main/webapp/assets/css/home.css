@@ -2278,3 +2278,71 @@ body {
     word-spacing: initial !important;
 }
 
+
+/* =========================================================
+   PRODUCT CARD ACTIONS - VIEW DETAIL / QUICK ADD
+========================================================= */
+
+.skin-product-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.skin-card-view-btn,
+.skin-card-cart-btn {
+    width: 100%;
+    min-height: 42px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    border: 0;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 900;
+    line-height: 1;
+    transition: transform .18s ease, box-shadow .18s ease, background .18s ease, color .18s ease, border-color .18s ease;
+}
+
+.skin-card-view-btn {
+    background: #fff;
+    color: #b01239;
+    border: 1px solid rgba(176, 18, 57, .18);
+}
+
+.skin-card-view-btn:hover {
+    background: #fff4f8;
+    color: #9a0027;
+    transform: translateY(-1px);
+}
+
+.skin-card-cart-form {
+    margin: 0;
+}
+
+.skin-card-cart-btn {
+    background: linear-gradient(135deg, #ff4f97 0%, #d9154f 48%, #a4041b 100%);
+    color: #fff;
+    box-shadow: 0 10px 20px rgba(176, 18, 57, .18);
+}
+
+.skin-card-cart-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 26px rgba(176, 18, 57, .24);
+}
+
+.skin-card-cart-btn:disabled {
+    opacity: .52;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+@media (max-width: 600px) {
+    .skin-product-actions {
+        grid-template-columns: 1fr;
+    }
+}
