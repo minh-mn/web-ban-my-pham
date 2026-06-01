@@ -37,6 +37,9 @@ public class SocialAuthServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         req.setCharacterEncoding("UTF-8");
+        System.out.println("Đã nhận được request tại SocialAuthServlet!");
+        System.out.println("Provider: " + req.getParameter("provider"));
+        System.out.println("Mode: " + req.getParameter("mode"));
 
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
@@ -132,7 +135,7 @@ public class SocialAuthServlet extends HttpServlet {
         User existingUser = userDAO.findByEmail(email);
 
         if (existingUser != null) {
-            handleLogin(req, resp, email, fullName, socialId, provider);
+            resp.getWriter().write("{\"status\":\"error\",\"message\":\"Tài khoản đã tồn tại\"}");
             return;
         }
 
