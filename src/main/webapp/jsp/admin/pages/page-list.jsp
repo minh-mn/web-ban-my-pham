@@ -45,56 +45,53 @@
               <thead>
               <tr>
                 <th>ID</th>
-                <th>Title</th>
+                <th>Hình ảnh</th> <th>Tiêu đề</th>
                 <th>Slug</th>
-                <th>Type</th>
-                <th>Actions</th>
+                <th>Loại</th>
+                <th>Hành động</th>
               </tr>
               </thead>
-
               <tbody>
               <c:forEach var="p" items="${pages}">
                 <tr>
                   <td>#${p.id}</td>
 
-                  <td><b>${p.title}</b></td>
-
-                  <td><c:out value="${p.slug}"/></td>
-
                   <td>
-                    <span class="admin-chip">
-                        ${p.type}
-                    </span>
+                    <img src="${p.thumbnail}"
+                         onerror="this.onerror=null; this.src='${pageContext.request.contextPath}/assets/images/pages/default-thumbnail.png';"
+                         alt="thumb"
+                         style="width: 60px; height: 45px; object-fit: cover; border-radius: 6px; border: 1px solid #e2e8f0;">
+                  </td>
+
+                  <td><b>${p.title}</b></td>
+                  <td><c:out value="${p.slug}"/></td>
+                  <td>
+                    <span class="admin-chip">${p.type}</span>
                   </td>
 
                   <td class="admin-actions">
-
                     <a class="admin-btn"
                        href="${pageContext.request.contextPath}/admin/pages?action=edit&id=${p.id}">
                       Sửa
                     </a>
 
-                    <form method="post"
-                          action="${pageContext.request.contextPath}/admin/pages"
-                          class="admin-inline"
-                          onsubmit="return confirm('Xóa page này?')">
+                    <form action="${pageContext.request.contextPath}/admin/pages/delete"
+                          method="POST"
+                          style="display:inline;"
+                          onsubmit="return confirm('Bạn có chắc chắn muốn xóa trang này không? Hành động này không thể hoàn tác!');">
 
                       <%@ include file="/jsp/common/csrf.jspf" %>
 
-                      <input type="hidden" name="action" value="delete">
                       <input type="hidden" name="id" value="${p.id}">
 
-                      <button class="admin-btn admin-btn--danger" type="submit">
+                      <button class="admin-btn admin-btn--danger" type="submit" style="cursor: pointer;">
                         Xóa
                       </button>
-
                     </form>
-
                   </td>
                 </tr>
               </c:forEach>
               </tbody>
-
             </table>
           </c:otherwise>
         </c:choose>
