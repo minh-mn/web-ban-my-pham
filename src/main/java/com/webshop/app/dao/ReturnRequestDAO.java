@@ -75,7 +75,15 @@ public class ReturnRequestDAO {
 
             try (ResultSet resultSet = statement.getGeneratedKeys()) {
                 if (resultSet.next()) {
-                    return resultSet.getLong(1);
+                    long createdId = resultSet.getLong(1);
+
+                    notifyReturnRequestCreatedSafely(
+                            conn,
+                            request,
+                            createdId
+                    );
+
+                    return createdId;
                 }
             }
         }
@@ -271,6 +279,13 @@ public class ReturnRequestDAO {
                         finalRefundMethod
                 );
 
+                notifyReturnRequestResultSafely(
+                        connection,
+                        current,
+                        normalizedStatus,
+                        finalRefundAmount
+                );
+
                 connection.commit();
                 return true;
 
@@ -382,6 +397,129 @@ public class ReturnRequestDAO {
             default -> "REQUESTED";
         };
     }
+
+    /* =========================================================
+       NOTIFICATION HELPERS - ISSUE 114
+    ========================================================= */
+
+    private void notifyReturnRequestCreatedSafely(Connection connection,
+                                                  ReturnRequest request,
+                                                  long returnRequestId) {
+        if (connection == null
+                || request == null
+                || returnRequestId <= 0
+                || request.getOrderId() <= 0
+                || request.getUserId() <= 0) {
+            return;
+        }
+
+        try {
+            NotificationDAO notificationDAO = new NotificationDAO();
+
+            notificationDAO.createUserNotification(
+                    connection,
+                    request.getUserId(),
+                    "RETURN_REQUEST_CREATED",
+                    "Đã gửi yêu cầu hoàn hàng",
+                    "Yêu cầu hoàn hàng cho đơn hàng #" + request.getOrderId() + " của bạn đã được ghi nhận.",
+                    "/orders/detail?id=" + request.getOrderId(),
+                    "RETURN_REQUEST",
+                    returnRequestId
+            );
+
+            notificationDAO.createAdminNotification(
+                    connection,
+                    "RETURN_REQUEST_CREATED",
+                    "Có yêu cầu hoàn hàng mới",
+                    "Khách hàng #" + request.getUserId()
+                            + " đã gửi yêu cầu hoàn hàng cho đơn hàng #" + request.getOrderId()
+                            + buildReasonText(request.getReason()),
+                    "/admin/orders?action=detail&id=" + request.getOrderId(),
+                    "RETURN_REQUEST",
+                    returnRequestId
+            );
+        } catch (SQLException e) {
+            /*
+             * Không để lỗi notification làm hỏng thao tác tạo yêu cầu hoàn hàng.
+             */
+            e.printStackTrace();
+        }
+    }
+
+    private void notifyReturnRequestResultSafely(Connection connection,
+                                                 ReturnRequest request,
+                                                 String status,
+                                                 BigDecimal refundAmount) {
+        if (connection == null
+                || request == null
+                || request.getId() <= 0
+                || request.getOrderId() <= 0
+                || request.getUserId() <= 0) {
+            return;
+        }
+
+        String normalizedStatus = normalizeStatus(status);
+
+        String type;
+        String title;
+        String message;
+
+        switch (normalizedStatus) {
+            case "APPROVED" -> {
+                type = "RETURN_REQUEST_APPROVED";
+                title = "Yêu cầu hoàn hàng đã được duyệt";
+                message = "Yêu cầu hoàn hàng cho đơn hàng #" + request.getOrderId() + " của bạn đã được duyệt.";
+            }
+            case "RETURNED" -> {
+                type = "RETURN_REQUEST_APPROVED";
+                title = "Shop đã nhận hàng hoàn";
+                message = "Shop đã ghi nhận hàng hoàn của đơn hàng #" + request.getOrderId() + ".";
+            }
+            case "REFUNDED" -> {
+                type = "RETURN_REQUEST_APPROVED";
+                title = "Đơn hàng đã được hoàn tiền";
+                message = "Đơn hàng #" + request.getOrderId() + " đã được hoàn tiền "
+                        + vnd0(refundAmount) + " VND.";
+            }
+            case "REJECTED" -> {
+                type = "RETURN_REQUEST_REJECTED";
+                title = "Yêu cầu hoàn hàng bị từ chối";
+                message = "Yêu cầu hoàn hàng cho đơn hàng #" + request.getOrderId() + " của bạn đã bị từ chối.";
+            }
+            default -> {
+                return;
+            }
+        }
+
+        try {
+            new NotificationDAO().createUserNotification(
+                    connection,
+                    request.getUserId(),
+                    type,
+                    title,
+                    message,
+                    "/orders/detail?id=" + request.getOrderId(),
+                    "RETURN_REQUEST",
+                    request.getId()
+            );
+        } catch (SQLException e) {
+            /*
+             * Không để lỗi notification làm rollback thao tác xử lý hoàn hàng.
+             */
+            e.printStackTrace();
+        }
+    }
+
+    private String buildReasonText(String reason) {
+        String safeReason = trimToNull(reason);
+
+        if (safeReason == null) {
+            return ".";
+        }
+
+        return ". Lý do: " + safeReason;
+    }
+
 
     private ReturnRequest mapRow(ResultSet resultSet) throws SQLException {
         ReturnRequest request = new ReturnRequest();
