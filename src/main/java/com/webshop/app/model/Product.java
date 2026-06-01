@@ -468,38 +468,94 @@ public class Product {
 	}
 
 	/**
-	 * JSP helper for homepage deal progress bar.
-	 * It is calculated from sold quantity, stock and discount percent so the
-	 * homepage can show a stable "ĐANG DIỄN RA" bar even when the project does
-	 * not have a dedicated flash-sale progress table.
+	 * Tổng số lượng dùng để tính tiến độ Flash Sale.
+	 *
+	 * Quy ước:
+	 * - soldQuantity: số lượng đã bán.
+	 * - stock: số lượng còn lại hiện tại.
+	 * - total = soldQuantity + stock.
+	 *
+	 * Công thức này phù hợp khi hệ thống chưa có bảng riêng lưu tổng số lượng
+	 * được phân bổ cho từng chương trình Flash Sale.
+	 */
+	public int getFlashSaleTotalQuantity() {
+		return Math.max(0, soldQuantity) + Math.max(0, stock);
+	}
+
+	/**
+	 * Phần trăm đã bán thật sự.
+	 *
+	 * Ví dụ:
+	 * - soldQuantity = 70
+	 * - stock = 30
+	 * - total = 100
+	 * => soldPercent = 70
+	 */
+	public int getSoldPercent() {
+		int total = getFlashSaleTotalQuantity();
+
+		if (total <= 0) {
+			return 0;
+		}
+
+		int percent = (int) Math.round((getSoldQuantity() * 100.0) / total);
+		return Math.max(0, Math.min(percent, 100));
+	}
+
+	/**
+	 * Alias cho JSP nếu muốn gọi product.soldProgressPercent.
+	 */
+	public int getSoldProgressPercent() {
+		return getSoldPercent();
+	}
+
+	/**
+	 * Alias giữ tương thích với các JSP cũ đang gọi product.saleProgressPercent.
+	 * Từ Issue 138 trở đi, giá trị này phản ánh đúng % đã bán,
+	 * không cộng thêm ảo theo discountPercent hoặc viewCount.
 	 */
 	public int getSaleProgressPercent() {
-		int base = 35;
+		return getSoldPercent();
+	}
 
-		if (soldQuantity > 0 || stock > 0) {
-			int total = soldQuantity + stock;
-			if (total > 0) {
-				base = (int) Math.round((soldQuantity * 100.0) / total);
-			}
+	/**
+	 * Phần trăm còn lại.
+	 */
+	public int getRemainingStockPercent() {
+		return Math.max(0, 100 - getSoldPercent());
+	}
+
+	/**
+	 * Dòng text hiển thị dưới Stock Bar.
+	 */
+	public String getSoldProgressLabel() {
+		int percent = getSoldPercent();
+
+		if (getFlashSaleTotalQuantity() <= 0) {
+			return "Chưa có dữ liệu đã bán";
 		}
 
-		if (discountPercent >= 30) {
-			base += 18;
-		} else if (discountPercent >= 20) {
-			base += 12;
-		} else if (discountPercent >= 10) {
-			base += 8;
+		if (percent >= 100 || stock <= 0) {
+			return "Đã bán hết";
 		}
 
-		if (viewCount > 100) {
-			base += 8;
+		if (percent <= 0) {
+			return "Vừa mở bán";
 		}
 
-		return Math.max(18, Math.min(base, 95));
+		return "Đã bán " + percent + "%";
+	}
+
+	/**
+	 * Style inline an toàn cho JSP:
+	 * style="width: ${product.soldProgressStyle};"
+	 */
+	public String getSoldProgressStyle() {
+		return getSoldPercent() + "%";
 	}
 
 	public boolean getHasSaleProgress() {
-		return getSaleProgressPercent() > 0;
+		return getFlashSaleTotalQuantity() > 0;
 	}
 
 	public BigDecimal getEffectivePrice() {
