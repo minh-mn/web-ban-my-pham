@@ -448,6 +448,13 @@ public class AdminOrderDAO {
                             "Đơn hàng đã có mã vận đơn " + safeShippingCode + ", chờ lấy hàng.",
                             null
                     );
+
+                    notifyCustomerShippingStatusSafely(
+                            connection,
+                            findById(id),
+                            id,
+                            normalizedShippingStatus
+                    );
                 }
 
                 connection.commit();
@@ -628,6 +635,13 @@ public class AdminOrderDAO {
                             defaultIfBlank(note, buildTrackingNote(normalizedShippingStatus, safeShippingCode)),
                             adminId
                     );
+
+                    notifyCustomerShippingStatusSafely(
+                            connection,
+                            currentOrder,
+                            id,
+                            normalizedShippingStatus
+                    );
                 }
 
                 connection.commit();
@@ -792,6 +806,82 @@ public class AdminOrderDAO {
             statement.executeUpdate();
         }
     }
+
+    /* =========================================================
+       NOTIFICATION HELPERS - ISSUE 114
+    ========================================================= */
+
+    private void notifyCustomerShippingStatusSafely(Connection connection,
+                                                    Order order,
+                                                    int orderId,
+                                                    String shippingStatus) {
+        if (connection == null || order == null || orderId <= 0 || order.getUserId() <= 0) {
+            return;
+        }
+
+        NotificationPayload payload = buildNotificationPayload(orderId, shippingStatus);
+
+        if (payload == null) {
+            return;
+        }
+
+        try {
+            new NotificationDAO().createUserNotification(
+                    connection,
+                    order.getUserId(),
+                    payload.type(),
+                    payload.title(),
+                    payload.message(),
+                    "/orders/detail?id=" + orderId,
+                    "ORDER",
+                    (long) orderId
+            );
+        } catch (SQLException e) {
+            /*
+             * Không để lỗi notification làm rollback thao tác cập nhật đơn hàng.
+             */
+            e.printStackTrace();
+        }
+    }
+
+    private NotificationPayload buildNotificationPayload(int orderId, String shippingStatus) {
+        String normalizedShippingStatus = normalizeShippingStatus(shippingStatus);
+
+        return switch (normalizedShippingStatus) {
+            case "PENDING_PICKUP" -> new NotificationPayload(
+                    "ORDER_CONFIRMED",
+                    "Đơn hàng đã được xác nhận",
+                    "Đơn hàng #" + orderId + " đã được admin xác nhận và đang chờ lấy hàng."
+            );
+
+            case "DELIVERING" -> new NotificationPayload(
+                    "ORDER_SHIPPING",
+                    "Đơn hàng đang được giao",
+                    "Đơn hàng #" + orderId + " đang được giao đến bạn."
+            );
+
+            case "DELIVERED" -> new NotificationPayload(
+                    "ORDER_DELIVERED",
+                    "Đơn hàng đã giao thành công",
+                    "Đơn hàng #" + orderId + " đã được giao thành công."
+            );
+
+            case "FAILED" -> new NotificationPayload(
+                    "ORDER_DELIVERY_FAILED",
+                    "Giao hàng thất bại",
+                    "Đơn hàng #" + orderId + " giao hàng thất bại. Shop sẽ liên hệ lại với bạn."
+            );
+
+            case "CANCELED" -> new NotificationPayload(
+                    "ORDER_CANCELLED",
+                    "Đơn hàng đã bị hủy",
+                    "Đơn hàng #" + orderId + " đã bị hủy."
+            );
+
+            default -> null;
+        };
+    }
+
 
     /* =========================================================
        MAPPER
@@ -1040,6 +1130,13 @@ public class AdminOrderDAO {
         };
     }
 
+    private record NotificationPayload(
+            String type,
+            String title,
+            String message
+    ) {
+    }
+
     /* =========================================================
        SIMPLE VIEW MODEL FOR TRACKING LOG
     ========================================================= */
@@ -1117,4 +1214,3 @@ public class AdminOrderDAO {
         }
     }
 }
-
