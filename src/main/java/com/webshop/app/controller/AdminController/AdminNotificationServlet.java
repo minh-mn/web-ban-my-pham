@@ -138,7 +138,7 @@ public class AdminNotificationServlet extends HttpServlet {
         request.setAttribute("totalNotifications", totalNotifications);
 
         /*
-         * Giữ lại attribute cũ để notification-list.jsp hiện tại không bị lỗi.
+         * Giữ lại attribute cũ để notification_list.jsp hiện tại không bị lỗi.
          */
         request.setAttribute("systemNotifications", notificationDAO.getSystemBroadcastHistory());
 
@@ -146,7 +146,7 @@ public class AdminNotificationServlet extends HttpServlet {
         request.setAttribute("activeMenu", "notifications");
         request.setAttribute("pageCss", "/assets/css/admin/admin-notification.css");
 
-        request.getRequestDispatcher("/jsp/admin/notification/notification-list.jsp")
+        request.getRequestDispatcher("/jsp/admin/notification/notification_list.jsp")
                 .forward(request, response);
     }
 
@@ -160,7 +160,7 @@ public class AdminNotificationServlet extends HttpServlet {
         request.setAttribute("activeMenu", "notifications");
         request.setAttribute("pageCss", "/assets/css/admin/admin-notification.css");
 
-        request.getRequestDispatcher("/jsp/admin/notification/notification-form.jsp")
+        request.getRequestDispatcher("/jsp/admin/notification/notification_form.jsp")
                 .forward(request, response);
     }
 
