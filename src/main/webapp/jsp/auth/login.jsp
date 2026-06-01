@@ -10,12 +10,12 @@
 	<div class="auth-card">
 		<h2 class="auth-title">Đăng nhập vào MyCosmetic</h2>
 
-		<div class="social-login-stack" style="display: flex; flex-direction: column; gap: 12px; margin-top: 10px;">
-			<div id="googleLoginBtn" style="margin-top: 10px;"></div>
+		<div class="social-login-stack" style="display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 10px;">
+			<div id="googleLoginBtn"></div>
 
-			<a href="javascript:void(0)" id="btn-facebook" class="social-btn" style="border: 1px solid #d9dadc; border-radius: 500px; padding: 12px 24px; text-decoration: none; color: #121212; font-weight: 700; display: flex; align-items: center;">
-				<img src="https://upload.wikimedia.org/wikipedia/commons/0/05/Facebook_Logo_%282019%29.png" alt="Facebook" style="width: 20px; margin-right: 12px;">
-				<span style="flex: 1; text-align: center;">Tiếp tục bằng Facebook</span>
+			<a href="javascript:void(0)" id="btn-facebook" class="btn-facebook-custom">
+				<img src="https://upload.wikimedia.org/wikipedia/commons/0/05/Facebook_Logo_%282019%29.png" alt="Facebook">
+				<span>Tiếp tục bằng Facebook</span>
 			</a>
 		</div>
 
@@ -248,6 +248,74 @@
 					inp.type = "password";
 					this.textContent = "🙈";
 				}
+			});
+		}
+	});
+
+	
+
+	document.addEventListener("DOMContentLoaded", function () {
+
+		// 1. Khởi tạo SDK
+		window.fbAsyncInit = function () {
+			FB.init({
+				appId: '1891459851533615',
+				cookie: true,
+				xfbml: true,
+				version: 'v19.0'
+			});
+		};
+
+		// 2. Tải SDK
+		(function (d, s, id) {
+			var js, fjs = d.getElementsByTagName(s)[0];
+			if (d.getElementById(id)) return;
+			js = d.createElement(s);
+			js.id = id;
+			js.src = "https://connect.facebook.net/vi_VN/sdk.js";
+			fjs.parentNode.insertBefore(js, fjs);
+		}(document, 'script', 'facebook-jssdk'));
+
+		// 3. Xử lý sự kiện Click cho nút Facebook
+		var btnFb = document.getElementById("btn-facebook");
+
+		if (btnFb) {
+			btnFb.addEventListener("click", function () {
+				FB.login(function (response) {
+					if (response.authResponse) {
+						const accessToken = response.authResponse.accessToken;
+
+						Swal.fire({
+							title: 'Đang xử lý...',
+							allowOutsideClick: false,
+							didOpen: () => { Swal.showLoading(); }
+						});
+
+						fetch(contextPath + "/social-auth", {
+							method: "POST",
+							headers: { "Content-Type": "application/x-www-form-urlencoded" },
+							body: new URLSearchParams({
+								provider: "facebook",
+								accessToken: accessToken,
+								mode: "login"
+							})
+						})
+								.then(res => res.json())
+								.then(data => {
+									if (data.status === "success") {
+										Swal.fire({ icon: "success", title: "Thành công", timer: 1500, showConfirmButton: false })
+												.then(() => { window.location.href = contextPath + data.redirectUrl; });
+									} else {
+										Swal.fire({ icon: "error", title: "Lỗi", text: data.message });
+									}
+								})
+								.catch(err => {
+									Swal.fire("Lỗi", "Không thể kết nối Server", "error");
+								});
+					} else {
+						Swal.fire("Đã hủy", "Bạn chưa đăng nhập Facebook", "info");
+					}
+				}, { scope: 'public_profile,email' });
 			});
 		}
 	});
