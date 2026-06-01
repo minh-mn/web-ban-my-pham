@@ -351,48 +351,6 @@
     font-weight: 520;
 }
 
-.pd-promo-strip {
-    margin: 0 0 24px;
-    padding: 18px 20px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    border-radius: 20px;
-    color: #ffffff;
-    background: linear-gradient(135deg, #25c4d6 0%, #2e86de 48%, #6142d9 100%);
-    box-shadow: 0 16px 30px rgba(46, 134, 222, .16);
-}
-
-.pd-promo-icon {
-    width: 54px;
-    height: 54px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    border-radius: 16px;
-    background: rgba(255, 255, 255, .22);
-    font-size: 28px;
-    font-weight: 950;
-}
-
-.pd-promo-strip strong,
-.pd-promo-strip span {
-    display: block;
-}
-
-.pd-promo-strip strong {
-    margin-bottom: 4px;
-    font-size: 16px;
-    font-weight: 900;
-}
-
-.pd-promo-strip span {
-    font-size: 14px;
-    line-height: 1.5;
-    font-weight: 650;
-    opacity: .95;
-}
 
 .pd-cart-form {
     margin: 0;
