@@ -1,957 +1,338 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
-<c:set var="pageTitle" value="ADMIN | Order Detail" scope="request" />
+<c:set var="pageTitle" value="ADMIN | Chi tiết đơn hàng" scope="request" />
 <c:set var="activeMenu" value="orders" scope="request" />
 <c:set var="pageCss" value="/assets/css/admin/admin-form.css" scope="request" />
 
 <jsp:include page="/jsp/admin/layout/header.jsp" />
 <jsp:include page="/jsp/admin/layout/sidebar.jsp" />
 
-<style>
-	.order-detail-grid {
-		display: grid;
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-		gap: 18px;
-	}
+<c:set var="orderStatus" value="${fn:toLowerCase(order.status)}" />
+<c:set var="shippingStatus" value="${fn:toUpperCase(order.shippingStatus)}" />
+<c:set var="paymentStatus" value="${fn:toUpperCase(order.paymentStatus)}" />
+<c:set var="paymentMethod" value="${fn:toUpperCase(order.paymentMethod)}" />
+<c:set var="shippingProvider" value="${fn:toUpperCase(order.shippingProvider)}" />
+<c:set var="shippingMethod" value="${fn:toUpperCase(order.shippingMethod)}" />
 
-	.order-detail-full {
-		grid-column: 1 / -1;
-	}
+<c:set var="isProcessing" value="${orderStatus eq 'processing' or orderStatus eq 'pending'}" />
+<c:set var="isConfirmed" value="${orderStatus eq 'confirmed'}" />
+<c:set var="isOrderShipping" value="${orderStatus eq 'shipping'}" />
+<c:set var="isCompleted" value="${orderStatus eq 'completed'}" />
+<c:set var="isCancelled" value="${orderStatus eq 'cancelled' or orderStatus eq 'canceled'}" />
+<c:set var="isPendingPickup" value="${shippingStatus eq 'PENDING_PICKUP' or shippingStatus eq 'PENDING' or shippingStatus eq 'CREATED' or shippingStatus eq 'PICKING'}" />
+<c:set var="isDelivering" value="${shippingStatus eq 'DELIVERING' or shippingStatus eq 'SHIPPING' or shippingStatus eq 'IN_TRANSIT'}" />
+<c:set var="isDelivered" value="${shippingStatus eq 'DELIVERED' or shippingStatus eq 'SUCCESS' or shippingStatus eq 'COMPLETED'}" />
+<c:set var="isDeliveryFailed" value="${shippingStatus eq 'FAILED' or shippingStatus eq 'DELIVERY_FAILED' or shippingStatus eq 'RETURNED'}" />
+<c:set var="isShippingCanceled" value="${shippingStatus eq 'CANCELED' or shippingStatus eq 'CANCELLED'}" />
 
-	.order-status-row {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: 10px;
-		margin-top: 8px;
-	}
+<c:set var="orderCss" value="warning"/>
+<c:if test="${isConfirmed}"><c:set var="orderCss" value="primary"/></c:if>
+<c:if test="${isOrderShipping}"><c:set var="orderCss" value="info"/></c:if>
+<c:if test="${isCompleted}"><c:set var="orderCss" value="ok"/></c:if>
+<c:if test="${isCancelled}"><c:set var="orderCss" value="danger"/></c:if>
 
-	.admin-alert {
-		margin: 0 0 16px;
-		padding: 12px 14px;
-		border-radius: 12px;
-		font-weight: 700;
-		line-height: 1.45;
-	}
+<c:set var="shippingCss" value="muted"/>
+<c:if test="${isPendingPickup}"><c:set var="shippingCss" value="warning"/></c:if>
+<c:if test="${isDelivering}"><c:set var="shippingCss" value="info"/></c:if>
+<c:if test="${isDelivered}"><c:set var="shippingCss" value="ok"/></c:if>
+<c:if test="${isDeliveryFailed or isShippingCanceled}"><c:set var="shippingCss" value="danger"/></c:if>
 
-	.admin-alert--success {
-		border: 1px solid #bbf7d0;
-		background: #f0fdf4;
-		color: #166534;
-	}
-
-	.admin-alert--error {
-		border: 1px solid #fecaca;
-		background: #fff1f2;
-		color: #b91c1c;
-	}
-
-	.admin-section-card {
-		margin-top: 22px;
-		padding: 18px;
-		border: 1px solid #edf0f5;
-		border-radius: 18px;
-		background: #ffffff;
-	}
-
-	.admin-section-title {
-		margin: 0 0 14px;
-		color: #1f2a44;
-		font-size: 18px;
-		font-weight: 900;
-	}
-
-	.admin-subsection-title {
-		margin: 0 0 10px;
-		color: #334155;
-		font-size: 15px;
-		font-weight: 900;
-	}
-
-	.shipping-summary {
-		display: grid;
-		grid-template-columns: repeat(4, minmax(0, 1fr));
-		gap: 14px;
-		margin-bottom: 18px;
-	}
-
-	.shipping-summary-item {
-		padding: 14px;
-		border: 1px solid #eef2f7;
-		border-radius: 14px;
-		background: #f8fafc;
-	}
-
-	.shipping-summary-item span {
-		display: block;
-		margin-bottom: 5px;
-		color: #64748b;
-		font-size: 12px;
-		font-weight: 800;
-		text-transform: uppercase;
-		letter-spacing: 0.04em;
-	}
-
-	.shipping-summary-item strong {
-		color: #1f2a44;
-		font-size: 14px;
-		font-weight: 900;
-	}
-
-	.tracking-steps {
-		display: grid;
-		grid-template-columns: repeat(4, minmax(0, 1fr));
-		gap: 10px;
-		margin: 16px 0 18px;
-	}
-
-	.tracking-step {
-		position: relative;
-		min-height: 86px;
-		padding: 14px 12px;
-		border: 1px solid #e5e7eb;
-		border-radius: 16px;
-		background: #f8fafc;
-		color: #64748b;
-	}
-
-	.tracking-step::before {
-		content: "";
-		width: 28px;
-		height: 28px;
-		display: inline-flex;
-		margin-bottom: 8px;
-		border-radius: 50%;
-		background: #e5e7eb;
-	}
-
-	.tracking-step strong {
-		display: block;
-		color: inherit;
-		font-size: 13.5px;
-		line-height: 1.35;
-	}
-
-	.tracking-step small {
-		display: block;
-		margin-top: 4px;
-		color: inherit;
-		font-size: 12px;
-		line-height: 1.35;
-	}
-
-	.tracking-step.is-active {
-		border-color: #93c5fd;
-		background: #eff6ff;
-		color: #1d4ed8;
-	}
-
-	.tracking-step.is-active::before {
-		background: #3b82f6;
-		box-shadow: 0 0 0 5px rgba(59, 130, 246, 0.14);
-	}
-
-	.tracking-step.is-done {
-		border-color: #bbf7d0;
-		background: #f0fdf4;
-		color: #166534;
-	}
-
-	.tracking-step.is-done::before {
-		background: #22c55e;
-		box-shadow: 0 0 0 5px rgba(34, 197, 94, 0.13);
-	}
-
-	.tracking-step.is-failed {
-		border-color: #fecaca;
-		background: #fff1f2;
-		color: #b91c1c;
-	}
-
-	.tracking-step.is-failed::before {
-		background: #ef4444;
-		box-shadow: 0 0 0 5px rgba(239, 68, 68, 0.13);
-	}
-
-	.tracking-history {
-		display: flex;
-		flex-direction: column;
-		gap: 10px;
-	}
-
-	.tracking-history-item {
-		display: grid;
-		grid-template-columns: 170px 1fr;
-		gap: 14px;
-		padding: 12px 14px;
-		border: 1px solid #eef2f7;
-		border-radius: 14px;
-		background: #ffffff;
-	}
-
-	.tracking-history-time {
-		color: #64748b;
-		font-size: 13px;
-		font-weight: 800;
-	}
-
-	.tracking-history-content strong {
-		display: block;
-		margin-bottom: 4px;
-		color: #1f2a44;
-		font-size: 14px;
-	}
-
-	.tracking-history-content p {
-		margin: 0;
-		color: #475569;
-		font-size: 13.5px;
-		line-height: 1.45;
-	}
-
-	.admin-pill--info {
-		color: #1d4ed8;
-		background: #eff6ff;
-		border: 1px solid #bfdbfe;
-	}
-
-	.admin-pill--warning {
-		color: #b45309;
-		background: #fffbeb;
-		border: 1px solid #fde68a;
-	}
-
-	.admin-pill--danger {
-		color: #b91c1c;
-		background: #fff1f2;
-		border: 1px solid #fecaca;
-	}
-
-	.admin-pill--ok {
-		color: #166534;
-		background: #f0fdf4;
-		border: 1px solid #bbf7d0;
-	}
-
-	.admin-pill--muted {
-		color: #475569;
-		background: #f8fafc;
-		border: 1px solid #e2e8f0;
-	}
-
-	.form-grid-2 {
-		display: grid;
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-		gap: 14px;
-	}
-
-	.admin-textarea {
-		width: 100%;
-		min-height: 86px;
-		padding: 12px 14px;
-		border: 1px solid #dbe3ef;
-		border-radius: 12px;
-		resize: vertical;
-		font-family: inherit;
-		font-size: 14px;
-		line-height: 1.45;
-	}
-
-	.admin-textarea:focus {
-		outline: none;
-		border-color: #d63384;
-		box-shadow: 0 0 0 4px rgba(214, 51, 132, 0.10);
-	}
-
-	@media (max-width: 900px) {
-		.order-detail-grid,
-		.shipping-summary,
-		.tracking-steps,
-		.form-grid-2 {
-			grid-template-columns: 1fr;
-		}
-
-		.tracking-history-item {
-			grid-template-columns: 1fr;
-		}
-	}
-</style>
+<c:set var="paymentCss" value="warning"/>
+<c:if test="${paymentStatus eq 'PAID'}"><c:set var="paymentCss" value="ok"/></c:if>
+<c:if test="${paymentStatus eq 'FAILED' or paymentStatus eq 'CANCELED' or paymentStatus eq 'CANCELLED'}"><c:set var="paymentCss" value="danger"/></c:if>
+<c:if test="${paymentStatus eq 'REFUNDED'}"><c:set var="paymentCss" value="info"/></c:if>
 
 <main class="admin-main">
-	<div class="admin-container">
-
-		<div class="admin-topbar">
-			<div>
-				<h1 class="admin-h1">Chi tiết đơn hàng #${order.id}</h1>
-
-				<div class="order-status-row">
-					<span class="admin-muted">Trạng thái đơn:</span>
-
-					<c:choose>
-						<c:when test="${order.status == 'completed'}">
-              <span class="admin-pill admin-pill--ok">
-                <c:out value="${order.statusLabel}" />
-              </span>
-						</c:when>
-
-						<c:when test="${order.status == 'cancelled' || order.status == 'canceled'}">
-              <span class="admin-pill admin-pill--danger">
-                <c:out value="${order.statusLabel}" />
-              </span>
-						</c:when>
-
-						<c:when test="${order.status == 'shipping'}">
-              <span class="admin-pill admin-pill--info">
-                <c:out value="${order.statusLabel}" />
-              </span>
-						</c:when>
-
-						<c:otherwise>
-              <span class="admin-pill admin-pill--muted">
-                <c:out value="${order.statusLabel}" />
-              </span>
-						</c:otherwise>
-					</c:choose>
-
-					<span class="admin-muted">Vận chuyển:</span>
-
-					<c:choose>
-						<c:when test="${order.delivered}">
-              <span class="admin-pill admin-pill--ok">
-                <c:out value="${order.shippingStatusLabel}" />
-              </span>
-						</c:when>
-
-						<c:when test="${order.deliveryFailed || order.shippingCanceled}">
-              <span class="admin-pill admin-pill--danger">
-                <c:out value="${order.shippingStatusLabel}" />
-              </span>
-						</c:when>
-
-						<c:when test="${order.delivering}">
-              <span class="admin-pill admin-pill--info">
-                <c:out value="${order.shippingStatusLabel}" />
-              </span>
-						</c:when>
-
-						<c:otherwise>
-              <span class="admin-pill admin-pill--warning">
-                <c:out value="${order.shippingStatusLabel}" />
-              </span>
-						</c:otherwise>
-					</c:choose>
-				</div>
-			</div>
-
-			<a class="admin-btn"
-			   href="${pageContext.request.contextPath}/admin/orders">
-				Quay lại
-			</a>
-		</div>
-
-		<c:if test="${not empty admin_order_success}">
-			<div class="admin-alert admin-alert--success">
-				<c:out value="${admin_order_success}" />
-			</div>
-		</c:if>
-
-		<c:if test="${not empty admin_order_error}">
-			<div class="admin-alert admin-alert--error">
-				<c:out value="${admin_order_error}" />
-			</div>
-		</c:if>
-
-		<div class="admin-card">
-			<div class="admin-card__body">
-
-				<!-- ================= ORDER BASIC INFO ================= -->
-				<div class="admin-section-card" style="margin-top: 0;">
-					<h2 class="admin-section-title">Thông tin đơn hàng</h2>
-
-					<div class="order-detail-grid">
-
-						<div class="admin-field">
-							<div class="admin-label">Khách hàng</div>
-							<div>
-								<c:out value="${order.fullName}" />
-							</div>
-						</div>
-
-						<div class="admin-field">
-							<div class="admin-label">Số điện thoại</div>
-							<div>
-								<c:out value="${order.phone}" />
-							</div>
-						</div>
-
-						<div class="admin-field order-detail-full">
-							<div class="admin-label">Địa chỉ giao hàng</div>
-							<div>
-								<c:out value="${order.address}" />
-							</div>
-						</div>
-
-						<div class="admin-field">
-							<div class="admin-label">Tổng tiền</div>
-							<div>
-								<strong>
-									<fmt:formatNumber value="${order.total}"
-													  type="number"
-													  groupingUsed="true"
-													  minFractionDigits="0"
-													  maxFractionDigits="0" /> ₫
-								</strong>
-							</div>
-						</div>
-
-						<div class="admin-field">
-							<div class="admin-label">Giảm giá</div>
-							<div>
-								<strong>
-									<fmt:formatNumber value="${order.couponDiscount}"
-													  type="number"
-													  groupingUsed="true"
-													  minFractionDigits="0"
-													  maxFractionDigits="0" /> ₫
-								</strong>
-							</div>
-						</div>
-
-						<div class="admin-field">
-							<div class="admin-label">Ngày tạo</div>
-							<div>
-								<fmt:formatDate value="${order.createdAtDate}"
-												pattern="dd/MM/yyyy HH:mm" />
-							</div>
-						</div>
-
-						<div class="admin-field">
-							<div class="admin-label">Thanh toán</div>
-							<div>
-								<c:out value="${order.paymentMethod}" />
-								-
-								<c:choose>
-									<c:when test="${order.paymentStatus == 'PAID'}">
-										<span class="admin-pill admin-pill--ok">PAID</span>
-									</c:when>
-
-									<c:when test="${order.paymentStatus == 'CANCELED' || order.paymentStatus == 'FAILED'}">
-                    <span class="admin-pill admin-pill--danger">
-                      <c:out value="${order.paymentStatus}" />
-                    </span>
-									</c:when>
-
-									<c:otherwise>
-                    <span class="admin-pill admin-pill--warning">
-                      <c:out value="${order.paymentStatus}" />
-                    </span>
-									</c:otherwise>
-								</c:choose>
-							</div>
-						</div>
-
-						<div class="admin-field">
-							<div class="admin-label">VNPAY TxnRef</div>
-							<div class="admin-muted">
-								<c:choose>
-									<c:when test="${not empty order.vnpTxnRef}">
-										<c:out value="${order.vnpTxnRef}" />
-									</c:when>
-									<c:otherwise>Không có</c:otherwise>
-								</c:choose>
-							</div>
-						</div>
-
-					</div>
-				</div>
-
-				<!-- ================= SHIPPING TRACKING ================= -->
-				<div class="admin-section-card">
-					<h2 class="admin-section-title">Tracking vận chuyển</h2>
-
-					<div class="shipping-summary">
-						<div class="shipping-summary-item">
-							<span>Phương thức</span>
-							<strong>
-								<c:out value="${order.shippingMethodLabel}" />
-							</strong>
-						</div>
-
-						<div class="shipping-summary-item">
-							<span>Đơn vị giao</span>
-							<strong>
-								<c:out value="${order.shippingProviderLabel}" />
-							</strong>
-						</div>
-
-						<div class="shipping-summary-item">
-							<span>Mã vận đơn</span>
-							<strong>
-								<c:choose>
-									<c:when test="${not empty order.shippingCode}">
-										<c:out value="${order.shippingCode}" />
-									</c:when>
-									<c:otherwise>Chưa có</c:otherwise>
-								</c:choose>
-							</strong>
-						</div>
-
-						<div class="shipping-summary-item">
-							<span>Phí ship</span>
-							<strong>
-								<fmt:formatNumber value="${order.shippingFee}"
-												  type="number"
-												  groupingUsed="true"
-												  minFractionDigits="0"
-												  maxFractionDigits="0" /> ₫
-							</strong>
-						</div>
-					</div>
-
-					<div class="tracking-steps">
-						<div class="tracking-step ${order.pendingPickup ? 'is-active' : (order.delivering || order.delivered || order.deliveryFailed ? 'is-done' : '')}">
-							<strong>Chờ lấy hàng</strong>
-							<small>Shop chuẩn bị và bàn giao cho đơn vị vận chuyển.</small>
-						</div>
-
-						<div class="tracking-step ${order.delivering ? 'is-active' : (order.delivered || order.deliveryFailed ? 'is-done' : '')}">
-							<strong>Đang giao</strong>
-							<small>
-								<c:choose>
-									<c:when test="${not empty order.shippedAtDate}">
-										Bắt đầu:
-										<fmt:formatDate value="${order.shippedAtDate}"
-														pattern="dd/MM/yyyy HH:mm" />
-									</c:when>
-									<c:otherwise>Đơn hàng đang trên đường giao đến khách.</c:otherwise>
-								</c:choose>
-							</small>
-						</div>
-
-						<c:choose>
-							<c:when test="${order.deliveryFailed}">
-								<div class="tracking-step is-failed">
-									<strong>Giao thất bại</strong>
-									<small>Shop cần liên hệ lại khách hàng để xử lý.</small>
-								</div>
-							</c:when>
-
-							<c:otherwise>
-								<div class="tracking-step ${order.delivered ? 'is-done' : ''}">
-									<strong>Giao thành công</strong>
-									<small>
-										<c:choose>
-											<c:when test="${not empty order.deliveredAtDate}">
-												Hoàn tất:
-												<fmt:formatDate value="${order.deliveredAtDate}"
-																pattern="dd/MM/yyyy HH:mm" />
-											</c:when>
-											<c:otherwise>Chờ đơn hàng được giao thành công.</c:otherwise>
-										</c:choose>
-									</small>
-								</div>
-							</c:otherwise>
-						</c:choose>
-
-						<div class="tracking-step ${order.shippingCanceled ? 'is-failed' : ''}">
-							<strong>Hủy vận chuyển</strong>
-							<small>Chỉ dùng khi vận chuyển đã bị hủy.</small>
-						</div>
-					</div>
-
-					<!-- UPDATE SHIPPING STATUS -->
-					<form method="post"
-						  action="${pageContext.request.contextPath}/admin/orders"
-						  class="admin-form">
-
-						<%@ include file="/jsp/common/csrf.jspf" %>
-
-						<input type="hidden" name="action" value="updateShippingStatus" />
-						<input type="hidden" name="id" value="${order.id}" />
-
-						<div class="form-grid-2">
-							<div class="admin-field">
-								<div class="admin-label">Cập nhật trạng thái vận chuyển</div>
-
-								<select name="shippingStatus" class="admin-select">
-									<option value="PENDING_PICKUP"
-									${order.shippingStatus == 'PENDING_PICKUP' ? 'selected' : ''}>
-										Chờ lấy hàng
-									</option>
-
-									<option value="DELIVERING"
-									${order.shippingStatus == 'DELIVERING' ? 'selected' : ''}>
-										Đang giao
-									</option>
-
-									<option value="DELIVERED"
-									${order.shippingStatus == 'DELIVERED' ? 'selected' : ''}>
-										Giao thành công
-									</option>
-
-									<option value="FAILED"
-									${order.shippingStatus == 'FAILED' ? 'selected' : ''}>
-										Giao thất bại
-									</option>
-
-									<option value="CANCELED"
-									${order.shippingStatus == 'CANCELED' ? 'selected' : ''}>
-										Đã hủy vận chuyển
-									</option>
-								</select>
-
-								<div class="admin-help">
-									Khi chọn “Đang giao”, hệ thống tự cập nhật thời gian gửi hàng.
-									Khi chọn “Giao thành công”, hệ thống tự cập nhật thời gian giao thành công.
-								</div>
-							</div>
-
-							<div class="admin-field">
-								<div class="admin-label">Ghi chú tracking</div>
-
-								<textarea name="trackingNote"
-										  class="admin-textarea"
-										  placeholder="Ví dụ: Shipper đã lấy hàng, giao thất bại do khách không nghe máy..."></textarea>
-							</div>
-						</div>
-
-						<div class="admin-actions">
-							<button type="submit" class="admin-btn admin-btn--primary">
-								Cập nhật vận chuyển
-							</button>
-						</div>
-					</form>
-
-					<hr class="admin-divider" />
-
-					<!-- UPDATE SHIPPING INFO -->
-					<h3 class="admin-subsection-title">Thông tin vận chuyển</h3>
-
-					<form method="post"
-						  action="${pageContext.request.contextPath}/admin/orders"
-						  class="admin-form">
-
-						<%@ include file="/jsp/common/csrf.jspf" %>
-
-						<input type="hidden" name="action" value="updateShippingInfo" />
-						<input type="hidden" name="id" value="${order.id}" />
-
-						<div class="form-grid-2">
-							<div class="admin-field">
-								<div class="admin-label">Đơn vị vận chuyển</div>
-
-								<select name="shippingProvider" class="admin-select">
-									<option value="INTERNAL" ${order.shippingProvider == 'INTERNAL' ? 'selected' : ''}>
-										Vận chuyển nội bộ
-									</option>
-									<option value="GHTK" ${order.shippingProvider == 'GHTK' ? 'selected' : ''}>
-										Giao hàng tiết kiệm
-									</option>
-									<option value="GHN" ${order.shippingProvider == 'GHN' ? 'selected' : ''}>
-										Giao hàng nhanh
-									</option>
-									<option value="VIETTEL_POST" ${order.shippingProvider == 'VIETTEL_POST' ? 'selected' : ''}>
-										Viettel Post
-									</option>
-									<option value="OTHER" ${order.shippingProvider == 'OTHER' ? 'selected' : ''}>
-										Khác
-									</option>
-								</select>
-							</div>
-
-							<div class="admin-field">
-								<div class="admin-label">Phương thức giao hàng</div>
-
-								<select name="shippingMethod" class="admin-select">
-									<option value="ECONOMY" ${order.shippingMethod == 'ECONOMY' ? 'selected' : ''}>
-										Giao hàng tiết kiệm
-									</option>
-									<option value="FAST" ${order.shippingMethod == 'FAST' ? 'selected' : ''}>
-										Giao hàng nhanh
-									</option>
-									<option value="EXPRESS" ${order.shippingMethod == 'EXPRESS' ? 'selected' : ''}>
-										Hỏa tốc
-									</option>
-								</select>
-							</div>
-
-							<div class="admin-field">
-								<div class="admin-label">Mã vận đơn</div>
-
-								<input type="text"
-									   name="shippingCode"
-									   class="admin-input"
-									   value="${order.shippingCode}"
-									   placeholder="Ví dụ: MC-SHIP-000123">
-							</div>
-
-							<div class="admin-field">
-								<div class="admin-label">Phí vận chuyển</div>
-
-								<input type="text"
-									   name="shippingFee"
-									   class="admin-input"
-									   value="${order.shippingFee}"
-									   placeholder="Ví dụ: 35000">
-							</div>
-						</div>
-
-						<div class="admin-actions">
-							<button type="submit" class="admin-btn admin-btn--primary">
-								Lưu thông tin vận chuyển
-							</button>
-						</div>
-					</form>
-
-					<hr class="admin-divider" />
-
-					<!-- TRACKING HISTORY -->
-					<h3 class="admin-subsection-title">Lịch sử tracking</h3>
-
-					<c:choose>
-						<c:when test="${empty trackingList}">
-							<div class="admin-empty">
-								Chưa có lịch sử tracking cho đơn hàng này.
-							</div>
-						</c:when>
-
-						<c:otherwise>
-							<div class="tracking-history">
-								<c:forEach var="tracking" items="${trackingList}">
-									<div class="tracking-history-item">
-										<div class="tracking-history-time">
-											<c:choose>
-												<c:when test="${not empty tracking.createdAt}">
-													<c:out value="${tracking.createdAt}" />
-												</c:when>
-												<c:otherwise>Không rõ thời gian</c:otherwise>
-											</c:choose>
-										</div>
-
-										<div class="tracking-history-content">
-											<strong>
-												<c:out value="${tracking.shippingStatusLabel}" />
-											</strong>
-											<p>
-												<c:out value="${tracking.note}" />
-											</p>
-										</div>
-									</div>
-								</c:forEach>
-							</div>
-						</c:otherwise>
-					</c:choose>
-				</div>
-
-				<!-- ================= ORDER ITEMS ================= -->
-				<div class="admin-section-card">
-					<h2 class="admin-section-title">Sản phẩm trong đơn hàng</h2>
-
-					<c:set var="displayItems" value="${orderItems}" />
-
-					<c:if test="${empty displayItems && not empty items}">
-						<c:set var="displayItems" value="${items}" />
-					</c:if>
-
-					<c:choose>
-						<c:when test="${empty displayItems}">
-							<div class="admin-empty">
-								Đơn hàng chưa có sản phẩm hoặc chưa load được chi tiết sản phẩm.
-							</div>
-						</c:when>
-
-						<c:otherwise>
-							<div style="overflow-x: auto;">
-								<table class="admin-table" style="width: 100%; border-collapse: collapse;">
-									<thead>
-									<tr>
-										<th style="width: 70px;">Ảnh</th>
-										<th>Sản phẩm</th>
-										<th style="width: 190px;">Biến thể</th>
-										<th style="width: 130px;">Đơn giá</th>
-										<th style="width: 90px;">SL</th>
-										<th style="width: 150px;">Thành tiền</th>
-									</tr>
-									</thead>
-
-									<tbody>
-									<c:forEach var="item" items="${displayItems}">
-										<tr>
-											<td>
-												<c:choose>
-													<c:when test="${not empty item.imageUrl}">
-														<img src="${pageContext.request.contextPath}${item.imageUrl}"
-															 alt="${item.productName}"
-															 style="width: 54px; height: 54px; object-fit: cover; border-radius: 10px;" />
-													</c:when>
-
-													<c:otherwise>
-														<div style="width: 54px; height: 54px; border-radius: 10px; background: #f1f1f1; display: flex; align-items: center; justify-content: center;"
-															 class="admin-muted">
-															—
-														</div>
-													</c:otherwise>
-												</c:choose>
-											</td>
-
-											<td>
-												<strong>
-													<c:out value="${item.productName}" />
-												</strong>
-
-												<div class="admin-muted" style="margin-top: 4px;">
-													Product ID:
-													<c:out value="${item.productId}" />
-												</div>
-											</td>
-
-											<td>
-												<c:choose>
-													<c:when test="${not empty item.variantId
-                                      || not empty item.variantName
-                                      || not empty item.variantSize
-                                      || not empty item.variantType}">
-														<div>
-															<span class="admin-pill">Variant</span>
-														</div>
-
-														<div style="margin-top: 6px;">
-															<c:if test="${not empty item.variantName}">
-																<div>
-																	<strong>Tên:</strong>
-																	<c:out value="${item.variantName}" />
-																</div>
-															</c:if>
-
-															<c:if test="${not empty item.variantSize}">
-																<div>
-																	<strong>Size:</strong>
-																	<c:out value="${item.variantSize}" />
-																</div>
-															</c:if>
-
-															<c:if test="${not empty item.variantType}">
-																<div>
-																	<strong>Loại:</strong>
-																	<c:out value="${item.variantType}" />
-																</div>
-															</c:if>
-
-															<c:if test="${not empty item.variantId}">
-																<div class="admin-muted">
-																	Variant ID:
-																	<c:out value="${item.variantId}" />
-																</div>
-															</c:if>
-														</div>
-													</c:when>
-
-													<c:otherwise>
-														<span class="admin-muted">Không có biến thể</span>
-													</c:otherwise>
-												</c:choose>
-											</td>
-
-											<td>
-												<fmt:formatNumber value="${item.price}"
-																  type="number"
-																  groupingUsed="true"
-																  minFractionDigits="0"
-																  maxFractionDigits="0" />
-												₫
-											</td>
-
-											<td>
-												<c:out value="${item.quantity}" />
-											</td>
-
-											<td>
-												<strong>
-													<fmt:formatNumber value="${item.subtotal}"
-																	  type="number"
-																	  groupingUsed="true"
-																	  minFractionDigits="0"
-																	  maxFractionDigits="0" />
-													₫
-												</strong>
-											</td>
-										</tr>
-									</c:forEach>
-									</tbody>
-								</table>
-							</div>
-						</c:otherwise>
-					</c:choose>
-				</div>
-
-				<!-- ================= UPDATE ORDER STATUS ================= -->
-				<div class="admin-section-card">
-					<h2 class="admin-section-title">Cập nhật trạng thái đơn hàng</h2>
-
-					<form method="post"
-						  action="${pageContext.request.contextPath}/admin/orders"
-						  class="admin-form">
-
-						<%@ include file="/jsp/common/csrf.jspf" %>
-
-						<input type="hidden" name="action" value="updateStatus" />
-						<input type="hidden" name="id" value="${order.id}" />
-
-						<div class="admin-field" style="max-width: 420px;">
-							<div class="admin-label">Trạng thái đơn hàng</div>
-
-							<select name="status" class="admin-select">
-								<option value="processing"
-								${order.status == 'processing' ? 'selected' : ''}>
-									Processing - Đang xử lý
-								</option>
-
-								<option value="confirmed"
-								${order.status == 'confirmed' ? 'selected' : ''}>
-									Confirmed - Đã xác nhận
-								</option>
-
-								<option value="shipping"
-								${order.status == 'shipping' ? 'selected' : ''}>
-									Shipping - Đang giao
-								</option>
-
-								<option value="completed"
-								${order.status == 'completed' ? 'selected' : ''}>
-									Completed - Hoàn tất
-								</option>
-
-								<option value="cancelled"
-								${order.status == 'cancelled' ? 'selected' : ''}>
-									Cancelled - Đã hủy
-								</option>
-							</select>
-
-							<div class="admin-help">
-								Nếu chọn Completed, hệ thống tự chuyển payment_status sang PAID.
-								Nếu chọn Cancelled, hệ thống tự chuyển payment_status sang CANCELED.
-							</div>
-						</div>
-
-						<div class="admin-actions">
-							<button type="submit" class="admin-btn admin-btn--primary">
-								Lưu trạng thái đơn hàng
-							</button>
-
-							<a class="admin-btn"
-							   href="${pageContext.request.contextPath}/admin/orders">
-								Hủy
-							</a>
-						</div>
-					</form>
-				</div>
-
-			</div>
-		</div>
-
-	</div>
+  <div class="admin-container admin-order-detail-page">
+
+    <div class="admin-order-detail-hero">
+      <div class="admin-order-detail-hero__content">
+        <span class="admin-order-detail-eyebrow">ORDER DETAIL</span>
+        <h1 class="admin-h1 admin-order-detail-title">Chi tiết đơn hàng #${order.id}</h1>
+        <div class="admin-order-detail-status-row">
+          <span class="admin-pill admin-pill--${orderCss}">
+            <c:choose>
+              <c:when test="${isProcessing}">Chờ xác nhận</c:when>
+              <c:when test="${isConfirmed}">Đã xác nhận</c:when>
+              <c:when test="${isOrderShipping}">Đang giao</c:when>
+              <c:when test="${isCompleted}">Giao thành công</c:when>
+              <c:when test="${isCancelled}">Đã hủy</c:when>
+              <c:otherwise><c:out value="${order.status}" /></c:otherwise>
+            </c:choose>
+          </span>
+          <span class="admin-pill admin-pill--${shippingCss}">
+            <c:choose>
+              <c:when test="${isPendingPickup}">Chờ lấy hàng</c:when>
+              <c:when test="${isDelivering}">Đang giao hàng</c:when>
+              <c:when test="${isDelivered}">Giao thành công</c:when>
+              <c:when test="${isDeliveryFailed}">Giao thất bại</c:when>
+              <c:when test="${isShippingCanceled}">Đã hủy giao hàng</c:when>
+              <c:otherwise>Chưa có trạng thái vận chuyển</c:otherwise>
+            </c:choose>
+          </span>
+          <span class="admin-pill admin-pill--${paymentCss}">
+            <c:choose>
+              <c:when test="${paymentStatus eq 'PAID'}">Đã thanh toán</c:when>
+              <c:when test="${paymentStatus eq 'FAILED'}">Thanh toán thất bại</c:when>
+              <c:when test="${paymentStatus eq 'CANCELED' or paymentStatus eq 'CANCELLED'}">Đã hủy thanh toán</c:when>
+              <c:when test="${paymentStatus eq 'REFUNDED'}">Đã hoàn tiền</c:when>
+              <c:otherwise>Chờ thanh toán</c:otherwise>
+            </c:choose>
+          </span>
+        </div>
+      </div>
+      <div class="admin-order-detail-hero__actions">
+        <a class="admin-btn" href="${pageContext.request.contextPath}/admin/orders">Quay lại</a>
+      </div>
+    </div>
+
+    <c:if test="${not empty admin_order_success}">
+      <div class="admin-alert admin-alert--success"><c:out value="${admin_order_success}" /></div>
+    </c:if>
+    <c:if test="${not empty admin_order_error}">
+      <div class="admin-alert admin-alert--danger"><c:out value="${admin_order_error}" /></div>
+    </c:if>
+
+    <div class="admin-order-detail-layout">
+      <section class="admin-order-detail-main">
+
+        <div class="admin-order-detail-card">
+          <div class="admin-order-detail-card__header">
+            <div>
+              <h2>Thông tin đơn hàng</h2>
+              <p>Thông tin khách hàng, thanh toán và tổng tiền đơn hàng.</p>
+            </div>
+          </div>
+          <div class="admin-order-detail-card__body">
+            <div class="admin-order-detail-grid">
+              <div class="admin-order-info-item"><span>Khách hàng</span><strong><c:out value="${order.fullName}" /></strong></div>
+              <div class="admin-order-info-item"><span>Số điện thoại</span><strong><c:out value="${order.phone}" /></strong></div>
+              <div class="admin-order-info-item admin-order-info-item--full"><span>Địa chỉ giao hàng</span><strong><c:out value="${order.address}" /></strong></div>
+              <div class="admin-order-info-item"><span>Tổng tiền</span><strong><fmt:formatNumber value="${order.total}" type="number" groupingUsed="true" maxFractionDigits="0" /> ₫</strong></div>
+              <div class="admin-order-info-item"><span>Giảm giá</span><strong><fmt:formatNumber value="${order.couponDiscount}" type="number" groupingUsed="true" maxFractionDigits="0" /> ₫</strong></div>
+              <div class="admin-order-info-item"><span>Ngày tạo</span><strong><fmt:formatDate value="${order.createdAtDate}" pattern="dd/MM/yyyy HH:mm" /></strong></div>
+              <div class="admin-order-info-item"><span>Thanh toán</span><strong><c:out value="${order.paymentMethod}" /> - <c:out value="${order.paymentStatus}" /></strong></div>
+              <div class="admin-order-info-item"><span>VNPAY TxnRef</span><strong><c:out value="${empty order.vnpTxnRef ? 'Không có' : order.vnpTxnRef}" /></strong></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="admin-order-detail-card">
+          <div class="admin-order-detail-card__header">
+            <div>
+              <h2>Tracking vận chuyển</h2>
+              <p>Theo dõi đơn vị vận chuyển, mã vận đơn, ngày gửi và ngày giao.</p>
+            </div>
+          </div>
+          <div class="admin-order-detail-card__body">
+            <div class="admin-order-shipping-summary">
+              <div><span>Phương thức</span><strong><c:choose><c:when test="${shippingMethod eq 'FAST'}">Giao hàng nhanh</c:when><c:when test="${shippingMethod eq 'EXPRESS'}">Hỏa tốc</c:when><c:otherwise>Giao hàng tiết kiệm</c:otherwise></c:choose></strong></div>
+              <div><span>Đơn vị giao</span><strong><c:choose><c:when test="${shippingProvider eq 'GHTK'}">Giao hàng tiết kiệm</c:when><c:when test="${shippingProvider eq 'GHN'}">Giao hàng nhanh</c:when><c:when test="${shippingProvider eq 'VIETTEL_POST'}">Viettel Post</c:when><c:when test="${shippingProvider eq 'OTHER'}">Đơn vị khác</c:when><c:otherwise>Vận chuyển nội bộ</c:otherwise></c:choose></strong></div>
+              <div><span>Mã vận đơn</span><strong><c:out value="${empty order.shippingCode ? 'Chưa có' : order.shippingCode}" /></strong></div>
+              <div><span>Phí ship</span><strong><fmt:formatNumber value="${order.shippingFee}" type="number" groupingUsed="true" maxFractionDigits="0" /> ₫</strong></div>
+              <div><span>Ngày gửi</span><strong><c:choose><c:when test="${not empty order.shippedAtDate}"><fmt:formatDate value="${order.shippedAtDate}" pattern="dd/MM/yyyy HH:mm" /></c:when><c:otherwise>Chưa gửi</c:otherwise></c:choose></strong></div>
+              <div><span>Ngày giao</span><strong><c:choose><c:when test="${not empty order.deliveredAtDate}"><fmt:formatDate value="${order.deliveredAtDate}" pattern="dd/MM/yyyy HH:mm" /></c:when><c:otherwise>Chưa giao</c:otherwise></c:choose></strong></div>
+            </div>
+
+            <div class="admin-order-tracking-steps">
+              <div class="admin-order-tracking-step ${isPendingPickup ? 'is-active' : (isDelivering or isDelivered or isDeliveryFailed ? 'is-done' : '')}"><strong>Chờ lấy hàng</strong><small>Shop chuẩn bị và bàn giao cho đơn vị vận chuyển.</small></div>
+              <div class="admin-order-tracking-step ${isDelivering ? 'is-active' : (isDelivered or isDeliveryFailed ? 'is-done' : '')}"><strong>Đang giao</strong><small>Đơn hàng đang trên đường giao đến khách.</small></div>
+              <div class="admin-order-tracking-step ${isDelivered ? 'is-done' : (isDeliveryFailed ? 'is-failed' : '')}"><strong>${isDeliveryFailed ? 'Giao thất bại' : 'Giao thành công'}</strong><small>${isDeliveryFailed ? 'Shop cần liên hệ lại khách hàng để xử lý.' : 'Chờ đơn hàng được giao thành công.'}</small></div>
+              <div class="admin-order-tracking-step ${isShippingCanceled ? 'is-failed' : ''}"><strong>Hủy vận chuyển</strong><small>Chỉ dùng khi vận chuyển đã bị hủy.</small></div>
+            </div>
+
+            <div class="admin-order-workflow-actions">
+              <c:if test="${isProcessing}">
+                <form method="post" action="${pageContext.request.contextPath}/admin/order/update-status">
+                  <input type="hidden" name="csrf_token" value="${sessionScope.CSRF_TOKEN}">
+                  <input type="hidden" name="orderId" value="${order.id}">
+                  <input type="hidden" name="workflowAction" value="confirmOrder">
+                  <input type="hidden" name="returnUrl" value="/admin/orders?action=detail&id=${order.id}">
+                  <button type="submit" class="admin-btn admin-btn--ok">Xác nhận đơn</button>
+                </form>
+              </c:if>
+
+              <c:if test="${isConfirmed or isDeliveryFailed}">
+                <form method="post" action="${pageContext.request.contextPath}/admin/order/update-status">
+                  <input type="hidden" name="csrf_token" value="${sessionScope.CSRF_TOKEN}">
+                  <input type="hidden" name="orderId" value="${order.id}">
+                  <input type="hidden" name="workflowAction" value="startShipping">
+                  <input type="hidden" name="returnUrl" value="/admin/orders?action=detail&id=${order.id}">
+                  <button type="submit" class="admin-btn admin-btn--primary">${isDeliveryFailed ? 'Giao lại' : 'Bắt đầu giao'}</button>
+                </form>
+              </c:if>
+
+              <c:if test="${isOrderShipping and (isDelivering or empty shippingStatus)}">
+                <form method="post" action="${pageContext.request.contextPath}/admin/order/update-status">
+                  <input type="hidden" name="csrf_token" value="${sessionScope.CSRF_TOKEN}">
+                  <input type="hidden" name="orderId" value="${order.id}">
+                  <input type="hidden" name="workflowAction" value="markDelivered">
+                  <input type="hidden" name="returnUrl" value="/admin/orders?action=detail&id=${order.id}">
+                  <button type="submit" class="admin-btn admin-btn--ok">Giao thành công</button>
+                </form>
+                <form method="post" action="${pageContext.request.contextPath}/admin/order/update-status" onsubmit="return confirm('Xác nhận giao hàng thất bại?');">
+                  <input type="hidden" name="csrf_token" value="${sessionScope.CSRF_TOKEN}">
+                  <input type="hidden" name="orderId" value="${order.id}">
+                  <input type="hidden" name="workflowAction" value="markFailed">
+                  <input type="hidden" name="returnUrl" value="/admin/orders?action=detail&id=${order.id}">
+                  <button type="submit" class="admin-btn admin-btn--danger">Giao thất bại</button>
+                </form>
+              </c:if>
+
+              <c:if test="${isProcessing or isConfirmed or isDeliveryFailed}">
+                <form method="post" action="${pageContext.request.contextPath}/admin/order/update-status" onsubmit="return confirm('Bạn có chắc muốn hủy đơn hàng này?');">
+                  <input type="hidden" name="csrf_token" value="${sessionScope.CSRF_TOKEN}">
+                  <input type="hidden" name="orderId" value="${order.id}">
+                  <input type="hidden" name="workflowAction" value="cancelOrder">
+                  <input type="hidden" name="returnUrl" value="/admin/orders?action=detail&id=${order.id}">
+                  <button type="submit" class="admin-btn admin-btn--danger">Hủy đơn</button>
+                </form>
+              </c:if>
+            </div>
+
+            <hr class="admin-divider" />
+
+            <h3 class="admin-order-subtitle-heading">Thông tin vận chuyển</h3>
+            <form method="post" action="${pageContext.request.contextPath}/admin/orders" class="admin-form">
+              <%@ include file="/jsp/common/csrf.jspf" %>
+              <input type="hidden" name="action" value="updateShippingInfo" />
+              <input type="hidden" name="id" value="${order.id}" />
+
+              <div class="admin-form-grid admin-form-grid--2">
+                <div class="admin-field">
+                  <div class="admin-label">Đơn vị vận chuyển</div>
+                  <select name="shippingProvider" class="admin-select">
+                    <option value="INTERNAL" ${shippingProvider eq 'INTERNAL' ? 'selected' : ''}>Vận chuyển nội bộ</option>
+                    <option value="GHTK" ${shippingProvider eq 'GHTK' ? 'selected' : ''}>Giao hàng tiết kiệm</option>
+                    <option value="GHN" ${shippingProvider eq 'GHN' ? 'selected' : ''}>Giao hàng nhanh</option>
+                    <option value="VIETTEL_POST" ${shippingProvider eq 'VIETTEL_POST' ? 'selected' : ''}>Viettel Post</option>
+                    <option value="OTHER" ${shippingProvider eq 'OTHER' ? 'selected' : ''}>Khác</option>
+                  </select>
+                </div>
+                <div class="admin-field">
+                  <div class="admin-label">Phương thức giao hàng</div>
+                  <select name="shippingMethod" class="admin-select">
+                    <option value="ECONOMY" ${shippingMethod eq 'ECONOMY' ? 'selected' : ''}>Giao hàng tiết kiệm</option>
+                    <option value="FAST" ${shippingMethod eq 'FAST' ? 'selected' : ''}>Giao hàng nhanh</option>
+                    <option value="EXPRESS" ${shippingMethod eq 'EXPRESS' ? 'selected' : ''}>Hỏa tốc</option>
+                  </select>
+                </div>
+                <div class="admin-field">
+                  <div class="admin-label">Mã vận đơn</div>
+                  <input type="text" name="shippingCode" class="admin-input" value="${order.shippingCode}" placeholder="Ví dụ: MC-SHIP-000123">
+                </div>
+                <div class="admin-field">
+                  <div class="admin-label">Phí vận chuyển</div>
+                  <input type="text" name="shippingFee" class="admin-input" value="${order.shippingFee}" placeholder="Ví dụ: 35000">
+                </div>
+              </div>
+
+              <div class="admin-actions">
+                <button type="submit" class="admin-btn admin-btn--primary">Lưu thông tin vận chuyển</button>
+              </div>
+            </form>
+
+            <hr class="admin-divider" />
+
+            <h3 class="admin-order-subtitle-heading">Lịch sử tracking</h3>
+            <c:choose>
+              <c:when test="${empty trackingList}">
+                <div class="admin-empty">Chưa có lịch sử tracking cho đơn hàng này.</div>
+              </c:when>
+              <c:otherwise>
+                <div class="admin-order-tracking-history">
+                  <c:forEach var="tracking" items="${trackingList}">
+                    <div class="admin-order-tracking-history-item">
+                      <div class="admin-order-tracking-history-time">
+                        <c:choose>
+                          <c:when test="${not empty tracking.createdAtDate}"><fmt:formatDate value="${tracking.createdAtDate}" pattern="dd/MM/yyyy HH:mm" /></c:when>
+                          <c:otherwise>Không rõ thời gian</c:otherwise>
+                        </c:choose>
+                      </div>
+                      <div class="admin-order-tracking-history-content">
+                        <strong><c:out value="${tracking.shippingStatusLabel}" /></strong>
+                        <p><c:out value="${tracking.note}" /></p>
+                      </div>
+                    </div>
+                  </c:forEach>
+                </div>
+              </c:otherwise>
+            </c:choose>
+          </div>
+        </div>
+
+        <div class="admin-order-detail-card">
+          <div class="admin-order-detail-card__header"><div><h2>Sản phẩm trong đơn hàng</h2><p>Chi tiết sản phẩm, biến thể, số lượng và thành tiền.</p></div></div>
+          <div class="admin-order-detail-card__body">
+            <c:set var="displayItems" value="${orderItems}" />
+            <c:if test="${empty displayItems && not empty items}"><c:set var="displayItems" value="${items}" /></c:if>
+
+            <c:choose>
+              <c:when test="${empty displayItems}">
+                <div class="admin-empty">Đơn hàng chưa có sản phẩm hoặc chưa load được chi tiết sản phẩm.</div>
+              </c:when>
+              <c:otherwise>
+                <div class="admin-order-items-wrap">
+                  <table class="admin-table admin-order-items-table">
+                    <thead>
+                    <tr><th>Ảnh</th><th>Sản phẩm</th><th>Biến thể</th><th>Đơn giá</th><th>SL</th><th>Thành tiền</th></tr>
+                    </thead>
+                    <tbody>
+                    <c:forEach var="item" items="${displayItems}">
+                      <tr>
+                        <td>
+                          <c:choose>
+                            <c:when test="${not empty item.imageUrl}"><img class="admin-order-item-img" src="${pageContext.request.contextPath}${item.imageUrl}" alt="${item.productName}" /></c:when>
+                            <c:otherwise><div class="admin-order-item-img admin-order-item-img--empty">—</div></c:otherwise>
+                          </c:choose>
+                        </td>
+                        <td><strong><c:out value="${item.productName}" /></strong><div class="admin-muted">Product ID: <c:out value="${item.productId}" /></div></td>
+                        <td>
+                          <c:choose>
+                            <c:when test="${not empty item.variantId || not empty item.variantName || not empty item.variantSize || not empty item.variantType}">
+                              <span class="admin-pill">Variant</span>
+                              <div class="admin-order-variant">
+                                <c:if test="${not empty item.variantName}"><div><strong>Tên:</strong> <c:out value="${item.variantName}" /></div></c:if>
+                                <c:if test="${not empty item.variantSize}"><div><strong>Size:</strong> <c:out value="${item.variantSize}" /></div></c:if>
+                                <c:if test="${not empty item.variantType}"><div><strong>Loại:</strong> <c:out value="${item.variantType}" /></div></c:if>
+                                <c:if test="${not empty item.variantId}"><div class="admin-muted">Variant ID: <c:out value="${item.variantId}" /></div></c:if>
+                              </div>
+                            </c:when>
+                            <c:otherwise><span class="admin-muted">Không có biến thể</span></c:otherwise>
+                          </c:choose>
+                        </td>
+                        <td><fmt:formatNumber value="${item.price}" type="number" groupingUsed="true" maxFractionDigits="0" /> ₫</td>
+                        <td><c:out value="${item.quantity}" /></td>
+                        <td><strong><fmt:formatNumber value="${item.subtotal}" type="number" groupingUsed="true" maxFractionDigits="0" /> ₫</strong></td>
+                      </tr>
+                    </c:forEach>
+                    </tbody>
+                  </table>
+                </div>
+              </c:otherwise>
+            </c:choose>
+          </div>
+        </div>
+      </section>
+
+      <aside class="admin-order-detail-side">
+        <div class="admin-order-detail-card admin-order-detail-card--side">
+          <div class="admin-order-detail-card__header"><div><h2>Quy tắc xử lý</h2><p>Admin thao tác theo workflow để tránh lệch trạng thái.</p></div></div>
+          <div class="admin-order-detail-card__body">
+            <div class="admin-order-rule-list">
+              <div class="admin-order-rule admin-order-rule--ok"><strong>1. Xác nhận đơn</strong><span>Chỉ áp dụng khi đơn đang chờ xử lý.</span></div>
+              <div class="admin-order-rule admin-order-rule--info"><strong>2. Bắt đầu giao</strong><span>Chỉ áp dụng khi đơn đã xác nhận hoặc giao thất bại cần giao lại.</span></div>
+              <div class="admin-order-rule admin-order-rule--ok"><strong>3. Giao thành công</strong><span>Tự chuyển đơn sang hoàn tất và COD sang đã thanh toán.</span></div>
+              <div class="admin-order-rule admin-order-rule--danger"><strong>4. Hủy đơn</strong><span>Chỉ hủy khi đơn chưa giao hoặc đã giao thất bại.</span></div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
 </main>
 
 <jsp:include page="/jsp/admin/layout/footer.jsp" />
