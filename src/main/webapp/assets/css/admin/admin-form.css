@@ -2888,3 +2888,313 @@
     height: 34px;
   }
 }
+
+/* =========================================================
+   FLASH SALE FORM ADMIN - ISSUE 139
+   Dùng cho: /jsp/admin/flashsale/flashsale-form.jsp
+   Chức năng:
+   - Form tạo/sửa Flash Sale
+   - Điều hướng sang trang cấu hình sản phẩm và giới hạn mua mỗi khách
+   - Hiển thị tóm tắt max_quantity_per_user của các sản phẩm Flash Sale
+========================================================= */
+
+.flashsale-form-page {
+  display: grid;
+  gap: 18px;
+}
+
+.flashsale-form-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: start;
+  margin-bottom: 0;
+  padding: 18px;
+  border: 1px solid rgba(255, 95, 162, 0.20);
+  border-radius: 22px;
+  background:
+          radial-gradient(circle at top left, rgba(255, 95, 162, 0.14), transparent 34%),
+          linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.055);
+}
+
+.flashsale-form-hero__content {
+  min-width: 0;
+}
+
+.flashsale-form-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 95, 162, 0.35);
+  background: rgba(255, 95, 162, 0.10);
+  color: #be185d;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.flashsale-form-title {
+  margin-bottom: 5px;
+}
+
+.flashsale-form-subtitle {
+  max-width: 860px;
+}
+
+.flashsale-form-hero__actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.flashsale-form-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 350px;
+  gap: 18px;
+  align-items: start;
+}
+
+.flashsale-form-card,
+.flashsale-form-side,
+.flashsale-form-items-card {
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.flashsale-form {
+  gap: 16px;
+}
+
+.flashsale-form-note {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  padding: 13px 14px;
+  border: 1px solid rgba(245, 158, 11, 0.32);
+  border-radius: 16px;
+  background: rgba(245, 158, 11, 0.08);
+  color: #92400e;
+}
+
+.flashsale-form-note__icon {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 15px;
+  background: #ffffff;
+  color: #b45309;
+  font-size: 13px;
+  font-weight: 1000;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.055);
+}
+
+.flashsale-form-note strong {
+  display: block;
+  margin-bottom: 4px;
+  color: currentColor;
+  font-size: 13px;
+  font-weight: 950;
+  line-height: 1.35;
+}
+
+.flashsale-form-note span {
+  display: block;
+  color: currentColor;
+  opacity: 0.94;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.flashsale-config-steps {
+  display: grid;
+  gap: 12px;
+}
+
+.flashsale-config-step {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 11px;
+  align-items: start;
+  padding: 12px;
+  border: 1px solid var(--admin-border);
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.02);
+}
+
+.flashsale-config-step span {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  background: #f3f4f6;
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 1000;
+}
+
+.flashsale-config-step strong {
+  display: block;
+  color: var(--admin-text);
+  font-size: 13px;
+  font-weight: 950;
+  line-height: 1.35;
+}
+
+.flashsale-config-step small {
+  display: block;
+  margin-top: 4px;
+  color: var(--admin-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.flashsale-config-step.is-done {
+  border-color: rgba(16, 185, 129, 0.28);
+  background: rgba(16, 185, 129, 0.06);
+}
+
+.flashsale-config-step.is-done span {
+  background: rgba(16, 185, 129, 0.12);
+  color: #047857;
+}
+
+.flashsale-side-btn {
+  width: 100%;
+  justify-content: center;
+  margin-top: 14px;
+}
+
+.flashsale-form-items-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.flashsale-form-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius, 14px);
+  background: #fff;
+}
+
+.flashsale-form-table {
+  width: 100%;
+  min-width: 980px;
+  border-collapse: collapse;
+}
+
+.flashsale-form-table th,
+.flashsale-form-table td {
+  padding: 12px 10px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  vertical-align: middle;
+  text-align: left;
+}
+
+.flashsale-form-table th {
+  background: rgba(15, 23, 42, 0.025);
+  color: rgba(15, 23, 42, 0.68);
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.flashsale-form-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.flashsale-form-table tbody tr:hover {
+  background: rgba(255, 95, 162, 0.025);
+}
+
+.flashsale-form-product-cell {
+  min-width: 240px;
+}
+
+.flashsale-form-product-cell strong {
+  display: block;
+  color: var(--admin-text);
+  font-size: 13px;
+  line-height: 1.4;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.flashsale-form-product-cell span {
+  display: block;
+  margin-top: 3px;
+  color: var(--admin-muted);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.flashsale-form-price-cell {
+  color: #be185d;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.flashsale-form-progress-cell {
+  min-width: 150px;
+}
+
+.flashsale-form-progress-cell small {
+  display: block;
+  margin-top: 5px;
+  color: #9b002f;
+  font-size: 12px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+@media (max-width: 1180px) {
+  .flashsale-form-hero,
+  .flashsale-form-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .flashsale-form-hero__actions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 760px) {
+  .flashsale-form-hero {
+    padding: 15px;
+    border-radius: 18px;
+  }
+
+  .flashsale-form-hero__actions,
+  .flashsale-form-items-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .flashsale-form-hero__actions .admin-btn,
+  .flashsale-form-items-head .admin-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .flashsale-form-note,
+  .flashsale-config-step {
+    grid-template-columns: 1fr;
+  }
+
+  .flashsale-form-note__icon {
+    width: 36px;
+    height: 36px;
+  }
+}
