@@ -4440,3 +4440,68 @@ td.product-actions {
     width: 100%;
   }
 }
+
+/* =========================================================
+   Admin Order Table Alignment Patch
+   Căn thẳng hàng cột mã đơn và tổng tiền
+========================================================= */
+
+.admin-order-table td.admin-order-id-cell,
+.admin-order-table td.admin-order-total-cell {
+  display: table-cell !important;
+  vertical-align: top !important;
+  padding-top: 14px !important;
+}
+
+.admin-order-id-content,
+.admin-order-total-content {
+  display: grid;
+  align-content: start;
+  justify-items: start;
+  gap: 4px;
+  min-height: 48px;
+}
+
+.admin-order-id-content strong,
+.admin-order-money strong {
+  display: block;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.admin-order-id-content span,
+.admin-order-total-content small {
+  display: block;
+  margin: 0;
+  line-height: 1.35;
+}
+
+.admin-order-money {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  min-height: 20px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.admin-order-money strong {
+  color: #be185d;
+  font-size: 16px;
+  font-weight: 950;
+  letter-spacing: -0.01em;
+}
+
+.admin-order-money span {
+  color: #be185d;
+  font-size: 12px;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.admin-order-total-content small {
+  color: var(--admin-muted);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
