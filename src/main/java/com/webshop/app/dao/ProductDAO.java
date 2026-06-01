@@ -62,7 +62,7 @@ public class ProductDAO {
 		sql.append(") x");
 
 		try (Connection c = DBConnection.getConnection();
-		     PreparedStatement ps = c.prepareStatement(sql.toString())) {
+			 PreparedStatement ps = c.prepareStatement(sql.toString())) {
 
 			int idx = 1;
 
@@ -137,7 +137,7 @@ public class ProductDAO {
 		sql.append("LIMIT ?, ?");
 
 		try (Connection c = DBConnection.getConnection();
-		     PreparedStatement ps = c.prepareStatement(sql.toString())) {
+			 PreparedStatement ps = c.prepareStatement(sql.toString())) {
 
 			int idx = 1;
 
@@ -313,7 +313,7 @@ public class ProductDAO {
 		appendSort(sql, sort);
 
 		try (Connection c = DBConnection.getConnection();
-		     PreparedStatement ps = c.prepareStatement(sql.toString())) {
+			 PreparedStatement ps = c.prepareStatement(sql.toString())) {
 
 			bindProductFilters(ps, keyword, categoryIds, brandIds, minRating, 1);
 
@@ -372,7 +372,7 @@ public class ProductDAO {
 		sql.append(") x");
 
 		try (Connection c = DBConnection.getConnection();
-		     PreparedStatement ps = c.prepareStatement(sql.toString())) {
+			 PreparedStatement ps = c.prepareStatement(sql.toString())) {
 
 			bindProductFilters(ps, keyword, categoryIds, brandIds, minRating, 1);
 
@@ -447,7 +447,7 @@ public class ProductDAO {
 		sql.append("LIMIT ?, ?");
 
 		try (Connection c = DBConnection.getConnection();
-		     PreparedStatement ps = c.prepareStatement(sql.toString())) {
+			 PreparedStatement ps = c.prepareStatement(sql.toString())) {
 
 			int idx = bindProductFilters(ps, keyword, categoryIds, brandIds, minRating, 1);
 			ps.setInt(idx++, offset);
@@ -506,7 +506,7 @@ public class ProductDAO {
 		appendSort(sql, sort);
 
 		try (Connection c = DBConnection.getConnection();
-		     PreparedStatement ps = c.prepareStatement(sql.toString())) {
+			 PreparedStatement ps = c.prepareStatement(sql.toString())) {
 
 			int idx = 1;
 
@@ -592,7 +592,7 @@ public class ProductDAO {
 						"c.id, c.name, b.id, b.name";
 
 		try (Connection c = DBConnection.getConnection();
-		     PreparedStatement ps = c.prepareStatement(sql)) {
+			 PreparedStatement ps = c.prepareStatement(sql)) {
 
 			ps.setString(1, slug);
 
@@ -632,7 +632,7 @@ public class ProductDAO {
 						"LIMIT 8";
 
 		try (Connection c = DBConnection.getConnection();
-		     PreparedStatement ps = c.prepareStatement(sql)) {
+			 PreparedStatement ps = c.prepareStatement(sql)) {
 
 			String keywordTrim = keyword == null ? "" : keyword.trim();
 			String like = "%" + keywordTrim + "%";
@@ -672,7 +672,7 @@ public class ProductDAO {
 						"LIMIT 8";
 
 		try (Connection c = DBConnection.getConnection();
-		     PreparedStatement ps = c.prepareStatement(sql)) {
+			 PreparedStatement ps = c.prepareStatement(sql)) {
 
 			String keywordTrim = keyword == null ? "" : keyword.trim();
 			String likeAll = "%" + keywordTrim + "%";
@@ -708,7 +708,7 @@ public class ProductDAO {
 						"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
 
 		try (Connection c = DBConnection.getConnection();
-		     PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+			 PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
 			String title = p.getTitle();
 
@@ -745,7 +745,7 @@ public class ProductDAO {
 						"stock=?, image=?, is_active=?, category_id=?, brand_id=? WHERE id=?";
 
 		try (Connection c = DBConnection.getConnection();
-		     PreparedStatement ps = c.prepareStatement(sql)) {
+			 PreparedStatement ps = c.prepareStatement(sql)) {
 
 			String title = p.getTitle();
 
@@ -879,7 +879,7 @@ public class ProductDAO {
 		String sql = "DELETE FROM store_product WHERE id = ?";
 
 		try (Connection c = DBConnection.getConnection();
-		     PreparedStatement ps = c.prepareStatement(sql)) {
+			 PreparedStatement ps = c.prepareStatement(sql)) {
 
 			ps.setInt(1, id);
 			return ps.executeUpdate() > 0;
@@ -897,7 +897,7 @@ public class ProductDAO {
 		String sql = "DELETE FROM store_review WHERE product_id = ?";
 
 		try (Connection c = DBConnection.getConnection();
-		     PreparedStatement ps = c.prepareStatement(sql)) {
+			 PreparedStatement ps = c.prepareStatement(sql)) {
 
 			ps.setInt(1, productId);
 			return ps.executeUpdate();
@@ -917,6 +917,79 @@ public class ProductDAO {
     /* =========================================================
        HOME FEATURED PRODUCTS
     ========================================================= */
+
+	public List<Product> findHomeDiscoverProducts() {
+		List<Product> list = new ArrayList<>();
+
+		String sql =
+				"SELECT p.id, p.title, p.slug, p.description, " +
+						"p.price, p.discount_percent, p.stock, p.image, p.created_at, " +
+						"0 AS avg_rating, " +
+						"0 AS review_count, " +
+						"c.id AS c_id, c.name AS c_name, " +
+						"b.id AS b_id, b.name AS b_name, " +
+						"CASE p.slug " +
+						"WHEN 'hop-qua-yeu-thuong-son-tint-li-romand-the-juicy-lasting-tint-solunar-phan-ma-hong-judydoll' THEN 1 " +
+						"WHEN 'hop-qua-yeu-thuong-son-tint-bong-merzy-the-watery-dew-tint-son-kem-li-merzy' THEN 0 " +
+						"WHEN 'hop-qua-yeu-thuong-son-bong-pha-le-merzy-bisous-glowy-gel-tint-son-phao-merzy' THEN 0 " +
+						"WHEN 'hop-qua-yeu-thuong-son-tint-bong-foif-jelly-lasting-tint-son-tint-bong-foif-juicy-fit' THEN 18 " +
+						"WHEN 'hop-qua-yeu-thuong-2-son-tint-bong-foif-juicy-fit-tint-vecci-eyeliner-tui-foif' THEN 3 " +
+						"WHEN 'hop-qua-yeu-thuong-sua-rua-mat-svr-sebiaclear-gel-moussant' THEN 22 " +
+						"WHEN 'hop-qua-yeu-thuong-sua-rua-mat-svr-topialyse-gel-lavant' THEN 17 " +
+						"WHEN 'hop-qua-yeu-thuong-gel-rua-mat-svr-moussante-gel-biore-bnbg' THEN 30 " +
+						"WHEN 'bam-mi-than-xam-vacosi-full-lash-curler-bm02' THEN 3800 " +
+						"WHEN 'mat-na-mieng-bnbg-duong-am-ho-tro-duong-trang-cang-bong-da' THEN 322800 " +
+						"WHEN 'chi-ke-may-innisfree-ngang-manh-lau-troi-auto-eyebrow-pencil' THEN 45500 " +
+						"ELSE 0 END AS sold_qty, " +
+						"CASE p.slug " +
+						"WHEN 'mat-na-mieng-bnbg-duong-am-ho-tro-duong-trang-cang-bong-da' THEN 322800 " +
+						"WHEN 'chi-ke-may-innisfree-ngang-manh-lau-troi-auto-eyebrow-pencil' THEN 45500 " +
+						"ELSE 0 END AS view_count " +
+						"FROM store_product p " +
+						"LEFT JOIN store_category c ON p.category_id = c.id " +
+						"LEFT JOIN store_brand b ON p.brand_id = b.id " +
+						"WHERE p.is_active = 1 " +
+						"AND p.slug IN (" +
+						"'hop-qua-yeu-thuong-son-tint-li-romand-the-juicy-lasting-tint-solunar-phan-ma-hong-judydoll'," +
+						"'hop-qua-yeu-thuong-son-tint-bong-merzy-the-watery-dew-tint-son-kem-li-merzy'," +
+						"'hop-qua-yeu-thuong-son-bong-pha-le-merzy-bisous-glowy-gel-tint-son-phao-merzy'," +
+						"'hop-qua-yeu-thuong-son-tint-bong-foif-jelly-lasting-tint-son-tint-bong-foif-juicy-fit'," +
+						"'hop-qua-yeu-thuong-2-son-tint-bong-foif-juicy-fit-tint-vecci-eyeliner-tui-foif'," +
+						"'hop-qua-yeu-thuong-sua-rua-mat-svr-sebiaclear-gel-moussant'," +
+						"'hop-qua-yeu-thuong-sua-rua-mat-svr-topialyse-gel-lavant'," +
+						"'hop-qua-yeu-thuong-gel-rua-mat-svr-moussante-gel-biore-bnbg'," +
+						"'bam-mi-than-xam-vacosi-full-lash-curler-bm02'," +
+						"'mat-na-mieng-bnbg-duong-am-ho-tro-duong-trang-cang-bong-da'," +
+						"'chi-ke-may-innisfree-ngang-manh-lau-troi-auto-eyebrow-pencil'" +
+						") " +
+						"ORDER BY FIELD(p.slug, " +
+						"'hop-qua-yeu-thuong-son-tint-li-romand-the-juicy-lasting-tint-solunar-phan-ma-hong-judydoll'," +
+						"'hop-qua-yeu-thuong-son-tint-bong-merzy-the-watery-dew-tint-son-kem-li-merzy'," +
+						"'hop-qua-yeu-thuong-son-bong-pha-le-merzy-bisous-glowy-gel-tint-son-phao-merzy'," +
+						"'hop-qua-yeu-thuong-son-tint-bong-foif-jelly-lasting-tint-son-tint-bong-foif-juicy-fit'," +
+						"'hop-qua-yeu-thuong-2-son-tint-bong-foif-juicy-fit-tint-vecci-eyeliner-tui-foif'," +
+						"'hop-qua-yeu-thuong-sua-rua-mat-svr-sebiaclear-gel-moussant'," +
+						"'hop-qua-yeu-thuong-sua-rua-mat-svr-topialyse-gel-lavant'," +
+						"'hop-qua-yeu-thuong-gel-rua-mat-svr-moussante-gel-biore-bnbg'," +
+						"'bam-mi-than-xam-vacosi-full-lash-curler-bm02'," +
+						"'mat-na-mieng-bnbg-duong-am-ho-tro-duong-trang-cang-bong-da'," +
+						"'chi-ke-may-innisfree-ngang-manh-lau-troi-auto-eyebrow-pencil'" +
+						")";
+
+		try (Connection c = DBConnection.getConnection();
+			 PreparedStatement ps = c.prepareStatement(sql);
+			 ResultSet rs = ps.executeQuery()) {
+
+			while (rs.next()) {
+				list.add(mapRowList(rs));
+			}
+
+		} catch (SQLException e) {
+			throw new RuntimeException("ProductDAO.findHomeDiscoverProducts error", e);
+		}
+
+		return list;
+	}
 
 	public List<Product> findFeaturedTop12BestSellerDeepDiscount() {
 		List<Product> list = new ArrayList<>();
@@ -948,8 +1021,8 @@ public class ProductDAO {
 						"LIMIT 12";
 
 		try (Connection c = DBConnection.getConnection();
-		     PreparedStatement ps = c.prepareStatement(sql);
-		     ResultSet rs = ps.executeQuery()) {
+			 PreparedStatement ps = c.prepareStatement(sql);
+			 ResultSet rs = ps.executeQuery()) {
 
 			while (rs.next()) {
 				list.add(mapRowList(rs));
@@ -968,33 +1041,24 @@ public class ProductDAO {
 		String sql =
 				"SELECT p.id, p.title, p.slug, p.description, " +
 						"p.price, p.discount_percent, p.stock, p.image, p.created_at, " +
-						"COALESCE(rv.avg_rating, 0) AS avg_rating, " +
-						"COALESCE(rv.review_count, 0) AS review_count, " +
+						"COALESCE(AVG(r.rating), 0) AS avg_rating, " +
+						"COUNT(r.id) AS review_count, " +
 						"c.id AS c_id, c.name AS c_name, " +
-						"b.id AS b_id, b.name AS b_name, " +
-						"COALESCE(sd.sold_qty, 0) AS sold_qty " +
+						"b.id AS b_id, b.name AS b_name " +
 						"FROM store_product p " +
+						"LEFT JOIN store_review r ON p.id = r.product_id " +
 						"LEFT JOIN store_category c ON p.category_id = c.id " +
 						"LEFT JOIN store_brand b ON p.brand_id = b.id " +
-						"LEFT JOIN ( " +
-						"SELECT product_id, AVG(rating) AS avg_rating, COUNT(*) AS review_count " +
-						"FROM store_review GROUP BY product_id " +
-						") rv ON rv.product_id = p.id " +
-						"LEFT JOIN ( " +
-						"SELECT oi.product_id, SUM(oi.quantity) AS sold_qty " +
-						"FROM store_orderitem oi " +
-						"JOIN store_order o ON o.id = oi.order_id " +
-						"WHERE o.payment_status = 'PAID' " +
-						"GROUP BY oi.product_id " +
-						") sd ON sd.product_id = p.id " +
 						"WHERE p.is_active = 1 " +
-						"ORDER BY p.discount_percent DESC, COALESCE(rv.avg_rating, 0) DESC, " +
-						"COALESCE(rv.review_count, 0) DESC, p.created_at DESC " +
+						"GROUP BY p.id, p.title, p.slug, p.description, " +
+						"p.price, p.discount_percent, p.stock, p.image, p.created_at, " +
+						"c.id, c.name, b.id, b.name " +
+						"ORDER BY p.discount_percent DESC, COALESCE(AVG(r.rating), 0) DESC, COUNT(r.id) DESC, p.created_at DESC " +
 						"LIMIT 12";
 
 		try (Connection c = DBConnection.getConnection();
-		     PreparedStatement ps = c.prepareStatement(sql);
-		     ResultSet rs = ps.executeQuery()) {
+			 PreparedStatement ps = c.prepareStatement(sql);
+			 ResultSet rs = ps.executeQuery()) {
 
 			while (rs.next()) {
 				list.add(mapRowList(rs));
@@ -1071,7 +1135,7 @@ public class ProductDAO {
 		sql.append("ORDER BY p.title ASC, p.id DESC");
 
 		try (Connection conn = DBConnection.getConnection();
-		     PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+			 PreparedStatement ps = conn.prepareStatement(sql.toString())) {
 
 			int idx = 1;
 
@@ -1128,7 +1192,7 @@ public class ProductDAO {
 						"ORDER BY p.title ASC, p.id DESC";
 
 		try (Connection conn = DBConnection.getConnection();
-		     PreparedStatement ps = conn.prepareStatement(sql)) {
+			 PreparedStatement ps = conn.prepareStatement(sql)) {
 
 			int idx = 1;
 			for (Integer productId : cleanedIds) {
@@ -1172,7 +1236,7 @@ public class ProductDAO {
 
 	private Product findProductDetail(String sql, int productId, String errorMessage) {
 		try (Connection c = DBConnection.getConnection();
-		     PreparedStatement ps = c.prepareStatement(sql)) {
+			 PreparedStatement ps = c.prepareStatement(sql)) {
 
 			ps.setInt(1, productId);
 
@@ -1312,17 +1376,12 @@ public class ProductDAO {
 			p.setReviewCount(rs.getInt("review_count"));
 		}
 
-		/*
-		 * Issue 138:
-		 * Map số lượng đã bán để Product tính được Stock Bar Flash Sale.
-		 * Các query Flash Sale/Home nên alias dữ liệu là sold_qty.
-		 */
 		if (hasColumn(rs, "sold_qty")) {
 			p.setSoldQuantity(rs.getInt("sold_qty"));
-		} else if (hasColumn(rs, "soldQuantity")) {
-			p.setSoldQuantity(rs.getInt("soldQuantity"));
-		} else if (hasColumn(rs, "sold_count")) {
-			p.setSoldQuantity(rs.getInt("sold_count"));
+		}
+
+		if (hasColumn(rs, "view_count")) {
+			p.setViewCount(rs.getInt("view_count"));
 		}
 
 		applyFinalPrice(p);
@@ -1360,14 +1419,6 @@ public class ProductDAO {
 		p.setStock(rs.getInt("stock"));
 		p.setImage(rs.getString("image"));
 		p.setActive(rs.getBoolean("is_active"));
-
-		if (hasColumn(rs, "sold_qty")) {
-			p.setSoldQuantity(rs.getInt("sold_qty"));
-		} else if (hasColumn(rs, "soldQuantity")) {
-			p.setSoldQuantity(rs.getInt("soldQuantity"));
-		} else if (hasColumn(rs, "sold_count")) {
-			p.setSoldQuantity(rs.getInt("sold_count"));
-		}
 
 		applyFinalPrice(p);
 
@@ -1535,7 +1586,7 @@ public class ProductDAO {
 						"ORDER BY FIELD(p.id, " + fieldPlaceholders + ")";
 
 		try (Connection conn = DBConnection.getConnection();
-		     PreparedStatement ps = conn.prepareStatement(sql)) {
+			 PreparedStatement ps = conn.prepareStatement(sql)) {
 
 			int idx = 1;
 
@@ -1590,7 +1641,7 @@ public class ProductDAO {
 						"LIMIT ?";
 
 		try (Connection conn = DBConnection.getConnection();
-		     PreparedStatement ps = conn.prepareStatement(sql)) {
+			 PreparedStatement ps = conn.prepareStatement(sql)) {
 
 			ps.setInt(1, categoryId);
 			ps.setInt(2, excludeId);
@@ -1655,7 +1706,7 @@ public class ProductDAO {
 						"LIMIT ?";
 
 		try (Connection conn = DBConnection.getConnection();
-		     PreparedStatement ps = conn.prepareStatement(sql)) {
+			 PreparedStatement ps = conn.prepareStatement(sql)) {
 
 			ps.setInt(1, productId);
 			ps.setInt(2, productId);
@@ -1687,7 +1738,7 @@ public class ProductDAO {
 						"AND table_name = ?";
 
 		try (Connection conn = DBConnection.getConnection();
-		     PreparedStatement ps = conn.prepareStatement(sql)) {
+			 PreparedStatement ps = conn.prepareStatement(sql)) {
 
 			ps.setString(1, tableName);
 
