@@ -66,16 +66,31 @@
 
 			<div class="header-actions" style="display: flex; align-items: center; gap: 20px;">
 
-				<div class="search-wrapper">
-					<form action="${pageContext.request.contextPath}/search" method="get" class="search-form">
+				<div class="search-wrapper search-history-wrapper">
+					<form action="${pageContext.request.contextPath}/search"
+						  method="get"
+						  class="search-form"
+						  autocomplete="off">
 						<span class="search-icon">🔍</span>
 						<input id="search-input"
 							   name="q"
 							   placeholder="Tìm sản phẩm..."
 							   autocomplete="off"
-							   value="${param.q}">
+							   value="${fn:escapeXml(param.q)}">
 					</form>
+
 					<div id="search-results" class="search-results"></div>
+
+					<div id="searchHistoryDropdown" class="header-search-history" aria-label="Lịch sử tìm kiếm">
+						<div class="header-search-history__head">
+							<span>Lịch sử tìm kiếm</span>
+							<a href="${pageContext.request.contextPath}/account?tab=search-history">Xem tất cả</a>
+						</div>
+
+						<div id="searchHistoryBody" class="header-search-history__body">
+							<div class="header-search-history__empty">Đang tải lịch sử tìm kiếm...</div>
+						</div>
+					</div>
 				</div>
 
 				<div class="auth-links">
@@ -265,6 +280,125 @@
 
 	<!-- GLOBAL JS: chỉ load 1 lần -->
 	<script defer src="${pageContext.request.contextPath}/assets/js/main.js?v=20260531"></script>
+
+
+	<script>
+		document.addEventListener("DOMContentLoaded", function () {
+			const searchInput = document.getElementById("search-input");
+			const searchResults = document.getElementById("search-results");
+			const historyDropdown = document.getElementById("searchHistoryDropdown");
+			const historyBody = document.getElementById("searchHistoryBody");
+
+			if (!searchInput || !historyDropdown || !historyBody) {
+				return;
+			}
+
+			const contextPath = window.APP_CTX || "${pageContext.request.contextPath}";
+			let historyLoaded = false;
+			let historyLoading = false;
+
+			function escapeHtml(value) {
+				return String(value || "")
+					.replaceAll("&", "&amp;")
+					.replaceAll("<", "&lt;")
+					.replaceAll(">", "&gt;")
+					.replaceAll('"', "&quot;")
+					.replaceAll("'", "&#039;");
+			}
+
+			function showHistoryDropdown() {
+				if (searchInput.value.trim().length > 0) {
+					hideHistoryDropdown();
+					return;
+				}
+
+				if (searchResults) {
+					searchResults.classList.remove("show");
+					searchResults.style.display = "none";
+				}
+
+				historyDropdown.classList.add("is-open");
+
+				if (!historyLoaded && !historyLoading) {
+					loadRecentSearchHistory();
+				}
+			}
+
+			function hideHistoryDropdown() {
+				historyDropdown.classList.remove("is-open");
+			}
+
+			function hideHistoryDropdownLater() {
+				setTimeout(hideHistoryDropdown, 180);
+			}
+
+			function loadRecentSearchHistory() {
+				historyLoading = true;
+
+				fetch(contextPath + "/search-history/recent", {
+					method: "GET",
+					headers: {
+						"Accept": "application/json"
+					}
+				})
+					.then(function (response) {
+						if (!response.ok) {
+							throw new Error("Cannot load search history");
+						}
+
+						return response.json();
+					})
+					.then(function (histories) {
+						historyLoaded = true;
+						renderRecentSearchHistory(Array.isArray(histories) ? histories : []);
+					})
+					.catch(function () {
+						historyBody.innerHTML =
+							'<div class="header-search-history__empty">Không tải được lịch sử tìm kiếm.</div>';
+					})
+					.finally(function () {
+						historyLoading = false;
+					});
+			}
+
+			function renderRecentSearchHistory(histories) {
+				if (!histories.length) {
+					historyBody.innerHTML =
+						'<div class="header-search-history__empty">Chưa có lịch sử tìm kiếm.</div>';
+					return;
+				}
+
+				historyBody.innerHTML = histories.map(function (item) {
+					const keyword = item.keyword || "";
+					const safeKeyword = escapeHtml(keyword);
+					const resultCount = item.resultCount || 0;
+					const searchCount = item.searchCount || 1;
+					const href = contextPath + "/search?q=" + encodeURIComponent(keyword);
+
+					return ''
+						+ '<a class="header-search-history__item" href="' + href + '" title="Tìm lại: ' + safeKeyword + '">'
+						+ '  <span class="header-search-history__icon">↺</span>'
+						+ '  <span class="header-search-history__content">'
+						+ '    <strong>' + safeKeyword + '</strong>'
+						+ '    <small>' + resultCount + ' kết quả • Đã tìm ' + searchCount + ' lần</small>'
+						+ '  </span>'
+						+ '</a>';
+				}).join("");
+			}
+
+			searchInput.addEventListener("focus", showHistoryDropdown);
+			searchInput.addEventListener("click", showHistoryDropdown);
+			searchInput.addEventListener("blur", hideHistoryDropdownLater);
+
+			searchInput.addEventListener("input", function () {
+				if (searchInput.value.trim().length > 0) {
+					hideHistoryDropdown();
+				} else {
+					showHistoryDropdown();
+				}
+			});
+		});
+	</script>
 
 	<script>
 		document.addEventListener("DOMContentLoaded", function () {
