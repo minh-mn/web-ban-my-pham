@@ -130,8 +130,7 @@
   border-radius: 999px;
   border: none;
 
-  /* GIỮ NGUYÊN MÀU CỦA BẠN */
-  background: linear-gradient(135deg, #ff5fa2, #ff86c3);
+  background: linear-gradient(135deg,#ff5fa2,#ff86c3);
   color: #ffffff;
 
   font-size: 16px;
