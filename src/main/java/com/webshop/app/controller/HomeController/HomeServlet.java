@@ -88,12 +88,14 @@ public class HomeServlet extends HttpServlet {
         List<Product> featuredProducts = loadFeaturedProducts();
         List<Product> discoverProducts = loadDiscoverProducts(featuredProducts);
         List<Product> featuredBrandProducts = loadFeaturedBrandProducts(brands, featuredProducts);
+        List<Brand> featuredHomeBrands = loadFeaturedHomeBrands(brands, featuredBrandProducts);
 
         // Các section bên dưới dùng các biến này. Nếu DAO chưa tách riêng từng nhóm,
         // dùng featuredProducts làm fallback để tránh section bị mất khỏi trang chủ.
         req.setAttribute("products", featuredProducts);
         req.setAttribute("featuredProducts", featuredProducts);
         req.setAttribute("featuredBrandProducts", featuredBrandProducts);
+        req.setAttribute("featuredHomeBrands", featuredHomeBrands);
         req.setAttribute("discoverProducts", discoverProducts);
         req.setAttribute("bestSellingProducts", featuredProducts);
         req.setAttribute("mostViewedProducts", featuredProducts);
@@ -182,7 +184,7 @@ public class HomeServlet extends HttpServlet {
         }
 
         try {
-            List<Product> products = productDAO.findFeaturedProductsByBrandIds(brandIds, 36);
+            List<Product> products = productDAO.findFeaturedProductsByBrandIds(brandIds, 9);
 
             if (products != null && !products.isEmpty()) {
                 return products;
@@ -192,6 +194,59 @@ public class HomeServlet extends HttpServlet {
         }
 
         return fallbackProducts != null ? fallbackProducts : new ArrayList<>();
+    }
+
+
+    private List<Brand> loadFeaturedHomeBrands(List<Brand> brands, List<Product> featuredBrandProducts) {
+        List<Brand> result = new ArrayList<>();
+
+        if (brands == null || brands.isEmpty()) {
+            return result;
+        }
+
+        Set<Long> brandIdsWithProducts = new HashSet<>();
+
+        if (featuredBrandProducts != null) {
+            for (Product product : featuredBrandProducts) {
+                if (product != null && product.getBrandId() > 0) {
+                    brandIdsWithProducts.add(product.getBrandId());
+                }
+            }
+        }
+
+        for (Brand brand : brands) {
+            if (brand == null || brand.getId() <= 0) {
+                continue;
+            }
+
+            if (!brandIdsWithProducts.isEmpty() && !brandIdsWithProducts.contains((long) brand.getId())) {
+                continue;
+            }
+
+            result.add(brand);
+
+            if (result.size() >= 6) {
+                break;
+            }
+        }
+
+        if (!result.isEmpty()) {
+            return result;
+        }
+
+        for (Brand brand : brands) {
+            if (brand == null || brand.getId() <= 0) {
+                continue;
+            }
+
+            result.add(brand);
+
+            if (result.size() >= 6) {
+                break;
+            }
+        }
+
+        return result;
     }
 
     private List<Product> loadFlashSaleProducts(HttpServletRequest req) {
