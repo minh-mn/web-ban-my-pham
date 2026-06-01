@@ -3,26 +3,88 @@
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
-<c:set var="mainImg" value="${product.imageUrl}" />
+<c:set var="rawMainImg" value="${product.imageUrl}" />
+<c:choose>
+  <c:when test="${not empty rawMainImg and fn:startsWith(rawMainImg, 'http')}">
+    <c:set var="mainImgSrc" value="${rawMainImg}" />
+    <c:set var="mainImgAltSrc" value="" />
+  </c:when>
+  <c:when test="${not empty rawMainImg and fn:startsWith(rawMainImg, '/')}">
+    <c:set var="mainImgSrc" value="${pageContext.request.contextPath}${rawMainImg}" />
+    <c:set var="mainImgAltSrc" value="" />
+  </c:when>
+  <c:when test="${not empty rawMainImg and fn:startsWith(rawMainImg, 'assets/')}">
+    <c:set var="mainImgSrc" value="${pageContext.request.contextPath}/${rawMainImg}" />
+    <c:set var="mainImgAltSrc" value="" />
+  </c:when>
+  <c:when test="${not empty rawMainImg and fn:startsWith(rawMainImg, 'uploads/')}">
+    <c:set var="mainImgSrc" value="${pageContext.request.contextPath}/${rawMainImg}" />
+    <c:set var="mainImgAltSrc" value="" />
+  </c:when>
+  <c:when test="${not empty rawMainImg and fn:startsWith(rawMainImg, 'products/')}">
+    <c:set var="mainImgFile" value="${fn:substringAfter(rawMainImg, 'products/')}" />
+    <c:set var="mainImgSrc" value="${pageContext.request.contextPath}/uploads/product/${mainImgFile}" />
+    <c:set var="mainImgAltSrc" value="${pageContext.request.contextPath}/${rawMainImg}" />
+  </c:when>
+  <c:when test="${not empty rawMainImg}">
+    <c:set var="mainImgSrc" value="${pageContext.request.contextPath}/uploads/product/${rawMainImg}" />
+    <c:set var="mainImgAltSrc" value="${pageContext.request.contextPath}/${rawMainImg}" />
+  </c:when>
+  <c:otherwise>
+    <c:set var="mainImgSrc" value="" />
+    <c:set var="mainImgAltSrc" value="" />
+  </c:otherwise>
+</c:choose>
 <script src="${pageContext.request.contextPath}/assets/js/main.js"></script>
 
 <section class="pd-page">
   <div class="pd-container">
+
+    <nav class="pd-breadcrumb" aria-label="breadcrumb">
+      <a href="${pageContext.request.contextPath}/home">Trang chủ</a>
+      <span>›</span>
+      <a href="${pageContext.request.contextPath}/products">Sản phẩm</a>
+      <span>›</span>
+      <span><c:out value="${product.title}" /></span>
+    </nav>
 
     <div class="pd-layout">
 
       <div class="pd-gallery-col">
 
         <div class="pd-thumbs">
-          <button type="button" class="pd-thumb active" data-src="${pageContext.request.contextPath}${mainImg}">
-            <img src="${pageContext.request.contextPath}${mainImg}" alt="${fn:escapeXml(product.title)}" onerror="handleImgError(this)">
+          <button type="button" class="pd-thumb active" data-src="${mainImgSrc}">
+            <img src="${mainImgSrc}" data-alt-src="${mainImgAltSrc}" alt="${fn:escapeXml(product.title)}" onerror="handleImgError(this)">
           </button>
 
           <c:if test="${not empty product.images}">
             <c:forEach var="img" items="${product.images}">
               <c:if test="${not empty img.imageUrl}">
-                <button type="button" class="pd-thumb" data-src="${pageContext.request.contextPath}${img.imageUrl}">
-                  <img src="${pageContext.request.contextPath}${img.imageUrl}" alt="gallery" onerror="handleImgError(this)">
+                <c:set var="rawGalleryImg" value="${img.imageUrl}" />
+                <c:choose>
+                  <c:when test="${not empty rawGalleryImg and fn:startsWith(rawGalleryImg, 'http')}">
+                    <c:set var="galleryImgSrc" value="${rawGalleryImg}" />
+                    <c:set var="galleryImgAltSrc" value="" />
+                  </c:when>
+                  <c:when test="${not empty rawGalleryImg and fn:startsWith(rawGalleryImg, '/')}">
+                    <c:set var="galleryImgSrc" value="${pageContext.request.contextPath}${rawGalleryImg}" />
+                    <c:set var="galleryImgAltSrc" value="" />
+                  </c:when>
+                  <c:when test="${not empty rawGalleryImg and fn:startsWith(rawGalleryImg, 'assets/')}">
+                    <c:set var="galleryImgSrc" value="${pageContext.request.contextPath}/${rawGalleryImg}" />
+                    <c:set var="galleryImgAltSrc" value="" />
+                  </c:when>
+                  <c:when test="${not empty rawGalleryImg and fn:startsWith(rawGalleryImg, 'uploads/')}">
+                    <c:set var="galleryImgSrc" value="${pageContext.request.contextPath}/${rawGalleryImg}" />
+                    <c:set var="galleryImgAltSrc" value="" />
+                  </c:when>
+                  <c:otherwise>
+                    <c:set var="galleryImgSrc" value="${pageContext.request.contextPath}/uploads/product/${rawGalleryImg}" />
+                    <c:set var="galleryImgAltSrc" value="${pageContext.request.contextPath}/${rawGalleryImg}" />
+                  </c:otherwise>
+                </c:choose>
+                <button type="button" class="pd-thumb" data-src="${galleryImgSrc}" data-alt-src="${galleryImgAltSrc}">
+                  <img src="${galleryImgSrc}" data-alt-src="${galleryImgAltSrc}" alt="gallery" onerror="handleImgError(this)">
                 </button>
               </c:if>
             </c:forEach>
@@ -30,7 +92,7 @@
         </div>
 
         <div class="pd-main-image" id="mainImageBox">
-          <img id="mainProductImage" src="${pageContext.request.contextPath}${mainImg}" alt="${fn:escapeXml(product.title)}" onerror="handleMainImgError(this)">
+          <img id="mainProductImage" src="${mainImgSrc}" data-alt-src="${mainImgAltSrc}" alt="${fn:escapeXml(product.title)}" onerror="handleMainImgError(this)">
         </div>
 
       </div>
@@ -42,7 +104,6 @@
             <c:out value="${product.title}" />
           </h1>
 
-          <c:set var="inWishlist" value="${wishlistIds != null && wishlistIds.contains(product.id)}" />
           <button type="button" class="wishlist-btn ${inWishlist ? 'active' : ''}" onclick="toggleWishlistDetail(${product.id}, this)"
                   style="color: ${inWishlist ? '#ff4757' : '#999'}; cursor: pointer; border: none; background: none; font-size: 24px; transition: 0.3s;">
             ❤
@@ -80,6 +141,12 @@
             <fmt:formatNumber value="${displayPrice}" type="number" groupingUsed="true"/>đ
           </span>
 
+          <c:if test="${priceSaved gt 0}">
+            <span class="pd-save-badge">
+              Tiết kiệm <fmt:formatNumber value="${priceSaved}" type="number" groupingUsed="true"/>đ
+            </span>
+          </c:if>
+
           <c:if test="${product.finalPrice lt product.price}">
             <span class="pd-old-price">
               <fmt:formatNumber value="${product.price}" type="number" groupingUsed="true"/>đ
@@ -95,6 +162,17 @@
           </c:if>
         </p>
 
+        <div class="pd-promo-strip">
+          <div class="pd-promo-icon">%</div>
+          <div>
+            <strong>Ưu đãi độc quyền tại MyCosmetic</strong>
+            <span>Giá đã bao gồm VAT, hỗ trợ chọn phân loại và thêm nhanh vào giỏ hàng.</span>
+          </div>
+        </div>
+
+        <c:if test="${param.outOfStock == '1'}">
+          <div class="pd-alert">Sản phẩm hiện đã hết hàng.</div>
+        </c:if>
         <c:if test="${param.variantRequired == '1'}">
           <div class="pd-alert">Vui lòng chọn size/loại trước khi thêm vào giỏ hàng.</div>
         </c:if>
@@ -107,6 +185,7 @@
 
         <form method="post" action="${pageContext.request.contextPath}/cart/add" class="pd-buy-form">
           <input type="hidden" name="productId" value="${product.id}">
+          <input type="hidden" name="csrf_token" value="${sessionScope.CSRF_TOKEN}">
 
           <c:if test="${not empty variants}">
             <div class="pd-option-group">
@@ -412,12 +491,26 @@
 
 <script>
   function handleImgError(img) {
+    const altSrc = img.getAttribute("data-alt-src");
+    if (altSrc) {
+      img.removeAttribute("data-alt-src");
+      img.src = altSrc;
+      return;
+    }
+
     img.style.display = "none";
     const parent = img.closest(".pd-thumb");
     if (parent) { parent.classList.add("missing-img"); }
   }
 
   function handleMainImgError(img) {
+    const altSrc = img.getAttribute("data-alt-src");
+    if (altSrc) {
+      img.removeAttribute("data-alt-src");
+      img.src = altSrc;
+      return;
+    }
+
     img.style.display = "none";
     const box = document.getElementById("mainImageBox");
     if (box) { box.classList.add("missing-img"); }
@@ -436,9 +529,15 @@
 
         thumb.classList.add("active");
         const src = thumb.getAttribute("data-src");
+        const altSrc = thumb.getAttribute("data-alt-src");
 
         if (mainImg && src) {
           mainImg.style.display = "block";
+          if (altSrc) {
+            mainImg.setAttribute("data-alt-src", altSrc);
+          } else {
+            mainImg.removeAttribute("data-alt-src");
+          }
           mainImg.src = src;
 
           if (mainBox) {

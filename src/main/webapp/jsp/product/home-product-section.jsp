@@ -82,7 +82,7 @@
 
                             <c:choose>
                                 <c:when test="${not empty product.slug}">
-                                    <c:set var="productUrl" value="${ctx}/product/${product.slug}" />
+                                    <c:set var="productUrl" value="${ctx}/product/${product.slug}?id=${product.id}" />
                                 </c:when>
                                 <c:otherwise>
                                     <c:set var="productUrl" value="${ctx}/product?id=${product.id}" />
@@ -192,6 +192,21 @@
                                             </div>
                                         </c:otherwise>
                                     </c:choose>
+
+                                    <div class="skin-product-actions">
+                                        <a class="skin-card-view-btn" href="${productUrl}">
+                                            Xem sản phẩm
+                                        </a>
+
+                                        <form method="post" action="${ctx}/cart/add" class="skin-card-cart-form">
+                                            <input type="hidden" name="productId" value="${product.id}">
+                                            <input type="hidden" name="quantity" value="1">
+                                            <input type="hidden" name="quickAdd" value="1">
+                                            <button type="submit" class="skin-card-cart-btn" ${product.stock <= 0 ? 'disabled' : ''}>
+                                                Thêm giỏ
+                                            </button>
+                                        </form>
+                                    </div>
                                 </div>
                             </article>
                         </c:forEach>

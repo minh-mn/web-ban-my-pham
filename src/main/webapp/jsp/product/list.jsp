@@ -252,6 +252,15 @@
                 <c:set var="rawImage" value="${product.imageUrl}" />
 
                 <c:choose>
+                  <c:when test="${not empty product.slug}">
+                    <c:set var="productUrl" value="${ctx}/product/${product.slug}?id=${product.id}" />
+                  </c:when>
+                  <c:otherwise>
+                    <c:set var="productUrl" value="${ctx}/product?id=${product.id}" />
+                  </c:otherwise>
+                </c:choose>
+
+                <c:choose>
                   <c:when test="${not empty rawImage and fn:startsWith(rawImage, 'http')}">
                     <c:set var="productImageSrc" value="${rawImage}" />
                     <c:set var="productImageAlt" value="" />
@@ -303,7 +312,7 @@
                   </c:if>
 
                   <a class="product-img-link collection-card__image-link"
-                     href="${ctx}/product/${product.slug}"
+                     href="${productUrl}"
                      aria-label="Xem chi tiết ${fn:escapeXml(product.title)}">
                     <div class="product-img-box collection-card__image-box">
                       <c:choose>
@@ -333,7 +342,7 @@
                     </div>
 
                     <h3 class="collection-card__title">
-                      <a class="product-title-link" href="${ctx}/product/${product.slug}">
+                      <a class="product-title-link" href="${productUrl}">
                         <c:out value="${product.title}" />
                       </a>
                     </h3>
@@ -362,6 +371,21 @@
                       </c:choose>
                     </div>
 
+                    <div class="collection-card__actions">
+                      <a class="collection-card__view-btn" href="${productUrl}">
+                        Xem sản phẩm
+                      </a>
+
+                      <form method="post" action="${ctx}/cart/add" class="collection-card__cart-form">
+                        <input type="hidden" name="productId" value="${product.id}">
+                        <input type="hidden" name="quantity" value="1">
+                        <input type="hidden" name="quickAdd" value="1">
+                        <button type="submit" class="collection-card__cart-btn" ${product.stock <= 0 ? 'disabled' : ''}>
+                          Thêm giỏ
+                        </button>
+                      </form>
+                    </div>
+
                     <div class="collection-card__bottom">
                       <div class="collection-card__meta">
                         <c:choose>
@@ -374,7 +398,7 @@
                         </c:choose>
                       </div>
 
-                      <a href="${ctx}/product/${product.slug}"
+                      <a href="${productUrl}"
                          class="collection-card__heart"
                          aria-label="Xem chi tiết sản phẩm">
                         ♡
