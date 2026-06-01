@@ -1369,3 +1369,65 @@ body .skin-product-section.is-flash .skin-discount-bubble {
     font-weight: 1000 !important;
     letter-spacing: 0.01em !important;
 }
+
+/* =========================================================
+   ISSUE 138 - FLASH SALE STOCK BAR
+   Hiển thị mức độ tiêu thụ hàng Flash Sale trên trang /flash-sale.
+========================================================= */
+
+.flash-page .flash-stock-progress {
+    position: relative;
+    height: 9px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #f6dce5 0%, #fff0f5 100%) !important;
+    box-shadow: inset 0 1px 2px rgba(120, 0, 38, 0.08);
+}
+
+.flash-page .flash-stock-progress span {
+    display: block;
+    height: 100%;
+    min-width: 8px;
+    border-radius: inherit;
+    background-color: #d6004f !important;
+    background-image: linear-gradient(90deg, #ff7ab1 0%, #f00061 48%, #9b0012 100%) !important;
+    box-shadow: 0 6px 14px rgba(214, 0, 79, 0.22);
+    transition: width 0.28s ease;
+}
+
+.flash-page .flash-stock-progress-text {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    margin-top: 10px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: rgba(214, 0, 79, 0.08);
+    color: #9b002f !important;
+    font-size: 13px;
+    line-height: 1.25;
+    font-weight: 1000;
+    letter-spacing: .02em;
+    text-transform: none !important;
+}
+
+.flash-page .flash-stock-progress-text::before {
+    content: "🔥";
+    margin-right: 5px;
+    font-size: 13px;
+    line-height: 1;
+}
+
+.flash-product-card.is-upcoming .flash-stock-progress-text::before,
+.flash-product-card.is-ended .flash-stock-progress-text::before {
+    content: "";
+    margin-right: 0;
+}
+
+.flash-product-card.is-upcoming .flash-stock-progress-text {
+    background: rgba(7, 28, 147, 0.08);
+}
+
+.flash-product-card.is-ended .flash-stock-progress-text {
+    background: rgba(138, 138, 138, 0.10);
+}
