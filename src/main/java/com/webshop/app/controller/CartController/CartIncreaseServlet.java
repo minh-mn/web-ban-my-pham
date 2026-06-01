@@ -21,12 +21,22 @@ public class CartIncreaseServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
 
+        req.setCharacterEncoding("UTF-8");
+        resp.setCharacterEncoding("UTF-8");
+
         int productId = parseInt(req.getParameter("productId"), -1);
         String key = CartUtil.normalizeKey(req.getParameter("key"), productId);
 
         HttpSession session = req.getSession();
-        Map<String, CartItem> cart = CartUtil.getCart(session);
 
+        /*
+         * Issue 132:
+         * Đảm bảo nếu user đã đăng nhập nhưng session cart chưa được nạp,
+         * hệ thống sẽ lấy lại giỏ hàng đã lưu trong database trước khi tăng số lượng.
+         */
+        CartUtil.loadDatabaseCartIfNeeded(session);
+
+        Map<String, CartItem> cart = CartUtil.getCart(session);
         CartItem item = cart.get(key);
 
         if (item != null) {
@@ -36,7 +46,16 @@ public class CartIncreaseServlet extends HttpServlet {
                 newQuantity = item.getStock();
             }
 
-            item.setQuantity(newQuantity);
+            item.setQuantity(Math.max(newQuantity, 1));
+            cart.put(key, item);
+
+            session.setAttribute(CartUtil.CART_SESSION_KEY, cart);
+
+            /*
+             * Lưu lại database ngay sau khi tăng số lượng.
+             * Nếu user logout/login lại thì quantity mới vẫn còn.
+             */
+            CartUtil.saveCartForLoggedUser(session);
         }
 
         resp.sendRedirect(req.getContextPath() + "/cart");
