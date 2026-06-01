@@ -160,12 +160,11 @@
               </p>
             </div>
 
-            <form class="pd-cart-form" action="${ctx}/cart" method="post">
+            <form class="pd-cart-form" action="${ctx}/cart/add" method="post">
               <input type="hidden" name="action" value="add" />
               <input type="hidden" name="quickAdd" value="1" />
               <input type="hidden" name="productId" value="${p.id}" />
-              <input type="hidden" name="csrf_token" value="${sessionScope.csrf_token}" />
-              <input type="hidden" name="csrfToken" value="${sessionScope.csrfToken}" />
+              <input type="hidden" name="csrf_token" value="${sessionScope.CSRF_TOKEN}" />
 
               <div class="pd-buy-row">
                 <label class="pd-qty-label" for="pdQuantity">Số lượng:</label>
