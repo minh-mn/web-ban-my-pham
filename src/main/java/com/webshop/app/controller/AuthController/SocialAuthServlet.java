@@ -19,6 +19,11 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.Collections;
 import java.util.Random;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.Scanner;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 @WebServlet("/social-auth")
 public class SocialAuthServlet extends HttpServlet {
@@ -40,33 +45,49 @@ public class SocialAuthServlet extends HttpServlet {
         String credential = req.getParameter("credential");
         String mode = req.getParameter("mode");
 
-        if (!"google".equalsIgnoreCase(provider)) {
+        if (!"google".equalsIgnoreCase(provider) && !"facebook".equalsIgnoreCase(provider)) {
             resp.getWriter().write("{\"status\":\"error\",\"message\":\"Provider không hỗ trợ\"}");
             return;
         }
 
         try {
+            String email = null;
+            String socialId = null;
+            String fullName = null;
 
-            GoogleIdToken.Payload payload = verifyGoogleCredential(credential);
+            if ("google".equalsIgnoreCase(provider)) {
+                GoogleIdToken.Payload payload = verifyGoogleCredential(credential);
+                email = payload.getEmail();
+                socialId = payload.getSubject();
+                fullName = (String) payload.get("name");
+            }
+            else if ("facebook".equalsIgnoreCase(provider)) {
+                String accessToken = req.getParameter("accessToken");
+                JsonObject fbUser = verifyFacebookToken(accessToken);
 
-            String email = payload.getEmail();
-            String googleId = payload.getSubject();
-            String fullName = (String) payload.get("name");
+                socialId = fbUser.get("id").getAsString();
+                fullName = fbUser.has("name") ? fbUser.get("name").getAsString() : "Người dùng Facebook";
+
+                if (fbUser.has("email")) {
+                    email = fbUser.get("email").getAsString();
+                } else {
+                    email = socialId + "@facebook.com";
+                }
+            }
 
             if (email == null || email.isBlank()) {
-                resp.getWriter().write("{\"status\":\"error\",\"message\":\"Không lấy được email\"}");
+                resp.getWriter().write("{\"status\":\"error\",\"message\":\"Không lấy được email từ " + provider + "\"}");
                 return;
             }
 
             if ("register".equalsIgnoreCase(mode)) {
-                handleRegister(req, resp, email, fullName, googleId);
+                handleRegister(req, resp, email, fullName, socialId, provider);
             } else {
-                handleLogin(req, resp, email, fullName, googleId);
+                handleLogin(req, resp, email, fullName, socialId, provider);
             }
 
         } catch (Exception e) {
             e.printStackTrace();
-
             resp.getWriter().write(
                     "{\"status\":\"error\",\"message\":\"" +
                             e.getMessage().replace("\"", "") +
@@ -96,62 +117,26 @@ public class SocialAuthServlet extends HttpServlet {
         return idToken.getPayload();
     }
 
-    private void handleLogin(
-            HttpServletRequest req,
-            HttpServletResponse resp,
-            String email,
-            String fullName,
-            String googleId
-    ) throws IOException {
-
-        User user = userDAO.findBySocialId("google", googleId);
-
-        if (user == null) {
-
-            user = userDAO.findByEmail(email);
-
-            if (user == null) {
-
-                User newUser = new User();
-                newUser.setUsername(email);
-                newUser.setEmail(email);
-                newUser.setFullName(fullName);
-                newUser.setActive(true);
-
-                userDAO.saveSocialUser(newUser, "google", googleId);
-
-                user = userDAO.findBySocialId("google", googleId);
-
-            } else {
-
-                userDAO.updateSocialId(user.getId(), "google", googleId);
-            }
-        }
-
-        HttpSession session = req.getSession();
-        session.setAttribute("user", user);
-
-        resp.getWriter().write(
-                "{\"status\":\"success\",\"redirectUrl\":\"/home\"}"
-        );
-    }
-
+    // =========================================================================
+    // HÀM XỬ LÝ ĐĂNG KÝ (TỰ ĐỘNG CHUYỂN ĐĂNG NHẬP NẾU TỒN TẠI TÀI KHOẢN)
+    // =========================================================================
     private void handleRegister(
             HttpServletRequest req,
             HttpServletResponse resp,
             String email,
             String fullName,
-            String googleId
+            String socialId,
+            String provider
     ) throws IOException, MessagingException {
 
         User existingUser = userDAO.findByEmail(email);
+
         if (existingUser != null) {
-            resp.getWriter().write("{\"status\":\"error\",\"message\":\"Email này đã được đăng ký. Vui lòng chọn Đăng nhập thay vì Đăng ký.\"}");
+            handleLogin(req, resp, email, fullName, socialId, provider);
             return;
         }
 
         HttpSession session = req.getSession();
-
         User pendingUser = new User();
 
         pendingUser.setUsername(email);
@@ -160,16 +145,14 @@ public class SocialAuthServlet extends HttpServlet {
         pendingUser.setActive(true);
 
         session.setAttribute("pendingUser", pendingUser);
-        session.setAttribute("pendingProvider", "google");
-        session.setAttribute("pendingSocialId", googleId);
+        session.setAttribute("pendingProvider", provider);
+        session.setAttribute("pendingSocialId", socialId);
 
         String otp = String.format("%06d", new Random().nextInt(999999));
-
         session.setAttribute("REGISTER_OTP", otp);
         session.setAttribute("OTP_TIME", System.currentTimeMillis());
 
         String subject = "Mã OTP xác thực tài khoản";
-
         String content = """
                 <h2>Xác thực tài khoản</h2>
                 <p>Mã OTP của bạn:</p>
@@ -180,7 +163,67 @@ public class SocialAuthServlet extends HttpServlet {
         EmailUtil.sendHtml(email, subject, content);
 
         resp.getWriter().write(
-                "{\"status\":\"otp_required\",\"redirectUrl\":\"/verify-registration\"}"
+                "{\"status\":\"otp_required\",\"redirectUrl\":\"/verify-registration\",\"message\":\"Mã OTP đã được gửi về email của bạn.\"}"
         );
+    }
+
+    // =========================================================================
+    // HÀM XỬ LÝ ĐĂNG NHẬP
+    // =========================================================================
+    private void handleLogin(
+            HttpServletRequest req,
+            HttpServletResponse resp,
+            String email,
+            String fullName,
+            String socialId,
+            String provider
+    ) throws IOException {
+
+        User user = userDAO.findBySocialId(provider, socialId);
+
+        if (user == null) {
+            user = userDAO.findByEmail(email);
+
+            if (user == null) {
+                User newUser = new User();
+                newUser.setUsername(email);
+                newUser.setEmail(email);
+                newUser.setFullName(fullName);
+                newUser.setActive(true);
+
+                userDAO.saveSocialUser(newUser, provider, socialId);
+                user = userDAO.findBySocialId(provider, socialId);
+
+            } else {
+                userDAO.updateSocialId(user.getId(), provider, socialId);
+            }
+        }
+        
+        HttpSession session = req.getSession();
+        session.setAttribute("user", user);
+
+        resp.getWriter().write(
+                "{\"status\":\"success\",\"redirectUrl\":\"/home\",\"message\":\"Đăng nhập thành công!\"}"
+        );
+    }
+
+    private JsonObject verifyFacebookToken(String accessToken) throws IOException {
+        String urlString = "https://graph.facebook.com/me?fields=id,name,email&access_token=" + accessToken;
+        URL url = new URL(urlString);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("GET");
+
+        if (conn.getResponseCode() != 200) {
+            throw new RuntimeException("Facebook token không hợp lệ hoặc đã hết hạn");
+        }
+
+        Scanner scanner = new Scanner(url.openStream());
+        StringBuilder response = new StringBuilder();
+        while (scanner.hasNext()) {
+            response.append(scanner.nextLine());
+        }
+        scanner.close();
+
+        return JsonParser.parseString(response.toString()).getAsJsonObject();
     }
 }
