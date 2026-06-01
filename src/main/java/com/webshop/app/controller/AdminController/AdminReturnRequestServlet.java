@@ -3,7 +3,6 @@ package com.webshop.app.controller.AdminController;
 import com.webshop.app.dao.ReturnRequestDAO;
 import com.webshop.app.model.ReturnRequest;
 import com.webshop.app.model.User;
-import com.webshop.app.service.OrderNotificationService;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -26,7 +25,6 @@ public class AdminReturnRequestServlet extends HttpServlet {
     private static final String VIEW_LIST = "/jsp/admin/return/return_list.jsp";
 
     private final ReturnRequestDAO returnRequestDAO = new ReturnRequestDAO();
-    private final OrderNotificationService notificationService = new OrderNotificationService();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -102,12 +100,11 @@ public class AdminReturnRequestServlet extends HttpServlet {
         );
 
         if (updated) {
-            notificationService.notifyReturnProcessedSafely(
-                    (int) current.getOrderId(),
-                    current.getUserId(),
-                    nextStatus,
-                    adminNote
-            );
+            /*
+             * Issue 114:
+             * Notification được tạo tập trung trong ReturnRequestDAO.updateStatus(...)
+             * để tránh servlet và DAO cùng tạo thông báo làm bị trùng.
+             */
             redirect(request, response, "success", "Cập nhật yêu cầu hoàn hàng thành công.");
         } else {
             redirect(request, response, "error", "Không tìm thấy yêu cầu hoàn hàng cần cập nhật.");
