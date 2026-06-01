@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import com.webshop.app.model.User;
 import com.webshop.app.service.RememberMeService;
+import com.webshop.app.utils.CartUtil;
 
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
@@ -62,7 +63,17 @@ public class RememberMeFilter implements Filter {
                     User rememberedUser = rememberMeService.authenticateByToken(token);
 
                     if (rememberedUser != null) {
-                        req.getSession(true).setAttribute("user", rememberedUser);
+                        HttpSession activeSession = req.getSession(true);
+                        activeSession.setAttribute("user", rememberedUser);
+
+                        /*
+                         * Issue 132:
+                         * Khi auto-login bằng Remember Me thành công,
+                         * khôi phục và gộp giỏ hàng đã lưu trong database vào session.
+                         */
+                        if (rememberedUser.getId() > 0) {
+                            CartUtil.mergeDatabaseCartIntoSession(activeSession, rememberedUser.getId());
+                        }
                     } else {
                         // Token sai, hết hạn hoặc đã revoked thì xóa cookie REMEMBER_ME
                         rememberMeService.clearCookie(resp);
