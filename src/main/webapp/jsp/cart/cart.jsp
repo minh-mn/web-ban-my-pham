@@ -50,6 +50,28 @@
     <div class="main-container">
         <h1 class="cart-title">Giỏ hàng của bạn</h1>
 
+        <c:if test="${not empty cartError or not empty flashSaleLimitError or param.flashLimit == '1'}">
+            <section class="cart-alert cart-alert--warning">
+                <strong>Thông báo giỏ hàng</strong>
+                <span>
+                    <c:choose>
+                        <c:when test="${not empty flashSaleLimitError}">
+                            <c:out value="${flashSaleLimitError}" />
+                        </c:when>
+                        <c:when test="${not empty cartError}">
+                            <c:out value="${cartError}" />
+                        </c:when>
+                        <c:when test="${not empty param.message}">
+                            <c:out value="${param.message}" />
+                        </c:when>
+                        <c:otherwise>
+                            Một số sản phẩm Flash Sale đã đạt giới hạn mua của mỗi khách.
+                        </c:otherwise>
+                    </c:choose>
+                </span>
+            </section>
+        </c:if>
+
         <c:choose>
             <c:when test="${empty cartItems}">
                 <section class="cart-empty">
@@ -98,13 +120,30 @@
                                 <c:set var="itemTitle" value="${empty item.title ? item.productName : item.title}" />
                                 <c:set var="itemImage" value="${empty item.imageUrl ? item.image : item.imageUrl}" />
 
+                                <c:url var="decreaseUrl" value="/cart/decrease">
+                                    <c:param name="key" value="${itemKey}" />
+                                    <c:param name="productId" value="${item.productId}" />
+                                </c:url>
+
+                                <c:url var="increaseUrl" value="/cart/increase">
+                                    <c:param name="key" value="${itemKey}" />
+                                    <c:param name="productId" value="${item.productId}" />
+                                </c:url>
+
+                                <c:url var="removeUrl" value="/cart/remove">
+                                    <c:param name="key" value="${itemKey}" />
+                                    <c:param name="productId" value="${item.productId}" />
+                                </c:url>
+
                                 <c:set var="calcSubtotal" value="${calcSubtotal + itemSubtotal}" />
                                 <c:set var="calcDiscount" value="${calcDiscount + itemDiscount}" />
                                 <c:set var="calcSelectedCount" value="${calcSelectedCount + 1}" />
 
-                                <tr class="cart-row"
+                                <tr class="cart-row ${item.flashSaleItem ? 'cart-row--flash-sale' : ''} ${item.flashSaleLimitReached ? 'cart-row--flash-limit' : ''}"
                                     data-subtotal="${itemSubtotal}"
-                                    data-discount="${itemDiscount}">
+                                    data-discount="${itemDiscount}"
+                                    data-flash-sale="${item.flashSaleItem}"
+                                    data-flash-limit-reached="${item.flashSaleLimitReached}">
                                     <td class="cart-select">
                                         <input type="checkbox"
                                                class="cart-item-checkbox"
@@ -143,6 +182,12 @@
                                                 <div class="cart-product-id">
                                                     Mã SP: <c:out value="${item.productId}" />
                                                 </div>
+
+                                                <c:if test="${item.flashSaleItem}">
+                                                    <div class="cart-flash-badge">
+                                                        Flash Sale
+                                                    </div>
+                                                </c:if>
                                             </div>
                                         </div>
                                     </td>
@@ -160,12 +205,37 @@
                                     <td class="cart-quantity">
                                         <div class="cart-quantity-inner">
                                             <div class="quantity-box">
-                                                <a class="qty-btn" href="${ctx}/cart/decrease?key=${itemKey}">-</a>
+                                                <a class="qty-btn" href="${decreaseUrl}">-</a>
                                                 <span class="qty-value"><c:out value="${itemQuantity}" /></span>
-                                                <a class="qty-btn" href="${ctx}/cart/increase?key=${itemKey}">+</a>
+
+                                                <c:choose>
+                                                    <c:when test="${item.flashSaleLimitReached or not item.canIncreaseQuantity}">
+                                                        <span class="qty-btn qty-btn--disabled"
+                                                              title="${empty item.flashSaleLimitMessage ? 'Không thể tăng thêm số lượng' : item.flashSaleLimitMessage}">
+                                                            +
+                                                        </span>
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        <a class="qty-btn" href="${increaseUrl}">+</a>
+                                                    </c:otherwise>
+                                                </c:choose>
                                             </div>
+
                                             <c:if test="${not empty item.stock}">
                                                 <span class="stock-note">Còn ${item.stock}</span>
+                                            </c:if>
+
+                                            <c:if test="${item.flashSaleItem}">
+                                                <span class="cart-flash-limit-note ${item.flashSaleLimitReached ? 'is-reached' : ''}">
+                                                    <c:choose>
+                                                        <c:when test="${not empty item.flashSaleLimitMessage}">
+                                                            <c:out value="${item.flashSaleLimitMessage}" />
+                                                        </c:when>
+                                                        <c:otherwise>
+                                                            <c:out value="${item.flashSaleLimitLabel}" />
+                                                        </c:otherwise>
+                                                    </c:choose>
+                                                </span>
                                             </c:if>
                                         </div>
                                     </td>
@@ -182,7 +252,7 @@
                                     </td>
 
                                     <td class="cart-remove">
-                                        <a href="${ctx}/cart/remove?key=${itemKey}" class="remove-btn" title="Xóa sản phẩm">×</a>
+                                        <a href="${removeUrl}" class="remove-btn" title="Xóa sản phẩm">×</a>
                                     </td>
                                 </tr>
                             </c:forEach>
