@@ -1041,6 +1041,159 @@ public class OrderDAO {
 
 
     /* =========================================================
+       NOTIFICATION HELPERS - ISSUE 114
+    ========================================================= */
+
+    private void notifyOrderCancelledByUserSafely(Connection conn,
+                                                  Order order,
+                                                  int orderId,
+                                                  int userId,
+                                                  String reason) {
+        if (conn == null || orderId <= 0 || userId <= 0) {
+            return;
+        }
+
+        try {
+            NotificationDAO notificationDAO = new NotificationDAO();
+
+            notificationDAO.createUserNotification(
+                    conn,
+                    userId,
+                    "ORDER_CANCELLED",
+                    "Đơn hàng đã được hủy",
+                    "Đơn hàng #" + orderId + " của bạn đã được hủy thành công.",
+                    "/orders/detail?id=" + orderId,
+                    "ORDER",
+                    (long) orderId
+            );
+
+            notificationDAO.createAdminNotification(
+                    conn,
+                    "ORDER_CANCELLED",
+                    "Khách hàng đã hủy đơn",
+                    "Khách hàng #" + userId + " đã hủy đơn hàng #" + orderId
+                            + buildReasonText(reason),
+                    "/admin/orders?action=detail&id=" + orderId,
+                    "ORDER",
+                    (long) orderId
+            );
+        } catch (SQLException e) {
+            /*
+             * Không để lỗi notification làm rollback thao tác hủy đơn.
+             */
+            e.printStackTrace();
+        }
+    }
+
+    private void notifyReturnRequestedSafely(Connection conn,
+                                             Order order,
+                                             int orderId,
+                                             BigDecimal refundAmount,
+                                             String refundMethod) {
+        if (conn == null || order == null || orderId <= 0 || order.getUserId() <= 0) {
+            return;
+        }
+
+        try {
+            NotificationDAO notificationDAO = new NotificationDAO();
+
+            notificationDAO.createUserNotification(
+                    conn,
+                    order.getUserId(),
+                    "RETURN_REQUEST_CREATED",
+                    "Đã gửi yêu cầu hoàn hàng",
+                    "Yêu cầu hoàn hàng cho đơn hàng #" + orderId + " đã được ghi nhận.",
+                    "/orders/detail?id=" + orderId,
+                    "ORDER",
+                    (long) orderId
+            );
+
+            notificationDAO.createAdminNotification(
+                    conn,
+                    "RETURN_REQUEST_CREATED",
+                    "Có yêu cầu hoàn hàng mới",
+                    "Khách hàng #" + order.getUserId() + " đã gửi yêu cầu hoàn hàng cho đơn hàng #"
+                            + orderId + ". Số tiền đề xuất: " + vnd0(refundAmount) + " VND.",
+                    "/admin/orders?action=detail&id=" + orderId,
+                    "ORDER",
+                    (long) orderId
+            );
+        } catch (SQLException e) {
+            /*
+             * Không để lỗi notification làm hỏng thao tác hoàn hàng.
+             */
+            e.printStackTrace();
+        }
+    }
+
+    private void notifyRefundStatusSafely(Connection conn,
+                                          Order order,
+                                          int orderId,
+                                          String refundStatus,
+                                          BigDecimal refundAmount) {
+        if (conn == null || order == null || orderId <= 0 || order.getUserId() <= 0) {
+            return;
+        }
+
+        String normalizedRefundStatus = normalizeRefundStatus(refundStatus);
+
+        String type;
+        String title;
+        String message;
+
+        switch (normalizedRefundStatus) {
+            case "APPROVED", "RETURNED" -> {
+                type = "RETURN_REQUEST_APPROVED";
+                title = "Yêu cầu hoàn hàng đã được duyệt";
+                message = "Yêu cầu hoàn hàng cho đơn hàng #" + orderId + " đã được duyệt.";
+            }
+            case "REFUNDED" -> {
+                type = "RETURN_REQUEST_APPROVED";
+                title = "Đơn hàng đã được hoàn tiền";
+                message = "Đơn hàng #" + orderId + " đã được hoàn tiền "
+                        + vnd0(refundAmount) + " VND.";
+            }
+            case "REJECTED" -> {
+                type = "RETURN_REQUEST_REJECTED";
+                title = "Yêu cầu hoàn hàng bị từ chối";
+                message = "Yêu cầu hoàn hàng cho đơn hàng #" + orderId + " đã bị từ chối.";
+            }
+            default -> {
+                return;
+            }
+        }
+
+        try {
+            new NotificationDAO().createUserNotification(
+                    conn,
+                    order.getUserId(),
+                    type,
+                    title,
+                    message,
+                    "/orders/detail?id=" + orderId,
+                    "ORDER",
+                    (long) orderId
+            );
+        } catch (SQLException e) {
+            /*
+             * Không để lỗi notification làm hỏng thao tác cập nhật hoàn tiền.
+             */
+            e.printStackTrace();
+        }
+    }
+
+    private String buildReasonText(String reason) {
+        String safeReason = trimToNull(reason);
+
+        if (safeReason == null) {
+            return ".";
+        }
+
+        return ". Lý do: " + safeReason;
+    }
+
+
+    /* =========================================================
        CANCEL / RETURN / REFUND
     ========================================================= */
 
@@ -1115,6 +1268,14 @@ public class OrderDAO {
                         defaultIfBlank(reason, "Khách hàng đã hủy đơn hàng."),
                         null
                 );
+
+                notifyOrderCancelledByUserSafely(
+                        conn,
+                        order,
+                        orderId,
+                        userId,
+                        reason
+                );
             }
 
             return updated;
@@ -1132,6 +1293,8 @@ public class OrderDAO {
     }
 
     public void markReturnRequested(Connection conn, int orderId, BigDecimal refundAmount, String refundMethod) throws SQLException {
+        Order order = findById(conn, orderId);
+
         String sql = """
                 UPDATE store_order
                 SET refund_status = ?,
@@ -1145,7 +1308,18 @@ public class OrderDAO {
             statement.setBigDecimal(2, vnd0(refundAmount));
             statement.setString(3, normalizeRefundMethod(refundMethod));
             statement.setInt(4, orderId);
-            statement.executeUpdate();
+
+            int updated = statement.executeUpdate();
+
+            if (updated > 0) {
+                notifyReturnRequestedSafely(
+                        conn,
+                        order,
+                        orderId,
+                        refundAmount,
+                        refundMethod
+                );
+            }
         }
     }
 
@@ -1167,16 +1341,41 @@ public class OrderDAO {
 
         String normalizedRefundStatus = normalizeRefundStatus(refundStatus);
 
-        try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+        try (Connection connection = DBConnection.getConnection()) {
+            connection.setAutoCommit(false);
 
-            statement.setString(1, normalizedRefundStatus);
-            statement.setBigDecimal(2, vnd0(refundAmount));
-            statement.setString(3, normalizeRefundMethod(refundMethod));
-            statement.setString(4, normalizedRefundStatus);
-            statement.setInt(5, orderId);
+            try {
+                Order order = findById(connection, orderId);
 
-            return statement.executeUpdate() > 0;
+                boolean updated;
+
+                try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                    statement.setString(1, normalizedRefundStatus);
+                    statement.setBigDecimal(2, vnd0(refundAmount));
+                    statement.setString(3, normalizeRefundMethod(refundMethod));
+                    statement.setString(4, normalizedRefundStatus);
+                    statement.setInt(5, orderId);
+
+                    updated = statement.executeUpdate() > 0;
+                }
+
+                if (updated) {
+                    notifyRefundStatusSafely(
+                            connection,
+                            order,
+                            orderId,
+                            normalizedRefundStatus,
+                            refundAmount
+                    );
+                }
+
+                connection.commit();
+                return updated;
+
+            } catch (SQLException e) {
+                connection.rollback();
+                throw e;
+            }
 
         } catch (SQLException e) {
             throw new RuntimeException("OrderDAO.updateRefundStatus error", e);
