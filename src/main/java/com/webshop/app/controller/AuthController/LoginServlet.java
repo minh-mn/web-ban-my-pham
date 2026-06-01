@@ -54,6 +54,14 @@ public class LoginServlet extends HttpServlet {
         String remember = req.getParameter("remember");
         String redirect = req.getParameter("redirect");
 
+        if (username != null && !username.equals(username.toLowerCase())) {
+            req.setAttribute("error", "Tên đăng nhập không được phép chứa chữ in hoa.");
+            req.setAttribute("pageTitle", "Đăng nhập");
+            req.setAttribute("pageContent", "/jsp/auth/login.jsp");
+            req.getRequestDispatcher("/jsp/common/base.jsp").forward(req, resp);
+            return;
+        }
+
         if (username == null || username.isBlank() || password == null || password.isBlank()) {
             req.setAttribute("error", "Vui lòng nhập đầy đủ thông tin");
             req.setAttribute("pageTitle", "Đăng nhập");
