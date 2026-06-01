@@ -224,6 +224,456 @@ Thay thế block SỰ KIỆN HOT bằng sản phẩm khám phá theo layout danh
 <jsp:include page="/jsp/product/home-product-section.jsp"/>
 
 <!-- =========================================================
+THƯƠNG HIỆU NỔI BẬT
+Layout theo mẫu: banner lớn bên trái, logo thương hiệu + sản phẩm nổi bật bên phải.
+========================================================= -->
+<c:if test="${not empty brands}">
+	<section class="skin-featured-brand-section" id="featured-brands">
+		<style>
+			.skin-featured-brand-section {
+				padding: 52px 0 58px;
+				background: #fff;
+			}
+
+			.skin-featured-brand-layout {
+				display: grid;
+				grid-template-columns: minmax(320px, 440px) minmax(0, 1fr);
+				gap: 32px;
+				align-items: start;
+			}
+
+			.skin-featured-brand-banner {
+				position: sticky;
+				top: 118px;
+				display: block;
+				min-height: 620px;
+				overflow: hidden;
+				background: linear-gradient(135deg, #ffe1eb 0%, #fff7fa 48%, #ffd4e3 100%);
+				text-decoration: none;
+				box-shadow: 0 18px 45px rgba(157, 0, 45, .10);
+			}
+
+			.skin-featured-brand-banner img {
+				width: 100%;
+				height: 100%;
+				min-height: 620px;
+				object-fit: cover;
+				display: block;
+			}
+
+			.skin-featured-brand-banner-fallback {
+				min-height: 620px;
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+				padding: 38px;
+				text-align: center;
+				color: #9b001c;
+			}
+
+			.skin-featured-brand-banner-fallback span {
+				font-size: 13px;
+				font-weight: 950;
+				letter-spacing: .22em;
+				text-transform: uppercase;
+			}
+
+			.skin-featured-brand-banner-fallback strong {
+				display: block;
+				margin-top: 12px;
+				font-size: clamp(32px, 4vw, 58px);
+				font-weight: 1000;
+				line-height: 1.05;
+				text-transform: uppercase;
+			}
+
+			.skin-featured-brand-main {
+				min-width: 0;
+			}
+
+			.skin-featured-brand-head {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				gap: 18px;
+				margin-bottom: 18px;
+			}
+
+			.skin-featured-brand-title {
+				margin: 0;
+				color: #161616;
+				font-size: clamp(24px, 2.4vw, 38px);
+				font-weight: 950;
+				letter-spacing: .075em;
+				line-height: 1.2;
+				text-transform: uppercase;
+			}
+
+			.skin-featured-brand-more {
+				flex: 0 0 auto;
+				color: #8d001f;
+				font-size: 17px;
+				font-weight: 850;
+				text-decoration: none;
+			}
+
+			.skin-featured-brand-more:hover {
+				text-decoration: underline;
+				text-underline-offset: 4px;
+			}
+
+			.skin-featured-brand-logo-row {
+				display: grid;
+				grid-template-columns: repeat(6, minmax(0, 1fr));
+				align-items: center;
+				min-height: 76px;
+				overflow: hidden;
+				border: 3px solid #8d001f;
+				border-radius: 999px;
+				background: #fff;
+				box-shadow: 0 12px 28px rgba(141, 0, 31, .08);
+			}
+
+			.skin-featured-brand-logo {
+				min-width: 0;
+				height: 76px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				padding: 12px 16px;
+				color: #161616;
+				font-size: 20px;
+				font-weight: 950;
+				letter-spacing: .04em;
+				text-align: center;
+				text-decoration: none;
+				text-transform: uppercase;
+				border-right: 1px solid rgba(141, 0, 31, .10);
+			}
+
+			.skin-featured-brand-logo:last-child {
+				border-right: 0;
+			}
+
+			.skin-featured-brand-logo img {
+				max-width: 100%;
+				max-height: 46px;
+				object-fit: contain;
+				display: block;
+				filter: grayscale(1) contrast(1.1);
+				transition: filter .22s ease, transform .22s ease;
+			}
+
+			.skin-featured-brand-logo:hover img {
+				filter: grayscale(0) contrast(1);
+				transform: scale(1.06);
+			}
+
+			.skin-featured-brand-logo-fallback {
+				display: -webkit-box;
+				overflow: hidden;
+				-webkit-line-clamp: 1;
+				-webkit-box-orient: vertical;
+			}
+
+			.skin-featured-brand-products {
+				display: grid;
+				grid-template-columns: repeat(4, minmax(0, 1fr));
+				margin-top: 16px;
+				border-top: 1px solid #ececec;
+				border-left: 1px solid #ececec;
+			}
+
+			.skin-featured-brand-card {
+				position: relative;
+				min-width: 0;
+				padding-bottom: 18px;
+				background: #fff;
+				border-right: 1px solid #ececec;
+				border-bottom: 1px solid #ececec;
+				transition: box-shadow .22s ease, transform .22s ease;
+			}
+
+			.skin-featured-brand-card:hover {
+				z-index: 2;
+				transform: translateY(-3px);
+				box-shadow: 0 18px 36px rgba(15, 23, 42, .10);
+			}
+
+			.skin-featured-brand-image {
+				position: relative;
+				display: block;
+				height: 190px;
+				overflow: hidden;
+				background: #f7fbff;
+			}
+
+			.skin-featured-brand-image img {
+				width: 100%;
+				height: 100%;
+				object-fit: cover;
+				display: block;
+			}
+
+			.skin-featured-brand-discount {
+				position: absolute;
+				right: 12px;
+				bottom: 12px;
+				width: 48px;
+				height: 48px;
+				display: inline-flex;
+				align-items: center;
+				justify-content: center;
+				border-radius: 999px;
+				background: #a8d83f;
+				color: #fff;
+				font-size: 13px;
+				font-weight: 950;
+			}
+
+			.skin-featured-brand-body {
+				padding: 14px 14px 0;
+			}
+
+			.skin-featured-brand-name {
+				display: block;
+				margin-bottom: 7px;
+				color: #171717;
+				font-size: 15px;
+				font-weight: 950;
+				letter-spacing: .05em;
+				text-decoration: none;
+				text-transform: uppercase;
+			}
+
+			.skin-featured-brand-product-title {
+				display: -webkit-box;
+				min-height: 56px;
+				overflow: hidden;
+				color: #1d1d1d;
+				font-size: 16px;
+				font-weight: 650;
+				line-height: 1.45;
+				text-decoration: none;
+				-webkit-line-clamp: 2;
+				-webkit-box-orient: vertical;
+			}
+
+			.skin-featured-brand-product-title:hover {
+				color: #9b001c;
+			}
+
+			.skin-featured-brand-price {
+				margin-top: 9px;
+				display: flex;
+				flex-wrap: wrap;
+				align-items: baseline;
+				gap: 8px;
+			}
+
+			.skin-featured-brand-price strong {
+				color: #a90027;
+				font-size: 18px;
+				font-weight: 950;
+			}
+
+			.skin-featured-brand-price del {
+				color: #8d8d8d;
+				font-size: 14px;
+			}
+
+			.skin-featured-brand-sold {
+				margin-top: 8px;
+				color: #111;
+				font-size: 14px;
+				font-weight: 650;
+			}
+
+			.skin-featured-brand-view-more {
+				display: flex;
+				justify-content: center;
+				margin-top: 24px;
+			}
+
+			.skin-featured-brand-view-more a {
+				color: #8d001f;
+				font-size: 18px;
+				font-weight: 850;
+				text-decoration: none;
+			}
+
+			.skin-featured-brand-view-more a:hover {
+				text-decoration: underline;
+				text-underline-offset: 4px;
+			}
+
+			@media (max-width: 1180px) {
+				.skin-featured-brand-layout {
+					grid-template-columns: 1fr;
+				}
+
+				.skin-featured-brand-banner {
+					position: relative;
+					top: auto;
+					min-height: 320px;
+				}
+
+				.skin-featured-brand-banner img,
+				.skin-featured-brand-banner-fallback {
+					min-height: 320px;
+				}
+			}
+
+			@media (max-width: 900px) {
+				.skin-featured-brand-logo-row {
+					grid-template-columns: repeat(3, minmax(0, 1fr));
+					border-radius: 28px;
+				}
+
+				.skin-featured-brand-products {
+					grid-template-columns: repeat(2, minmax(0, 1fr));
+				}
+			}
+
+			@media (max-width: 560px) {
+				.skin-featured-brand-section {
+					padding: 38px 0 44px;
+				}
+
+				.skin-featured-brand-head {
+					align-items: flex-start;
+					flex-direction: column;
+				}
+
+				.skin-featured-brand-logo-row,
+				.skin-featured-brand-products {
+					grid-template-columns: 1fr;
+				}
+			}
+		</style>
+
+		<div class="skin-featured-brand-layout">
+			<a class="skin-featured-brand-banner" href="${ctx}/events">
+				<c:choose>
+					<c:when test="${not empty recentEvents && not empty recentEvents[0].imageUrl}">
+						<img src="${ctx}${recentEvents[0].imageUrl}" alt="${recentEvents[0].title}">
+					</c:when>
+					<c:otherwise>
+						<div class="skin-featured-brand-banner-fallback">
+							<span>MyCosmetic</span>
+							<strong>Beauty Brand Picks</strong>
+						</div>
+					</c:otherwise>
+				</c:choose>
+			</a>
+
+			<div class="skin-featured-brand-main">
+				<div class="skin-featured-brand-head">
+					<h2 class="skin-featured-brand-title">THƯƠNG HIỆU NỔI BẬT</h2>
+					<a class="skin-featured-brand-more" href="${ctx}/brands">Xem thêm →</a>
+				</div>
+
+				<div class="skin-featured-brand-logo-row">
+					<c:forEach var="brand" items="${brands}" begin="0" end="5">
+						<a class="skin-featured-brand-logo" href="${ctx}/products?brand=${brand.id}" title="${brand.name}">
+							<c:choose>
+								<c:when test="${not empty brand.imageUrl}">
+									<c:choose>
+										<c:when test="${fn:startsWith(brand.imageUrl, 'http')}">
+											<img src="${brand.imageUrl}" alt="${brand.name}" loading="lazy">
+										</c:when>
+										<c:when test="${fn:startsWith(brand.imageUrl, '/')}">
+											<img src="${ctx}${brand.imageUrl}" alt="${brand.name}" loading="lazy">
+										</c:when>
+										<c:otherwise>
+											<img src="${ctx}/uploads/brand/${brand.imageUrl}" alt="${brand.name}" loading="lazy">
+										</c:otherwise>
+									</c:choose>
+								</c:when>
+								<c:otherwise>
+									<span class="skin-featured-brand-logo-fallback">${brand.name}</span>
+								</c:otherwise>
+							</c:choose>
+						</a>
+					</c:forEach>
+				</div>
+
+				<div class="skin-featured-brand-products">
+					<c:forEach var="product" items="${featuredProducts}" begin="0" end="7">
+						<c:choose>
+							<c:when test="${not empty product.slug}">
+								<c:set var="brandProductUrl" value="${ctx}/product/${product.slug}?id=${product.id}" />
+							</c:when>
+							<c:otherwise>
+								<c:set var="brandProductUrl" value="${ctx}/product?id=${product.id}" />
+							</c:otherwise>
+						</c:choose>
+
+						<article class="skin-featured-brand-card">
+							<a class="skin-featured-brand-image" href="${brandProductUrl}">
+								<c:if test="${product.discountPercent > 0}">
+									<span class="skin-featured-brand-discount">-${product.discountPercent}%</span>
+								</c:if>
+
+								<c:choose>
+									<c:when test="${not empty product.imageUrl}">
+										<c:choose>
+											<c:when test="${fn:startsWith(product.imageUrl, 'http')}">
+												<img src="${product.imageUrl}" alt="${product.title}" loading="lazy">
+											</c:when>
+											<c:when test="${fn:startsWith(product.imageUrl, '/')}">
+												<img src="${ctx}${product.imageUrl}" alt="${product.title}" loading="lazy">
+											</c:when>
+											<c:otherwise>
+												<img src="${ctx}/uploads/product/${product.imageUrl}" alt="${product.title}" loading="lazy">
+											</c:otherwise>
+										</c:choose>
+									</c:when>
+									<c:otherwise>
+										<div class="skin-no-image">No image</div>
+									</c:otherwise>
+								</c:choose>
+							</a>
+
+							<div class="skin-featured-brand-body">
+								<c:if test="${not empty product.brandName}">
+									<a class="skin-featured-brand-name" href="${brandProductUrl}">${product.brandName}</a>
+								</c:if>
+
+								<a class="skin-featured-brand-product-title" href="${brandProductUrl}">
+										${product.title}
+								</a>
+
+								<div class="skin-featured-brand-price">
+									<c:choose>
+										<c:when test="${product.discountPercent > 0}">
+											<strong><fmt:formatNumber value="${product.finalPrice}" type="number" groupingUsed="true"/>đ</strong>
+											<del><fmt:formatNumber value="${product.price}" type="number" groupingUsed="true"/>đ</del>
+										</c:when>
+										<c:otherwise>
+											<strong><fmt:formatNumber value="${product.price}" type="number" groupingUsed="true"/>đ</strong>
+										</c:otherwise>
+									</c:choose>
+								</div>
+
+								<c:if test="${product.soldQuantity > 0}">
+									<div class="skin-featured-brand-sold">${product.soldQuantity} đã bán</div>
+								</c:if>
+							</div>
+						</article>
+					</c:forEach>
+				</div>
+
+				<div class="skin-featured-brand-view-more">
+					<a href="${ctx}/brands">Xem thêm →</a>
+				</div>
+			</div>
+		</div>
+	</section>
+</c:if>
+
+<!-- =========================================================
 PRODUCT GROUPS
 ========================================================= -->
 <c:set var="homeSectionProducts" value="${bestSellingProducts}" scope="request"/>
