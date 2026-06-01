@@ -1583,6 +1583,11 @@ public class ProductDAO {
 
 	/**
 	 * Lấy sản phẩm liên quan dựa theo tag tương đồng.
+	 *
+	 * Bản an toàn:
+	 * - Nếu bảng store_product_tag đã tồn tại: lấy sản phẩm có tag giống sản phẩm hiện tại.
+	 * - Nếu database chưa có bảng store_product_tag: trả danh sách rỗng để trang chi tiết không bị HTTP 500.
+	 * - RecommendationService có thể tiếp tục fallback sang sản phẩm cùng danh mục.
 	 */
 	public List<Product> findRelatedByTag(int productId, int limit) {
 		if (productId <= 0 || limit <= 0) {
@@ -1631,10 +1636,21 @@ public class ProductDAO {
 			}
 
 		} catch (SQLException e) {
-			throw new RuntimeException("ProductDAO.findRelatedByTag error", e);
+			/*
+			 * Không để lỗi phần "Sản phẩm liên quan" làm sập trang chi tiết sản phẩm.
+			 *
+			 * Lỗi thường gặp:
+			 * Table 'mycosmetic_shop.store_product_tag' doesn't exist
+			 *
+			 * Khi thiếu bảng tag, trả list rỗng để RecommendationService fallback
+			 * sang findRelatedByCategory hoặc hiển thị trang chi tiết bình thường.
+			 */
+			System.out.println("[ProductDAO] findRelatedByTag skipped: " + e.getMessage());
+			return new ArrayList<>();
 		}
 
 		return products;
 	}
+
 
 }
