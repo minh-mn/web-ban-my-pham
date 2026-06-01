@@ -231,3 +231,31 @@
 
 .admin-muted{ color: var(--admin-muted); }
 .admin-right{ text-align: right; }
+
+/* =========================================================
+   ISSUE 114 - ADMIN NOTIFICATION UTILITY CHIPS
+========================================================= */
+
+.admin-chip--brand {
+  border-color: rgba(255, 95, 162, 0.30);
+  background: rgba(255, 95, 162, 0.10);
+  color: #be185d;
+}
+
+.admin-chip--success {
+  border-color: rgba(16, 185, 129, 0.30);
+  background: rgba(16, 185, 129, 0.10);
+  color: #047857;
+}
+
+.admin-chip--danger {
+  border-color: rgba(239, 68, 68, 0.30);
+  background: rgba(239, 68, 68, 0.10);
+  color: #b91c1c;
+}
+
+.admin-chip--warning {
+  border-color: rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.10);
+  color: #92400e;
+}
