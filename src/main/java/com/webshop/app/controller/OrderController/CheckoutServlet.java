@@ -19,6 +19,8 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import com.webshop.app.dao.CouponDAO;
+import com.webshop.app.dao.NotificationDAO;
+import com.webshop.app.dao.OrderItemDAO;
 import com.webshop.app.dao.UserCouponDAO;
 import com.webshop.app.model.CartItem;
 import com.webshop.app.model.Coupon;
@@ -96,6 +98,8 @@ public class CheckoutServlet extends HttpServlet {
     private final CheckoutService checkoutService = new CheckoutService();
     private final CouponDAO couponDAO = new CouponDAO();
     private final UserCouponDAO userCouponDAO = new UserCouponDAO();
+    private final NotificationDAO notificationDAO = new NotificationDAO();
+    private final OrderItemDAO orderItemDAO = new OrderItemDAO();
 
     private BigDecimal calcSubTotal(Map<String, CartItem> cart) {
         BigDecimal subTotal = BigDecimal.ZERO;
@@ -1641,6 +1645,112 @@ public class CheckoutServlet extends HttpServlet {
         return true;
     }
 
+    /* =========================================================
+       NOTIFICATION - ISSUE 114
+    ========================================================= */
+
+    /**
+     * Tạo thông báo sau khi đơn hàng được tạo thành công.
+     * Lỗi notification không được làm hỏng checkout.
+     */
+    private void createOrderCreatedNotificationsSafely(User user,
+                                                       int orderId,
+                                                       String paymentMethod) {
+        if (user == null || user.getId() <= 0 || orderId <= 0) {
+            return;
+        }
+
+        String orderSummary = "";
+
+        try {
+            orderSummary = orderItemDAO.buildOrderItemSummary(orderId, 3);
+        } catch (Exception e) {
+            /*
+             * Không có tóm tắt sản phẩm thì vẫn tạo thông báo bình thường.
+             */
+            e.printStackTrace();
+        }
+
+        String paymentLabel = "VNPAY".equalsIgnoreCase(paymentMethod)
+                ? "Thanh toán qua VNPAY"
+                : "Thanh toán khi nhận hàng";
+
+        String userMessage = "Đơn hàng #" + orderId + " của bạn đã được tạo thành công. "
+                + "Phương thức thanh toán: " + paymentLabel + ".";
+
+        String adminMessage = getUserDisplayName(user)
+                + " vừa đặt đơn hàng #" + orderId + ". "
+                + "Phương thức thanh toán: " + paymentLabel + ".";
+
+        if (!isBlank(orderSummary)) {
+            adminMessage += " Sản phẩm: " + orderSummary + ".";
+        }
+
+        try (Connection connection = DBConnection.getConnection()) {
+            notificationDAO.createUserNotification(
+                    connection,
+                    user.getId(),
+                    "ORDER_CREATED",
+                    "Đặt hàng thành công",
+                    userMessage,
+                    "/orders/detail?id=" + orderId,
+                    "ORDER",
+                    (long) orderId
+            );
+
+            notificationDAO.createAdminNotification(
+                    connection,
+                    "ORDER_CREATED",
+                    "Có đơn hàng mới",
+                    adminMessage,
+                    "/admin/orders?action=detail&id=" + orderId,
+                    "ORDER",
+                    (long) orderId
+            );
+        } catch (Exception e) {
+            /*
+             * Không để lỗi notification làm hỏng thao tác đặt hàng.
+             */
+            e.printStackTrace();
+        }
+    }
+
+    private String getUserDisplayName(User user) {
+        if (user == null) {
+            return "Khách hàng";
+        }
+
+        String fullName = invokeStringGetter(user, "getFullName");
+
+        if (!isBlank(fullName)) {
+            return fullName.trim();
+        }
+
+        String username = invokeStringGetter(user, "getUsername");
+
+        if (!isBlank(username)) {
+            return username.trim();
+        }
+
+        return "Khách hàng #" + user.getId();
+    }
+
+    private String invokeStringGetter(User user, String getterName) {
+        try {
+            Object value = user.getClass().getMethod(getterName).invoke(user);
+
+            if (value != null) {
+                return value.toString().trim();
+            }
+        } catch (Exception ignored) {
+            // Getter không tồn tại thì bỏ qua.
+        }
+
+        return "";
+    }
+
+
+
     /**
      * Mục 91 - gửi thông báo đơn hàng qua email.
      *
@@ -1925,6 +2035,13 @@ public class CheckoutServlet extends HttpServlet {
                         + "/checkout/success?success=false&message=order_create_failed");
                 return;
             }
+
+            /*
+             * Issue 114:
+             * Tạo thông báo cho khách hàng và admin khi đơn hàng được đặt thành công.
+             * Lỗi notification không làm hỏng checkout.
+             */
+            createOrderCreatedNotificationsSafely(user, orderId, paymentMethod);
 
             /*
              * Mục 90:
