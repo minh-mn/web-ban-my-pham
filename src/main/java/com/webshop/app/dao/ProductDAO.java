@@ -1071,6 +1071,73 @@ public class ProductDAO {
 		return list;
 	}
 
+
+	public List<Product> findFeaturedProductsByBrandIds(List<Integer> brandIds, int limit) {
+		List<Product> list = new ArrayList<>();
+
+		if (brandIds == null || brandIds.isEmpty()) {
+			return list;
+		}
+
+		int safeLimit = Math.max(limit, brandIds.size() * 4);
+		String brandPlaceholders = placeholders(brandIds.size());
+
+		String sql =
+				"SELECT p.id, p.title, p.slug, p.description, " +
+						"p.price, p.discount_percent, p.stock, p.image, p.created_at, " +
+						"COALESCE(rv.avg_rating, 0) AS avg_rating, " +
+						"COALESCE(rv.review_count, 0) AS review_count, " +
+						"c.id AS c_id, c.name AS c_name, " +
+						"b.id AS b_id, b.name AS b_name, " +
+						"COALESCE(sd.sold_qty, 0) AS sold_qty " +
+						"FROM store_product p " +
+						"LEFT JOIN store_category c ON p.category_id = c.id " +
+						"LEFT JOIN store_brand b ON p.brand_id = b.id " +
+						"LEFT JOIN ( " +
+						"SELECT product_id, AVG(rating) AS avg_rating, COUNT(*) AS review_count " +
+						"FROM store_review GROUP BY product_id " +
+						") rv ON rv.product_id = p.id " +
+						"LEFT JOIN ( " +
+						"SELECT oi.product_id, SUM(oi.quantity) AS sold_qty " +
+						"FROM store_orderitem oi " +
+						"JOIN store_order o ON o.id = oi.order_id " +
+						"WHERE o.payment_status = 'PAID' " +
+						"GROUP BY oi.product_id " +
+						") sd ON sd.product_id = p.id " +
+						"WHERE p.is_active = 1 " +
+						"AND p.brand_id IN (" + brandPlaceholders + ") " +
+						"ORDER BY FIELD(p.brand_id, " + brandPlaceholders + "), " +
+						"COALESCE(sd.sold_qty, 0) DESC, p.discount_percent DESC, p.created_at DESC " +
+						"LIMIT ?";
+
+		try (Connection c = DBConnection.getConnection();
+			 PreparedStatement ps = c.prepareStatement(sql)) {
+
+			int idx = 1;
+
+			for (Integer brandId : brandIds) {
+				ps.setInt(idx++, brandId);
+			}
+
+			for (Integer brandId : brandIds) {
+				ps.setInt(idx++, brandId);
+			}
+
+			ps.setInt(idx, safeLimit);
+
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					list.add(mapRowList(rs));
+				}
+			}
+
+		} catch (SQLException e) {
+			throw new RuntimeException("ProductDAO.findFeaturedProductsByBrandIds error", e);
+		}
+
+		return list;
+	}
+
     /* =========================================================
        PROMOTION PRODUCT PICKER
        Chỉ dùng cho admin/promotions, không ảnh hưởng /products
