@@ -1,6 +1,7 @@
 package com.webshop.app.controller.AdminController;
 
 import com.webshop.app.dao.AdminReviewDAO;
+import com.webshop.app.dao.NotificationDAO;
 import com.webshop.app.model.Review;
 import com.webshop.app.model.User;
 
@@ -22,6 +23,7 @@ public class AdminReviewServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
     private final AdminReviewDAO reviewDAO = new AdminReviewDAO();
+    private final NotificationDAO notificationDAO = new NotificationDAO();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
@@ -68,6 +70,8 @@ public class AdminReviewServlet extends HttpServlet {
         }
 
         try {
+            Review currentReview = reviewDAO.findById(id);
+
             switch (action) {
                 case "approve" -> {
                     success = reviewDAO.approve(id, adminId, adminNote);
@@ -94,6 +98,14 @@ public class AdminReviewServlet extends HttpServlet {
                     message = "Thao tác không hợp lệ.";
                 }
             }
+
+            if (success) {
+                notifyReviewModerationSafely(
+                        currentReview,
+                        action,
+                        adminNote
+                );
+            }
         } catch (Exception e) {
             success = false;
             message = "Lỗi xử lý bình luận: " + e.getMessage();
@@ -101,6 +113,114 @@ public class AdminReviewServlet extends HttpServlet {
 
         redirectBack(req, resp, success, message);
     }
+
+    /* =========================================================
+       NOTIFICATION - ISSUE 114
+    ========================================================= */
+
+    private void notifyReviewModerationSafely(Review review,
+                                              String action,
+                                              String adminNote) {
+        if (review == null || review.getId() <= 0 || review.getAuthorId() <= 0) {
+            return;
+        }
+
+        ReviewNotificationPayload payload = buildReviewNotificationPayload(
+                review,
+                action,
+                adminNote
+        );
+
+        if (payload == null) {
+            return;
+        }
+
+        try {
+            notificationDAO.createUserNotification(
+                    review.getAuthorId(),
+                    payload.type(),
+                    payload.title(),
+                    payload.message(),
+                    payload.targetUrl(),
+                    "REVIEW",
+                    (long) review.getId()
+            );
+        } catch (Exception e) {
+            /*
+             * Không để lỗi notification làm hỏng thao tác quản lý đánh giá.
+             */
+            e.printStackTrace();
+        }
+    }
+
+    private ReviewNotificationPayload buildReviewNotificationPayload(Review review,
+                                                                     String action,
+                                                                     String adminNote) {
+        String safeAction = action == null ? "" : action.trim().toLowerCase();
+        String productName = safeText(review.getProductName());
+
+        if (productName == null) {
+            productName = "sản phẩm #" + review.getProductId();
+        }
+
+        String targetUrl = review.getOrderId() != null && review.getOrderId() > 0
+                ? "/orders/detail?id=" + review.getOrderId()
+                : "/notifications";
+
+        return switch (safeAction) {
+            case "approve" -> new ReviewNotificationPayload(
+                    "REVIEW_APPROVED",
+                    "Đánh giá đã được duyệt",
+                    "Đánh giá của bạn cho sản phẩm \"" + productName + "\" đã được duyệt và hiển thị trên hệ thống.",
+                    targetUrl
+            );
+
+            case "reject" -> new ReviewNotificationPayload(
+                    "REVIEW_REJECTED",
+                    "Đánh giá bị từ chối",
+                    "Đánh giá của bạn cho sản phẩm \"" + productName + "\" đã bị từ chối."
+                            + buildAdminNoteText(adminNote),
+                    targetUrl
+            );
+
+            case "hide" -> new ReviewNotificationPayload(
+                    "REVIEW_HIDDEN",
+                    "Đánh giá bị ẩn",
+                    "Đánh giá của bạn cho sản phẩm \"" + productName + "\" đã bị ẩn."
+                            + buildAdminNoteText(adminNote),
+                    targetUrl
+            );
+
+            case "unhide" -> new ReviewNotificationPayload(
+                    "REVIEW_APPROVED",
+                    "Đánh giá đã được hiển thị lại",
+                    "Đánh giá của bạn cho sản phẩm \"" + productName + "\" đã được hiển thị lại trên hệ thống.",
+                    targetUrl
+            );
+
+            default -> null;
+        };
+    }
+
+    private String buildAdminNoteText(String adminNote) {
+        String note = safeText(adminNote);
+
+        if (note == null) {
+            return "";
+        }
+
+        return " Lý do: " + note;
+    }
+
+    private record ReviewNotificationPayload(
+            String type,
+            String title,
+            String message,
+            String targetUrl
+    ) {
+    }
+
+
 
     private void showList(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
