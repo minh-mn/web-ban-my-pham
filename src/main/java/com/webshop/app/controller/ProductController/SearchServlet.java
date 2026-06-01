@@ -8,7 +8,9 @@ import java.util.List;
 import com.webshop.app.dao.BrandDAO;
 import com.webshop.app.dao.CategoryDAO;
 import com.webshop.app.dao.ProductDAO;
+import com.webshop.app.dao.SearchHistoryDAO;
 import com.webshop.app.model.Product;
+import com.webshop.app.model.User;
 import com.webshop.app.service.ProductPricingFacade;
 
 import jakarta.servlet.ServletException;
@@ -16,6 +18,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 @WebServlet("/search")
 public class SearchServlet extends HttpServlet {
@@ -25,6 +28,7 @@ public class SearchServlet extends HttpServlet {
     private final ProductDAO productDAO = new ProductDAO();
     private final CategoryDAO categoryDAO = new CategoryDAO();
     private final BrandDAO brandDAO = new BrandDAO();
+    private final SearchHistoryDAO searchHistoryDAO = new SearchHistoryDAO();
 
     private final ProductPricingFacade pricingFacade = new ProductPricingFacade();
 
@@ -35,7 +39,6 @@ public class SearchServlet extends HttpServlet {
         req.setCharacterEncoding("UTF-8");
         resp.setCharacterEncoding("UTF-8");
 
-        // ===== READ PARAMS =====
         String keyword = req.getParameter("q");
         String sort = req.getParameter("sort");
 
@@ -43,20 +46,12 @@ public class SearchServlet extends HttpServlet {
         Integer brandId = parseInt(req.getParameter("brand"));
         Integer minRating = parseInt(req.getParameter("rating"));
 
-        /*
-         * ProductDAO hiện tại đang nhận List:
-         * - List<Integer> categoryIds
-         * - List<Integer> brandIds
-         * - List<String> priceRanges
-         */
         List<Integer> categoryIds = toIdList(categoryId);
         List<Integer> brandIds = toIdList(brandId);
         List<String> priceRanges = toStringList(req.getParameterValues("priceRange"));
 
-        // Lấy lại 1 priceRange để giữ tương thích với JSP cũ nếu JSP đang dùng ${priceRange}
         String priceRange = priceRanges.isEmpty() ? null : priceRanges.get(0);
 
-        // Nếu không có q thì quay về /products
         if (keyword == null || keyword.trim().isEmpty()) {
             resp.sendRedirect(req.getContextPath() + "/products");
             return;
@@ -64,7 +59,6 @@ public class SearchServlet extends HttpServlet {
 
         keyword = keyword.trim();
 
-        // ===== PAGINATION =====
         int pageSize = 18;
         int page = parseIntOrDefault(req.getParameter("page"), 1);
 
@@ -79,6 +73,13 @@ public class SearchServlet extends HttpServlet {
                 priceRanges,
                 minRating
         );
+
+        /*
+         * Issue 133:
+         * Lưu lịch sử tìm kiếm của tài khoản sau khi đã có tổng số kết quả.
+         * Chỉ lưu khi user đã đăng nhập, không áp dụng cho ajax-search/search-suggest.
+         */
+        saveSearchHistoryIfLoggedIn(req, keyword, total);
 
         int totalPages = (int) Math.ceil(total / (double) pageSize);
 
@@ -101,14 +102,11 @@ public class SearchServlet extends HttpServlet {
                 pageSize
         );
 
-        // ===== FINAL PRICE =====
         products.forEach(p -> p.setFinalPrice(pricingFacade.getFinalPrice(p)));
 
-        // ===== SIDEBAR DATA =====
         req.setAttribute("categories", categoryDAO.findParents());
         req.setAttribute("brands", brandDAO.findWithProductCount());
 
-        // ===== KEEP FILTER STATE =====
         req.setAttribute("q", keyword);
         req.setAttribute("sort", sort);
 
@@ -116,28 +114,72 @@ public class SearchServlet extends HttpServlet {
         req.setAttribute("selectedBrand", brandId);
         req.setAttribute("selectedRating", minRating);
 
-        // Dành cho JSP cũ đang dùng 1 giá trị
         req.setAttribute("priceRange", priceRange);
 
-        // Dành cho JSP mới đang dùng nhiều checkbox/filter
         req.setAttribute("selectedCategories", categoryIds);
         req.setAttribute("selectedBrands", brandIds);
         req.setAttribute("selectedPriceRanges", priceRanges);
 
-        // ===== PAGE DATA =====
         req.setAttribute("products", products);
         req.setAttribute("page", page);
         req.setAttribute("totalPages", totalPages);
         req.setAttribute("total", total);
         req.setAttribute("pageSize", pageSize);
 
-        // ===== META =====
         req.setAttribute("pageTitle", "MyCosmetic | Tìm kiếm: " + keyword);
         req.setAttribute("pageCss", "product-list.css");
         req.setAttribute("pageContent", "/jsp/product/list.jsp");
 
-        // ===== RENDER =====
         req.getRequestDispatcher("/jsp/common/base.jsp").forward(req, resp);
+    }
+
+    private void saveSearchHistoryIfLoggedIn(HttpServletRequest req, String keyword, int total) {
+        User currentUser = getCurrentUser(req);
+
+        if (currentUser == null || currentUser.getId() <= 0) {
+            return;
+        }
+
+        try {
+            searchHistoryDAO.saveSearch(
+                    currentUser.getId(),
+                    keyword,
+                    total,
+                    buildSearchUrl(req)
+            );
+        } catch (Exception e) {
+            /*
+             * Không để lỗi lưu lịch sử làm hỏng chức năng tìm kiếm sản phẩm.
+             * Nếu bảng user_search_history chưa được tạo, search vẫn phải chạy bình thường.
+             */
+            System.out.println("[SearchServlet] save search history error: " + e.getMessage());
+        }
+    }
+
+    private User getCurrentUser(HttpServletRequest req) {
+        HttpSession session = req.getSession(false);
+
+        if (session == null) {
+            return null;
+        }
+
+        Object rawUser = session.getAttribute("user");
+
+        if (rawUser instanceof User) {
+            return (User) rawUser;
+        }
+
+        return null;
+    }
+
+    private String buildSearchUrl(HttpServletRequest req) {
+        String queryString = req.getQueryString();
+
+        if (queryString == null || queryString.isBlank()) {
+            return "/search";
+        }
+
+        return "/search?" + queryString;
     }
 
     private List<Integer> toIdList(Integer id) {
