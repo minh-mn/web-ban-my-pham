@@ -19,12 +19,22 @@ public class PageController extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
-        String slug = req.getPathInfo().substring(1);
+        String pathInfo = req.getPathInfo();
+
+        if (pathInfo == null || pathInfo.equals("/")) {
+            resp.sendRedirect(req.getContextPath() + "/home");
+            return;
+        }
+
+        String slug = pathInfo.substring(1);
 
         Page page = dao.findBySlug(slug);
 
-        req.setAttribute("page", page);
-
-        req.getRequestDispatcher("/jsp/pages/page-detail.jsp").forward(req, resp);
+        if (page != null) {
+            req.setAttribute("page", page);
+            req.getRequestDispatcher("/jsp/pages/page-detail.jsp").forward(req, resp);
+        } else {
+            resp.sendRedirect(req.getContextPath() + "/home");
+        }
     }
 }
