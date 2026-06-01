@@ -108,7 +108,7 @@
                                     <td class="cart-select">
                                         <input type="checkbox"
                                                class="cart-item-checkbox"
-                                               name="selectedItemIds"
+                                               name="selectedKeys"
                                                value="${itemKey}"
                                                checked />
                                     </td>
@@ -277,7 +277,7 @@
 
                 const input = document.createElement('input');
                 input.type = 'hidden';
-                input.name = 'selectedItemIds';
+                input.name = 'selectedKeys';
                 input.value = checkbox.value;
                 selectedInputs.appendChild(input);
             });
