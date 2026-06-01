@@ -705,85 +705,51 @@ public class UserDAO {
 
     public User findBySocialId(String provider, String socialId) {
         String column = "google".equalsIgnoreCase(provider) ? "google_id" : "facebook_id";
+        String sql = "SELECT * FROM users WHERE " + column + " = ?";
 
-        String sql = """
-                SELECT %s
-                FROM users
-                WHERE %s = ?
-                """.formatted(USER_COLUMNS, column);
-
-        try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-
-            statement.setString(1, socialId);
-
-            try (ResultSet resultSet = statement.executeQuery()) {
-                if (!resultSet.next()) {
-                    return null;
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, socialId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapUser(rs);
                 }
-
-                return mapUser(resultSet);
             }
-
         } catch (SQLException e) {
-            throw new RuntimeException("UserDAO.findBySocialId error", e);
+            e.printStackTrace();
         }
+        return null;
     }
 
     public void saveSocialUser(User user, String provider, String socialId) {
         String column = "google".equalsIgnoreCase(provider) ? "google_id" : "facebook_id";
+        String sql = "INSERT INTO users (username, email, full_name, role, active, " + column + ", created_at) VALUES (?, ?, ?, 'USER', 1, ?, NOW())";
 
-        String sql = """
-                INSERT INTO users
-                (
-                    username,
-                    role,
-                    full_name,
-                    email,
-                    active,
-                    %s,
-                    manual_rank_code
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                """.formatted(column);
-
-        try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-
-            statement.setString(1, user.getUsername());
-            statement.setString(2, DEFAULT_ROLE);
-            statement.setString(3, nullify(user.getFullName()));
-            statement.setString(4, nullify(user.getEmail()));
-            statement.setBoolean(5, true);
-            statement.setString(6, socialId);
-            statement.setString(7, normalizeNullableRankCode(user.getManualRankCode()));
-
-            statement.executeUpdate();
-
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, user.getUsername());
+            ps.setString(2, user.getEmail());
+            ps.setString(3, user.getFullName());
+            ps.setString(4, socialId);
+            ps.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException("UserDAO.saveSocialUser error", e);
+            e.printStackTrace();
+            throw new RuntimeException("Lỗi khi lưu Social User", e);
         }
     }
 
     public void updateSocialId(int userId, String provider, String socialId) {
         String column = "google".equalsIgnoreCase(provider) ? "google_id" : "facebook_id";
+        String sql = "UPDATE users SET " + column + " = ? WHERE id = ?";
 
-        String sql = """
-                UPDATE users
-                SET %s = ?
-                WHERE id = ?
-                """.formatted(column);
-
-        try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-
-            statement.setString(1, socialId);
-            statement.setInt(2, userId);
-
-            statement.executeUpdate();
-
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, socialId);
+            ps.setInt(2, userId);
+            ps.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException("UserDAO.updateSocialId error", e);
+            e.printStackTrace();
+            throw new RuntimeException("Lỗi khi update Social ID", e);
         }
     }
 
