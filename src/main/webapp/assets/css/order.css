@@ -1087,3 +1087,414 @@
     gap: 6px;
   }
 }
+
+
+/* =========================================================
+   ORDER LIST WORKFLOW PATCH - ISSUE 113
+   Scope: /jsp/order/order_list.jsp
+   Mục tiêu:
+   - Không phụ thuộc getter mới của Order trong JSP
+   - Hiển thị trạng thái đơn, vận chuyển, tracking rõ ràng
+   - Đồng bộ giao diện chính với workflow admin
+========================================================= */
+
+.order-page {
+  color: #1f2a44;
+  width: min(1380px, calc(100vw - 32px));
+  max-width: none !important;
+  margin: 0 auto;
+}
+
+.order-orders {
+  background: #ffffff;
+  border: 1px solid #f0e8ee;
+  border-radius: 22px;
+  padding: 24px;
+  box-shadow: 0 12px 34px rgba(31, 42, 68, 0.07);
+}
+
+.order-section-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.order-section-title {
+  margin: 0;
+  color: #1f2a44;
+  font-size: 22px;
+  line-height: 1.35;
+  font-weight: 900;
+}
+
+.order-section-subtitle {
+  margin: 4px 0 0;
+  color: #7b8794;
+  font-size: 13.5px;
+  font-weight: 650;
+}
+
+.order-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #eef2f7;
+  border-radius: 18px;
+  background: #ffffff;
+  padding: 0;
+}
+
+.order-table {
+  width: 100%;
+  min-width: 1040px;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.order-table th {
+  padding: 14px 12px;
+  border-bottom: 1px solid #eef2f7;
+  color: #475569;
+  background: #f8fafc;
+  font-size: 13px;
+  text-align: left;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.order-table td {
+  padding: 15px 12px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #334155;
+  font-size: 14px;
+  vertical-align: middle;
+}
+
+.order-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.order-table tr:hover td {
+  background: #fff8fb;
+}
+
+.order-row-cancelled td {
+  background: rgba(220, 38, 38, 0.025);
+}
+
+.order-row-failed td {
+  background: rgba(245, 158, 11, 0.035);
+}
+
+.text-center {
+  text-align: center !important;
+}
+
+.order-id {
+  color: #d63384;
+  font-weight: 950;
+  white-space: nowrap;
+  font-size: 15px;
+}
+
+.order-price {
+  color: #1f2a44;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.order-muted {
+  color: #7b8794;
+  font-size: 13px;
+}
+
+.order-status-td,
+.shipping-status-td {
+  vertical-align: top !important;
+  padding-top: 18px !important;
+}
+
+.status-cell {
+  width: 100%;
+  min-height: 82px;
+  margin: 0 auto;
+  display: grid !important;
+  grid-template-rows: 34px 42px;
+  row-gap: 8px;
+  justify-items: center;
+  align-items: start;
+  align-content: start;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 152px;
+  height: 34px;
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-size: 13.5px;
+  line-height: 1;
+  font-weight: 900;
+  text-align: center;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.status-subtext {
+  width: 100%;
+  min-height: 38px;
+  max-width: 172px;
+  color: #64748b;
+  font-size: 12.5px;
+  font-weight: 750;
+  line-height: 1.35;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.shipping-code-line {
+  margin-top: 0;
+}
+
+.status-badge.status-warning {
+  background: #fff6e5;
+  color: #9a5b00;
+  border: 1px solid #ffe4ad;
+}
+
+.status-badge.status-info {
+  background: #eaf3ff;
+  color: #1769aa;
+  border: 1px solid #c7ddff;
+}
+
+.status-badge.status-ok {
+  background: #e8f7ef;
+  color: #12804a;
+  border: 1px solid #bdebd1;
+}
+
+.status-badge.status-danger {
+  background: #fdecec;
+  color: #c62828;
+  border: 1px solid #facaca;
+}
+
+.status-badge.status-muted {
+  background: #f8fafc;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+.tracking-link {
+  display: block;
+  width: 100%;
+  padding: 12px 12px 11px;
+  border: 1px solid #edf0f5;
+  border-radius: 16px;
+  background: #ffffff;
+  color: inherit;
+  text-decoration: none;
+  transition: 0.18s ease;
+}
+
+.tracking-link:hover {
+  border-color: #ffc2dc;
+  box-shadow: 0 10px 24px rgba(255, 95, 162, 0.12);
+  transform: translateY(-1px);
+}
+
+.tracking-progress {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-bottom: 9px;
+}
+
+.tracking-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: #e2e8f0;
+}
+
+.tracking-bar.active {
+  background: linear-gradient(135deg, #ffb15c, #ffcf7a);
+}
+
+.tracking-bar.done {
+  background: linear-gradient(135deg, #22c55e, #86efac);
+}
+
+.tracking-bar.failed {
+  background: linear-gradient(135deg, #ef4444, #fecaca);
+}
+
+.tracking-labels {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  color: #64748b;
+  font-size: 11.5px;
+  line-height: 1.25;
+  font-weight: 800;
+  text-align: center;
+}
+
+.tracking-action {
+  display: block;
+  margin-top: 8px;
+  color: #d63384;
+  font-size: 12.5px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.order-action-stack {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-detail,
+.btn-retry-payment,
+.btn-cancel-order,
+.btn-return-order {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 132px;
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: none;
+  text-decoration: none;
+  font-size: 12.8px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: 0.18s ease;
+  white-space: nowrap;
+}
+
+.btn-detail {
+  background: linear-gradient(135deg, #ff5fa2, #ff86c3);
+  color: #ffffff !important;
+  box-shadow: 0 12px 24px rgba(214, 51, 132, 0.22);
+}
+
+.btn-detail:hover,
+.btn-retry-payment:hover,
+.btn-cancel-order:hover,
+.btn-return-order:hover {
+  transform: translateY(-1px);
+}
+
+.btn-retry-payment {
+  background: #1f2a44;
+  color: #ffffff;
+  box-shadow: 0 10px 20px rgba(31, 42, 68, 0.18);
+}
+
+.btn-cancel-order {
+  background: #fff1f2;
+  color: #be123c;
+  border: 1px solid #fecdd3;
+}
+
+.btn-return-order {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.order-inline-form {
+  margin: 0;
+}
+
+.order-note {
+  margin: 16px 0 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #fff8fb;
+  color: #7b3a56;
+  font-size: 14px;
+  font-weight: 750;
+}
+
+@media (max-width: 1200px) {
+  .order-page {
+    width: min(1280px, calc(100vw - 24px));
+  }
+}
+
+@media (max-width: 992px) {
+  .order-table {
+    min-width: 980px;
+  }
+
+  .order-table-wrap {
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .order-page {
+    width: calc(100vw - 16px);
+  }
+
+  .order-orders {
+    padding: 16px;
+  }
+
+  .order-section-head {
+    flex-direction: column;
+  }
+
+  .order-section-title {
+    font-size: 19px;
+  }
+
+  .order-table {
+    min-width: 940px;
+  }
+}
+
+/* =========================================================
+   USER ORDER LIST COLUMN WIDTHS - CSS ONLY
+========================================================= */
+
+.order-col-id {
+  width: 84px;
+}
+
+.order-col-date {
+  width: 138px;
+}
+
+.order-col-total {
+  width: 150px;
+}
+
+.order-col-status {
+  width: 170px;
+}
+
+.order-col-shipping {
+  width: 190px;
+}
+
+.order-col-tracking {
+  width: 250px;
+}
+
+.order-col-actions {
+  width: 150px;
+}
