@@ -25,8 +25,13 @@
 			<input type="hidden" name="csrf_token" value="<c:out value='${sessionScope.CSRF_TOKEN}'/>">
 			<div class="form-group">
 				<label>Tên đăng nhập hoặc email</label>
-				<input type="text" name="username" placeholder="Tên đăng nhập hoặc email" required style="width: 100%; height: 48px; padding: 0 15px; border-radius: 4px; border: 1px solid #727272;">
+				<input type="text" name="username" id="usernameInput" placeholder="Tên đăng nhập hoặc email" required style="width: 100%; height: 48px; padding: 0 15px; border-radius: 4px; border: 1px solid #727272;">
+
+				<span id="usernameError" style="color: red; font-size: 13px; display: none; margin-top: 5px;">
+					Tên đăng nhập không được chứa chữ in hoa!
+				</span>
 			</div>
+
 			<div class="form-group">
 				<label class="auth-label">Mật khẩu</label>
 				<div style="position: relative; display: flex; align-items: center;">
@@ -78,13 +83,15 @@
 	});
 
 	function handleGoogleLogin(response) {
-		fetch(contextPath + "/social-auth/google", {
+		fetch(contextPath + "/social-auth", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/x-www-form-urlencoded"
 			},
 			body: new URLSearchParams({
-				credential: response.credential
+				provider: "google",
+				credential: response.credential,
+				mode: "login"
 			})
 		})
 				.then(res => res.json())
@@ -318,5 +325,35 @@
 				}, { scope: 'public_profile,email' });
 			});
 		}
+	});
+
+	document.addEventListener("DOMContentLoaded", function () {
+		const usernameInput = document.getElementById("usernameInput");
+		const errorMsg = document.getElementById("usernameError");
+		const loginForm = document.querySelector(".auth-form");
+
+		// 1. Kiểm tra real-time khi người dùng đang nhập
+		usernameInput.addEventListener("input", function() {
+			if (/[A-Z]/.test(this.value)) {
+				errorMsg.style.display = "block"; // Hiện lỗi
+				this.style.borderColor = "red";   // Đổi viền đỏ
+			} else {
+				errorMsg.style.display = "none";  // Ẩn lỗi
+				this.style.borderColor = "#727272"; // Trả về màu viền gốc
+			}
+		});
+
+		// 2. Chặn không cho submit nếu vẫn còn chữ in hoa
+		loginForm.addEventListener("submit", function(e) {
+			if (/[A-Z]/.test(usernameInput.value)) {
+				e.preventDefault(); // Dừng việc gửi form
+				Swal.fire({
+					icon: 'error',
+					title: 'Lỗi định dạng',
+					text: 'Tên đăng nhập không được phép chứa chữ in hoa. Vui lòng sửa lại!'
+				});
+				usernameInput.focus();
+			}
+		});
 	});
 </script>
