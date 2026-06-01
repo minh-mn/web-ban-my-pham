@@ -116,8 +116,13 @@ Nếu include header/footer ở đây sẽ bị 2 thanh menu.
           <div class="flash-products-grid">
             <c:forEach var="item" items="${fsItems}">
               <c:set var="product" value="${item.product}" />
+              <c:set var="flashSoldPercent" value="${empty item.soldPercent ? 0 : item.soldPercent}" />
+              <c:set var="flashLimit" value="${empty item.maxQuantityPerUser ? 2 : item.maxQuantityPerUser}" />
+              <c:set var="flashSoldOut" value="${item.soldOut or item.remainQuantity <= 0 or flashSoldPercent >= 100}" />
 
-              <article class="flash-product-card">
+              <article class="flash-product-card ${flashSoldOut ? 'is-sold-out' : ''}"
+                       data-flash-limit="${flashLimit}"
+                       data-sold-out="${flashSoldOut}">
                 <c:choose>
                   <c:when test="${not empty product.slug}">
                     <c:set var="productUrl" value="${ctx}/products/${product.slug}" />
@@ -153,6 +158,9 @@ Nếu include header/footer ở đây sẽ bị 2 thanh menu.
                 <div class="flash-badge-row">
                   <span class="flash-badge flash-badge-ship">FREESHIP TQ</span>
                   <span class="flash-badge flash-badge-deal">FLASH DEAL</span>
+                  <span class="flash-badge flash-badge-limit">
+                    Giới hạn ${flashLimit}/khách
+                  </span>
 
                   <c:if test="${product.discountPercent > 0}">
                     <span class="flash-discount-bubble">-${product.discountPercent}%</span>
@@ -177,8 +185,6 @@ Nếu include header/footer ở đây sẽ bị 2 thanh menu.
 
                 <div class="flash-product-bottom">
                   <div class="flash-progress-wrap">
-                    <c:set var="flashSoldPercent" value="${empty item.soldPercent ? 0 : item.soldPercent}" />
-
                     <div class="flash-progress flash-stock-progress"
                          role="progressbar"
                          aria-label="Tiến độ đã bán"
@@ -203,11 +209,24 @@ Nếu include header/footer ở đây sẽ bị 2 thanh menu.
                         </c:otherwise>
                       </c:choose>
                     </div>
+
+                    <div class="flash-purchase-limit">
+                      Mỗi khách tối đa ${flashLimit} sản phẩm
+                    </div>
                   </div>
 
-                  <a class="flash-buy-btn" href="${productUrl}">
-                    MUA<br>NGAY
-                  </a>
+                  <c:choose>
+                    <c:when test="${flashSoldOut}">
+                      <span class="flash-buy-btn is-disabled is-sold-out" aria-disabled="true">
+                        ĐÃ<br>HẾT
+                      </span>
+                    </c:when>
+                    <c:otherwise>
+                      <a class="flash-buy-btn" href="${productUrl}">
+                        MUA<br>NGAY
+                      </a>
+                    </c:otherwise>
+                  </c:choose>
                 </div>
               </article>
             </c:forEach>
