@@ -1,9 +1,13 @@
 package com.webshop.app.controller.CartController;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import com.webshop.app.model.CartItem;
+import com.webshop.app.model.User;
+import com.webshop.app.service.FlashSaleLimitService;
 import com.webshop.app.utils.CartUtil;
 
 import jakarta.servlet.annotation.WebServlet;
@@ -16,6 +20,8 @@ import jakarta.servlet.http.HttpSession;
 public class CartIncreaseServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
+
+    private final FlashSaleLimitService flashSaleLimitService = new FlashSaleLimitService();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
@@ -46,8 +52,49 @@ public class CartIncreaseServlet extends HttpServlet {
                 newQuantity = item.getStock();
             }
 
+            /*
+             * Issue 139:
+             * Chặn tăng số lượng vượt giới hạn Flash Sale.
+             *
+             * Cần kiểm tra theo productId, không chỉ theo cartKey, vì cùng một sản phẩm
+             * có thể có nhiều variant khác nhau trong giỏ. Nếu chỉ chặn theo cartKey,
+             * user có thể lách bằng cách thêm nhiều variant.
+             */
+            int userId = getCurrentUserId(session);
+
+            FlashSaleLimitService.LimitResult limitResult =
+                    flashSaleLimitService.checkCanSetQuantity(
+                            userId,
+                            cart,
+                            key,
+                            item.getProductId(),
+                            newQuantity
+                    );
+
+            if (!limitResult.isAllowed()) {
+                session.setAttribute("cartError", limitResult.getMessage());
+                session.setAttribute("flashSaleLimitError", limitResult.getMessage());
+
+                try {
+                    flashSaleLimitService.enrichCartItems(userId, cart);
+                } catch (Exception e) {
+                    System.out.println("[CartIncreaseServlet] enrich flash sale limit skipped: " + e.getMessage());
+                }
+
+                resp.sendRedirect(req.getContextPath()
+                        + "/cart?flashLimit=1&message="
+                        + urlEncode(limitResult.getMessage()));
+                return;
+            }
+
             item.setQuantity(Math.max(newQuantity, 1));
             cart.put(key, item);
+
+            try {
+                flashSaleLimitService.enrichCartItems(userId, cart);
+            } catch (Exception e) {
+                System.out.println("[CartIncreaseServlet] enrich flash sale limit skipped: " + e.getMessage());
+            }
 
             session.setAttribute(CartUtil.CART_SESSION_KEY, cart);
 
@@ -61,9 +108,43 @@ public class CartIncreaseServlet extends HttpServlet {
         resp.sendRedirect(req.getContextPath() + "/cart");
     }
 
+    private int getCurrentUserId(HttpSession session) {
+        if (session == null) {
+            return 0;
+        }
+
+        Object rawUser = session.getAttribute("user");
+
+        if (!(rawUser instanceof User)) {
+            rawUser = session.getAttribute("currentUser");
+        }
+
+        if (!(rawUser instanceof User)) {
+            rawUser = session.getAttribute("authUser");
+        }
+
+        if (rawUser instanceof User) {
+            return ((User) rawUser).getId();
+        }
+
+        return 0;
+    }
+
+    private String urlEncode(String value) {
+        if (value == null || value.isBlank()) {
+            return "";
+        }
+
+        return URLEncoder.encode(value, StandardCharsets.UTF_8);
+    }
+
     private int parseInt(String raw, int def) {
         try {
-            return Integer.parseInt(raw);
+            if (raw == null || raw.isBlank()) {
+                return def;
+            }
+
+            return Integer.parseInt(raw.trim());
         } catch (Exception e) {
             return def;
         }
