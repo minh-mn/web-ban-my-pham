@@ -420,6 +420,55 @@ public class AdminOrderDAO {
     }
 
     /* =========================================================
+       ADMIN ORDER WORKFLOW HELPERS
+    ========================================================= */
+
+    public boolean confirmOrder(int id, Integer adminId, String note) {
+        return updateShippingStatus(
+                id,
+                ShippingStatus.PENDING_PICKUP.getCode(),
+                adminId,
+                defaultIfBlank(note, "Admin đã xác nhận đơn hàng. Đơn hàng đang chờ lấy hàng.")
+        );
+    }
+
+    public boolean startShipping(int id, Integer adminId, String note) {
+        return updateShippingStatus(
+                id,
+                ShippingStatus.DELIVERING.getCode(),
+                adminId,
+                defaultIfBlank(note, "Đơn hàng đã được bàn giao cho đơn vị vận chuyển.")
+        );
+    }
+
+    public boolean markDelivered(int id, Integer adminId, String note) {
+        return updateShippingStatus(
+                id,
+                ShippingStatus.DELIVERED.getCode(),
+                adminId,
+                defaultIfBlank(note, "Đơn hàng đã giao thành công cho khách.")
+        );
+    }
+
+    public boolean markDeliveryFailed(int id, Integer adminId, String note) {
+        return updateShippingStatus(
+                id,
+                ShippingStatus.FAILED.getCode(),
+                adminId,
+                defaultIfBlank(note, "Giao hàng thất bại. Shop sẽ liên hệ lại với khách hàng.")
+        );
+    }
+
+    public boolean cancelOrderShipping(int id, Integer adminId, String note) {
+        return updateShippingStatus(
+                id,
+                ShippingStatus.CANCELED.getCode(),
+                adminId,
+                defaultIfBlank(note, "Đơn hàng đã bị hủy.")
+        );
+    }
+
+    /* =========================================================
        TRACKING LOG
     ========================================================= */
 
