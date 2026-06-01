@@ -71,12 +71,13 @@ a { text-decoration: none; color: inherit; }
   display: flex; /* Dùng flex cho linh hoạt hơn grid */
   justify-content: space-between;
   align-items: center;
-  gap: 30px;
+  gap: 24px;
 }
 
 .search-wrapper {
   flex: 1; /* Cho phép search box giãn ra chiếm hết khoảng trống ở giữa */
-  max-width: 600px; /* Giới hạn độ rộng tối đa để không bị quá dài trên màn hình lớn */
+  max-width: 760px; /* Mở rộng thanh tìm kiếm cho dễ nhập tên sản phẩm */
+  min-width: 360px;
   margin: 0 auto; /* Đảm bảo luôn nằm giữa */
   position: relative;
 }
@@ -298,8 +299,17 @@ a { text-decoration: none; color: inherit; }
 
 /* Mobile Responsive */
 @media (max-width: 992px) {
-  .search-form input { width: 180px; }
-  .menu-horizontal-list { gap: 15px; }
+  .search-wrapper {
+    max-width: 100%;
+  }
+
+  .search-form input {
+    width: 100%;
+  }
+
+  .menu-horizontal-list {
+    gap: 15px;
+  }
 }
 
 /* Layout chung cho Sự kiện */
@@ -392,7 +402,12 @@ a { text-decoration: none; color: inherit; }
 .search-wrapper {
   position: relative;
   flex: 1;
-  max-width: 600px;
+  max-width: 760px;
+  min-width: 360px;
+}
+
+.search-form {
+  width: 100%;
 }
 
 /* input */
@@ -974,5 +989,22 @@ a { text-decoration: none; color: inherit; }
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+
+@media (max-width: 768px) {
+  .header-inner {
+    gap: 12px;
+    flex-wrap: wrap;
+    height: auto;
+    padding: 12px 0;
+  }
+
+  .search-wrapper {
+    order: 3;
+    flex: 1 1 100%;
+    min-width: 0;
+    max-width: 100%;
   }
 }
