@@ -1,58 +1,187 @@
-<%--
-  Created by IntelliJ IDEA.
-  User: ASUS
-  Date: 30/05/2026
-  Time: 8:17 CH
---%>
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 
-<section class="section" style="padding: 40px 0; min-height: 70vh; background: #f8f9fa;">
-  <div class="container" style="max-width: 800px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.05);">
-    <h2 style="color: #333; margin-bottom: 25px; border-bottom: 2px solid #ff5fa2; padding-bottom: 10px; font-weight: 700;">
-      🔔 TẤT CẢ THÔNG BÁO ĐÃ NHẬN
-    </h2>
+<c:set var="notificationItems"
+       value="${not empty notificationList ? notificationList : notifications}" />
+<c:set var="unreadCountValue"
+       value="${not empty unreadNotificationCount ? unreadNotificationCount : unreadCount}" />
 
-    <div style="display: flex; flex-direction: column; gap: 15px;">
+<section class="notification-page">
+  <div class="notification-page__container">
+
+    <div class="notification-page__hero">
+      <div class="notification-page__hero-content">
+        <span class="notification-page__eyebrow">THÔNG BÁO</span>
+
+        <h1 class="notification-page__title">
+          Tất cả thông báo
+        </h1>
+
+        <p class="notification-page__subtitle">
+          Theo dõi trạng thái đơn hàng, yêu cầu hủy/hoàn hàng, đánh giá và các thông báo từ MyCosmetic.
+        </p>
+      </div>
+
+      <div class="notification-page__hero-actions">
+        <div class="notification-page__stat">
+          <strong>
+            <c:out value="${empty totalNotifications ? 0 : totalNotifications}" />
+          </strong>
+          <span>Tổng thông báo</span>
+        </div>
+
+        <div class="notification-page__stat notification-page__stat--unread">
+          <strong>
+            <c:out value="${empty unreadCountValue ? 0 : unreadCountValue}" />
+          </strong>
+          <span>Chưa đọc</span>
+        </div>
+
+        <form action="${pageContext.request.contextPath}/notifications"
+              method="post"
+              class="notification-page__mark-form">
+          <input type="hidden" name="action" value="markAllRead">
+          <input type="hidden" name="csrf_token" value="${sessionScope.CSRF_TOKEN}">
+          <button type="submit" class="notification-page__mark-btn">
+            Đánh dấu tất cả đã đọc
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="notification-list-card">
+      <div class="notification-list-card__head">
+        <div>
+          <h2>Danh sách thông báo</h2>
+          <p>
+            Bấm vào từng thông báo để đánh dấu đã đọc và chuyển tới nội dung liên quan.
+          </p>
+        </div>
+      </div>
+
       <c:choose>
-        <c:when test="${not empty requestScope.notifications}">
-          <c:forEach var="notif" items="${requestScope.notifications}">
+        <c:when test="${not empty notificationItems}">
+          <div class="notification-list">
+            <c:forEach var="notif" items="${notificationItems}">
+              <c:url var="notificationReadUrl" value="/notifications">
+                <c:param name="action" value="read" />
+                <c:param name="id" value="${notif.id}" />
+                <c:param name="returnUrl" value="${not empty notif.targetUrl ? notif.targetUrl : '/notifications'}" />
+              </c:url>
 
-            <%-- Đặt màu nền mặc định tùy thuộc vào trạng thái đã đọc hay chưa --%>
-            <c:set var="bgColor" value="${notif.read ? '#ffffff' : '#fff9fb'}" />
+              <a href="${notificationReadUrl}"
+                 class="notification-list__item ${notif.read ? 'is-read' : 'is-unread'}">
 
-            <%-- ĐÃ SỬA: Đưa thẻ <a> ra ngoài cùng toàn bộ khối thông báo để bấm vào đâu cũng được --%>
-            <a href="${pageContext.request.contextPath}/notifications/read?id=${notif.id}&redirect=${notif.targetUrl}"
-               style="display: flex; padding: 18px; border: 1px solid #eee; border-radius: 10px; background: ${bgColor}; gap: 15px; align-items: start; text-decoration: none; color: inherit; transition: all 0.2s ease; box-shadow: 0 2px 5px rgba(0,0,0,0.01);"
-               onmouseover="this.style.background='#fff0f5'; this.style.borderColor='#ff5fa2'; this.style.transform='translateY(-1px)';"
-               onmouseout="this.style.background='${bgColor}'; this.style.borderColor='#eee'; this.style.transform='none';">
+                <span class="notification-list__icon">
+                  <c:choose>
+                    <c:when test="${not empty notif.icon}">
+                      <c:out value="${notif.icon}" />
+                    </c:when>
+                    <c:when test="${notif.type == 'ORDER_CREATED'}">🛒</c:when>
+                    <c:when test="${notif.type == 'ORDER_STATUS'}">📦</c:when>
+                    <c:when test="${notif.type == 'CANCEL_REQUEST_CREATED'}">❌</c:when>
+                    <c:when test="${notif.type == 'CANCEL_REQUEST_APPROVED'}">✅</c:when>
+                    <c:when test="${notif.type == 'CANCEL_REQUEST_REJECTED'}">⚠️</c:when>
+                    <c:when test="${notif.type == 'RETURN_REQUEST_CREATED'}">↩️</c:when>
+                    <c:when test="${notif.type == 'RETURN_REQUEST_APPROVED'}">✅</c:when>
+                    <c:when test="${notif.type == 'RETURN_REQUEST_REJECTED'}">⚠️</c:when>
+                    <c:when test="${notif.type == 'REVIEW_APPROVED'}">⭐</c:when>
+                    <c:when test="${notif.type == 'REVIEW_REJECTED'}">📝</c:when>
+                    <c:when test="${notif.type == 'VOUCHER'}">🎟️</c:when>
+                    <c:when test="${notif.type == 'EVENT'}">📢</c:when>
+                    <c:otherwise>🔔</c:otherwise>
+                  </c:choose>
+                </span>
 
-              <div style="font-size: 26px; line-height: 1;">
-                <c:choose>
-                  <c:when test="${notif.type == 'VOUCHER'}">🎟️</c:when>
-                  <c:when test="${notif.type == 'EVENT'}">📢</c:when>
-                  <c:otherwise>✨</c:otherwise>
-                </c:choose>
-              </div>
+                <span class="notification-list__content">
+                  <span class="notification-list__title-row">
+                    <strong>
+                      <c:out value="${notif.title}" />
+                    </strong>
 
-              <div style="flex: 1;">
-                <h4 style="margin: 0 0 6px 0; font-size: 15px; color: #222; font-weight: ${notif.read ? '500' : 'bold'}; line-height: 1.4;">
-                  <c:out value="${notif.title}"/>
-                </h4>
-                <p style="margin: 0; color: #666; font-size: 13.5px; line-height: 1.5;">
-                  <c:out value="${notif.message}"/>
-                </p>
-              </div>
-            </a>
+                    <c:if test="${not notif.read}">
+                      <span class="notification-list__badge">
+                        Mới
+                      </span>
+                    </c:if>
+                  </span>
 
-          </c:forEach>
+                  <span class="notification-list__message">
+                    <c:out value="${notif.message}" />
+                  </span>
+
+                  <span class="notification-list__meta">
+                    <c:choose>
+                      <c:when test="${not empty notif.createdAt}">
+                        <c:out value="${notif.createdAt}" />
+                      </c:when>
+                      <c:otherwise>
+                        Thông báo hệ thống
+                      </c:otherwise>
+                    </c:choose>
+                  </span>
+                </span>
+
+                <span class="notification-list__arrow">
+                  →
+                </span>
+              </a>
+            </c:forEach>
+          </div>
+
+          <c:if test="${not empty totalPages and totalPages gt 1}">
+            <div class="notification-pagination">
+              <c:choose>
+                <c:when test="${currentPage gt 1}">
+                  <a class="notification-pagination__btn"
+                     href="${pageContext.request.contextPath}/notifications?page=${currentPage - 1}&pageSize=${pageSize}">
+                    ← Trước
+                  </a>
+                </c:when>
+                <c:otherwise>
+                  <span class="notification-pagination__btn is-disabled">
+                    ← Trước
+                  </span>
+                </c:otherwise>
+              </c:choose>
+
+              <span class="notification-pagination__current">
+                Trang <strong>${currentPage}</strong> / ${totalPages}
+              </span>
+
+              <c:choose>
+                <c:when test="${currentPage lt totalPages}">
+                  <a class="notification-pagination__btn"
+                     href="${pageContext.request.contextPath}/notifications?page=${currentPage + 1}&pageSize=${pageSize}">
+                    Sau →
+                  </a>
+                </c:when>
+                <c:otherwise>
+                  <span class="notification-pagination__btn is-disabled">
+                    Sau →
+                  </span>
+                </c:otherwise>
+              </c:choose>
+            </div>
+          </c:if>
         </c:when>
+
         <c:otherwise>
-          <div style="text-align: center; padding: 50px 0; color: #999;">
-            <p style="font-size: 14px;">Bạn chưa có thông báo nào.</p>
+          <div class="notification-empty-state">
+            <div class="notification-empty-state__icon">🔕</div>
+            <h3>Bạn chưa có thông báo nào</h3>
+            <p>
+              Khi có đơn hàng mới, cập nhật vận chuyển, yêu cầu hủy/hoàn hàng hoặc đánh giá,
+              thông báo sẽ xuất hiện tại đây.
+            </p>
+            <a href="${pageContext.request.contextPath}/home"
+               class="notification-empty-state__btn">
+              Tiếp tục mua sắm
+            </a>
           </div>
         </c:otherwise>
       </c:choose>
     </div>
+
   </div>
 </section>
