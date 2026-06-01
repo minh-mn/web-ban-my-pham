@@ -11,12 +11,7 @@
 <main class="admin-main">
   <div class="admin-container">
 
-    <div class="admin-topbar">
-      <div>
-        <h1 class="admin-h1">Admin Center</h1>
-        <p class="admin-subtext">Chọn phân hệ để quản trị.</p>
-      </div>
-    </div>
+    <jsp:include page="/jsp/admin/layout/topbar.jsp"/>
 
     <div class="admin-card">
       <div class="admin-card__body">
