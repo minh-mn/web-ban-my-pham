@@ -9,6 +9,8 @@ import java.util.Map;
 import com.webshop.app.dao.ProductVariantDAO;
 import com.webshop.app.model.CartItem;
 import com.webshop.app.model.ProductVariant;
+import com.webshop.app.model.User;
+import com.webshop.app.service.FlashSaleLimitService;
 import com.webshop.app.utils.CartUtil;
 
 import jakarta.servlet.ServletException;
@@ -24,6 +26,7 @@ public class CartViewServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
     private final ProductVariantDAO productVariantDAO = new ProductVariantDAO();
+    private final FlashSaleLimitService flashSaleLimitService = new FlashSaleLimitService();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
@@ -45,6 +48,24 @@ public class CartViewServlet extends HttpServlet {
         CartUtil.loadDatabaseCartIfNeeded(session);
 
         Map<String, CartItem> cart = CartUtil.getCart(session);
+
+        /*
+         * Issue 139:
+         * Gắn thông tin giới hạn Flash Sale vào CartItem trước khi render JSP.
+         *
+         * Mục tiêu:
+         * - cart.jsp hiển thị: "Flash Sale: giới hạn X sản phẩm/khách".
+         * - cart.jsp biết khi nào cần khóa nút tăng số lượng.
+         * - Nếu user refresh trang giỏ hàng, thông tin giới hạn vẫn được cập nhật
+         *   theo Flash Sale đang active và lịch sử mua của user.
+         */
+        int userId = getCurrentUserId(session);
+
+        try {
+            flashSaleLimitService.enrichCartItems(userId, cart);
+        } catch (Exception e) {
+            System.out.println("[CartViewServlet] enrich flash sale limit skipped: " + e.getMessage());
+        }
 
         BigDecimal total = BigDecimal.ZERO;
         Map<Integer, List<ProductVariant>> variantOptions = new HashMap<>();
@@ -68,6 +89,19 @@ public class CartViewServlet extends HttpServlet {
             }
         }
 
+        Object cartError = session.getAttribute("cartError");
+        Object flashSaleLimitError = session.getAttribute("flashSaleLimitError");
+
+        if (cartError != null) {
+            req.setAttribute("cartError", cartError);
+            session.removeAttribute("cartError");
+        }
+
+        if (flashSaleLimitError != null) {
+            req.setAttribute("flashSaleLimitError", flashSaleLimitError);
+            session.removeAttribute("flashSaleLimitError");
+        }
+
         req.setAttribute("cart", cart);
         req.setAttribute("total", total);
         req.setAttribute("variantOptions", variantOptions);
@@ -78,5 +112,27 @@ public class CartViewServlet extends HttpServlet {
 
         req.getRequestDispatcher("/jsp/common/base.jsp")
                 .forward(req, resp);
+    }
+
+    private int getCurrentUserId(HttpSession session) {
+        if (session == null) {
+            return 0;
+        }
+
+        Object rawUser = session.getAttribute("user");
+
+        if (!(rawUser instanceof User)) {
+            rawUser = session.getAttribute("currentUser");
+        }
+
+        if (!(rawUser instanceof User)) {
+            rawUser = session.getAttribute("authUser");
+        }
+
+        if (rawUser instanceof User) {
+            return ((User) rawUser).getId();
+        }
+
+        return 0;
     }
 }
