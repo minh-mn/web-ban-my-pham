@@ -229,6 +229,15 @@ Các thương hiệu chọn được và lọc đúng sản phẩm ngay trong se
 ========================================================= -->
 <c:if test="${not empty brands}">
 	<c:choose>
+		<c:when test="${not empty featuredHomeBrands}">
+			<c:set var="featuredBrandList" value="${featuredHomeBrands}" />
+		</c:when>
+		<c:otherwise>
+			<c:set var="featuredBrandList" value="${brands}" />
+		</c:otherwise>
+	</c:choose>
+
+	<c:choose>
 		<c:when test="${not empty featuredBrandProducts}">
 			<c:set var="brandSectionProducts" value="${featuredBrandProducts}" />
 		</c:when>
@@ -671,14 +680,16 @@ Các thương hiệu chọn được và lọc đúng sản phẩm ngay trong se
 				</div>
 
 				<div class="skin-featured-brand-logo-row" role="tablist" aria-label="Lọc sản phẩm theo thương hiệu">
-					<c:forEach var="brand" items="${brands}" begin="0" end="5">
-						<button type="button"
-								class="skin-featured-brand-logo"
-								data-brand-filter="${brand.id}"
-								data-brand-name="${brand.name}"
-								role="tab"
-								aria-selected="false"
-								title="${brand.name}">
+					<c:forEach var="brand" items="${featuredBrandList}" begin="0" end="5">
+						<div class="skin-featured-brand-logo"
+							 data-brand-filter="${brand.id}"
+							 data-brand-name="${brand.name}"
+							 role="tab"
+							 tabindex="0"
+							 onclick="return window.myCosmeticFilterFeaturedBrand ? window.myCosmeticFilterFeaturedBrand(this, event) : false;"
+							 onkeydown="if(event.key === 'Enter' || event.key === ' '){return window.myCosmeticFilterFeaturedBrand ? window.myCosmeticFilterFeaturedBrand(this, event) : false;}"
+							 aria-selected="false"
+							 title="${brand.name}">
 							<c:choose>
 								<c:when test="${not empty brand.imageUrl}">
 									<c:choose>
@@ -697,7 +708,7 @@ Các thương hiệu chọn được và lọc đúng sản phẩm ngay trong se
 									<span class="skin-featured-brand-logo-fallback">${brand.name}</span>
 								</c:otherwise>
 							</c:choose>
-						</button>
+						</div>
 					</c:forEach>
 				</div>
 
@@ -784,82 +795,104 @@ Các thương hiệu chọn được và lọc đúng sản phẩm ngay trong se
 
 		<script>
 			(function () {
+				function getSection(control) {
+					return control ? control.closest("[data-featured-brand-section]") : null;
+				}
+
+				function getBrandProductCount(section, brandId) {
+					const cards = Array.from(section.querySelectorAll("[data-brand-product]"));
+
+					return cards.filter(function (card) {
+						return String(card.dataset.brandId || "") === String(brandId || "");
+					}).length;
+				}
+
+				window.myCosmeticFilterFeaturedBrand = function (control, event) {
+					if (event) {
+						event.preventDefault();
+						event.stopPropagation();
+						if (typeof event.stopImmediatePropagation === "function") {
+							event.stopImmediatePropagation();
+						}
+					}
+
+					const section = getSection(control);
+
+					if (!section) {
+						return false;
+					}
+
+					const buttons = Array.from(section.querySelectorAll("[data-brand-filter]"));
+					const cards = Array.from(section.querySelectorAll("[data-brand-product]"));
+					const note = section.querySelector("[data-brand-note]");
+					const empty = section.querySelector("[data-brand-empty]");
+					const productGrid = section.querySelector("[data-brand-products]");
+					const brandId = String(control.dataset.brandFilter || "");
+					const brandName = control.dataset.brandName || "thương hiệu";
+					let visibleCount = 0;
+
+					buttons.forEach(function (button) {
+						const isActive = button === control;
+						button.classList.toggle("is-active", isActive);
+						button.setAttribute("aria-selected", isActive ? "true" : "false");
+					});
+
+					cards.forEach(function (card) {
+						const matched = String(card.dataset.brandId || "") === brandId;
+						card.classList.toggle("is-hidden", !matched);
+
+						if (matched) {
+							visibleCount++;
+						}
+					});
+
+					if (productGrid) {
+						productGrid.classList.remove("is-filtering");
+						void productGrid.offsetWidth;
+						productGrid.classList.add("is-filtering");
+					}
+
+					if (note) {
+						note.innerHTML = "Đang hiển thị <b>" + visibleCount + "</b> sản phẩm của thương hiệu <b>" + brandName + "</b>.";
+					}
+
+					if (empty) {
+						empty.classList.toggle("is-show", visibleCount === 0);
+					}
+
+					return false;
+				};
+
 				function initFeaturedBrandFilter() {
 					const sections = document.querySelectorAll("[data-featured-brand-section]");
 
 					sections.forEach(function (section) {
 						const buttons = Array.from(section.querySelectorAll("[data-brand-filter]"));
-						const cards = Array.from(section.querySelectorAll("[data-brand-product]"));
-						const note = section.querySelector("[data-brand-note]");
-						const empty = section.querySelector("[data-brand-empty]");
-						const productGrid = section.querySelector("[data-brand-products]");
 
-						if (!buttons.length || !cards.length) {
+						if (!buttons.length) {
 							return;
-						}
-
-						function countProducts(brandId) {
-							return cards.filter(function (card) {
-								return String(card.dataset.brandId || "") === String(brandId || "");
-							}).length;
-						}
-
-						function setActiveButton(activeButton) {
-							buttons.forEach(function (button) {
-								const isActive = button === activeButton;
-								button.classList.toggle("is-active", isActive);
-								button.setAttribute("aria-selected", isActive ? "true" : "false");
-							});
-						}
-
-						function filterByBrand(button) {
-							const brandId = String(button.dataset.brandFilter || "");
-							const brandName = button.dataset.brandName || "thương hiệu";
-							let visibleCount = 0;
-
-							setActiveButton(button);
-
-							cards.forEach(function (card) {
-								const matched = String(card.dataset.brandId || "") === brandId;
-								card.classList.toggle("is-hidden", !matched);
-
-								if (matched) {
-									visibleCount++;
-								}
-							});
-
-							if (productGrid) {
-								productGrid.classList.remove("is-filtering");
-								void productGrid.offsetWidth;
-								productGrid.classList.add("is-filtering");
-							}
-
-							if (note) {
-								note.innerHTML = "Đang hiển thị <b>" + visibleCount + "</b> sản phẩm của thương hiệu <b>" + brandName + "</b>.";
-							}
-
-							if (empty) {
-								empty.classList.toggle("is-show", visibleCount === 0);
-							}
 						}
 
 						buttons.forEach(function (button) {
 							button.addEventListener("click", function (event) {
-								event.preventDefault();
-								event.stopPropagation();
-								filterByBrand(button);
+								window.myCosmeticFilterFeaturedBrand(button, event);
+							});
+
+							button.addEventListener("keydown", function (event) {
+								if (event.key === "Enter" || event.key === " ") {
+									window.myCosmeticFilterFeaturedBrand(button, event);
+								}
 							});
 						});
 
 						const defaultButton = buttons.find(function (button) {
-							return countProducts(button.dataset.brandFilter || "") > 0;
+							return getBrandProductCount(section, button.dataset.brandFilter || "") > 0;
 						}) || buttons[0];
 
-						filterByBrand(defaultButton);
+						window.myCosmeticFilterFeaturedBrand(defaultButton, null);
 					});
 				}
 
-				// Chặn triệt để mọi link cũ nếu trình duyệt còn cache markup có href /products?brand=...
 				document.addEventListener("click", function (event) {
 					const brandControl = event.target.closest("[data-brand-filter]");
 
@@ -867,11 +900,14 @@ Các thương hiệu chọn được và lọc đúng sản phẩm ngay trong se
 						return;
 					}
 
-					event.preventDefault();
-					event.stopPropagation();
+					window.myCosmeticFilterFeaturedBrand(brandControl, event);
 				}, true);
 
-				document.addEventListener("DOMContentLoaded", initFeaturedBrandFilter);
+				if (document.readyState === "loading") {
+					document.addEventListener("DOMContentLoaded", initFeaturedBrandFilter);
+				} else {
+					initFeaturedBrandFilter();
+				}
 			})();
 		</script>
 	</section>
