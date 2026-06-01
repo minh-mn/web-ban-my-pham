@@ -202,60 +202,26 @@ DANH MỤC HOT
 <jsp:include page="/jsp/product/hot-categories.jsp" />
 
 <!-- =========================================================
-SỰ KIỆN HOT - kiểu banner mosaic
+KHÁM PHÁ
+Thay thế block SỰ KIỆN HOT bằng sản phẩm khám phá theo layout danh mục hot.
 ========================================================= -->
-<section class="skin-events-section">
-	<div class="skin-container">
-		<div class="skin-section-top">
-			<div>
-				<span class="skin-eyebrow">HOT EVENT</span>
-				<h2>SỰ KIỆN HOT!!!</h2>
-			</div>
-			<a href="${ctx}/blog">Xem tất cả</a>
-		</div>
-
-		<div class="skin-event-mosaic">
-			<c:choose>
-				<c:when test="${not empty recentEvents}">
-					<c:forEach var="event" items="${recentEvents}" varStatus="st">
-						<a class="skin-event-tile ${st.first ? 'is-large' : ''}" href="${ctx}/blog/detail?id=${event.id}">
-							<c:choose>
-								<c:when test="${not empty event.imageUrl}">
-									<img src="${ctx}${event.imageUrl}" alt="${event.title}">
-								</c:when>
-								<c:otherwise>
-									<div class="skin-event-fallback">
-										<span>${not empty event.tag ? event.tag : 'EVENT'}</span>
-										<strong>${event.title}</strong>
-									</div>
-								</c:otherwise>
-							</c:choose>
-							<div class="skin-event-info">
-								<span>${not empty event.tag ? event.tag : 'SỰ KIỆN'}</span>
-								<strong>${event.title}</strong>
-								<small>${event.summary}</small>
-							</div>
-						</a>
-					</c:forEach>
-				</c:when>
-				<c:otherwise>
-					<a class="skin-event-tile is-large" href="${ctx}/products?sort=discount-desc">
-						<div class="skin-event-fallback pink">
-							<span>BEAUTY SALE</span>
-							<strong>Ưu đãi mỹ phẩm hôm nay</strong>
-						</div>
-					</a>
-					<a class="skin-event-tile" href="${ctx}/products">
-						<div class="skin-event-fallback blue">
-							<span>NEW ARRIVAL</span>
-							<strong>Sản phẩm mới</strong>
-						</div>
-					</a>
-				</c:otherwise>
-			</c:choose>
-		</div>
-	</div>
-</section>
+<c:choose>
+	<c:when test="${not empty discoverProducts}">
+		<c:set var="homeSectionProducts" value="${discoverProducts}" scope="request"/>
+	</c:when>
+	<c:otherwise>
+		<c:set var="homeSectionProducts" value="${featuredProducts}" scope="request"/>
+	</c:otherwise>
+</c:choose>
+<c:set var="homeSectionTitle" value="KHÁM PHÁ" scope="request"/>
+<c:set var="homeSectionDesc" value="" scope="request"/>
+<c:set var="homeSectionLink" value="/products?sort=featured" scope="request"/>
+<c:set var="homeSectionViewAllText" value="XEM TẤT CẢ" scope="request"/>
+<c:set var="homeSectionMode" value="discover" scope="request"/>
+<c:set var="homeSectionShowSold" value="${true}" scope="request"/>
+<c:set var="homeSectionShowViews" value="${false}" scope="request"/>
+<c:set var="homeSectionShowDiscount" value="${true}" scope="request"/>
+<jsp:include page="/jsp/product/home-product-section.jsp"/>
 
 <!-- =========================================================
 PRODUCT GROUPS
@@ -270,15 +236,6 @@ PRODUCT GROUPS
 <c:set var="homeSectionShowDiscount" value="${false}" scope="request"/>
 <jsp:include page="/jsp/product/home-product-section.jsp"/>
 
-<c:set var="homeSectionProducts" value="${featuredProducts}" scope="request"/>
-<c:set var="homeSectionTitle" value="KHÁM PHÁ" scope="request"/>
-<c:set var="homeSectionDesc" value="Sản phẩm nổi bật dựa trên đánh giá, lượt bán và mức độ quan tâm." scope="request"/>
-<c:set var="homeSectionLink" value="/products?sort=featured" scope="request"/>
-<c:set var="homeSectionMode" value="default" scope="request"/>
-<c:set var="homeSectionShowSold" value="${false}" scope="request"/>
-<c:set var="homeSectionShowViews" value="${false}" scope="request"/>
-<c:set var="homeSectionShowDiscount" value="${false}" scope="request"/>
-<jsp:include page="/jsp/product/home-product-section.jsp"/>
 
 <c:set var="homeSectionProducts" value="${mostViewedProducts}" scope="request"/>
 <c:set var="homeSectionTitle" value="LƯỢT XEM NHIỀU" scope="request"/>
