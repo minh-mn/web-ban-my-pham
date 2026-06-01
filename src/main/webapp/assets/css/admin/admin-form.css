@@ -3457,3 +3457,247 @@
   .admin-order-detail-hero__actions .admin-btn,
   .admin-order-workflow-actions .admin-btn { width: 100%; justify-content: center; }
 }
+
+/* =========================================================
+   Admin Notification Form - ISSUE 114
+   Scope: /jsp/admin/notification/notification_form.jsp
+========================================================= */
+
+.admin-notification-form-page {
+  width: 100%;
+}
+
+.admin-notification-form-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: start;
+  margin-bottom: 16px;
+  padding: 18px;
+  border: 1px solid rgba(255, 95, 162, 0.20);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at top left, rgba(255, 95, 162, 0.14), transparent 34%),
+    linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.055);
+}
+
+.admin-notification-form-hero__content {
+  min-width: 0;
+}
+
+.admin-notification-form-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 10px;
+  margin-bottom: 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 95, 162, 0.35);
+  background: rgba(255, 95, 162, 0.10);
+  color: #be185d;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.admin-notification-form-title {
+  margin-bottom: 5px;
+}
+
+.admin-notification-form-subtitle {
+  max-width: 860px;
+  line-height: 1.55;
+}
+
+.admin-notification-form-hero__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.admin-notification-form {
+  display: grid;
+  gap: 16px;
+}
+
+.admin-notification-form-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 18px;
+  align-items: start;
+}
+
+.admin-notification-form-main,
+.admin-notification-form-side {
+  min-width: 0;
+}
+
+.admin-notification-form-side {
+  position: sticky;
+  top: 18px;
+}
+
+.admin-notification-message-input {
+  min-height: 210px;
+}
+
+.admin-notification-url-shortcuts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-notification-url-btn {
+  min-height: 34px;
+  padding: 0 11px;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.admin-notification-type-section {
+  background: #fffafc;
+}
+
+.admin-notification-publish-box {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px dashed rgba(255, 95, 162, 0.38);
+  border-radius: 16px;
+  background: rgba(255, 95, 162, 0.06);
+}
+
+.admin-notification-publish-btn {
+  width: 100%;
+  justify-content: center;
+  min-height: 42px;
+}
+
+.admin-notification-publish-box p {
+  margin: 0;
+  color: var(--admin-muted);
+  font-size: 12px;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.admin-notification-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(15, 23, 42, 0.58);
+  backdrop-filter: blur(3px);
+}
+
+.admin-notification-modal.is-open {
+  display: flex;
+}
+
+.admin-notification-modal__dialog {
+  width: min(420px, 100%);
+  padding: 28px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 95, 162, 0.18);
+  background: #ffffff;
+  text-align: center;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
+  animation: adminNotificationModalIn 0.22s ease-out both;
+}
+
+.admin-notification-modal__icon {
+  margin-bottom: 14px;
+  font-size: 44px;
+  line-height: 1;
+}
+
+.admin-notification-modal__dialog h3 {
+  margin: 0 0 10px;
+  color: var(--admin-text);
+  font-size: 20px;
+  line-height: 1.25;
+  font-weight: 950;
+}
+
+.admin-notification-modal__dialog p {
+  margin: 0 0 22px;
+  color: var(--admin-muted);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.admin-notification-modal__dialog p strong {
+  color: #be185d;
+  font-weight: 950;
+}
+
+.admin-notification-modal__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.admin-notification-modal__actions .admin-btn {
+  width: 100%;
+  justify-content: center;
+  min-height: 40px;
+}
+
+@keyframes adminNotificationModalIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 1180px) {
+  .admin-notification-form-hero,
+  .admin-notification-form-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-notification-form-hero__actions {
+    justify-content: flex-start;
+  }
+
+  .admin-notification-form-side {
+    position: static;
+  }
+}
+
+@media (max-width: 760px) {
+  .admin-notification-form-hero {
+    padding: 15px;
+    border-radius: 18px;
+  }
+
+  .admin-notification-form-hero__actions,
+  .admin-notification-url-shortcuts {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-notification-form-hero__actions .admin-btn,
+  .admin-notification-url-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .admin-notification-modal__dialog {
+    padding: 22px;
+  }
+
+  .admin-notification-modal__actions {
+    grid-template-columns: 1fr;
+  }
+}
