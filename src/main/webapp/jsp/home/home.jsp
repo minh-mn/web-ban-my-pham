@@ -225,10 +225,19 @@ Thay thế block SỰ KIỆN HOT bằng sản phẩm khám phá theo layout danh
 
 <!-- =========================================================
 THƯƠNG HIỆU NỔI BẬT
-Layout theo mẫu: banner lớn bên trái, logo thương hiệu + sản phẩm nổi bật bên phải.
+Các thương hiệu chọn được và lọc đúng sản phẩm ngay trong section.
 ========================================================= -->
 <c:if test="${not empty brands}">
-	<section class="skin-featured-brand-section" id="featured-brands">
+	<c:choose>
+		<c:when test="${not empty featuredBrandProducts}">
+			<c:set var="brandSectionProducts" value="${featuredBrandProducts}" />
+		</c:when>
+		<c:otherwise>
+			<c:set var="brandSectionProducts" value="${featuredProducts}" />
+		</c:otherwise>
+	</c:choose>
+
+	<section class="skin-featured-brand-section" id="featured-brands" data-featured-brand-section>
 		<style>
 			.skin-featured-brand-section {
 				padding: 52px 0 58px;
@@ -342,14 +351,19 @@ Layout theo mẫu: banner lớn bên trái, logo thương hiệu + sản phẩm 
 				align-items: center;
 				justify-content: center;
 				padding: 12px 16px;
+				border: 0;
+				border-right: 1px solid rgba(141, 0, 31, .10);
+				background: #fff;
 				color: #161616;
+				font-family: inherit;
 				font-size: 20px;
 				font-weight: 950;
 				letter-spacing: .04em;
 				text-align: center;
 				text-decoration: none;
 				text-transform: uppercase;
-				border-right: 1px solid rgba(141, 0, 31, .10);
+				cursor: pointer;
+				transition: background .2s ease, color .2s ease, box-shadow .2s ease;
 			}
 
 			.skin-featured-brand-logo:last-child {
@@ -364,9 +378,37 @@ Layout theo mẫu: banner lớn bên trái, logo thương hiệu + sản phẩm 
 				filter: grayscale(1) contrast(1.1);
 				transition: filter .22s ease, transform .22s ease;
 			}
+			.skin-featured-brand-logo:hover {
+				background: #fff4f7;
+				color: #9b001c;
+				box-shadow: inset 0 -4px 0 #9b001c;
+			}
 
 			.skin-featured-brand-logo:hover img {
 				filter: grayscale(0) contrast(1);
+				transform: scale(1.06);
+			}
+
+			.skin-featured-brand-logo.is-active {
+				position: relative;
+				background: #9b001c;
+				color: #fff;
+				box-shadow: inset 0 0 0 2px #9b001c, 0 12px 24px rgba(155, 0, 28, .18);
+			}
+
+			.skin-featured-brand-logo.is-active::after {
+				content: "";
+				position: absolute;
+				left: 50%;
+				bottom: -9px;
+				width: 18px;
+				height: 18px;
+				background: #9b001c;
+				transform: translateX(-50%) rotate(45deg);
+			}
+
+			.skin-featured-brand-logo.is-active img {
+				filter: brightness(0) invert(1);
 				transform: scale(1.06);
 			}
 
@@ -377,12 +419,41 @@ Layout theo mẫu: banner lớn bên trái, logo thương hiệu + sản phẩm 
 				-webkit-box-orient: vertical;
 			}
 
+			.skin-featured-brand-filter-note {
+				min-height: 26px;
+				margin-top: 12px;
+				color: #6b7280;
+				font-size: 14px;
+				font-weight: 650;
+			}
+
+			.skin-featured-brand-filter-note b {
+				color: #9b001c;
+				font-weight: 900;
+			}
+
 			.skin-featured-brand-products {
 				display: grid;
 				grid-template-columns: repeat(4, minmax(0, 1fr));
 				margin-top: 16px;
 				border-top: 1px solid #ececec;
 				border-left: 1px solid #ececec;
+			}
+
+			.skin-featured-brand-products.is-filtering {
+				animation: skinBrandFilterFade .18s ease;
+			}
+
+			@keyframes skinBrandFilterFade {
+				from {
+					opacity: .55;
+					transform: translateY(4px);
+				}
+
+				to {
+					opacity: 1;
+					transform: translateY(0);
+				}
 			}
 
 			.skin-featured-brand-card {
@@ -393,6 +464,10 @@ Layout theo mẫu: banner lớn bên trái, logo thương hiệu + sản phẩm 
 				border-right: 1px solid #ececec;
 				border-bottom: 1px solid #ececec;
 				transition: box-shadow .22s ease, transform .22s ease;
+			}
+
+			.skin-featured-brand-card.is-hidden {
+				display: none;
 			}
 
 			.skin-featured-brand-card:hover {
@@ -490,6 +565,23 @@ Layout theo mẫu: banner lớn bên trái, logo thương hiệu + sản phẩm 
 				font-weight: 650;
 			}
 
+			.skin-featured-brand-empty {
+				display: none;
+				margin-top: 16px;
+				padding: 24px;
+				border: 1px dashed #e5b3c1;
+				border-radius: 18px;
+				background: #fff8fb;
+				color: #8d001f;
+				font-size: 15px;
+				font-weight: 750;
+				text-align: center;
+			}
+
+			.skin-featured-brand-empty.is-show {
+				display: block;
+			}
+
 			.skin-featured-brand-view-more {
 				display: flex;
 				justify-content: center;
@@ -529,6 +621,10 @@ Layout theo mẫu: banner lớn bên trái, logo thương hiệu + sản phẩm 
 				.skin-featured-brand-logo-row {
 					grid-template-columns: repeat(3, minmax(0, 1fr));
 					border-radius: 28px;
+				}
+
+				.skin-featured-brand-logo {
+					border-bottom: 1px solid rgba(141, 0, 31, .10);
 				}
 
 				.skin-featured-brand-products {
@@ -574,9 +670,15 @@ Layout theo mẫu: banner lớn bên trái, logo thương hiệu + sản phẩm 
 					<a class="skin-featured-brand-more" href="${ctx}/brands">Xem thêm →</a>
 				</div>
 
-				<div class="skin-featured-brand-logo-row">
+				<div class="skin-featured-brand-logo-row" role="tablist" aria-label="Lọc sản phẩm theo thương hiệu">
 					<c:forEach var="brand" items="${brands}" begin="0" end="5">
-						<a class="skin-featured-brand-logo" href="${ctx}/products?brand=${brand.id}" title="${brand.name}">
+						<button type="button"
+								class="skin-featured-brand-logo"
+								data-brand-filter="${brand.id}"
+								data-brand-name="${brand.name}"
+								role="tab"
+								aria-selected="false"
+								title="${brand.name}">
 							<c:choose>
 								<c:when test="${not empty brand.imageUrl}">
 									<c:choose>
@@ -595,12 +697,14 @@ Layout theo mẫu: banner lớn bên trái, logo thương hiệu + sản phẩm 
 									<span class="skin-featured-brand-logo-fallback">${brand.name}</span>
 								</c:otherwise>
 							</c:choose>
-						</a>
+						</button>
 					</c:forEach>
 				</div>
 
-				<div class="skin-featured-brand-products">
-					<c:forEach var="product" items="${featuredProducts}" begin="0" end="7">
+				<div class="skin-featured-brand-filter-note" data-brand-note></div>
+
+				<div class="skin-featured-brand-products" data-brand-products>
+					<c:forEach var="product" items="${brandSectionProducts}">
 						<c:choose>
 							<c:when test="${not empty product.slug}">
 								<c:set var="brandProductUrl" value="${ctx}/product/${product.slug}?id=${product.id}" />
@@ -610,7 +714,10 @@ Layout theo mẫu: banner lớn bên trái, logo thương hiệu + sản phẩm 
 							</c:otherwise>
 						</c:choose>
 
-						<article class="skin-featured-brand-card">
+						<article class="skin-featured-brand-card"
+								 data-brand-product
+								 data-brand-id="${product.brandId}"
+								 data-brand-name="${product.brandName}">
 							<a class="skin-featured-brand-image" href="${brandProductUrl}">
 								<c:if test="${product.discountPercent > 0}">
 									<span class="skin-featured-brand-discount">-${product.discountPercent}%</span>
@@ -638,7 +745,7 @@ Layout theo mẫu: banner lớn bên trái, logo thương hiệu + sản phẩm 
 
 							<div class="skin-featured-brand-body">
 								<c:if test="${not empty product.brandName}">
-									<a class="skin-featured-brand-name" href="${brandProductUrl}">${product.brandName}</a>
+									<span class="skin-featured-brand-name">${product.brandName}</span>
 								</c:if>
 
 								<a class="skin-featured-brand-product-title" href="${brandProductUrl}">
@@ -665,11 +772,108 @@ Layout theo mẫu: banner lớn bên trái, logo thương hiệu + sản phẩm 
 					</c:forEach>
 				</div>
 
+				<div class="skin-featured-brand-empty" data-brand-empty>
+					Chưa có sản phẩm phù hợp cho thương hiệu này trong danh sách nổi bật.
+				</div>
+
 				<div class="skin-featured-brand-view-more">
 					<a href="${ctx}/brands">Xem thêm →</a>
 				</div>
 			</div>
 		</div>
+
+		<script>
+			(function () {
+				function initFeaturedBrandFilter() {
+					const sections = document.querySelectorAll("[data-featured-brand-section]");
+
+					sections.forEach(function (section) {
+						const buttons = Array.from(section.querySelectorAll("[data-brand-filter]"));
+						const cards = Array.from(section.querySelectorAll("[data-brand-product]"));
+						const note = section.querySelector("[data-brand-note]");
+						const empty = section.querySelector("[data-brand-empty]");
+						const productGrid = section.querySelector("[data-brand-products]");
+
+						if (!buttons.length || !cards.length) {
+							return;
+						}
+
+						function countProducts(brandId) {
+							return cards.filter(function (card) {
+								return String(card.dataset.brandId || "") === String(brandId || "");
+							}).length;
+						}
+
+						function setActiveButton(activeButton) {
+							buttons.forEach(function (button) {
+								const isActive = button === activeButton;
+								button.classList.toggle("is-active", isActive);
+								button.setAttribute("aria-selected", isActive ? "true" : "false");
+							});
+						}
+
+						function filterByBrand(button) {
+							const brandId = String(button.dataset.brandFilter || "");
+							const brandName = button.dataset.brandName || "thương hiệu";
+							let visibleCount = 0;
+
+							setActiveButton(button);
+
+							cards.forEach(function (card) {
+								const matched = String(card.dataset.brandId || "") === brandId;
+								card.classList.toggle("is-hidden", !matched);
+
+								if (matched) {
+									visibleCount++;
+								}
+							});
+
+							if (productGrid) {
+								productGrid.classList.remove("is-filtering");
+								void productGrid.offsetWidth;
+								productGrid.classList.add("is-filtering");
+							}
+
+							if (note) {
+								note.innerHTML = "Đang hiển thị <b>" + visibleCount + "</b> sản phẩm của thương hiệu <b>" + brandName + "</b>.";
+							}
+
+							if (empty) {
+								empty.classList.toggle("is-show", visibleCount === 0);
+							}
+						}
+
+						buttons.forEach(function (button) {
+							button.addEventListener("click", function (event) {
+								event.preventDefault();
+								event.stopPropagation();
+								filterByBrand(button);
+							});
+						});
+
+						const defaultButton = buttons.find(function (button) {
+							return countProducts(button.dataset.brandFilter || "") > 0;
+						}) || buttons[0];
+
+						filterByBrand(defaultButton);
+					});
+				}
+
+				// Chặn triệt để mọi link cũ nếu trình duyệt còn cache markup có href /products?brand=...
+				document.addEventListener("click", function (event) {
+					const brandControl = event.target.closest("[data-brand-filter]");
+
+					if (!brandControl) {
+						return;
+					}
+
+					event.preventDefault();
+					event.stopPropagation();
+				}, true);
+
+				document.addEventListener("DOMContentLoaded", initFeaturedBrandFilter);
+			})();
+		</script>
 	</section>
 </c:if>
 
