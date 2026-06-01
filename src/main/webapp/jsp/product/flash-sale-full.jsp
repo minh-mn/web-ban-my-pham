@@ -126,8 +126,14 @@ Không include header/footer ở đây để tránh bị trùng menu.
           <div class="flash-products-grid" id="flashProductsGrid">
             <c:forEach var="item" items="${fsItems}">
               <c:set var="product" value="${item.product}" />
+              <c:set var="flashSoldPercent" value="${empty item.soldPercent ? 0 : item.soldPercent}" />
+              <c:set var="flashLimit" value="${empty item.maxQuantityPerUser ? 2 : item.maxQuantityPerUser}" />
+              <c:set var="flashSoldOut" value="${item.soldOut or item.remainQuantity <= 0 or flashSoldPercent >= 100}" />
 
-              <article class="flash-product-card" data-flash-card>
+              <article class="flash-product-card ${flashSoldOut ? 'is-sold-out' : ''}"
+                       data-flash-card
+                       data-flash-limit="${flashLimit}"
+                       data-sold-out="${flashSoldOut}">
                 <c:choose>
                   <c:when test="${not empty product.slug}">
                     <c:set var="productUrl" value="${ctx}/product/${product.slug}" />
@@ -168,6 +174,9 @@ Không include header/footer ở đây để tránh bị trùng menu.
 
                 <div class="flash-badge-row">
                   <span class="flash-badge flash-badge-deal" data-card-badge>FLASH DEAL</span>
+                  <span class="flash-badge flash-badge-limit">
+                    Giới hạn ${flashLimit}/khách
+                  </span>
 
                   <c:if test="${product.discountPercent > 0}">
                     <span class="flash-discount-bubble">-${product.discountPercent}%</span>
@@ -195,8 +204,6 @@ Không include header/footer ở đây để tránh bị trùng menu.
 
                 <div class="flash-product-bottom">
                   <div class="flash-progress-wrap">
-                    <c:set var="flashSoldPercent" value="${empty item.soldPercent ? 0 : item.soldPercent}" />
-
                     <div class="flash-progress flash-stock-progress"
                          role="progressbar"
                          aria-label="Tiến độ đã bán"
@@ -221,11 +228,32 @@ Không include header/footer ở đây để tránh bị trùng menu.
                         </c:otherwise>
                       </c:choose>
                     </div>
+
+                    <div class="flash-purchase-limit">
+                      Mỗi khách tối đa ${flashLimit} sản phẩm
+                    </div>
                   </div>
 
-                  <a class="flash-buy-btn" href="${productUrl}" data-buy-url="${productUrl}" data-buy-btn>
-                    MUA<br>NGAY
-                  </a>
+                  <c:choose>
+                    <c:when test="${flashSoldOut}">
+                      <span class="flash-buy-btn is-disabled is-sold-out"
+                            data-buy-url="${productUrl}"
+                            data-buy-btn
+                            data-sold-out="true"
+                            aria-disabled="true">
+                        ĐÃ<br>HẾT
+                      </span>
+                    </c:when>
+                    <c:otherwise>
+                      <a class="flash-buy-btn"
+                         href="${productUrl}"
+                         data-buy-url="${productUrl}"
+                         data-buy-btn
+                         data-sold-out="false">
+                        MUA<br>NGAY
+                      </a>
+                    </c:otherwise>
+                  </c:choose>
                 </div>
               </article>
             </c:forEach>
@@ -383,12 +411,28 @@ Không include header/footer ở đây để tránh bị trùng menu.
         }
 
         if (selectedState.name === "running") {
+          const soldOut = card.getAttribute("data-sold-out") === "true"
+                  || (buyBtn && buyBtn.getAttribute("data-sold-out") === "true");
+
           if (badge) badge.textContent = "FLASH DEAL";
+
+          if (soldOut) {
+            if (progressText) progressText.textContent = "Đã bán hết";
+            if (priceStatus) priceStatus.textContent = "Đã bán hết";
+            if (buyBtn) {
+              buyBtn.innerHTML = "ĐÃ<br>HẾT";
+              buyBtn.classList.add("is-disabled", "is-sold-out");
+              buyBtn.removeAttribute("href");
+              buyBtn.setAttribute("aria-disabled", "true");
+            }
+            return;
+          }
+
           if (progressText) progressText.textContent = formatSoldProgressText(percent);
           if (priceStatus) priceStatus.textContent = "Giá Flash Sale";
           if (buyBtn) {
             buyBtn.innerHTML = "MUA<br>NGAY";
-            buyBtn.classList.remove("is-disabled");
+            buyBtn.classList.remove("is-disabled", "is-sold-out");
             buyBtn.setAttribute("href", buyBtn.getAttribute("data-buy-url") || "#");
             buyBtn.setAttribute("aria-disabled", "false");
           }
