@@ -761,7 +761,17 @@ public class OrderDAO {
             statement.setString(index++, ORDER_CONFIRMED);
             statement.setInt(index++, orderId);
 
-            statement.executeUpdate();
+            int updated = statement.executeUpdate();
+
+            if (updated > 0) {
+                insertTrackingLogSafely(
+                        conn,
+                        orderId,
+                        ShippingStatus.PENDING_PICKUP.getCode(),
+                        "Đơn hàng đã có mã vận đơn " + safeShippingCode + ", chờ lấy hàng.",
+                        null
+                );
+            }
         }
     }
 
@@ -938,7 +948,17 @@ public class OrderDAO {
             statement.setString(index++, normalizedShippingStatus);
             statement.setInt(index++, orderId);
 
-            statement.executeUpdate();
+            int updated = statement.executeUpdate();
+
+            if (updated > 0) {
+                insertTrackingLogSafely(
+                        conn,
+                        orderId,
+                        normalizedShippingStatus,
+                        buildTrackingNote(normalizedShippingStatus, safeShippingCode),
+                        null
+                );
+            }
         }
     }
 
@@ -960,6 +980,63 @@ public class OrderDAO {
 
     public void cancelShipping(int orderId) {
         updateShippingStatus(orderId, ShippingStatus.CANCELED.getCode());
+    }
+
+
+    /* =========================================================
+       TRACKING LOG
+    ========================================================= */
+
+    private void insertTrackingLogSafely(Connection connection,
+                                         int orderId,
+                                         String shippingStatus,
+                                         String note,
+                                         Integer updatedBy) {
+        String sql = """
+                INSERT INTO store_order_tracking
+                (
+                    order_id,
+                    shipping_status,
+                    note,
+                    updated_by,
+                    created_at
+                )
+                VALUES (?, ?, ?, ?, NOW())
+                """;
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, orderId);
+            statement.setString(2, normalizeShippingStatus(shippingStatus));
+            statement.setString(3, defaultIfBlank(note, buildTrackingNote(shippingStatus, null)));
+
+            if (updatedBy == null || updatedBy <= 0) {
+                statement.setNull(4, Types.INTEGER);
+            } else {
+                statement.setInt(4, updatedBy);
+            }
+
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            /*
+             * Không để lỗi bảng tracking làm hỏng thao tác chính.
+             * Nếu database cũ chưa có store_order_tracking, chức năng đơn hàng vẫn chạy được.
+             */
+            e.printStackTrace();
+        }
+    }
+
+    private String buildTrackingNote(String shippingStatus, String shippingCode) {
+        String normalizedShippingStatus = normalizeShippingStatus(shippingStatus);
+        String codeText = isBlank(shippingCode) ? "" : " Mã vận đơn: " + shippingCode + ".";
+
+        return switch (normalizedShippingStatus) {
+            case "PENDING_PICKUP" -> "Đơn hàng đang chờ lấy hàng." + codeText;
+            case "DELIVERING" -> "Đơn hàng đang được vận chuyển." + codeText;
+            case "DELIVERED" -> "Đơn hàng đã được giao thành công." + codeText;
+            case "FAILED" -> "Giao hàng thất bại. Shop sẽ liên hệ lại với khách hàng." + codeText;
+            case "CANCELED" -> "Vận chuyển đã bị hủy.";
+            default -> "Cập nhật trạng thái vận chuyển." + codeText;
+        };
     }
 
 
@@ -1028,7 +1105,19 @@ public class OrderDAO {
             statement.setInt(index++, orderId);
             statement.setInt(index++, userId);
 
-            return statement.executeUpdate() > 0;
+            boolean updated = statement.executeUpdate() > 0;
+
+            if (updated) {
+                insertTrackingLogSafely(
+                        conn,
+                        orderId,
+                        ShippingStatus.CANCELED.getCode(),
+                        defaultIfBlank(reason, "Khách hàng đã hủy đơn hàng."),
+                        null
+                );
+            }
+
+            return updated;
         }
     }
 
@@ -1163,7 +1252,20 @@ public class OrderDAO {
             statement.setString(1, trimToNull(note));
             statement.setInt(2, orderId);
             statement.setInt(3, userId);
-            return statement.executeUpdate() > 0;
+
+            boolean updated = statement.executeUpdate() > 0;
+
+            if (updated) {
+                insertTrackingLogSafely(
+                        connection,
+                        orderId,
+                        ShippingStatus.DELIVERED.getCode(),
+                        defaultIfBlank(note, "Khách hàng đã xác nhận nhận hàng thành công."),
+                        null
+                );
+            }
+
+            return updated;
         } catch (SQLException e) {
             throw new RuntimeException("OrderDAO.confirmReceivedByUser error", e);
         }
