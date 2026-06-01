@@ -32,6 +32,21 @@ public class AdminOrderServlet extends HttpServlet {
 
     private static final String ACTION_LIST = "list";
     private static final String ACTION_DETAIL = "detail";
+
+    /*
+     * Action mới theo nghiệp vụ.
+     * JSP admin nên gọi các action này thay vì cho admin đổi status tự do.
+     */
+    private static final String ACTION_CONFIRM_ORDER = "confirmOrder";
+    private static final String ACTION_START_SHIPPING = "startShipping";
+    private static final String ACTION_MARK_DELIVERED = "markDelivered";
+    private static final String ACTION_MARK_FAILED = "markFailed";
+    private static final String ACTION_CANCEL_ORDER = "cancelOrder";
+
+    /*
+     * Giữ lại action cũ để không làm lỗi các form/JSP cũ.
+     * Các action cũ sẽ được chuyển sang workflow mới, không update tự do nữa.
+     */
     private static final String ACTION_UPDATE_STATUS = "updateStatus";
     private static final String ACTION_UPDATE_SHIPPING_STATUS = "updateShippingStatus";
     private static final String ACTION_UPDATE_SHIPPING_INFO = "updateShippingInfo";
@@ -64,9 +79,16 @@ public class AdminOrderServlet extends HttpServlet {
         String action = normalizeAction(req.getParameter("action"));
 
         switch (action) {
-            case ACTION_UPDATE_STATUS -> handleUpdateStatus(req, resp);
-            case ACTION_UPDATE_SHIPPING_STATUS -> handleUpdateShippingStatus(req, resp);
+            case ACTION_CONFIRM_ORDER -> handleConfirmOrder(req, resp);
+            case ACTION_START_SHIPPING -> handleStartShipping(req, resp);
+            case ACTION_MARK_DELIVERED -> handleMarkDelivered(req, resp);
+            case ACTION_MARK_FAILED -> handleMarkFailed(req, resp);
+            case ACTION_CANCEL_ORDER -> handleCancelOrder(req, resp);
+
+            case ACTION_UPDATE_STATUS -> handleLegacyUpdateStatus(req, resp);
+            case ACTION_UPDATE_SHIPPING_STATUS -> handleLegacyUpdateShippingStatus(req, resp);
             case ACTION_UPDATE_SHIPPING_INFO -> handleUpdateShippingInfo(req, resp);
+
             default -> {
                 setFlashError(req, "Thao tác quản trị đơn hàng không hợp lệ.");
                 resp.sendRedirect(req.getContextPath() + "/admin/orders");
@@ -116,6 +138,22 @@ public class AdminOrderServlet extends HttpServlet {
         req.setAttribute("order", order);
         req.setAttribute("trackingList", trackingList);
         req.setAttribute("shippingStatuses", ShippingStatus.values());
+
+        /*
+         * Các cờ này giúp JSP hiện đúng nút theo từng trạng thái.
+         * Ví dụ:
+         * - canConfirmOrder: hiện nút "Xác nhận đơn"
+         * - canStartShipping: hiện nút "Bắt đầu giao"
+         * - canMarkDelivered/canMarkFailed: hiện nút kết quả giao hàng
+         * - canCancelOrder: hiện nút hủy đơn khi đơn chưa giao
+         */
+        req.setAttribute("canConfirmOrder", canConfirmOrder(order));
+        req.setAttribute("canStartShipping", canStartShipping(order));
+        req.setAttribute("canMarkDelivered", canMarkDelivered(order));
+        req.setAttribute("canMarkFailed", canMarkFailed(order));
+        req.setAttribute("canCancelOrder", canCancelOrder(order));
+        req.setAttribute("canUpdateShippingInfo", canUpdateShippingInfo(order));
+
         req.setAttribute("pageTitle", "Admin - Chi tiết đơn hàng #" + id);
         req.setAttribute("activeMenu", "orders");
 
@@ -136,93 +174,249 @@ public class AdminOrderServlet extends HttpServlet {
     }
 
     /* =========================================================
-       POST HANDLERS
+       WORKFLOW HANDLERS
     ========================================================= */
 
-    private void handleUpdateStatus(HttpServletRequest req, HttpServletResponse resp)
+    private void handleConfirmOrder(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
 
         int id = parseInt(req.getParameter("id"), -1);
-        String status = normalizeStatus(req.getParameter("status"));
+        Order order = findOrderOrRedirect(req, resp, id);
 
-        if (id <= 0) {
-            setFlashError(req, "Mã đơn hàng không hợp lệ.");
-            resp.sendRedirect(req.getContextPath() + "/admin/orders");
+        if (order == null) {
             return;
         }
 
-        if (!isAllowedOrderStatus(status)) {
-            setFlashError(req, "Trạng thái đơn hàng không hợp lệ.");
+        if (!canConfirmOrder(order)) {
+            setFlashError(req, "Chỉ có thể xác nhận đơn hàng đang chờ xử lý.");
             resp.sendRedirect(detailUrl(req, id));
             return;
         }
 
-        Order order = orderDAO.findById(id);
+        String paymentStatus = normalizePaymentStatus(order.getPaymentStatus());
+        String note = resolveTrackingNote(req, "Admin đã xác nhận đơn hàng và chờ bàn giao cho đơn vị vận chuyển.");
+        Integer adminId = getCurrentAdminId(req);
 
-        if (order == null) {
-            setFlashError(req, "Không tìm thấy đơn hàng #" + id + ".");
-            resp.sendRedirect(req.getContextPath() + "/admin/orders");
-            return;
-        }
-
-        String paymentStatus = resolvePaymentStatusByOrderStatus(
-                status,
-                order.getPaymentStatus()
+        boolean updatedOrder = orderDAO.updateStatusAndPaymentStatus(id, "confirmed", paymentStatus);
+        boolean updatedShipping = updateShippingStatusSafely(
+                id,
+                "PENDING_PICKUP",
+                adminId,
+                note
         );
 
-        boolean updated = orderDAO.updateStatusAndPaymentStatus(id, status, paymentStatus);
-
-        if (updated) {
-            setFlashSuccess(req, "Cập nhật trạng thái đơn hàng thành công.");
+        if (updatedOrder || updatedShipping) {
+            setFlashSuccess(req, "Đã xác nhận đơn hàng thành công.");
         } else {
-            setFlashError(req, "Không thể cập nhật trạng thái đơn hàng.");
+            setFlashError(req, "Không thể xác nhận đơn hàng.");
         }
 
         resp.sendRedirect(detailUrl(req, id));
     }
 
-    private void handleUpdateShippingStatus(HttpServletRequest req, HttpServletResponse resp)
+    private void handleStartShipping(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
 
         int id = parseInt(req.getParameter("id"), -1);
-        String shippingStatus = ShippingStatus.normalizeCode(req.getParameter("shippingStatus"));
-        String note = trim(req.getParameter("trackingNote"));
-        Integer adminId = getCurrentAdminId(req);
+        Order order = findOrderOrRedirect(req, resp, id);
 
-        if (id <= 0) {
-            setFlashError(req, "Mã đơn hàng không hợp lệ.");
-            resp.sendRedirect(req.getContextPath() + "/admin/orders");
+        if (order == null) {
             return;
         }
 
-        if (!isAllowedShippingStatus(shippingStatus)) {
-            setFlashError(req, "Trạng thái vận chuyển không hợp lệ.");
+        if (!canStartShipping(order)) {
+            setFlashError(req, "Chỉ có thể bắt đầu giao khi đơn đã được xác nhận hoặc giao thất bại trước đó.");
             resp.sendRedirect(detailUrl(req, id));
             return;
         }
 
-        Order order = orderDAO.findById(id);
+        String paymentStatus = normalizePaymentStatus(order.getPaymentStatus());
+        String note = resolveTrackingNote(req, "Đơn hàng đã được bàn giao và bắt đầu giao cho khách.");
+        Integer adminId = getCurrentAdminId(req);
 
-        if (order == null) {
-            setFlashError(req, "Không tìm thấy đơn hàng #" + id + ".");
-            resp.sendRedirect(req.getContextPath() + "/admin/orders");
-            return;
-        }
-
-        boolean updated = orderDAO.updateShippingStatus(
+        boolean updatedOrder = orderDAO.updateStatusAndPaymentStatus(id, "shipping", paymentStatus);
+        boolean updatedShipping = updateShippingStatusSafely(
                 id,
-                shippingStatus,
+                "DELIVERING",
                 adminId,
                 note
         );
 
-        if (updated) {
-            setFlashSuccess(req, "Cập nhật trạng thái vận chuyển thành công.");
+        if (updatedOrder || updatedShipping) {
+            setFlashSuccess(req, "Đã chuyển đơn hàng sang trạng thái đang giao.");
         } else {
-            setFlashError(req, "Không thể cập nhật trạng thái vận chuyển.");
+            setFlashError(req, "Không thể bắt đầu giao đơn hàng.");
         }
 
         resp.sendRedirect(detailUrl(req, id));
+    }
+
+    private void handleMarkDelivered(HttpServletRequest req, HttpServletResponse resp)
+            throws IOException {
+
+        int id = parseInt(req.getParameter("id"), -1);
+        Order order = findOrderOrRedirect(req, resp, id);
+
+        if (order == null) {
+            return;
+        }
+
+        if (!canMarkDelivered(order)) {
+            setFlashError(req, "Chỉ có thể xác nhận giao thành công khi đơn đang giao.");
+            resp.sendRedirect(detailUrl(req, id));
+            return;
+        }
+
+        String note = resolveTrackingNote(req, "Đơn hàng đã giao thành công cho khách.");
+        Integer adminId = getCurrentAdminId(req);
+
+        /*
+         * Khi giao thành công:
+         * - status = completed
+         * - shipping_status = DELIVERED
+         * - payment_status = PAID
+         *
+         * Với COD, khách đã thanh toán khi nhận hàng.
+         * Với thanh toán online, trạng thái PAID cũng hợp lý nếu đơn đã hoàn tất.
+         */
+        boolean updatedOrder = orderDAO.updateStatusAndPaymentStatus(id, "completed", "PAID");
+        boolean updatedShipping = updateShippingStatusSafely(
+                id,
+                "DELIVERED",
+                adminId,
+                note
+        );
+
+        if (updatedOrder || updatedShipping) {
+            setFlashSuccess(req, "Đã xác nhận giao hàng thành công.");
+        } else {
+            setFlashError(req, "Không thể xác nhận giao hàng thành công.");
+        }
+
+        resp.sendRedirect(detailUrl(req, id));
+    }
+
+    private void handleMarkFailed(HttpServletRequest req, HttpServletResponse resp)
+            throws IOException {
+
+        int id = parseInt(req.getParameter("id"), -1);
+        Order order = findOrderOrRedirect(req, resp, id);
+
+        if (order == null) {
+            return;
+        }
+
+        if (!canMarkFailed(order)) {
+            setFlashError(req, "Chỉ có thể đánh dấu giao thất bại khi đơn đang giao.");
+            resp.sendRedirect(detailUrl(req, id));
+            return;
+        }
+
+        String paymentStatus = normalizePaymentStatus(order.getPaymentStatus());
+        String note = resolveTrackingNote(req, "Giao hàng thất bại. Admin cần kiểm tra và xử lý giao lại hoặc hủy đơn.");
+        Integer adminId = getCurrentAdminId(req);
+
+        /*
+         * Giao thất bại chưa đồng nghĩa hủy đơn.
+         * Giữ status = shipping để admin có thể giao lại hoặc xử lý tiếp.
+         */
+        boolean updatedOrder = orderDAO.updateStatusAndPaymentStatus(id, "shipping", paymentStatus);
+        boolean updatedShipping = updateShippingStatusSafely(
+                id,
+                "FAILED",
+                adminId,
+                note
+        );
+
+        if (updatedOrder || updatedShipping) {
+            setFlashSuccess(req, "Đã đánh dấu đơn hàng giao thất bại.");
+        } else {
+            setFlashError(req, "Không thể cập nhật giao hàng thất bại.");
+        }
+
+        resp.sendRedirect(detailUrl(req, id));
+    }
+
+    private void handleCancelOrder(HttpServletRequest req, HttpServletResponse resp)
+            throws IOException {
+
+        int id = parseInt(req.getParameter("id"), -1);
+        Order order = findOrderOrRedirect(req, resp, id);
+
+        if (order == null) {
+            return;
+        }
+
+        if (!canCancelOrder(order)) {
+            setFlashError(req, "Không thể hủy đơn đã giao thành công hoặc đang giao. Nếu giao thất bại, hãy xử lý hoàn/hủy ở bước riêng.");
+            resp.sendRedirect(detailUrl(req, id));
+            return;
+        }
+
+        String note = resolveTrackingNote(req, "Admin đã hủy đơn hàng.");
+        Integer adminId = getCurrentAdminId(req);
+
+        boolean updatedOrder = orderDAO.updateStatusAndPaymentStatus(id, "cancelled", "CANCELED");
+        boolean updatedShipping = updateShippingStatusSafely(
+                id,
+                "CANCELED",
+                adminId,
+                note
+        );
+
+        if (updatedOrder || updatedShipping) {
+            setFlashSuccess(req, "Đã hủy đơn hàng thành công.");
+        } else {
+            setFlashError(req, "Không thể hủy đơn hàng.");
+        }
+
+        resp.sendRedirect(detailUrl(req, id));
+    }
+
+    /* =========================================================
+       LEGACY HANDLERS - CHUYỂN ACTION CŨ SANG WORKFLOW MỚI
+    ========================================================= */
+
+    private void handleLegacyUpdateStatus(HttpServletRequest req, HttpServletResponse resp)
+            throws IOException {
+
+        String status = normalizeStatus(req.getParameter("status"));
+
+        switch (status) {
+            case "confirmed" -> handleConfirmOrder(req, resp);
+            case "shipping" -> handleStartShipping(req, resp);
+            case "completed" -> handleMarkDelivered(req, resp);
+            case "cancelled" -> handleCancelOrder(req, resp);
+            case "processing" -> {
+                int id = parseInt(req.getParameter("id"), -1);
+                setFlashError(req, "Không hỗ trợ chuyển ngược đơn hàng về trạng thái chờ xử lý.");
+                resp.sendRedirect(id > 0 ? detailUrl(req, id) : req.getContextPath() + "/admin/orders");
+            }
+            default -> {
+                int id = parseInt(req.getParameter("id"), -1);
+                setFlashError(req, "Trạng thái đơn hàng không hợp lệ.");
+                resp.sendRedirect(id > 0 ? detailUrl(req, id) : req.getContextPath() + "/admin/orders");
+            }
+        }
+    }
+
+    private void handleLegacyUpdateShippingStatus(HttpServletRequest req, HttpServletResponse resp)
+            throws IOException {
+
+        String shippingStatus = ShippingStatus.normalizeCode(req.getParameter("shippingStatus"));
+
+        switch (shippingStatus) {
+            case "PENDING_PICKUP" -> handleConfirmOrder(req, resp);
+            case "DELIVERING" -> handleStartShipping(req, resp);
+            case "DELIVERED" -> handleMarkDelivered(req, resp);
+            case "FAILED" -> handleMarkFailed(req, resp);
+            case "CANCELED" -> handleCancelOrder(req, resp);
+            default -> {
+                int id = parseInt(req.getParameter("id"), -1);
+                setFlashError(req, "Trạng thái vận chuyển không hợp lệ.");
+                resp.sendRedirect(id > 0 ? detailUrl(req, id) : req.getContextPath() + "/admin/orders");
+            }
+        }
     }
 
     private void handleUpdateShippingInfo(HttpServletRequest req, HttpServletResponse resp)
@@ -234,17 +428,15 @@ public class AdminOrderServlet extends HttpServlet {
         String shippingMethod = normalizeShippingMethod(req.getParameter("shippingMethod"));
         BigDecimal shippingFee = parseVnd(req.getParameter("shippingFee"));
 
-        if (id <= 0) {
-            setFlashError(req, "Mã đơn hàng không hợp lệ.");
-            resp.sendRedirect(req.getContextPath() + "/admin/orders");
+        Order order = findOrderOrRedirect(req, resp, id);
+
+        if (order == null) {
             return;
         }
 
-        Order order = orderDAO.findById(id);
-
-        if (order == null) {
-            setFlashError(req, "Không tìm thấy đơn hàng #" + id + ".");
-            resp.sendRedirect(req.getContextPath() + "/admin/orders");
+        if (!canUpdateShippingInfo(order)) {
+            setFlashError(req, "Không thể sửa thông tin vận chuyển khi đơn đã hoàn tất hoặc đã hủy.");
+            resp.sendRedirect(detailUrl(req, id));
             return;
         }
 
@@ -269,31 +461,131 @@ public class AdminOrderServlet extends HttpServlet {
        BUSINESS RULES
     ========================================================= */
 
-    private String resolvePaymentStatusByOrderStatus(String status, String currentPaymentStatus) {
-        String normalizedStatus = normalizeStatus(status);
-        String safeCurrentPaymentStatus = normalizePaymentStatus(currentPaymentStatus);
+    private boolean canConfirmOrder(Order order) {
+        String status = getOrderStatus(order);
+        String shippingStatus = getShippingStatus(order);
 
-        return switch (normalizedStatus) {
-            case "completed" -> "PAID";
-            case "cancelled", "canceled" -> "CANCELED";
-            default -> safeCurrentPaymentStatus;
-        };
+        return "processing".equals(status)
+                && !isFinalOrderStatus(status)
+                && !isFinalShippingStatus(shippingStatus);
     }
 
-    private boolean isAllowedOrderStatus(String status) {
+    private boolean canStartShipping(Order order) {
+        String status = getOrderStatus(order);
+        String shippingStatus = getShippingStatus(order);
+
+        return "confirmed".equals(status)
+                || ("shipping".equals(status) && "FAILED".equals(shippingStatus));
+    }
+
+    private boolean canMarkDelivered(Order order) {
+        String status = getOrderStatus(order);
+        String shippingStatus = getShippingStatus(order);
+
+        return "shipping".equals(status)
+                && ("DELIVERING".equals(shippingStatus) || shippingStatus.isEmpty());
+    }
+
+    private boolean canMarkFailed(Order order) {
+        String status = getOrderStatus(order);
+        String shippingStatus = getShippingStatus(order);
+
+        return "shipping".equals(status)
+                && ("DELIVERING".equals(shippingStatus) || shippingStatus.isEmpty());
+    }
+
+    private boolean canCancelOrder(Order order) {
+        String status = getOrderStatus(order);
+        String shippingStatus = getShippingStatus(order);
+
+        if (isFinalOrderStatus(status) || isFinalShippingStatus(shippingStatus)) {
+            return false;
+        }
+
+        /*
+         * Không hủy trực tiếp khi đang giao.
+         * Khi đang giao, admin nên chọn giao thất bại trước để lưu tracking rõ ràng.
+         */
+        return "processing".equals(status) || "confirmed".equals(status);
+    }
+
+    private boolean canUpdateShippingInfo(Order order) {
+        String status = getOrderStatus(order);
+
+        return !isFinalOrderStatus(status);
+    }
+
+    private boolean isFinalOrderStatus(String status) {
         return switch (normalizeStatus(status)) {
-            case "processing", "confirmed", "shipping", "completed", "cancelled" -> true;
+            case "completed", "cancelled" -> true;
             default -> false;
         };
     }
 
-    private boolean isAllowedShippingStatus(String shippingStatus) {
-        String normalized = ShippingStatus.normalizeCode(shippingStatus);
-
-        return switch (normalized) {
-            case "PENDING_PICKUP", "DELIVERING", "DELIVERED", "FAILED", "CANCELED" -> true;
+    private boolean isFinalShippingStatus(String shippingStatus) {
+        return switch (ShippingStatus.normalizeCode(shippingStatus)) {
+            case "DELIVERED", "CANCELED" -> true;
             default -> false;
         };
+    }
+
+    private String getOrderStatus(Order order) {
+        if (order == null) {
+            return "";
+        }
+
+        return normalizeStatus(order.getStatus());
+    }
+
+    private String getShippingStatus(Order order) {
+        if (order == null) {
+            return "";
+        }
+
+        return ShippingStatus.normalizeCode(order.getShippingStatus());
+    }
+
+    private boolean updateShippingStatusSafely(
+            int orderId,
+            String shippingStatus,
+            Integer adminId,
+            String note
+    ) {
+        try {
+            return orderDAO.updateShippingStatus(
+                    orderId,
+                    shippingStatus,
+                    adminId,
+                    note
+            );
+        } catch (RuntimeException e) {
+            /*
+             * Nếu database cũ chưa có bảng/cột tracking thì vẫn không làm hỏng toàn bộ workflow.
+             * Tuy nhiên nên chạy migration để tracking và shipped_at/delivered_at được cập nhật đầy đủ.
+             */
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    private Order findOrderOrRedirect(HttpServletRequest req, HttpServletResponse resp, int id)
+            throws IOException {
+
+        if (id <= 0) {
+            setFlashError(req, "Mã đơn hàng không hợp lệ.");
+            resp.sendRedirect(req.getContextPath() + "/admin/orders");
+            return null;
+        }
+
+        Order order = orderDAO.findById(id);
+
+        if (order == null) {
+            setFlashError(req, "Không tìm thấy đơn hàng #" + id + ".");
+            resp.sendRedirect(req.getContextPath() + "/admin/orders");
+            return null;
+        }
+
+        return order;
     }
 
     /* =========================================================
@@ -363,8 +655,25 @@ public class AdminOrderServlet extends HttpServlet {
         };
     }
 
+    private String resolveTrackingNote(HttpServletRequest req, String fallback) {
+        String note = trim(req.getParameter("trackingNote"));
+
+        if (note.isEmpty()) {
+            note = trim(req.getParameter("note"));
+        }
+
+        if (note.isEmpty()) {
+            return fallback;
+        }
+
+        return note;
+    }
+
     private BigDecimal parseVnd(String raw) {
-        String value = trim(raw).replace(",", "").replace(".", "");
+        String value = trim(raw)
+                .replace(",", "")
+                .replace(".", "")
+                .replace(" ", "");
 
         if (value.isEmpty()) {
             return BigDecimal.ZERO;
