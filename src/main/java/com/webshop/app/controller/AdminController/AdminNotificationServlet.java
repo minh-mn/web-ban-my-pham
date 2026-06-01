@@ -146,7 +146,7 @@ public class AdminNotificationServlet extends HttpServlet {
         request.setAttribute("activeMenu", "notifications");
         request.setAttribute("pageCss", "/assets/css/admin/admin-notification.css");
 
-        request.getRequestDispatcher("/jsp/admin/notification/notification_list.jsp")
+        request.getRequestDispatcher("/jsp/admin/notifications/notification-list.jsp")
                 .forward(request, response);
     }
 
@@ -160,7 +160,7 @@ public class AdminNotificationServlet extends HttpServlet {
         request.setAttribute("activeMenu", "notifications");
         request.setAttribute("pageCss", "/assets/css/admin/admin-notification.css");
 
-        request.getRequestDispatcher("/jsp/admin/notification/notification_form.jsp")
+        request.getRequestDispatcher("/jsp/admin/notifications/notification-form.jsp")
                 .forward(request, response);
     }
 
