@@ -1,6 +1,7 @@
 package com.webshop.app.controller.ReviewController;
 
 import com.webshop.app.dao.ReviewSubmitDAO;
+import com.webshop.app.dao.NotificationDAO;
 import com.webshop.app.model.ReviewMedia;
 import com.webshop.app.model.User;
 
@@ -47,6 +48,7 @@ public class ReviewServlet extends HttpServlet {
     };
 
     private final ReviewSubmitDAO reviewSubmitDAO = new ReviewSubmitDAO();
+    private final NotificationDAO notificationDAO = new NotificationDAO();
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
@@ -147,10 +149,60 @@ public class ReviewServlet extends HttpServlet {
 
         reviewSubmitDAO.createReview(createRequest);
 
+        notifyReviewSubmittedSafely(
+                user,
+                orderId,
+                productId,
+                rating,
+                !mediaList.isEmpty()
+        );
+
         request.getSession().setAttribute("successMessage",
                 "Đánh giá của bạn đã được gửi và đang chờ quản trị viên duyệt. Xu sẽ được cộng sau khi đánh giá được duyệt.");
         response.sendRedirect(request.getContextPath() + "/orders/detail?id=" + orderId);
     }
+
+    /* =========================================================
+       NOTIFICATION - ISSUE 114
+    ========================================================= */
+
+    private void notifyReviewSubmittedSafely(User user,
+                                             long orderId,
+                                             long productId,
+                                             int rating,
+                                             boolean hasMedia) {
+        if (user == null || user.getId() <= 0 || productId <= 0) {
+            return;
+        }
+
+        String title = "Có đánh giá mới";
+        String message = "Khách hàng #" + user.getId()
+                + " vừa gửi đánh giá " + rating + " sao"
+                + " cho sản phẩm #" + productId
+                + (orderId > 0 ? " trong đơn hàng #" + orderId : "")
+                + (hasMedia ? " kèm hình ảnh/video." : ".");
+
+        try {
+            /*
+             * ReviewSubmitDAO hiện không trả về reviewId, nên reference_id để null.
+             * Admin vẫn có thể bấm vào /admin/reviews để kiểm duyệt danh sách đánh giá mới.
+             */
+            notificationDAO.createAdminNotification(
+                    "REVIEW_CREATED",
+                    title,
+                    message,
+                    "/admin/reviews",
+                    "REVIEW",
+                    null
+            );
+        } catch (Exception e) {
+            /*
+             * Không để lỗi notification làm hỏng thao tác gửi đánh giá.
+             */
+            e.printStackTrace();
+        }
+    }
+
 
     private List<ReviewMedia> saveReviewMedia(HttpServletRequest request) throws IOException, ServletException {
         List<ReviewMedia> result = new ArrayList<>();
