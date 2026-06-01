@@ -17,10 +17,237 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class ProductDAO {
+
+	/* =====================================================
+	   HOT COLLECTION / SEMANTIC KEYWORD SEARCH
+	===================================================== */
+
+	public int countProductsByKeywordSet(
+			List<String> keywords,
+			List<Integer> brandIds,
+			List<String> priceRanges,
+			Integer minRating
+	) {
+		StringBuilder sql = new StringBuilder(
+				"SELECT COUNT(*) FROM ( " +
+						"SELECT p.id " +
+						"FROM store_product p " +
+						"LEFT JOIN store_review r ON p.id = r.product_id " +
+						"LEFT JOIN store_category c ON p.category_id = c.id " +
+						"WHERE p.is_active = 1 "
+		);
+
+		List<String> normalizedKeywords = normalizeCollectionKeywords(keywords);
+
+		appendKeywordSetCondition(sql, normalizedKeywords);
+
+		if (brandIds != null && !brandIds.isEmpty()) {
+			sql.append("AND p.brand_id IN (")
+					.append(placeholders(brandIds.size()))
+					.append(") ");
+		}
+
+		appendPriceRanges(sql, priceRanges);
+
+		sql.append("GROUP BY p.id ");
+
+		if (minRating != null) {
+			sql.append("HAVING COALESCE(AVG(r.rating), 0) >= ? ");
+		}
+
+		sql.append(") x");
+
+		try (Connection c = DBConnection.getConnection();
+			 PreparedStatement ps = c.prepareStatement(sql.toString())) {
+
+			int idx = 1;
+
+			idx = bindKeywordSet(ps, normalizedKeywords, idx);
+			idx = bindIntegerList(ps, brandIds, idx);
+
+			if (minRating != null) {
+				ps.setInt(idx, minRating);
+			}
+
+			try (ResultSet rs = ps.executeQuery()) {
+				rs.next();
+				return rs.getInt(1);
+			}
+
+		} catch (SQLException e) {
+			throw new RuntimeException("ProductDAO.countProductsByKeywordSet error", e);
+		}
+	}
+
+	public List<Product> findProductsPagedByKeywordSet(
+			List<String> keywords,
+			List<Integer> brandIds,
+			String sort,
+			List<String> priceRanges,
+			Integer minRating,
+			int page,
+			int pageSize
+	) {
+		int safePage = Math.max(1, page);
+		int safeSize = Math.max(1, pageSize);
+		int offset = (safePage - 1) * safeSize;
+
+		List<Product> list = new ArrayList<>();
+
+		StringBuilder sql = new StringBuilder(
+				"SELECT p.id, p.title, p.slug, p.description, " +
+						"p.price, p.discount_percent, p.stock, p.image, p.created_at, " +
+						"COALESCE(AVG(r.rating), 0) AS avg_rating, " +
+						"COUNT(r.id) AS review_count, " +
+						"c.id AS c_id, c.name AS c_name, " +
+						"b.id AS b_id, b.name AS b_name " +
+						"FROM store_product p " +
+						"LEFT JOIN store_review r ON p.id = r.product_id " +
+						"LEFT JOIN store_category c ON p.category_id = c.id " +
+						"LEFT JOIN store_brand b ON p.brand_id = b.id " +
+						"WHERE p.is_active = 1 "
+		);
+
+		List<String> normalizedKeywords = normalizeCollectionKeywords(keywords);
+
+		appendKeywordSetCondition(sql, normalizedKeywords);
+
+		if (brandIds != null && !brandIds.isEmpty()) {
+			sql.append("AND p.brand_id IN (")
+					.append(placeholders(brandIds.size()))
+					.append(") ");
+		}
+
+		appendPriceRanges(sql, priceRanges);
+
+		sql.append("GROUP BY p.id, p.title, p.slug, p.description, ")
+				.append("p.price, p.discount_percent, p.stock, p.image, p.created_at, ")
+				.append("c.id, c.name, b.id, b.name ");
+
+		if (minRating != null) {
+			sql.append("HAVING COALESCE(AVG(r.rating), 0) >= ? ");
+		}
+
+		appendSort(sql, sort);
+
+		sql.append("LIMIT ?, ?");
+
+		try (Connection c = DBConnection.getConnection();
+			 PreparedStatement ps = c.prepareStatement(sql.toString())) {
+
+			int idx = 1;
+
+			idx = bindKeywordSet(ps, normalizedKeywords, idx);
+			idx = bindIntegerList(ps, brandIds, idx);
+
+			if (minRating != null) {
+				ps.setInt(idx++, minRating);
+			}
+
+			ps.setInt(idx++, offset);
+			ps.setInt(idx, safeSize);
+
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					list.add(mapRowList(rs));
+				}
+			}
+
+		} catch (SQLException e) {
+			throw new RuntimeException("ProductDAO.findProductsPagedByKeywordSet error", e);
+		}
+
+		return list;
+	}
+
+	private void appendKeywordSetCondition(StringBuilder sql, List<String> keywords) {
+		if (keywords == null || keywords.isEmpty()) {
+			return;
+		}
+
+		sql.append("AND (");
+
+		for (int i = 0; i < keywords.size(); i++) {
+			if (i > 0) {
+				sql.append(" OR ");
+			}
+
+			sql.append("LOWER(CONCAT_WS(' ', ")
+					.append("p.title, ")
+					.append("COALESCE(p.description, ''), ")
+					.append("COALESCE(p.slug, ''), ")
+					.append("COALESCE(c.name, ''), ")
+					.append("COALESCE(c.slug, '')")
+					.append(")) LIKE ? ");
+		}
+
+		sql.append(") ");
+	}
+
+	private List<String> normalizeCollectionKeywords(List<String> keywords) {
+		if (keywords == null || keywords.isEmpty()) {
+			return Collections.emptyList();
+		}
+
+		List<String> result = new ArrayList<>();
+
+		for (String keyword : keywords) {
+			if (keyword == null) {
+				continue;
+			}
+
+			String value = keyword.trim().toLowerCase(Locale.ROOT);
+
+			if (!value.isEmpty() && !result.contains(value)) {
+				result.add(value);
+			}
+		}
+
+		return result;
+	}
+
+	private int bindKeywordSet(
+			PreparedStatement ps,
+			List<String> keywords,
+			int startIndex
+	) throws SQLException {
+		int idx = startIndex;
+
+		if (keywords == null || keywords.isEmpty()) {
+			return idx;
+		}
+
+		for (String keyword : keywords) {
+			ps.setString(idx++, "%" + keyword + "%");
+		}
+
+		return idx;
+	}
+
+	private int bindIntegerList(
+			PreparedStatement ps,
+			List<Integer> values,
+			int startIndex
+	) throws SQLException {
+		int idx = startIndex;
+
+		if (values == null || values.isEmpty()) {
+			return idx;
+		}
+
+		for (Integer value : values) {
+			if (value != null) {
+				ps.setInt(idx++, value);
+			}
+		}
+
+		return idx;
+	}
+
 
 	public enum DeleteMode {
 		HARD_DELETED,
@@ -86,7 +313,7 @@ public class ProductDAO {
 		appendSort(sql, sort);
 
 		try (Connection c = DBConnection.getConnection();
-		     PreparedStatement ps = c.prepareStatement(sql.toString())) {
+			 PreparedStatement ps = c.prepareStatement(sql.toString())) {
 
 			bindProductFilters(ps, keyword, categoryIds, brandIds, minRating, 1);
 
@@ -145,7 +372,7 @@ public class ProductDAO {
 		sql.append(") x");
 
 		try (Connection c = DBConnection.getConnection();
-		     PreparedStatement ps = c.prepareStatement(sql.toString())) {
+			 PreparedStatement ps = c.prepareStatement(sql.toString())) {
 
 			bindProductFilters(ps, keyword, categoryIds, brandIds, minRating, 1);
 
@@ -220,7 +447,7 @@ public class ProductDAO {
 		sql.append("LIMIT ?, ?");
 
 		try (Connection c = DBConnection.getConnection();
-		     PreparedStatement ps = c.prepareStatement(sql.toString())) {
+			 PreparedStatement ps = c.prepareStatement(sql.toString())) {
 
 			int idx = bindProductFilters(ps, keyword, categoryIds, brandIds, minRating, 1);
 			ps.setInt(idx++, offset);
@@ -279,7 +506,7 @@ public class ProductDAO {
 		appendSort(sql, sort);
 
 		try (Connection c = DBConnection.getConnection();
-		     PreparedStatement ps = c.prepareStatement(sql.toString())) {
+			 PreparedStatement ps = c.prepareStatement(sql.toString())) {
 
 			int idx = 1;
 
@@ -365,7 +592,7 @@ public class ProductDAO {
 						"c.id, c.name, b.id, b.name";
 
 		try (Connection c = DBConnection.getConnection();
-		     PreparedStatement ps = c.prepareStatement(sql)) {
+			 PreparedStatement ps = c.prepareStatement(sql)) {
 
 			ps.setString(1, slug);
 
@@ -405,7 +632,7 @@ public class ProductDAO {
 						"LIMIT 8";
 
 		try (Connection c = DBConnection.getConnection();
-		     PreparedStatement ps = c.prepareStatement(sql)) {
+			 PreparedStatement ps = c.prepareStatement(sql)) {
 
 			String keywordTrim = keyword == null ? "" : keyword.trim();
 			String like = "%" + keywordTrim + "%";
@@ -445,7 +672,7 @@ public class ProductDAO {
 						"LIMIT 8";
 
 		try (Connection c = DBConnection.getConnection();
-		     PreparedStatement ps = c.prepareStatement(sql)) {
+			 PreparedStatement ps = c.prepareStatement(sql)) {
 
 			String keywordTrim = keyword == null ? "" : keyword.trim();
 			String likeAll = "%" + keywordTrim + "%";
@@ -481,7 +708,7 @@ public class ProductDAO {
 						"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
 
 		try (Connection c = DBConnection.getConnection();
-		     PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+			 PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
 			String title = p.getTitle();
 
@@ -518,7 +745,7 @@ public class ProductDAO {
 						"stock=?, image=?, is_active=?, category_id=?, brand_id=? WHERE id=?";
 
 		try (Connection c = DBConnection.getConnection();
-		     PreparedStatement ps = c.prepareStatement(sql)) {
+			 PreparedStatement ps = c.prepareStatement(sql)) {
 
 			String title = p.getTitle();
 
@@ -652,7 +879,7 @@ public class ProductDAO {
 		String sql = "DELETE FROM store_product WHERE id = ?";
 
 		try (Connection c = DBConnection.getConnection();
-		     PreparedStatement ps = c.prepareStatement(sql)) {
+			 PreparedStatement ps = c.prepareStatement(sql)) {
 
 			ps.setInt(1, id);
 			return ps.executeUpdate() > 0;
@@ -670,7 +897,7 @@ public class ProductDAO {
 		String sql = "DELETE FROM store_review WHERE product_id = ?";
 
 		try (Connection c = DBConnection.getConnection();
-		     PreparedStatement ps = c.prepareStatement(sql)) {
+			 PreparedStatement ps = c.prepareStatement(sql)) {
 
 			ps.setInt(1, productId);
 			return ps.executeUpdate();
@@ -721,8 +948,8 @@ public class ProductDAO {
 						"LIMIT 12";
 
 		try (Connection c = DBConnection.getConnection();
-		     PreparedStatement ps = c.prepareStatement(sql);
-		     ResultSet rs = ps.executeQuery()) {
+			 PreparedStatement ps = c.prepareStatement(sql);
+			 ResultSet rs = ps.executeQuery()) {
 
 			while (rs.next()) {
 				list.add(mapRowList(rs));
@@ -757,8 +984,8 @@ public class ProductDAO {
 						"LIMIT 12";
 
 		try (Connection c = DBConnection.getConnection();
-		     PreparedStatement ps = c.prepareStatement(sql);
-		     ResultSet rs = ps.executeQuery()) {
+			 PreparedStatement ps = c.prepareStatement(sql);
+			 ResultSet rs = ps.executeQuery()) {
 
 			while (rs.next()) {
 				list.add(mapRowList(rs));
@@ -835,7 +1062,7 @@ public class ProductDAO {
 		sql.append("ORDER BY p.title ASC, p.id DESC");
 
 		try (Connection conn = DBConnection.getConnection();
-		     PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+			 PreparedStatement ps = conn.prepareStatement(sql.toString())) {
 
 			int idx = 1;
 
@@ -892,7 +1119,7 @@ public class ProductDAO {
 						"ORDER BY p.title ASC, p.id DESC";
 
 		try (Connection conn = DBConnection.getConnection();
-		     PreparedStatement ps = conn.prepareStatement(sql)) {
+			 PreparedStatement ps = conn.prepareStatement(sql)) {
 
 			int idx = 1;
 			for (Integer productId : cleanedIds) {
@@ -936,7 +1163,7 @@ public class ProductDAO {
 
 	private Product findProductDetail(String sql, int productId, String errorMessage) {
 		try (Connection c = DBConnection.getConnection();
-		     PreparedStatement ps = c.prepareStatement(sql)) {
+			 PreparedStatement ps = c.prepareStatement(sql)) {
 
 			ps.setInt(1, productId);
 
@@ -1250,112 +1477,164 @@ public class ProductDAO {
 	}
 
 	/**
-	 * Lấy danh sách sản phẩm và giữ nguyên thứ tự sắp xếp của List ID truyền vào
+	 * Lấy danh sách sản phẩm theo danh sách ID và giữ nguyên thứ tự ID truyền vào.
+	 * Dùng cho các màn hình cần hiển thị sản phẩm theo thứ tự seed/danh mục cố định.
 	 */
 	public List<Product> findByIdsOrdered(List<Integer> ids) {
-		if (ids == null || ids.isEmpty()) {
-			return new ArrayList<>();
+		List<Product> products = new ArrayList<>();
+		List<Integer> cleanedIds = normalizeProductIds(ids);
+
+		if (cleanedIds.isEmpty()) {
+			return products;
 		}
 
-		String placeholders = ids.stream().map(id -> "?").collect(Collectors.joining(","));
-		String sql = "SELECT * FROM store_product WHERE id IN (" + placeholders + ") " +
-				"ORDER BY FIELD(id, " + placeholders + ")";
+		String inPlaceholders = placeholders(cleanedIds.size());
+		String fieldPlaceholders = placeholders(cleanedIds.size());
 
-		List<Product> products = new ArrayList<>();
+		String sql =
+				"SELECT p.id, p.title, p.slug, p.description, " +
+						"p.price, p.discount_percent, p.stock, p.image, p.created_at, p.is_active, " +
+						"0 AS avg_rating, " +
+						"0 AS review_count, " +
+						"c.id AS c_id, c.name AS c_name, " +
+						"b.id AS b_id, b.name AS b_name " +
+						"FROM store_product p " +
+						"LEFT JOIN store_category c ON p.category_id = c.id " +
+						"LEFT JOIN store_brand b ON p.brand_id = b.id " +
+						"WHERE p.id IN (" + inPlaceholders + ") " +
+						"ORDER BY FIELD(p.id, " + fieldPlaceholders + ")";
+
 		try (Connection conn = DBConnection.getConnection();
 		     PreparedStatement ps = conn.prepareStatement(sql)) {
 
-			int size = ids.size();
-			for (int i = 0; i < size; i++) {
-				ps.setInt(i + 1, ids.get(i));
+			int idx = 1;
+
+			for (Integer id : cleanedIds) {
+				ps.setInt(idx++, id);
 			}
-			for (int i = 0; i < size; i++) {
-				ps.setInt(size + i + 1, ids.get(i));
+
+			for (Integer id : cleanedIds) {
+				ps.setInt(idx++, id);
 			}
 
 			try (ResultSet rs = ps.executeQuery()) {
 				while (rs.next()) {
-					products.add(mapRowToProduct(rs));
+					Product product = mapRowList(rs);
+					product.setActive(rs.getBoolean("is_active"));
+					products.add(product);
 				}
 			}
+
 		} catch (SQLException e) {
-			e.printStackTrace();
+			throw new RuntimeException("ProductDAO.findByIdsOrdered error", e);
 		}
+
 		return products;
 	}
 
 	/**
-	 * Lấy sản phẩm liên quan cùng danh mục
+	 * Lấy sản phẩm liên quan cùng danh mục.
 	 */
 	public List<Product> findRelatedByCategory(int categoryId, int excludeId, int limit) {
+		if (categoryId <= 0 || limit <= 0) {
+			return new ArrayList<>();
+		}
+
 		List<Product> products = new ArrayList<>();
-		String sql = "SELECT * FROM store_product WHERE category_id = ? AND id != ? AND stock > 0 AND is_active = 1 LIMIT ?";
+
+		String sql =
+				"SELECT p.id, p.title, p.slug, p.description, " +
+						"p.price, p.discount_percent, p.stock, p.image, p.created_at, p.is_active, " +
+						"0 AS avg_rating, " +
+						"0 AS review_count, " +
+						"c.id AS c_id, c.name AS c_name, " +
+						"b.id AS b_id, b.name AS b_name " +
+						"FROM store_product p " +
+						"LEFT JOIN store_category c ON p.category_id = c.id " +
+						"LEFT JOIN store_brand b ON p.brand_id = b.id " +
+						"WHERE p.category_id = ? " +
+						"AND p.id <> ? " +
+						"AND p.stock > 0 " +
+						"AND p.is_active = 1 " +
+						"ORDER BY p.created_at DESC, p.id DESC " +
+						"LIMIT ?";
 
 		try (Connection conn = DBConnection.getConnection();
 		     PreparedStatement ps = conn.prepareStatement(sql)) {
+
 			ps.setInt(1, categoryId);
 			ps.setInt(2, excludeId);
 			ps.setInt(3, limit);
 
 			try (ResultSet rs = ps.executeQuery()) {
 				while (rs.next()) {
-					products.add(mapRowToProduct(rs));
+					Product product = mapRowList(rs);
+					product.setActive(rs.getBoolean("is_active"));
+					products.add(product);
 				}
 			}
+
 		} catch (SQLException e) {
-			e.printStackTrace();
+			throw new RuntimeException("ProductDAO.findRelatedByCategory error", e);
 		}
+
 		return products;
 	}
 
 	/**
-	 * Lấy sản phẩm liên quan dựa theo Tag tương đồng
+	 * Lấy sản phẩm liên quan dựa theo tag tương đồng.
 	 */
 	public List<Product> findRelatedByTag(int productId, int limit) {
+		if (productId <= 0 || limit <= 0) {
+			return new ArrayList<>();
+		}
+
 		List<Product> products = new ArrayList<>();
-		String sql = "SELECT p.*, COUNT(*) as score " +
-				"FROM store_product p " +
-				"JOIN store_product_tag pt ON p.id = pt.product_id " +
-				"WHERE pt.tag_id IN (" +
-				"    SELECT tag_id FROM store_product_tag WHERE product_id = ?" +
-				") " +
-				"AND p.id != ? AND p.stock > 0 AND p.is_active = 1 " +
-				"GROUP BY p.id " +
-				"ORDER BY score DESC " +
-				"LIMIT ?";
+
+		String sql =
+				"SELECT p.id, p.title, p.slug, p.description, " +
+						"p.price, p.discount_percent, p.stock, p.image, p.created_at, p.is_active, " +
+						"0 AS avg_rating, " +
+						"0 AS review_count, " +
+						"c.id AS c_id, c.name AS c_name, " +
+						"b.id AS b_id, b.name AS b_name, " +
+						"COUNT(*) AS tag_score " +
+						"FROM store_product p " +
+						"JOIN store_product_tag pt ON p.id = pt.product_id " +
+						"LEFT JOIN store_category c ON p.category_id = c.id " +
+						"LEFT JOIN store_brand b ON p.brand_id = b.id " +
+						"WHERE pt.tag_id IN ( " +
+						"SELECT tag_id FROM store_product_tag WHERE product_id = ? " +
+						") " +
+						"AND p.id <> ? " +
+						"AND p.stock > 0 " +
+						"AND p.is_active = 1 " +
+						"GROUP BY p.id, p.title, p.slug, p.description, " +
+						"p.price, p.discount_percent, p.stock, p.image, p.created_at, p.is_active, " +
+						"c.id, c.name, b.id, b.name " +
+						"ORDER BY tag_score DESC, p.created_at DESC " +
+						"LIMIT ?";
 
 		try (Connection conn = DBConnection.getConnection();
 		     PreparedStatement ps = conn.prepareStatement(sql)) {
+
 			ps.setInt(1, productId);
 			ps.setInt(2, productId);
 			ps.setInt(3, limit);
 
 			try (ResultSet rs = ps.executeQuery()) {
 				while (rs.next()) {
-					products.add(mapRowToProduct(rs));
+					Product product = mapRowList(rs);
+					product.setActive(rs.getBoolean("is_active"));
+					products.add(product);
 				}
 			}
+
 		} catch (SQLException e) {
-			e.printStackTrace();
+			throw new RuntimeException("ProductDAO.findRelatedByTag error", e);
 		}
+
 		return products;
 	}
 
-	/**
-	 * Tiện ích map dữ liệu từ DB sang Đối tượng Object (Đã fix lỗi setId và setImageUrl)
-	 */
-	private Product mapRowToProduct(ResultSet rs) throws SQLException {
-		Product p = new Product();
-		p.setId(rs.getInt("id")); // Đã sửa từ getLong thành getInt
-		p.setTitle(rs.getString("title"));
-		p.setSlug(rs.getString("slug"));
-		p.setPrice(rs.getBigDecimal("price"));
-		p.setImage(rs.getString("image")); // Đã sửa sang setImage theo đúng model của bạn
-		p.setStock(rs.getInt("stock"));
-		if (rs.getMetaData().getColumnCount() >= 7) {
-			try { p.setCategoryId(rs.getInt("category_id")); } catch (Exception ignored) {}
-		}
-		return p;
-	}
-	
 }
