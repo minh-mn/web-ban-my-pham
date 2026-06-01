@@ -2,6 +2,9 @@ package com.webshop.app.controller.CartController;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.Map;
 
 import com.webshop.app.dao.ProductDAO;
@@ -9,6 +12,8 @@ import com.webshop.app.dao.ProductVariantDAO;
 import com.webshop.app.model.CartItem;
 import com.webshop.app.model.Product;
 import com.webshop.app.model.ProductVariant;
+import com.webshop.app.model.User;
+import com.webshop.app.service.FlashSaleLimitService;
 import com.webshop.app.utils.CartUtil;
 
 import jakarta.servlet.annotation.WebServlet;
@@ -24,6 +29,7 @@ public class CartUpdateVariantServlet extends HttpServlet {
 
     private final ProductDAO productDAO = new ProductDAO();
     private final ProductVariantDAO variantDAO = new ProductVariantDAO();
+    private final FlashSaleLimitService flashSaleLimitService = new FlashSaleLimitService();
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
@@ -85,17 +91,67 @@ public class CartUpdateVariantServlet extends HttpServlet {
             newQty = 1;
         }
 
-        cart.remove(oldKey);
-
         CartItem existing = cart.get(newKey);
+        int finalQuantityForNewKey;
 
-        if (existing != null) {
-            int mergedQty = existing.getQuantity() + newQty;
+        if (existing != null && !newKey.equals(oldKey)) {
+            finalQuantityForNewKey = existing.getQuantity() + newQty;
+        } else {
+            finalQuantityForNewKey = newQty;
+        }
 
-            if (mergedQty > variant.getStock()) {
-                mergedQty = variant.getStock();
+        if (finalQuantityForNewKey > variant.getStock()) {
+            finalQuantityForNewKey = variant.getStock();
+        }
+
+        /*
+         * Issue 139:
+         * Chặn lách giới hạn Flash Sale bằng cách đổi variant.
+         *
+         * Trường hợp cần chặn:
+         * - User đã có cùng productId ở nhiều variant khác nhau.
+         * - User đổi variant cũ sang variant mới.
+         * - Nếu gộp quantity làm tổng productId vượt max_quantity_per_user thì không cho đổi.
+         *
+         * Cách kiểm tra:
+         * - Tạo cart giả lập đã bỏ oldKey.
+         * - Kiểm tra số lượng mới của newKey trên cart giả lập.
+         * - Service sẽ tính tổng theo productId, không chỉ theo cartKey.
+         */
+        int userId = getCurrentUserId(session);
+        Map<String, CartItem> checkingCart = new HashMap<>(cart);
+        checkingCart.remove(oldKey);
+
+        FlashSaleLimitService.LimitResult limitResult =
+                flashSaleLimitService.checkCanSetQuantity(
+                        userId,
+                        checkingCart,
+                        newKey,
+                        productId,
+                        finalQuantityForNewKey
+                );
+
+        if (!limitResult.isAllowed()) {
+            session.setAttribute("cartError", limitResult.getMessage());
+            session.setAttribute("flashSaleLimitError", limitResult.getMessage());
+
+            try {
+                flashSaleLimitService.enrichCartItems(userId, cart);
+            } catch (Exception e) {
+                System.out.println("[CartUpdateVariantServlet] enrich flash sale limit skipped: " + e.getMessage());
             }
 
+            resp.sendRedirect(req.getContextPath()
+                    + "/cart?flashLimit=1&message="
+                    + urlEncode(limitResult.getMessage()));
+            return;
+        }
+
+        cart.remove(oldKey);
+
+        existing = cart.get(newKey);
+
+        if (existing != null) {
             existing.setCartKey(newKey);
             existing.setProductId(product.getId());
             existing.setTitle(product.getTitle());
@@ -103,7 +159,7 @@ public class CartUpdateVariantServlet extends HttpServlet {
             existing.setOriginalPrice(originalUnitPrice);
             existing.setImageUrl(product.getImageUrl());
             existing.setStock(variant.getStock());
-            existing.setQuantity(Math.max(mergedQty, 1));
+            existing.setQuantity(Math.max(finalQuantityForNewKey, 1));
 
             existing.setVariantId(variant.getId());
             existing.setVariantSize(variant.getSize());
@@ -120,7 +176,7 @@ public class CartUpdateVariantServlet extends HttpServlet {
             oldItem.setOriginalPrice(originalUnitPrice);
             oldItem.setImageUrl(product.getImageUrl());
             oldItem.setStock(variant.getStock());
-            oldItem.setQuantity(newQty);
+            oldItem.setQuantity(Math.max(finalQuantityForNewKey, 1));
 
             oldItem.setVariantId(variant.getId());
             oldItem.setVariantSize(variant.getSize());
@@ -129,6 +185,12 @@ public class CartUpdateVariantServlet extends HttpServlet {
             oldItem.setVariantExtraPrice(variantExtraPrice);
 
             cart.put(newKey, oldItem);
+        }
+
+        try {
+            flashSaleLimitService.enrichCartItems(userId, cart);
+        } catch (Exception e) {
+            System.out.println("[CartUpdateVariantServlet] enrich flash sale limit skipped: " + e.getMessage());
         }
 
         if (cart.isEmpty()) {
@@ -146,13 +208,47 @@ public class CartUpdateVariantServlet extends HttpServlet {
         resp.sendRedirect(req.getContextPath() + "/cart");
     }
 
+    private int getCurrentUserId(HttpSession session) {
+        if (session == null) {
+            return 0;
+        }
+
+        Object rawUser = session.getAttribute("user");
+
+        if (!(rawUser instanceof User)) {
+            rawUser = session.getAttribute("currentUser");
+        }
+
+        if (!(rawUser instanceof User)) {
+            rawUser = session.getAttribute("authUser");
+        }
+
+        if (rawUser instanceof User) {
+            return ((User) rawUser).getId();
+        }
+
+        return 0;
+    }
+
+    private String urlEncode(String value) {
+        if (value == null || value.isBlank()) {
+            return "";
+        }
+
+        return URLEncoder.encode(value, StandardCharsets.UTF_8);
+    }
+
     private BigDecimal safeMoney(BigDecimal value) {
         return value != null ? value : BigDecimal.ZERO;
     }
 
     private int parseInt(String raw, int def) {
         try {
-            return Integer.parseInt(raw);
+            if (raw == null || raw.isBlank()) {
+                return def;
+            }
+
+            return Integer.parseInt(raw.trim());
         } catch (Exception e) {
             return def;
         }
