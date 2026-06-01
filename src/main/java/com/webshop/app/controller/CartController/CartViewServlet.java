@@ -29,17 +29,37 @@ public class CartViewServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
+        req.setCharacterEncoding("UTF-8");
+        resp.setCharacterEncoding("UTF-8");
+
         HttpSession session = req.getSession();
+
+        /*
+         * Issue 132:
+         * Khi user đã đăng nhập và mở trang giỏ hàng, tự nạp lại giỏ hàng
+         * đã lưu trong database vào session.
+         *
+         * CartUtil sẽ chỉ load một lần cho mỗi user trong cùng session,
+         * tránh việc refresh trang giỏ hàng làm cộng dồn số lượng nhiều lần.
+         */
+        CartUtil.loadDatabaseCartIfNeeded(session);
+
         Map<String, CartItem> cart = CartUtil.getCart(session);
 
         BigDecimal total = BigDecimal.ZERO;
         Map<Integer, List<ProductVariant>> variantOptions = new HashMap<>();
 
-        if (cart != null) {
+        if (cart != null && !cart.isEmpty()) {
             for (CartItem item : cart.values()) {
-                if (item != null && item.getPrice() != null) {
-                    total = total.add(item.getSubtotal());
+                if (item == null) {
+                    continue;
+                }
 
+                if (item.getPrice() != null) {
+                    total = total.add(item.getSubtotal());
+                }
+
+                if (item.getProductId() > 0) {
                     variantOptions.computeIfAbsent(
                             item.getProductId(),
                             productVariantDAO::findActiveByProductId
