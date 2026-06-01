@@ -20,10 +20,17 @@ public class RecommendationService {
     }
 
     /**
-     * Lấy sản phẩm MUA KÈM: Định dạng tham số cấu hình lại theo kiểu int
+     * Lấy sản phẩm mua kèm.
+     * Nếu chưa có dữ liệu mua kèm thì fallback về sản phẩm cùng danh mục.
      */
     public List<Product> getFrequentlyBought(int productId, int categoryId) {
-        List<Integer> ids = orderItemDAO.findFrequentlyBoughtTogether(productId);
+        List<Integer> ids = new ArrayList<>();
+
+        try {
+            ids = orderItemDAO.findFrequentlyBoughtTogether(productId);
+        } catch (RuntimeException e) {
+            ids = new ArrayList<>();
+        }
 
         if (ids == null || ids.isEmpty()) {
             return productDAO.findRelatedByCategory(categoryId, productId, 4);
@@ -33,20 +40,33 @@ public class RecommendationService {
     }
 
     /**
-     * Lấy sản phẩm LIÊN QUAN
+     * Lấy sản phẩm liên quan.
+     * Không để trang chi tiết sản phẩm lỗi 500 nếu bảng tag chưa được tạo trong database.
      */
     public List<Product> getRelatedProducts(int productId, int categoryId) {
-        List<Product> byCategory = productDAO.findRelatedByCategory(categoryId, productId, 6);
-        List<Product> byTag = productDAO.findRelatedByTag(productId, 6);
+        List<Product> byCategory = new ArrayList<>();
+        List<Product> byTag = new ArrayList<>();
 
-        // Sử dụng Map với Key là Integer thay vì Long
+        try {
+            byCategory = productDAO.findRelatedByCategory(categoryId, productId, 6);
+        } catch (RuntimeException e) {
+            byCategory = new ArrayList<>();
+        }
+
+        try {
+            byTag = productDAO.findRelatedByTag(productId, 6);
+        } catch (RuntimeException e) {
+            byTag = new ArrayList<>();
+        }
+
         Map<Integer, Product> uniqueMap = new LinkedHashMap<>();
 
         if (byCategory != null) {
-            byCategory.forEach(p -> uniqueMap.put(p.getId(), p));
+            byCategory.forEach(product -> uniqueMap.put(product.getId(), product));
         }
+
         if (byTag != null) {
-            byTag.forEach(p -> uniqueMap.put(p.getId(), p));
+            byTag.forEach(product -> uniqueMap.put(product.getId(), product));
         }
 
         return new ArrayList<>(uniqueMap.values());
