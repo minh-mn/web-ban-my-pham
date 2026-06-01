@@ -257,6 +257,13 @@ public class ReviewDAO {
                 }
 
                 replaceMedia(conn, reviewId, imageUrl, videoUrl);
+
+                notifyReviewCreatedSafely(
+                        conn,
+                        review,
+                        reviewId
+                );
+
                 conn.commit();
 
             } catch (Exception e) {
@@ -403,6 +410,173 @@ public class ReviewDAO {
             }
         }
     }
+
+    /* ================= NOTIFICATION HELPERS - ISSUE 114 ================= */
+
+    private void notifyReviewCreatedSafely(Connection connection,
+                                           Review review,
+                                           int reviewId) {
+        if (connection == null
+                || review == null
+                || reviewId <= 0
+                || review.getAuthorId() <= 0
+                || review.getProductId() <= 0) {
+            return;
+        }
+
+        String productName = findProductNameSafely(connection, review.getProductId());
+        String title = "Có đánh giá mới";
+        String message = "Khách hàng #" + review.getAuthorId()
+                + " vừa gửi đánh giá " + review.getRating()
+                + " sao cho sản phẩm \"" + productName + "\".";
+
+        try {
+            new NotificationDAO().createAdminNotification(
+                    connection,
+                    "REVIEW_CREATED",
+                    title,
+                    message,
+                    "/admin/reviews",
+                    "REVIEW",
+                    (long) reviewId
+            );
+        } catch (SQLException e) {
+            /*
+             * Không để lỗi notification làm hỏng thao tác gửi đánh giá.
+             */
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Dùng cho AdminReviewServlet nếu servlet xử lý duyệt/ẩn đánh giá
+     * nhưng muốn gọi DAO để tạo thông báo cho khách.
+     */
+    public void notifyReviewResult(int reviewId,
+                                   boolean approved,
+                                   String adminNote) {
+        if (reviewId <= 0) {
+            return;
+        }
+
+        try (Connection connection = DBConnection.getConnection()) {
+            notifyReviewResult(connection, reviewId, approved, adminNote);
+        } catch (SQLException e) {
+            throw new RuntimeException("ReviewDAO.notifyReviewResult error", e);
+        }
+    }
+
+    public void notifyReviewResult(Connection connection,
+                                   int reviewId,
+                                   boolean approved,
+                                   String adminNote) throws SQLException {
+        if (connection == null) {
+            throw new SQLException("Connection must not be null");
+        }
+
+        ReviewNotificationTarget target = findNotificationTargetByReviewId(connection, reviewId);
+
+        if (target == null || target.authorId() <= 0) {
+            return;
+        }
+
+        String type = approved ? "REVIEW_APPROVED" : "REVIEW_REJECTED";
+        String title = approved ? "Đánh giá đã được duyệt" : "Đánh giá bị từ chối";
+        String message = approved
+                ? "Đánh giá của bạn cho sản phẩm \"" + target.productName() + "\" đã được duyệt."
+                : "Đánh giá của bạn cho sản phẩm \"" + target.productName() + "\" đã bị từ chối hoặc bị ẩn."
+                        + buildAdminNoteText(adminNote);
+
+        new NotificationDAO().createUserNotification(
+                connection,
+                target.authorId(),
+                type,
+                title,
+                message,
+                target.orderId() == null ? "/notifications" : "/orders/detail?id=" + target.orderId(),
+                "REVIEW",
+                (long) reviewId
+        );
+    }
+
+    private ReviewNotificationTarget findNotificationTargetByReviewId(Connection connection,
+                                                                      int reviewId) throws SQLException {
+        String sql = """
+                SELECT
+                    r.author_id,
+                    r.order_id,
+                    COALESCE(p.title, CONCAT('Sản phẩm #', r.product_id)) AS product_name
+                FROM store_review r
+                LEFT JOIN store_product p ON p.id = r.product_id
+                WHERE r.id = ?
+                LIMIT 1
+                """;
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, reviewId);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (!resultSet.next()) {
+                    return null;
+                }
+
+                int authorId = resultSet.getInt("author_id");
+                Integer orderId = getNullableInt(resultSet, "order_id");
+                String productName = defaultIfBlank(
+                        resultSet.getString("product_name"),
+                        "Sản phẩm"
+                );
+
+                return new ReviewNotificationTarget(authorId, orderId, productName);
+            }
+        }
+    }
+
+    private String findProductNameSafely(Connection connection, int productId) {
+        String sql = """
+                SELECT COALESCE(title, CONCAT('Sản phẩm #', id)) AS product_name
+                FROM store_product
+                WHERE id = ?
+                LIMIT 1
+                """;
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, productId);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return defaultIfBlank(resultSet.getString("product_name"), "Sản phẩm");
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return "Sản phẩm #" + productId;
+    }
+
+    private String buildAdminNoteText(String adminNote) {
+        String value = normalize(adminNote);
+
+        if (value == null) {
+            return "";
+        }
+
+        return " Lý do: " + value;
+    }
+
+    private String defaultIfBlank(String value, String defaultValue) {
+        String normalized = normalize(value);
+        return normalized == null ? defaultValue : normalized;
+    }
+
+    private record ReviewNotificationTarget(
+            int authorId,
+            Integer orderId,
+            String productName
+    ) {
+    }
+
 
     public int deleteByProductId(int productId) {
         String sql = "DELETE FROM store_review WHERE product_id = ?";
