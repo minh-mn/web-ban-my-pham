@@ -2,11 +2,15 @@ package com.webshop.app.controller.AdminController;
 
 import com.webshop.app.dao.AdminOrderDAO;
 import com.webshop.app.dao.AdminOrderDAO.OrderTrackingView;
+import com.webshop.app.dao.AdminOrderDAO.OrderSearchFilter;
 import com.webshop.app.model.Order;
 import com.webshop.app.model.ShippingStatus;
 import com.webshop.app.model.User;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Collections;
@@ -50,6 +54,7 @@ public class AdminOrderServlet extends HttpServlet {
     private static final String ACTION_UPDATE_STATUS = "updateStatus";
     private static final String ACTION_UPDATE_SHIPPING_STATUS = "updateShippingStatus";
     private static final String ACTION_UPDATE_SHIPPING_INFO = "updateShippingInfo";
+    private static final String ACTION_BULK_WORKFLOW = "bulkWorkflow";
 
     private final AdminOrderDAO orderDAO = new AdminOrderDAO();
 
@@ -88,6 +93,7 @@ public class AdminOrderServlet extends HttpServlet {
             case ACTION_UPDATE_STATUS -> handleLegacyUpdateStatus(req, resp);
             case ACTION_UPDATE_SHIPPING_STATUS -> handleLegacyUpdateShippingStatus(req, resp);
             case ACTION_UPDATE_SHIPPING_INFO -> handleUpdateShippingInfo(req, resp);
+            case ACTION_BULK_WORKFLOW -> handleBulkWorkflow(req, resp);
 
             default -> {
                 setFlashError(req, "Thao tác quản trị đơn hàng không hợp lệ.");
@@ -105,7 +111,21 @@ public class AdminOrderServlet extends HttpServlet {
 
         consumeFlash(req);
 
-        req.setAttribute("orders", orderDAO.findAll());
+        OrderSearchFilter filter = buildSearchFilter(req);
+        int totalRows = orderDAO.count(filter);
+        int totalPages = Math.max(1, (int) Math.ceil((double) totalRows / filter.getPageSize()));
+
+        if (filter.getPage() > totalPages) {
+            filter.setPage(totalPages);
+        }
+
+        req.setAttribute("orders", orderDAO.search(filter));
+        req.setAttribute("filter", filter);
+        req.setAttribute("totalRows", totalRows);
+        req.setAttribute("totalPages", totalPages);
+        req.setAttribute("currentPage", filter.getPage());
+        req.setAttribute("pageSize", filter.getPageSize());
+        req.setAttribute("filterQueryString", buildFilterQueryString(filter));
         req.setAttribute("pageTitle", "Admin - Quản lý đơn hàng");
         req.setAttribute("activeMenu", "orders");
 
@@ -373,6 +393,122 @@ public class AdminOrderServlet extends HttpServlet {
         resp.sendRedirect(detailUrl(req, id));
     }
 
+    private void handleBulkWorkflow(HttpServletRequest req, HttpServletResponse resp)
+            throws IOException {
+
+        String[] rawIds = req.getParameterValues("selectedOrderIds");
+        String bulkAction = normalizeBulkAction(req.getParameter("bulkAction"));
+        String returnUrl = safeAdminOrdersReturnUrl(req, req.getParameter("returnUrl"));
+
+        if (rawIds == null || rawIds.length == 0) {
+            setFlashError(req, "Vui lòng chọn ít nhất một đơn hàng để xử lý hàng loạt.");
+            resp.sendRedirect(returnUrl);
+            return;
+        }
+
+        if (bulkAction.isEmpty()) {
+            setFlashError(req, "Vui lòng chọn thao tác xử lý hàng loạt.");
+            resp.sendRedirect(returnUrl);
+            return;
+        }
+
+        Integer adminId = getCurrentAdminId(req);
+        String note = resolveTrackingNote(req, defaultBulkNote(bulkAction));
+
+        int successCount = 0;
+        int skippedCount = 0;
+
+        for (String rawId : rawIds) {
+            int orderId = parseInt(rawId, -1);
+
+            if (orderId <= 0) {
+                skippedCount++;
+                continue;
+            }
+
+            Order order = orderDAO.findById(orderId);
+
+            if (order == null) {
+                skippedCount++;
+                continue;
+            }
+
+            if (applyBulkWorkflowAction(order, bulkAction, adminId, note)) {
+                successCount++;
+            } else {
+                skippedCount++;
+            }
+        }
+
+        if (successCount > 0) {
+            setFlashSuccess(
+                    req,
+                    "Đã xử lý " + successCount + " đơn hàng."
+                            + (skippedCount > 0 ? " Bỏ qua " + skippedCount + " đơn không hợp lệ hoặc sai luồng." : "")
+            );
+        } else {
+            setFlashError(req, "Không có đơn hàng nào được xử lý. Vui lòng kiểm tra trạng thái hiện tại của các đơn đã chọn.");
+        }
+
+        resp.sendRedirect(returnUrl);
+    }
+
+    private boolean applyBulkWorkflowAction(Order order,
+                                            String bulkAction,
+                                            Integer adminId,
+                                            String note) {
+        int orderId = order.getId();
+
+        return switch (bulkAction) {
+            case ACTION_CONFIRM_ORDER -> {
+                if (!canConfirmOrder(order)) {
+                    yield false;
+                }
+                yield updateShippingStatusSafely(orderId, "PENDING_PICKUP", adminId, note);
+            }
+            case ACTION_START_SHIPPING -> {
+                if (!canStartShipping(order)) {
+                    yield false;
+                }
+                yield updateShippingStatusSafely(orderId, "DELIVERING", adminId, note);
+            }
+            case ACTION_MARK_DELIVERED -> {
+                if (!canMarkDelivered(order)) {
+                    yield false;
+                }
+                boolean updatedOrder = orderDAO.updateStatusAndPaymentStatus(orderId, "completed", "PAID");
+                boolean updatedShipping = updateShippingStatusSafely(orderId, "DELIVERED", adminId, note);
+                yield updatedOrder || updatedShipping;
+            }
+            case ACTION_MARK_FAILED -> {
+                if (!canMarkFailed(order)) {
+                    yield false;
+                }
+                yield updateShippingStatusSafely(orderId, "FAILED", adminId, note);
+            }
+            case ACTION_CANCEL_ORDER -> {
+                if (!canCancelOrderInBulk(order)) {
+                    yield false;
+                }
+                yield updateShippingStatusSafely(orderId, "CANCELED", adminId, note);
+            }
+            default -> false;
+        };
+    }
+
+    private boolean canCancelOrderInBulk(Order order) {
+        String status = getOrderStatus(order);
+        String shippingStatus = getShippingStatus(order);
+
+        if (isFinalOrderStatus(status) || "DELIVERED".equals(shippingStatus) || "CANCELED".equals(shippingStatus)) {
+            return false;
+        }
+
+        return "processing".equals(status)
+                || "confirmed".equals(status)
+                || ("shipping".equals(status) && "FAILED".equals(shippingStatus));
+    }
+
     /* =========================================================
        LEGACY HANDLERS - CHUYỂN ACTION CŨ SANG WORKFLOW MỚI
     ========================================================= */
@@ -586,6 +722,127 @@ public class AdminOrderServlet extends HttpServlet {
         }
 
         return order;
+    }
+
+    /* =========================================================
+       FILTER / PAGINATION
+    ========================================================= */
+
+    private OrderSearchFilter buildSearchFilter(HttpServletRequest req) {
+        OrderSearchFilter filter = new OrderSearchFilter();
+
+        filter.setKeyword(trim(req.getParameter("keyword")));
+        filter.setOrderStatus(emptyToNull(req.getParameter("orderStatus")));
+        filter.setPaymentStatus(emptyToNull(req.getParameter("paymentStatus")));
+        filter.setShippingStatus(emptyToNull(req.getParameter("shippingStatus")));
+        filter.setShippingProvider(emptyToNull(req.getParameter("shippingProvider")));
+        filter.setDateFrom(parseLocalDate(req.getParameter("dateFrom")));
+        filter.setDateTo(parseLocalDate(req.getParameter("dateTo")));
+        filter.setPage(parseInt(req.getParameter("page"), 1));
+        filter.setPageSize(parsePageSize(req.getParameter("pageSize"), 20));
+
+        return filter;
+    }
+
+    private int parsePageSize(String value, int fallback) {
+        int parsed = parseInt(value, fallback);
+
+        return switch (parsed) {
+            case 10, 20, 50, 100 -> parsed;
+            default -> fallback;
+        };
+    }
+
+    private LocalDate parseLocalDate(String value) {
+        String trimmed = trim(value);
+
+        if (trimmed.isEmpty()) {
+            return null;
+        }
+
+        try {
+            return LocalDate.parse(trimmed);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private String buildFilterQueryString(OrderSearchFilter filter) {
+        StringBuilder query = new StringBuilder();
+
+        appendQueryParam(query, "keyword", filter.getKeyword());
+        appendQueryParam(query, "orderStatus", filter.getOrderStatus());
+        appendQueryParam(query, "paymentStatus", filter.getPaymentStatus());
+        appendQueryParam(query, "shippingStatus", filter.getShippingStatus());
+        appendQueryParam(query, "shippingProvider", filter.getShippingProvider());
+        appendQueryParam(query, "dateFrom", filter.getDateFrom() == null ? "" : filter.getDateFrom().toString());
+        appendQueryParam(query, "dateTo", filter.getDateTo() == null ? "" : filter.getDateTo().toString());
+        appendQueryParam(query, "pageSize", String.valueOf(filter.getPageSize()));
+
+        return query.toString();
+    }
+
+    private void appendQueryParam(StringBuilder query, String name, String value) {
+        String trimmed = trim(value);
+
+        if (trimmed.isEmpty()) {
+            return;
+        }
+
+        if (query.length() > 0) {
+            query.append('&');
+        }
+
+        query.append(URLEncoder.encode(name, StandardCharsets.UTF_8));
+        query.append('=');
+        query.append(URLEncoder.encode(trimmed, StandardCharsets.UTF_8));
+    }
+
+    private String safeAdminOrdersReturnUrl(HttpServletRequest req, String returnUrl) {
+        String fallback = req.getContextPath() + "/admin/orders";
+        String value = trim(returnUrl);
+
+        if (value.isEmpty()
+                || "null".equalsIgnoreCase(value)
+                || value.startsWith("http://")
+                || value.startsWith("https://")) {
+            return fallback;
+        }
+
+        if (!value.startsWith("/admin/orders")) {
+            return fallback;
+        }
+
+        return req.getContextPath() + value;
+    }
+
+    private String normalizeBulkAction(String action) {
+        String value = trim(action);
+
+        return switch (value) {
+            case ACTION_CONFIRM_ORDER,
+                 ACTION_START_SHIPPING,
+                 ACTION_MARK_DELIVERED,
+                 ACTION_MARK_FAILED,
+                 ACTION_CANCEL_ORDER -> value;
+            default -> "";
+        };
+    }
+
+    private String defaultBulkNote(String bulkAction) {
+        return switch (bulkAction) {
+            case ACTION_CONFIRM_ORDER -> "Admin đã xác nhận đơn hàng bằng thao tác hàng loạt.";
+            case ACTION_START_SHIPPING -> "Admin đã chuyển đơn sang đang giao bằng thao tác hàng loạt.";
+            case ACTION_MARK_DELIVERED -> "Admin đã xác nhận giao thành công bằng thao tác hàng loạt.";
+            case ACTION_MARK_FAILED -> "Admin đã đánh dấu giao thất bại bằng thao tác hàng loạt.";
+            case ACTION_CANCEL_ORDER -> "Admin đã hủy đơn hàng bằng thao tác hàng loạt.";
+            default -> "Admin đã cập nhật đơn hàng bằng thao tác hàng loạt.";
+        };
+    }
+
+    private String emptyToNull(String value) {
+        String trimmed = trim(value);
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     /* =========================================================
