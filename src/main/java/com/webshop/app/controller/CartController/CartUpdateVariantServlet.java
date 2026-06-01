@@ -42,8 +42,15 @@ public class CartUpdateVariantServlet extends HttpServlet {
         }
 
         HttpSession session = req.getSession();
-        Map<String, CartItem> cart = CartUtil.getCart(session);
 
+        /*
+         * Issue 132:
+         * Nếu user đã đăng nhập nhưng session cart chưa được nạp,
+         * lấy lại giỏ hàng từ database trước khi đổi biến thể.
+         */
+        CartUtil.loadDatabaseCartIfNeeded(session);
+
+        Map<String, CartItem> cart = CartUtil.getCart(session);
         CartItem oldItem = cart.get(oldKey);
 
         if (oldItem == null) {
@@ -61,19 +68,12 @@ public class CartUpdateVariantServlet extends HttpServlet {
 
         String newKey = CartUtil.buildKey(productId, variant.getId());
 
-        /*
-         * originalProductPrice = giá gốc sản phẩm.
-         * finalProductPrice    = giá sau giảm / giá đang bán.
-         */
         BigDecimal originalProductPrice = safeMoney(product.getPrice());
 
         BigDecimal finalProductPrice = product.getFinalPrice() != null
                 ? safeMoney(product.getFinalPrice())
                 : originalProductPrice;
 
-        /*
-         * Khi đổi biến thể, extraPrice phải cộng vào cả giá gốc và giá sau giảm.
-         */
         BigDecimal variantExtraPrice = safeMoney(variant.getExtraPrice());
 
         BigDecimal originalUnitPrice = originalProductPrice.add(variantExtraPrice);
@@ -96,27 +96,29 @@ public class CartUpdateVariantServlet extends HttpServlet {
                 mergedQty = variant.getStock();
             }
 
+            existing.setCartKey(newKey);
+            existing.setProductId(product.getId());
+            existing.setTitle(product.getTitle());
             existing.setPrice(finalUnitPrice);
             existing.setOriginalPrice(originalUnitPrice);
+            existing.setImageUrl(product.getImageUrl());
             existing.setStock(variant.getStock());
-            existing.setQuantity(mergedQty);
+            existing.setQuantity(Math.max(mergedQty, 1));
 
             existing.setVariantId(variant.getId());
             existing.setVariantSize(variant.getSize());
             existing.setVariantType(variant.getType());
             existing.setVariantName(variant.getDisplayName());
             existing.setVariantExtraPrice(variantExtraPrice);
+
+            cart.put(newKey, existing);
         } else {
             oldItem.setCartKey(newKey);
-
-            /*
-             * Quan trọng:
-             * price         = giá đang bán / giá sau giảm
-             * originalPrice = giá gốc trước giảm
-             */
+            oldItem.setProductId(product.getId());
+            oldItem.setTitle(product.getTitle());
             oldItem.setPrice(finalUnitPrice);
             oldItem.setOriginalPrice(originalUnitPrice);
-
+            oldItem.setImageUrl(product.getImageUrl());
             oldItem.setStock(variant.getStock());
             oldItem.setQuantity(newQty);
 
@@ -128,6 +130,18 @@ public class CartUpdateVariantServlet extends HttpServlet {
 
             cart.put(newKey, oldItem);
         }
+
+        if (cart.isEmpty()) {
+            session.removeAttribute(CartUtil.CART_SESSION_KEY);
+        } else {
+            session.setAttribute(CartUtil.CART_SESSION_KEY, cart);
+        }
+
+        /*
+         * Lưu lại database ngay sau khi đổi biến thể.
+         * Nếu user logout/login lại thì biến thể mới vẫn được giữ.
+         */
+        CartUtil.saveCartForLoggedUser(session);
 
         resp.sendRedirect(req.getContextPath() + "/cart");
     }
