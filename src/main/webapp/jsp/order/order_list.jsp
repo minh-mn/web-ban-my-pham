@@ -1,468 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
-
-<style>
-  .order-page {
-    color: #1f2a44;
-    width: min(1380px, calc(100vw - 32px));
-    max-width: none !important;
-    margin: 0 auto;
-  }
-
-  .order-orders {
-    background: #ffffff;
-    border: 1px solid #f0e8ee;
-    border-radius: 22px;
-    padding: 24px;
-    box-shadow: 0 12px 34px rgba(31, 42, 68, 0.07);
-  }
-
-  .order-section-head {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 14px;
-    margin-bottom: 18px;
-  }
-
-  .order-section-title {
-    margin: 0;
-    color: #1f2a44;
-    font-size: 22px;
-    line-height: 1.35;
-    font-weight: 900;
-  }
-
-  .order-section-subtitle {
-    margin: 4px 0 0;
-    color: #7b8794;
-    font-size: 13.5px;
-    font-weight: 650;
-  }
-
-  .order-table-wrap {
-    overflow-x: auto;
-    border: 1px solid #eef2f7;
-    border-radius: 18px;
-    background: #ffffff;
-  }
-
-  .order-table {
-    width: 100%;
-    min-width: 0;
-    border-collapse: collapse;
-    table-layout: fixed;
-  }
-
-  .order-table th {
-    padding: 14px 12px;
-    border-bottom: 1px solid #eef2f7;
-    color: #475569;
-    background: #f8fafc;
-    font-size: 13px;
-    text-align: left;
-    font-weight: 900;
-    white-space: nowrap;
-  }
-
-  .order-table td {
-    padding: 15px 12px;
-    border-bottom: 1px solid #f1f5f9;
-    color: #334155;
-    font-size: 14px;
-    vertical-align: middle;
-  }
-
-  .order-table tbody tr:last-child td {
-    border-bottom: none;
-  }
-
-  .order-table tr:hover td {
-    background: #fff8fb;
-  }
-
-  .text-center {
-    text-align: center !important;
-  }
-
-  .order-id {
-    color: #d63384;
-    font-weight: 950;
-    white-space: nowrap;
-    font-size: 15px;
-  }
-
-  .order-price {
-    color: #1f2a44;
-    font-weight: 950;
-    white-space: nowrap;
-  }
-
-  .order-muted {
-    color: #7b8794;
-    font-size: 13px;
-  }
-
-  /*
-   * FIX CĂN NGANG:
-   * Hai cột "Trạng thái đơn" và "Vận chuyển" dùng cùng layout 2 hàng:
-   * hàng 1 = badge, hàng 2 = mô tả/mã vận đơn.
-   * Badge luôn nằm trên cùng một trục ngang dù dòng phụ có xuống hàng.
-   */
-  .order-status-td,
-  .shipping-status-td {
-    vertical-align: top !important;
-    padding-top: 18px !important;
-  }
-
-  .status-cell {
-    width: 100%;
-    min-height: 82px;
-    margin: 0 auto;
-    display: grid;
-    grid-template-rows: 34px 42px;
-    row-gap: 8px;
-    justify-items: center;
-    align-items: start;
-    align-content: start;
-  }
-
-  .status-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 152px;
-    height: 34px;
-    min-height: 34px;
-    padding: 0 14px;
-    border-radius: 999px;
-    font-size: 13.5px;
-    line-height: 1;
-    font-weight: 900;
-    text-align: center;
-    white-space: nowrap;
-    box-sizing: border-box;
-  }
-
-  .status-subtext {
-    width: 100%;
-    min-height: 38px;
-    max-width: 172px;
-    color: #64748b;
-    font-size: 12.5px;
-    font-weight: 750;
-    line-height: 1.35;
-    text-align: center;
-    white-space: normal;
-    overflow-wrap: anywhere;
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-  }
-
-  .shipping-code-line {
-    margin-top: 0;
-  }
-
-  .status-badge.status-warning {
-    background: #fff6e5;
-    color: #9a5b00;
-    border: 1px solid #ffe4ad;
-  }
-
-  .status-badge.status-info {
-    background: #eaf3ff;
-    color: #1769aa;
-    border: 1px solid #c7ddff;
-  }
-
-  .status-badge.status-ok {
-    background: #e8f7ef;
-    color: #12804a;
-    border: 1px solid #bdebd1;
-  }
-
-  .status-badge.status-danger {
-    background: #fdecec;
-    color: #c62828;
-    border: 1px solid #facaca;
-  }
-
-  .status-badge.status-muted {
-    background: #f8fafc;
-    color: #475569;
-    border: 1px solid #e2e8f0;
-  }
-
-  .tracking-link {
-    display: block;
-    width: 100%;
-    padding: 12px 12px 11px;
-    border: 1px solid #edf0f5;
-    border-radius: 16px;
-    background: #ffffff;
-    color: inherit;
-    text-decoration: none;
-    transition: 0.18s ease;
-  }
-
-  .tracking-link:hover {
-    border-color: #f3b8d2;
-    background: #fff3f8;
-    transform: translateY(-1px);
-  }
-
-  .tracking-progress {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 7px;
-    margin-bottom: 8px;
-  }
-
-  .tracking-bar {
-    height: 8px;
-    border-radius: 999px;
-    background: #e5e7eb;
-  }
-
-  .tracking-bar.done {
-    background: #22c55e;
-  }
-
-  .tracking-bar.active {
-    background: #3b82f6;
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
-  }
-
-  .tracking-bar.failed {
-    background: #ef4444;
-    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.12);
-  }
-
-  .tracking-labels {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 7px;
-    color: #64748b;
-    font-size: 11.5px;
-    font-weight: 800;
-    text-align: center;
-  }
-
-  .tracking-action {
-    display: inline-flex;
-    margin-top: 9px;
-    color: #d63384;
-    font-size: 12.5px;
-    font-weight: 900;
-  }
-
-  .btn-outline.small {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 34px;
-    padding: 0 12px;
-    border: 1px solid #e5e7eb;
-    border-radius: 10px;
-    color: #334155;
-    background: #ffffff;
-    text-decoration: none;
-    font-size: 13px;
-    font-weight: 850;
-    cursor: pointer;
-    transition: 0.18s ease;
-    white-space: nowrap;
-  }
-
-  .btn-outline.small:hover {
-    border-color: #f3b8d2;
-    color: #d63384;
-    background: #fff3f8;
-    transform: translateY(-1px);
-  }
-
-  .btn-detail {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 132px;
-    min-height: 44px;
-    padding: 0 18px;
-    border: none;
-    border-radius: 999px;
-    background: linear-gradient(180deg, #f45ea7 0%, #d63384 100%);
-    color: #ffffff;
-    text-decoration: none;
-    font-size: 14px;
-    font-weight: 900;
-    box-shadow: 0 12px 24px rgba(214, 51, 132, 0.22);
-    transition: 0.18s ease;
-    white-space: nowrap;
-  }
-
-  .btn-detail:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 14px 28px rgba(214, 51, 132, 0.28);
-    color: #ffffff;
-  }
-
-  .detail-cell {
-    text-align: center;
-  }
-
-  .order-action-stack {
-    display: inline-flex;
-    flex-direction: column;
-    align-items: stretch;
-    justify-content: center;
-    gap: 8px;
-  }
-
-  .btn-retry-payment {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 132px;
-    min-height: 40px;
-    padding: 0 16px;
-    border: none;
-    border-radius: 999px;
-    background: #1f2a44;
-    color: #ffffff;
-    text-decoration: none;
-    font-size: 13px;
-    font-weight: 900;
-    box-shadow: 0 10px 20px rgba(31, 42, 68, 0.18);
-    transition: 0.18s ease;
-    white-space: nowrap;
-  }
-
-  .btn-retry-payment:hover {
-    transform: translateY(-1px);
-    color: #ffffff;
-    box-shadow: 0 12px 24px rgba(31, 42, 68, 0.25);
-  }
-
-  .order-inline-form {
-    margin: 0;
-  }
-
-  .btn-cancel-order,
-  .btn-return-order {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 132px;
-    min-height: 38px;
-    padding: 0 14px;
-    border-radius: 999px;
-    border: none;
-    text-decoration: none;
-    font-size: 12.8px;
-    font-weight: 900;
-    cursor: pointer;
-    transition: 0.18s ease;
-    white-space: nowrap;
-  }
-
-  .btn-cancel-order {
-    background: #fff1f2;
-    color: #be123c;
-    border: 1px solid #fecdd3;
-  }
-
-  .btn-return-order {
-    background: #eff6ff;
-    color: #1d4ed8;
-    border: 1px solid #bfdbfe;
-  }
-
-  .btn-cancel-order:hover,
-  .btn-return-order:hover {
-    transform: translateY(-1px);
-    filter: brightness(0.98);
-  }
-
-  .admin-status-form {
-    min-height: 82px;
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    gap: 8px;
-    padding-top: 0;
-  }
-
-  .order-status-select {
-    min-height: 34px;
-    padding: 0 10px;
-    border: 1px solid #dbe3ef;
-    border-radius: 10px;
-    background: #ffffff;
-    color: #334155;
-    font-weight: 750;
-  }
-
-  .order-note {
-    margin: 16px 0 0;
-    padding: 12px 14px;
-    border-radius: 14px;
-    background: #fff8fb;
-    color: #7b3a56;
-    font-size: 14px;
-    font-weight: 750;
-  }
-
-  .empty-text {
-    margin: 0;
-    padding: 22px;
-    border-radius: 16px;
-    background: #f8fafc;
-    color: #7b8794;
-    font-weight: 750;
-    text-align: center;
-  }
-
-  @media (max-width: 1200px) {
-    .order-page {
-      width: min(1280px, calc(100vw - 24px));
-    }
-  }
-
-  @media (max-width: 992px) {
-    .order-table {
-      min-width: 980px;
-    }
-
-    .order-table-wrap {
-      overflow-x: auto;
-    }
-  }
-
-  @media (max-width: 768px) {
-    .order-page {
-      width: calc(100vw - 16px);
-    }
-
-    .order-orders {
-      padding: 16px;
-    }
-
-    .order-section-head {
-      flex-direction: column;
-    }
-
-    .order-section-title {
-      font-size: 19px;
-    }
-
-    .order-table {
-      min-width: 940px;
-    }
-  }
-</style>
-
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <section class="section">
   <div class="container order-page">
 
@@ -483,19 +22,40 @@
             <table class="order-table">
               <thead>
               <tr>
-                <th style="width: 84px;">Mã đơn</th>
-                <th style="width: 138px;">Ngày đặt</th>
-                <th style="width: 150px;">Tổng thanh toán</th>
-                <th class="text-center" style="width: 170px;">Trạng thái đơn</th>
-                <th class="text-center" style="width: 182px;">Vận chuyển</th>
-                <th style="width: 230px;">Tracking</th>
-                <th class="text-center" style="width: 144px;">Chi tiết</th>
+                <th class="order-col-id">Mã đơn</th>
+                <th class="order-col-date">Ngày đặt</th>
+                <th class="order-col-total">Tổng thanh toán</th>
+                <th class="text-center order-col-status">Trạng thái đơn</th>
+                <th class="text-center order-col-shipping">Vận chuyển</th>
+                <th class="order-col-tracking">Tracking</th>
+                <th class="text-center order-col-actions">Chi tiết</th>
               </tr>
               </thead>
 
               <tbody>
               <c:forEach var="order" items="${orders}">
-                <tr id="order-${order.id}">
+                <c:set var="orderStatus" value="${empty order.status ? '' : fn:toLowerCase(order.status)}" />
+                <c:set var="shippingStatus" value="${empty order.shippingStatus ? '' : fn:toUpperCase(order.shippingStatus)}" />
+                <c:set var="paymentStatus" value="${empty order.paymentStatus ? 'PENDING' : fn:toUpperCase(order.paymentStatus)}" />
+                <c:set var="paymentMethod" value="${empty order.paymentMethod ? 'COD' : fn:toUpperCase(order.paymentMethod)}" />
+                <c:set var="isProcessing" value="${orderStatus eq 'processing' or orderStatus eq 'pending'}" />
+                <c:set var="isConfirmed" value="${orderStatus eq 'confirmed'}" />
+                <c:set var="isOrderShipping" value="${orderStatus eq 'shipping'}" />
+                <c:set var="isCompleted" value="${orderStatus eq 'completed'}" />
+                <c:set var="isCancelled" value="${orderStatus eq 'cancelled' or orderStatus eq 'canceled'}" />
+
+                <c:set var="isPendingPickup" value="${shippingStatus eq 'PENDING_PICKUP' or shippingStatus eq 'PENDING' or shippingStatus eq 'CREATED' or shippingStatus eq 'PICKING' or empty shippingStatus}" />
+                <c:set var="isDelivering" value="${shippingStatus eq 'DELIVERING' or shippingStatus eq 'SHIPPING' or shippingStatus eq 'IN_TRANSIT'}" />
+                <c:set var="isDelivered" value="${shippingStatus eq 'DELIVERED' or shippingStatus eq 'SUCCESS' or shippingStatus eq 'COMPLETED'}" />
+                <c:set var="isDeliveryFailed" value="${shippingStatus eq 'FAILED' or shippingStatus eq 'DELIVERY_FAILED' or shippingStatus eq 'RETURNED'}" />
+                <c:set var="isShippingCanceled" value="${shippingStatus eq 'CANCELED' or shippingStatus eq 'CANCELLED'}" />
+
+                <c:set var="canRetryPayment" value="${paymentMethod eq 'VNPAY' and paymentStatus ne 'PAID' and not isCancelled and not isCompleted}" />
+                <c:set var="canCancel" value="${(isProcessing or isConfirmed) and isPendingPickup}" />
+                <c:set var="canReturn" value="${isCompleted and isDelivered}" />
+
+                <tr id="order-${order.id}"
+                    class="<c:if test='${isCancelled or isShippingCanceled}'>order-row-cancelled</c:if><c:if test='${isDeliveryFailed}'> order-row-failed</c:if>">
                   <td>
                     <span class="order-id">#${order.id}</span>
                   </td>
@@ -521,98 +81,55 @@
                   </td>
 
                   <td class="text-center order-status-td">
-                    <c:choose>
-                      <c:when test="${not empty sessionScope.user and sessionScope.user.admin}">
-                        <form method="post"
-                              action="${pageContext.request.contextPath}/admin/order/update-status"
-                              class="admin-status-form">
+                    <div class="status-cell">
+                      <c:choose>
+                        <c:when test="${isCompleted}">
+                          <span class="status-badge status-ok">Hoàn thành</span>
+                        </c:when>
+                        <c:when test="${isCancelled}">
+                          <span class="status-badge status-danger">Đã hủy</span>
+                        </c:when>
+                        <c:when test="${isOrderShipping}">
+                          <span class="status-badge status-info">Đang giao</span>
+                        </c:when>
+                        <c:when test="${isConfirmed}">
+                          <span class="status-badge status-warning">Đã xác nhận</span>
+                        </c:when>
+                        <c:when test="${isProcessing}">
+                          <span class="status-badge status-warning">Chờ xác nhận</span>
+                        </c:when>
+                        <c:otherwise>
+                          <span class="status-badge status-muted">
+                            <c:out value="${empty order.statusLabel ? order.status : order.statusLabel}" />
+                          </span>
+                        </c:otherwise>
+                      </c:choose>
 
-                          <input type="hidden" name="csrf_token" value="${sessionScope.CSRF_TOKEN}" />
-                          <input type="hidden" name="orderId" value="${order.id}" />
-                          <input type="hidden" name="returnUrl" value="/orders" />
-
-                          <select name="status"
-                                  class="order-status-select ${order.status}"
-                                  <c:if test="${order.status eq 'completed'}">disabled="disabled"</c:if>>
-
-                            <c:choose>
-                              <c:when test="${not empty statusChoices}">
-                                <c:forEach var="st" items="${statusChoices}">
-                                  <option value="${st.key}"
-                                          <c:if test="${st.key eq order.status}">selected="selected"</c:if>>
-                                      ${st.label}
-                                  </option>
-                                </c:forEach>
-                              </c:when>
-
-                              <c:otherwise>
-                                <option value="${order.status}" selected="selected">
-                                  <c:choose>
-                                    <c:when test="${order.status == 'processing'}">Chờ xác nhận</c:when>
-                                    <c:when test="${order.status == 'confirmed'}">Đã xác nhận</c:when>
-                                    <c:when test="${order.status == 'shipping'}">Đang giao</c:when>
-                                    <c:when test="${order.status == 'completed'}">Hoàn thành</c:when>
-                                    <c:when test="${order.status == 'cancelled' || order.status == 'canceled'}">Đã hủy</c:when>
-                                    <c:when test="${not empty order.statusLabel}">
-                                      ${order.statusLabel}
-                                    </c:when>
-                                    <c:otherwise>${order.status}</c:otherwise>
-                                  </c:choose>
-                                </option>
-                              </c:otherwise>
-                            </c:choose>
-                          </select>
-
-                          <c:if test="${order.status ne 'completed'}">
-                            <button type="submit" class="btn-outline small">Lưu</button>
-                          </c:if>
-                        </form>
-                      </c:when>
-
-                      <c:otherwise>
-                        <div class="status-cell">
-                          <c:choose>
-                            <c:when test="${order.status == 'completed'}">
-                              <span class="status-badge status-ok">Hoàn thành</span>
-                            </c:when>
-                            <c:when test="${order.status == 'cancelled' || order.status == 'canceled'}">
-                              <span class="status-badge status-danger">Đã hủy</span>
-                            </c:when>
-                            <c:when test="${order.status == 'shipping'}">
-                              <span class="status-badge status-info">Đang giao</span>
-                            </c:when>
-                            <c:when test="${order.status == 'confirmed'}">
-                              <span class="status-badge status-warning">Đã xác nhận</span>
-                            </c:when>
-                            <c:when test="${order.status == 'processing'}">
-                              <span class="status-badge status-warning">Chờ xác nhận</span>
-                            </c:when>
-                            <c:otherwise>
-                              <span class="status-badge status-muted">
-                                <c:out value="${empty order.statusLabel ? order.status : order.statusLabel}" />
-                              </span>
-                            </c:otherwise>
-                          </c:choose>
-
-                          <span class="status-subtext">Trạng thái đơn hàng</span>
-                        </div>
-                      </c:otherwise>
-                    </c:choose>
+                      <span class="status-subtext">
+                        <c:choose>
+                          <c:when test="${paymentStatus eq 'PAID'}">Đã thanh toán</c:when>
+                          <c:when test="${paymentStatus eq 'FAILED'}">Thanh toán thất bại</c:when>
+                          <c:when test="${paymentStatus eq 'CANCELED' or paymentStatus eq 'CANCELLED'}">Đã hủy thanh toán</c:when>
+                          <c:when test="${paymentStatus eq 'REFUNDED'}">Đã hoàn tiền</c:when>
+                          <c:otherwise>Chờ thanh toán</c:otherwise>
+                        </c:choose>
+                      </span>
+                    </div>
                   </td>
 
                   <td class="text-center shipping-status-td">
                     <div class="status-cell">
                       <c:choose>
-                        <c:when test="${order.delivered}">
+                        <c:when test="${isDelivered}">
                           <span class="status-badge status-ok">Giao thành công</span>
                         </c:when>
-                        <c:when test="${order.deliveryFailed}">
+                        <c:when test="${isDeliveryFailed}">
                           <span class="status-badge status-danger">Giao thất bại</span>
                         </c:when>
-                        <c:when test="${order.shippingCanceled}">
+                        <c:when test="${isShippingCanceled}">
                           <span class="status-badge status-danger">Đã hủy vận chuyển</span>
                         </c:when>
-                        <c:when test="${order.delivering}">
+                        <c:when test="${isDelivering}">
                           <span class="status-badge status-info">Đang giao</span>
                         </c:when>
                         <c:otherwise>
@@ -638,15 +155,15 @@
                        title="Xem tracking đơn hàng #${order.id}">
 
                       <div class="tracking-progress">
-                        <span class="tracking-bar ${order.pendingPickup ? 'active' : (order.delivering || order.delivered || order.deliveryFailed ? 'done' : '')}"></span>
-                        <span class="tracking-bar ${order.delivering ? 'active' : (order.delivered || order.deliveryFailed ? 'done' : '')}"></span>
+                        <span class="tracking-bar ${isPendingPickup ? 'active' : (isDelivering or isDelivered or isDeliveryFailed ? 'done' : '')}"></span>
+                        <span class="tracking-bar ${isDelivering ? 'active' : (isDelivered or isDeliveryFailed ? 'done' : '')}"></span>
 
                         <c:choose>
-                          <c:when test="${order.deliveryFailed || order.shippingCanceled}">
+                          <c:when test="${isDeliveryFailed or isShippingCanceled}">
                             <span class="tracking-bar failed"></span>
                           </c:when>
                           <c:otherwise>
-                            <span class="tracking-bar ${order.delivered ? 'done' : ''}"></span>
+                            <span class="tracking-bar ${isDelivered ? 'done' : ''}"></span>
                           </c:otherwise>
                         </c:choose>
                       </div>
@@ -655,10 +172,10 @@
                         <span>Chờ lấy</span>
                         <span>Đang giao</span>
                         <c:choose>
-                          <c:when test="${order.deliveryFailed}">
+                          <c:when test="${isDeliveryFailed}">
                             <span>Thất bại</span>
                           </c:when>
-                          <c:when test="${order.shippingCanceled}">
+                          <c:when test="${isShippingCanceled}">
                             <span>Đã hủy</span>
                           </c:when>
                           <c:otherwise>
@@ -673,14 +190,14 @@
 
                   <td class="detail-cell">
                     <div class="order-action-stack">
-                      <c:if test="${order.retryPaymentAvailable}">
+                      <c:if test="${canRetryPayment}">
                         <a href="${pageContext.request.contextPath}/vnpay/payment?orderId=${order.id}"
                            class="btn-retry-payment">
                           Thanh toán lại
                         </a>
                       </c:if>
 
-                      <c:if test="${order.cancelable}">
+                      <c:if test="${canCancel}">
                         <form method="post"
                               action="${pageContext.request.contextPath}/orders/cancel"
                               class="order-inline-form"
@@ -692,7 +209,7 @@
                         </form>
                       </c:if>
 
-                      <c:if test="${order.returnable}">
+                      <c:if test="${canReturn}">
                         <form method="post"
                               action="${pageContext.request.contextPath}/orders/return"
                               class="order-inline-form"
