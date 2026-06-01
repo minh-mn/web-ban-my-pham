@@ -311,6 +311,87 @@ public class OrderItemDAO {
         }
     }
 
+    /* ================= NOTIFICATION HELPERS - ISSUE 114 ================= */
+
+    /**
+     * Lấy danh sách tên sản phẩm trong đơn hàng để tạo nội dung thông báo.
+     * Ví dụ dùng cho thông báo admin: "Đơn hàng mới gồm: Son dưỡng x1, Serum x2..."
+     */
+    public List<String> findProductNamesByOrderId(int orderId, int limit) {
+        List<String> productNames = new ArrayList<>();
+
+        if (orderId <= 0) {
+            return productNames;
+        }
+
+        int safeLimit = Math.max(1, Math.min(limit, 10));
+
+        String sql = """
+                SELECT
+                    COALESCE(p.title, CONCAT('Sản phẩm #', oi.product_id)) AS product_name,
+                    COALESCE(oi.quantity, 0) AS quantity
+                FROM store_orderitem oi
+                LEFT JOIN store_product p ON p.id = oi.product_id
+                WHERE oi.order_id = ?
+                ORDER BY oi.id ASC
+                LIMIT ?
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setInt(1, orderId);
+            statement.setInt(2, safeLimit);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    String productName = defaultIfBlank(resultSet.getString("product_name"), "Sản phẩm");
+                    int quantity = Math.max(resultSet.getInt("quantity"), 0);
+
+                    if (quantity > 0) {
+                        productNames.add(productName + " x" + quantity);
+                    } else {
+                        productNames.add(productName);
+                    }
+                }
+            }
+
+            return productNames;
+        } catch (SQLException e) {
+            throw new RuntimeException("OrderItemDAO.findProductNamesByOrderId error", e);
+        }
+    }
+
+    /**
+     * Tạo mô tả ngắn các sản phẩm trong đơn hàng.
+     */
+    public String buildOrderItemSummary(int orderId) {
+        return buildOrderItemSummary(orderId, 3);
+    }
+
+    public String buildOrderItemSummary(int orderId, int limit) {
+        if (orderId <= 0) {
+            return "";
+        }
+
+        int safeLimit = Math.max(1, Math.min(limit, 10));
+        List<String> productNames = findProductNamesByOrderId(orderId, safeLimit);
+
+        if (productNames.isEmpty()) {
+            return "";
+        }
+
+        int totalItems = countByOrderId(orderId);
+        String summary = String.join(", ", productNames);
+
+        if (totalItems > productNames.size()) {
+            summary += " và " + (totalItems - productNames.size()) + " sản phẩm khác";
+        }
+
+        return summary;
+    }
+
+
     public List<Integer> findFrequentlyBoughtTogether(int productId) {
         List<Integer> productIds = new ArrayList<>();
         String sql = "SELECT oi2.product_id, SUM(oi1.quantity * oi2.quantity) AS score " +
