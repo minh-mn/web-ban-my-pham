@@ -18,6 +18,14 @@ public class SearchHistoryDAO {
     private static final int MAX_KEYWORD_LENGTH = 255;
     private static final int MAX_URL_LENGTH = 500;
 
+    /**
+     * Lưu lịch sử tìm kiếm của user.
+     *
+     * Nếu user tìm cùng một keyword nhiều lần:
+     * - Không tạo dòng trùng.
+     * - Tăng search_count.
+     * - Cập nhật result_count, search_url, last_searched_at.
+     */
     public void saveSearch(int userId, String keyword, int resultCount, String searchUrl) {
         if (userId <= 0) {
             return;
@@ -61,14 +69,23 @@ public class SearchHistoryDAO {
         }
     }
 
+    /**
+     * Alias dùng cho servlet nếu bạn đang gọi tên hàm ngắn hơn.
+     */
     public void save(int userId, String keyword, int resultCount, String searchUrl) {
         saveSearch(userId, keyword, resultCount, searchUrl);
     }
 
+    /**
+     * Alias dùng khi chỉ cần lưu keyword, không cần số kết quả/url.
+     */
     public void saveKeyword(int userId, String keyword) {
         saveSearch(userId, keyword, 0, buildDefaultSearchUrl(keyword));
     }
 
+    /**
+     * Lấy lịch sử tìm kiếm gần đây của user.
+     */
     public List<UserSearchHistory> findRecentByUserId(int userId, int limit) {
         List<UserSearchHistory> histories = new ArrayList<>();
 
@@ -109,6 +126,9 @@ public class SearchHistoryDAO {
         return findRecentByUserId(userId, DEFAULT_LIMIT);
     }
 
+    /**
+     * Alias nếu AccountServlet đang gọi findLatestByUserId.
+     */
     public List<UserSearchHistory> findLatestByUserId(int userId, int limit) {
         return findRecentByUserId(userId, limit);
     }
@@ -117,10 +137,16 @@ public class SearchHistoryDAO {
         return findRecentByUserId(userId, DEFAULT_LIMIT);
     }
 
+    /**
+     * Lấy tất cả lịch sử của user, dùng cho trang quản lý riêng nếu sau này cần.
+     */
     public List<UserSearchHistory> findAllByUserId(int userId) {
         return findRecentByUserId(userId, 100);
     }
 
+    /**
+     * Xóa một dòng lịch sử, bắt buộc kèm user_id để tránh xóa nhầm dữ liệu tài khoản khác.
+     */
     public boolean deleteByIdAndUserId(long id, int userId) {
         if (id <= 0 || userId <= 0) {
             return false;
@@ -141,14 +167,23 @@ public class SearchHistoryDAO {
         }
     }
 
+    /**
+     * Alias nếu servlet đang gọi delete().
+     */
     public boolean delete(int userId, long id) {
         return deleteByIdAndUserId(id, userId);
     }
 
+    /**
+     * Alias nếu servlet truyền id trước, userId sau.
+     */
     public boolean delete(long id, int userId) {
         return deleteByIdAndUserId(id, userId);
     }
 
+    /**
+     * Xóa toàn bộ lịch sử tìm kiếm của user.
+     */
     public int clearByUserId(int userId) {
         if (userId <= 0) {
             return 0;
@@ -167,10 +202,16 @@ public class SearchHistoryDAO {
         }
     }
 
+    /**
+     * Alias nếu servlet đang gọi clear().
+     */
     public int clear(int userId) {
         return clearByUserId(userId);
     }
 
+    /**
+     * Đếm số dòng lịch sử của user.
+     */
     public int countByUserId(int userId) {
         if (userId <= 0) {
             return 0;
@@ -192,6 +233,10 @@ public class SearchHistoryDAO {
         }
     }
 
+    /**
+     * Giữ lại N lịch sử gần nhất, xóa các lịch sử cũ hơn.
+     * Không bắt buộc dùng, nhưng hữu ích để bảng không phình quá lớn.
+     */
     public int deleteOldHistoriesKeepingLatest(int userId, int keepLatest) {
         if (userId <= 0) {
             return 0;
