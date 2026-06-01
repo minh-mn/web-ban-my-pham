@@ -15,6 +15,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 @WebServlet("/products")
 public class ProductListServlet extends HttpServlet {
@@ -25,6 +26,7 @@ public class ProductListServlet extends HttpServlet {
     private final CategoryDAO categoryDAO = new CategoryDAO();
     private final BrandDAO brandDAO = new BrandDAO();
     private final CategoryTagDAO categoryTagDAO = new CategoryTagDAO();
+    private final SearchHistoryDAO searchHistoryDAO = new SearchHistoryDAO();
 
     private final ProductPricingFacade pricingFacade = new ProductPricingFacade();
 
@@ -89,7 +91,7 @@ public class ProductListServlet extends HttpServlet {
 
         WishlistDAO wishlistDAO = new WishlistDAO();
 
-        User user = (User) req.getSession().getAttribute("user");
+        User user = getCurrentUser(req);
 
         Set<Integer> wishlistIds = new HashSet<>();
 
@@ -114,6 +116,14 @@ public class ProductListServlet extends HttpServlet {
                 priceRangeList,
                 minRating
         );
+
+        /*
+         * Issue 133:
+         * Lưu lịch sử tìm kiếm khi user tìm bằng q trên trang /products.
+         * Chỉ lưu khi user đã đăng nhập và keyword thật sự có nội dung.
+         * Các thao tác lọc không có keyword sẽ không lưu để tránh rác lịch sử.
+         */
+        saveSearchHistoryIfLoggedIn(req, keyword, total);
 
         int totalPages = (int) Math.ceil(total / (double) pageSize);
 
@@ -231,6 +241,64 @@ public class ProductListServlet extends HttpServlet {
 
         // ===== 11. RENDER =====
         req.getRequestDispatcher("/jsp/common/base.jsp").forward(req, resp);
+    }
+
+
+    /* =====================================================
+       SEARCH HISTORY
+    ===================================================== */
+
+    private void saveSearchHistoryIfLoggedIn(HttpServletRequest req, String keyword, int total) {
+        if (isBlank(keyword)) {
+            return;
+        }
+
+        User currentUser = getCurrentUser(req);
+
+        if (currentUser == null || currentUser.getId() <= 0) {
+            return;
+        }
+
+        try {
+            searchHistoryDAO.saveSearch(
+                    currentUser.getId(),
+                    keyword.trim(),
+                    total,
+                    buildSearchUrl(req)
+            );
+        } catch (Exception e) {
+            /*
+             * Không để lỗi lưu lịch sử làm hỏng trang danh sách sản phẩm.
+             * Nếu bảng user_search_history chưa được tạo, /products vẫn phải chạy bình thường.
+             */
+            System.out.println("[ProductListServlet] save search history error: " + e.getMessage());
+        }
+    }
+
+    private User getCurrentUser(HttpServletRequest req) {
+        HttpSession session = req.getSession(false);
+
+        if (session == null) {
+            return null;
+        }
+
+        Object rawUser = session.getAttribute("user");
+
+        if (rawUser instanceof User) {
+            return (User) rawUser;
+        }
+
+        return null;
+    }
+
+    private String buildSearchUrl(HttpServletRequest req) {
+        String queryString = req.getQueryString();
+
+        if (queryString == null || queryString.isBlank()) {
+            return "/products";
+        }
+
+        return "/products?" + queryString;
     }
 
     /* =====================================================
