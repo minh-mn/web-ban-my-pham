@@ -36,6 +36,41 @@ public class CartItem {
     private String variantName;
     private BigDecimal variantExtraPrice;
 
+    // ===== ISSUE 139: FLASH SALE PURCHASE LIMIT =====
+    /*
+     * Đánh dấu item này có thuộc Flash Sale đang hoạt động hay không.
+     */
+    private boolean flashSaleItem;
+
+    /*
+     * ID của flash sale và flash sale item để service/DAO kiểm tra giới hạn.
+     */
+    private int flashSaleId;
+    private int flashSaleItemId;
+
+    /*
+     * Giới hạn mua tối đa cho mỗi khách trong khung Flash Sale.
+     * Ví dụ: 2 nghĩa là mỗi khách chỉ được mua tối đa 2 sản phẩm này.
+     */
+    private int maxQuantityPerUser;
+
+    /*
+     * Số lượng user đã mua trước đó trong khung Flash Sale.
+     * Dùng để hiển thị hoặc tính phần còn được mua thêm.
+     */
+    private int purchasedFlashSaleQuantity;
+
+    /*
+     * Số lượng tối đa user còn được giữ trong giỏ/checkout ở thời điểm kiểm tra.
+     * Nếu service không set thì helper sẽ tự tính theo maxQuantityPerUser - purchasedFlashSaleQuantity.
+     */
+    private int remainingFlashSaleLimit = -1;
+
+    /*
+     * Message cảnh báo dùng cho JSP.
+     */
+    private String flashSaleLimitMessage;
+
     // ===== BUSINESS =====
 
     /**
@@ -63,8 +98,16 @@ public class CartItem {
                 && originalPrice.compareTo(price) > 0;
     }
 
+    public boolean getDiscounted() {
+        return isDiscounted();
+    }
+
     public boolean isHasVariant() {
         return variantId > 0;
+    }
+
+    public boolean getHasVariant() {
+        return isHasVariant();
     }
 
     public String getVariantDisplayName() {
@@ -88,6 +131,91 @@ public class CartItem {
         }
 
         return "Mặc định";
+    }
+
+    /*
+     * Issue 139:
+     * Số lượng còn được phép mua thêm theo giới hạn Flash Sale.
+     */
+    public int getEffectiveRemainingFlashSaleLimit() {
+        if (!flashSaleItem || maxQuantityPerUser <= 0) {
+            return Integer.MAX_VALUE;
+        }
+
+        if (remainingFlashSaleLimit >= 0) {
+            return remainingFlashSaleLimit;
+        }
+
+        return Math.max(0, maxQuantityPerUser - purchasedFlashSaleQuantity);
+    }
+
+    public boolean isFlashSaleLimitReached() {
+        return flashSaleItem
+                && maxQuantityPerUser > 0
+                && quantity >= getEffectiveRemainingFlashSaleLimit();
+    }
+
+    public boolean getFlashSaleLimitReached() {
+        return isFlashSaleLimitReached();
+    }
+
+    public boolean isReachedFlashSaleLimit() {
+        return isFlashSaleLimitReached();
+    }
+
+    public boolean getReachedFlashSaleLimit() {
+        return isFlashSaleLimitReached();
+    }
+
+    public boolean isCanIncreaseQuantity() {
+        if (stock > 0 && quantity >= stock) {
+            return false;
+        }
+
+        if (flashSaleItem && maxQuantityPerUser > 0) {
+            return quantity < getEffectiveRemainingFlashSaleLimit();
+        }
+
+        return true;
+    }
+
+    public boolean getCanIncreaseQuantity() {
+        return isCanIncreaseQuantity();
+    }
+
+    public String getFlashSaleLimitLabel() {
+        if (!flashSaleItem || maxQuantityPerUser <= 0) {
+            return "";
+        }
+
+        return "Flash Sale: giới hạn " + maxQuantityPerUser + " sản phẩm/khách";
+    }
+
+    public String getFlashSaleLimitMessage() {
+        if (flashSaleLimitMessage != null && !flashSaleLimitMessage.isBlank()) {
+            return flashSaleLimitMessage;
+        }
+
+        if (!flashSaleItem || maxQuantityPerUser <= 0) {
+            return "";
+        }
+
+        int remaining = getEffectiveRemainingFlashSaleLimit();
+
+        if (remaining <= 0) {
+            return "Bạn đã đạt giới hạn mua Flash Sale cho sản phẩm này.";
+        }
+
+        if (quantity >= remaining) {
+            return "Bạn đã đạt giới hạn " + maxQuantityPerUser + " sản phẩm/khách trong Flash Sale.";
+        }
+
+        return getFlashSaleLimitLabel();
+    }
+
+    public boolean getHasFlashSaleLimitMessage() {
+        String message = getFlashSaleLimitMessage();
+        return message != null && !message.isBlank();
     }
 
     private BigDecimal getSafePrice() {
@@ -129,7 +257,7 @@ public class CartItem {
     }
 
     public void setTitle(String title) {
-        this.title = title;
+        this.title = title == null ? null : title.trim();
     }
 
     public int getQuantity() {
@@ -161,7 +289,7 @@ public class CartItem {
     }
 
     public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
+        this.imageUrl = imageUrl == null ? null : imageUrl.trim();
     }
 
     public int getStock() {
@@ -177,7 +305,7 @@ public class CartItem {
     }
 
     public void setCartKey(String cartKey) {
-        this.cartKey = cartKey;
+        this.cartKey = cartKey == null ? null : cartKey.trim();
     }
 
     public int getVariantId() {
@@ -193,7 +321,7 @@ public class CartItem {
     }
 
     public void setVariantSize(String variantSize) {
-        this.variantSize = variantSize;
+        this.variantSize = variantSize == null ? null : variantSize.trim();
     }
 
     public String getVariantType() {
@@ -201,7 +329,7 @@ public class CartItem {
     }
 
     public void setVariantType(String variantType) {
-        this.variantType = variantType;
+        this.variantType = variantType == null ? null : variantType.trim();
     }
 
     public String getVariantName() {
@@ -209,7 +337,7 @@ public class CartItem {
     }
 
     public void setVariantName(String variantName) {
-        this.variantName = variantName;
+        this.variantName = variantName == null ? null : variantName.trim();
     }
 
     public BigDecimal getVariantExtraPrice() {
@@ -218,5 +346,90 @@ public class CartItem {
 
     public void setVariantExtraPrice(BigDecimal variantExtraPrice) {
         this.variantExtraPrice = variantExtraPrice;
+    }
+
+    // ===== ISSUE 139 GETTER / SETTER =====
+
+    public boolean isFlashSaleItem() {
+        return flashSaleItem;
+    }
+
+    public boolean getFlashSaleItem() {
+        return flashSaleItem;
+    }
+
+    /*
+     * Alias nếu JSP/service gọi item.flashSale.
+     */
+    public boolean isFlashSale() {
+        return flashSaleItem;
+    }
+
+    public boolean getFlashSale() {
+        return flashSaleItem;
+    }
+
+    public void setFlashSaleItem(boolean flashSaleItem) {
+        this.flashSaleItem = flashSaleItem;
+    }
+
+    public void setFlashSale(boolean flashSale) {
+        this.flashSaleItem = flashSale;
+    }
+
+    public int getFlashSaleId() {
+        return flashSaleId;
+    }
+
+    public void setFlashSaleId(int flashSaleId) {
+        this.flashSaleId = Math.max(flashSaleId, 0);
+    }
+
+    public int getFlashSaleItemId() {
+        return flashSaleItemId;
+    }
+
+    public void setFlashSaleItemId(int flashSaleItemId) {
+        this.flashSaleItemId = Math.max(flashSaleItemId, 0);
+    }
+
+    public int getMaxQuantityPerUser() {
+        return maxQuantityPerUser;
+    }
+
+    public void setMaxQuantityPerUser(int maxQuantityPerUser) {
+        this.maxQuantityPerUser = Math.max(maxQuantityPerUser, 0);
+    }
+
+    /*
+     * Alias nếu code đang dùng tên flashSaleLimitPerUser.
+     */
+    public int getFlashSaleLimitPerUser() {
+        return maxQuantityPerUser;
+    }
+
+    public void setFlashSaleLimitPerUser(int flashSaleLimitPerUser) {
+        setMaxQuantityPerUser(flashSaleLimitPerUser);
+    }
+
+    public int getPurchasedFlashSaleQuantity() {
+        return purchasedFlashSaleQuantity;
+    }
+
+    public void setPurchasedFlashSaleQuantity(int purchasedFlashSaleQuantity) {
+        this.purchasedFlashSaleQuantity = Math.max(purchasedFlashSaleQuantity, 0);
+    }
+
+    public int getRemainingFlashSaleLimit() {
+        int value = getEffectiveRemainingFlashSaleLimit();
+        return value == Integer.MAX_VALUE ? 0 : value;
+    }
+
+    public void setRemainingFlashSaleLimit(int remainingFlashSaleLimit) {
+        this.remainingFlashSaleLimit = Math.max(remainingFlashSaleLimit, 0);
+    }
+
+    public void setFlashSaleLimitMessage(String flashSaleLimitMessage) {
+        this.flashSaleLimitMessage = flashSaleLimitMessage;
     }
 }
