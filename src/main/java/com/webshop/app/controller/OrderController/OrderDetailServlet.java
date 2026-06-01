@@ -156,6 +156,7 @@ public class OrderDetailServlet extends HttpServlet {
         req.setAttribute("error", req.getParameter("error"));
 
         req.setAttribute("pageTitle", "MyCosmetic | Chi tiết đơn hàng #" + order.getId());
+        req.setAttribute("pageCss", "/order-detail.css");
         req.setAttribute("pageContent", "/jsp/order/order_detail.jsp");
 
         req.getRequestDispatcher("/jsp/common/base.jsp").forward(req, resp);
