@@ -74,7 +74,15 @@ public class CancelRequestDAO {
 
             try (ResultSet resultSet = statement.getGeneratedKeys()) {
                 if (resultSet.next()) {
-                    return resultSet.getLong(1);
+                    long createdId = resultSet.getLong(1);
+
+                    notifyCancelRequestCreatedSafely(
+                            conn,
+                            request,
+                            createdId
+                    );
+
+                    return createdId;
                 }
             }
         }
@@ -230,6 +238,12 @@ public class CancelRequestDAO {
                     );
                 }
 
+                notifyCancelRequestResultSafely(
+                        connection,
+                        current,
+                        normalizedStatus
+                );
+
                 connection.commit();
                 return true;
             } catch (SQLException e) {
@@ -359,6 +373,115 @@ public class CancelRequestDAO {
             statement.executeUpdate();
         }
     }
+
+    /* =========================================================
+       NOTIFICATION HELPERS - ISSUE 114
+    ========================================================= */
+
+    private void notifyCancelRequestCreatedSafely(Connection connection,
+                                                  CancelRequest request,
+                                                  long cancelRequestId) {
+        if (connection == null
+                || request == null
+                || cancelRequestId <= 0
+                || request.getOrderId() <= 0
+                || request.getUserId() <= 0) {
+            return;
+        }
+
+        try {
+            NotificationDAO notificationDAO = new NotificationDAO();
+
+            notificationDAO.createUserNotification(
+                    connection,
+                    request.getUserId(),
+                    "CANCEL_REQUEST_CREATED",
+                    "Đã gửi yêu cầu hủy đơn",
+                    "Yêu cầu hủy đơn hàng #" + request.getOrderId() + " của bạn đã được ghi nhận.",
+                    "/orders/detail?id=" + request.getOrderId(),
+                    "CANCEL_REQUEST",
+                    cancelRequestId
+            );
+
+            notificationDAO.createAdminNotification(
+                    connection,
+                    "CANCEL_REQUEST_CREATED",
+                    "Có yêu cầu hủy đơn mới",
+                    "Khách hàng #" + request.getUserId()
+                            + " đã gửi yêu cầu hủy đơn hàng #" + request.getOrderId()
+                            + buildReasonText(request.getReason()),
+                    "/admin/orders?action=detail&id=" + request.getOrderId(),
+                    "CANCEL_REQUEST",
+                    cancelRequestId
+            );
+        } catch (SQLException e) {
+            /*
+             * Không để lỗi notification làm hỏng thao tác tạo yêu cầu hủy.
+             */
+            e.printStackTrace();
+        }
+    }
+
+    private void notifyCancelRequestResultSafely(Connection connection,
+                                                 CancelRequest request,
+                                                 String status) {
+        if (connection == null
+                || request == null
+                || request.getId() <= 0
+                || request.getOrderId() <= 0
+                || request.getUserId() <= 0) {
+            return;
+        }
+
+        String normalizedStatus = normalizeStatus(status);
+
+        if (!"APPROVED".equals(normalizedStatus) && !"REJECTED".equals(normalizedStatus)) {
+            return;
+        }
+
+        boolean approved = "APPROVED".equals(normalizedStatus);
+
+        String type = approved
+                ? "CANCEL_REQUEST_APPROVED"
+                : "CANCEL_REQUEST_REJECTED";
+
+        String title = approved
+                ? "Yêu cầu hủy đơn đã được duyệt"
+                : "Yêu cầu hủy đơn bị từ chối";
+
+        String message = approved
+                ? "Yêu cầu hủy đơn hàng #" + request.getOrderId() + " của bạn đã được duyệt."
+                : "Yêu cầu hủy đơn hàng #" + request.getOrderId() + " của bạn đã bị từ chối.";
+
+        try {
+            new NotificationDAO().createUserNotification(
+                    connection,
+                    request.getUserId(),
+                    type,
+                    title,
+                    message,
+                    "/orders/detail?id=" + request.getOrderId(),
+                    "CANCEL_REQUEST",
+                    request.getId()
+            );
+        } catch (SQLException e) {
+            /*
+             * Không để lỗi notification làm rollback thao tác duyệt/từ chối hủy đơn.
+             */
+            e.printStackTrace();
+        }
+    }
+
+    private String buildReasonText(String reason) {
+        String safeReason = trimToNull(reason);
+
+        if (safeReason == null) {
+            return ".";
+        }
+
+        return ". Lý do: " + safeReason;
+    }
+
 
     private CancelRequest mapRow(ResultSet resultSet) throws SQLException {
         CancelRequest request = new CancelRequest();
