@@ -73,19 +73,24 @@ public class CartServlet extends HttpServlet {
             }
 
             if (selectedVariant.getStock() <= 0) {
-                if (quantity > selectedVariant.getStock()) {
-
-                    resp.sendRedirect(
-                            req.getContextPath()
-                                    + "/product/"
-                                    + product.getSlug()
-                                    + "?variantOutOfStock=1"
-                    );
-
-                    return;
-                }
+                resp.sendRedirect(req.getContextPath()
+                        + "/product/" + product.getSlug() + "?variantOutOfStock=1");
+                return;
             }
-            
+        }
+
+        int maxStock = selectedVariant != null
+                ? selectedVariant.getStock()
+                : product.getStock();
+
+        if (maxStock <= 0) {
+            resp.sendRedirect(req.getContextPath()
+                    + "/product/" + product.getSlug() + "?outOfStock=1");
+            return;
+        }
+
+        if (quantity > maxStock) {
+            quantity = maxStock;
         }
 
         HttpSession session = req.getSession();
@@ -94,29 +99,12 @@ public class CartServlet extends HttpServlet {
         int realVariantId = selectedVariant != null ? selectedVariant.getId() : 0;
         String cartKey = CartUtil.buildKey(productId, realVariantId);
 
-        int maxStock = selectedVariant != null
-                ? selectedVariant.getStock()
-                : product.getStock();
-
-        if (maxStock > 0 && quantity > maxStock) {
-            quantity = maxStock;
-        }
-
-        /*
-         * originalProductPrice = giá gốc của sản phẩm.
-         * finalProductPrice    = giá sau giảm / giá đang bán.
-         */
         BigDecimal originalProductPrice = safeMoney(product.getPrice());
 
         BigDecimal finalProductPrice = product.getFinalPrice() != null
                 ? safeMoney(product.getFinalPrice())
                 : originalProductPrice;
 
-        /*
-         * Nếu sản phẩm có biến thể thì cộng thêm extraPrice vào cả:
-         * - giá gốc
-         * - giá sau giảm
-         */
         BigDecimal variantExtraPrice = selectedVariant != null
                 ? safeMoney(selectedVariant.getExtraPrice())
                 : BigDecimal.ZERO;
@@ -132,15 +120,8 @@ public class CartServlet extends HttpServlet {
             item.setCartKey(cartKey);
             item.setProductId(product.getId());
             item.setTitle(product.getTitle());
-
-            /*
-             * Quan trọng:
-             * price         = giá đang bán / giá sau giảm
-             * originalPrice = giá gốc trước giảm
-             */
             item.setPrice(finalUnitPrice);
             item.setOriginalPrice(originalUnitPrice);
-
             item.setImageUrl(product.getImageUrl());
             item.setStock(maxStock);
             item.setQuantity(quantity);
@@ -157,15 +138,13 @@ public class CartServlet extends HttpServlet {
         } else {
             int newQuantity = item.getQuantity() + quantity;
 
-            if (maxStock > 0 && newQuantity > maxStock) {
+            if (newQuantity > maxStock) {
                 newQuantity = maxStock;
             }
 
-            /*
-             * Cập nhật lại giá để tránh trường hợp giá sản phẩm/giá biến thể đã thay đổi.
-             */
             item.setPrice(finalUnitPrice);
             item.setOriginalPrice(originalUnitPrice);
+            item.setImageUrl(product.getImageUrl());
             item.setStock(maxStock);
             item.setQuantity(newQuantity);
 
@@ -175,8 +154,23 @@ public class CartServlet extends HttpServlet {
                 item.setVariantType(selectedVariant.getType());
                 item.setVariantName(selectedVariant.getDisplayName());
                 item.setVariantExtraPrice(variantExtraPrice);
+            } else {
+                item.setVariantId(0);
+                item.setVariantSize(null);
+                item.setVariantType(null);
+                item.setVariantName(null);
+                item.setVariantExtraPrice(BigDecimal.ZERO);
             }
         }
+
+        session.setAttribute(CartUtil.CART_SESSION_KEY, cart);
+
+        /*
+         * Issue 132:
+         * Nếu user đã đăng nhập, lưu ngay giỏ hàng xuống database sau khi thêm sản phẩm.
+         * Khi logout/login lại, CartUtil có thể khôi phục giỏ hàng từ bảng cart_items.
+         */
+        CartUtil.saveCartForLoggedUser(session);
 
         resp.sendRedirect(req.getContextPath() + "/cart");
     }
