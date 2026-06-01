@@ -168,11 +168,29 @@
 
                                     <c:choose>
                                         <c:when test="${isFlashSection}">
-                                            <div class="skin-progress">
-                                                <span style="width: 18%;"></span>
+                                            <c:set var="flashSoldPercent" value="${product.saleProgressPercent}" />
+
+                                            <div class="skin-progress skin-stock-progress"
+                                                 role="progressbar"
+                                                 aria-label="Tiến độ đã bán"
+                                                 aria-valuemin="0"
+                                                 aria-valuemax="100"
+                                                 aria-valuenow="${flashSoldPercent}">
+                                                <span style="width: ${flashSoldPercent}%;"></span>
                                             </div>
-                                            <div class="skin-progress-text">
-                                                ĐANG DIỄN RA 18%
+
+                                            <div class="skin-progress-text skin-stock-progress-text">
+                                                <c:choose>
+                                                    <c:when test="${flashSoldPercent >= 100 || product.stock <= 0}">
+                                                        Đã bán hết
+                                                    </c:when>
+                                                    <c:when test="${flashSoldPercent <= 0}">
+                                                        Vừa mở bán
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        Đã bán ${flashSoldPercent}%
+                                                    </c:otherwise>
+                                                </c:choose>
                                             </div>
                                         </c:when>
 
