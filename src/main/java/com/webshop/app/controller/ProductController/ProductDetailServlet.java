@@ -1,13 +1,19 @@
 package com.webshop.app.controller.ProductController;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
-import com.webshop.app.dao.*;
+import com.webshop.app.dao.OrderItemDAO;
+import com.webshop.app.dao.ProductDAO;
+import com.webshop.app.dao.ProductImageDAO;
+import com.webshop.app.dao.ProductMediaDAO;
+import com.webshop.app.dao.ProductVariantDAO;
+import com.webshop.app.dao.ReviewDAO;
+import com.webshop.app.dao.WishlistDAO;
 import com.webshop.app.model.Product;
 import com.webshop.app.model.ProductMedia;
 import com.webshop.app.model.ProductVariant;
@@ -23,21 +29,17 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
-@WebServlet("/product/*")
+@WebServlet({"/product", "/product/*", "/products/detail"})
 public class ProductDetailServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
 
     private final ProductDAO productDAO = new ProductDAO();
     private final ProductImageDAO productImageDAO = new ProductImageDAO();
-
-    // Issue 123: DAO lấy media chi tiết sản phẩm gồm ảnh/video
     private final ProductMediaDAO productMediaDAO = new ProductMediaDAO();
-
     private final ProductVariantDAO productVariantDAO = new ProductVariantDAO();
     private final ReviewDAO reviewDAO = new ReviewDAO();
     private final ProductPricingFacade pricingFacade = new ProductPricingFacade();
-    
     private final OrderItemDAO orderItemDAO = new OrderItemDAO();
     private final RecommendationService recommendationService = new RecommendationService(orderItemDAO, productDAO);
 
@@ -48,42 +50,17 @@ public class ProductDetailServlet extends HttpServlet {
         req.setCharacterEncoding("UTF-8");
         resp.setCharacterEncoding("UTF-8");
 
-        String path = req.getPathInfo();
-
-        if (path == null || "/".equals(path) || path.length() <= 1) {
-            resp.sendRedirect(req.getContextPath() + "/products");
-            return;
-        }
-
-        String slug = path.substring(1);
-
-        if (slug.endsWith("/")) {
-            slug = slug.substring(0, slug.length() - 1);
-        }
-
-        slug = URLDecoder.decode(slug, StandardCharsets.UTF_8.name());
-
-        Product product = productDAO.findBySlug(slug);
+        Product product = resolveProduct(req);
 
         if (product == null) {
             resp.sendRedirect(req.getContextPath() + "/products");
             return;
         }
 
-        /*
-         * Gallery ảnh cũ của sản phẩm.
-         */
         product.setImages(productImageDAO.findByProductId(product.getId()));
 
-        /*
-         * Issue 123:
-         * Lấy danh sách media chi tiết sản phẩm gồm ảnh/video.
-         * JSP detail.jsp sẽ dùng productMediaList để hiển thị.
-         */
         List<ProductMedia> productMediaList = productMediaDAO.findByProductId(product.getId());
-
-        List<ProductVariant> variants =
-                productVariantDAO.findActiveByProductId(product.getId());
+        List<ProductVariant> variants = productVariantDAO.findActiveByProductId(product.getId());
 
         Integer reviewRating = parseNullableRating(req.getParameter("reviewRating"));
         String reviewSort = req.getParameter("reviewSort");
@@ -98,66 +75,109 @@ public class ProductDetailServlet extends HttpServlet {
 
         int reviewCount = reviews != null ? reviews.size() : 0;
         product.setReviewCount(reviewCount);
-
-        double avgRating = 0.0;
-
-        if (reviewCount > 0) {
-            int sum = 0;
-
-            for (Review r : reviews) {
-                sum += r.getRating();
-            }
-
-            avgRating = sum / (double) reviewCount;
-        }
-
-        product.setAvgRating(avgRating);
+        product.setAvgRating(calculateAvgRating(reviews));
         product.setFinalPrice(pricingFacade.getFinalPrice(product));
 
-        List<Product> boughtTogether = recommendationService.getFrequentlyBought(product.getId(), (int) product.getCategoryId());
-        List<Product> related = recommendationService.getRelatedProducts(product.getId(), (int) product.getCategoryId());
+        BigDecimal basePrice = product.getFinalPrice() != null
+                ? product.getFinalPrice()
+                : product.getPrice();
 
-        req.setAttribute("boughtTogetherProducts", boughtTogether);
-        req.setAttribute("relatedProducts", related);
+        BigDecimal priceSaved = BigDecimal.ZERO;
+        if (product.getPrice() != null && basePrice != null && product.getPrice().compareTo(basePrice) > 0) {
+            priceSaved = product.getPrice().subtract(basePrice);
+        }
 
-        req.setAttribute("product", product);
-        req.setAttribute("productMediaList", productMediaList);
-        req.setAttribute("reviews", reviews);
-        req.setAttribute("variants", variants);
-        req.setAttribute("reviewSort", reviewSort);
-        req.setAttribute("reviewRating", reviewRating);
-        req.setAttribute("reviewMedia", reviewMedia);
-        req.setAttribute(
-                "basePrice",
-                product.getFinalPrice() != null
-                        ? product.getFinalPrice()
-                        : product.getPrice()
-        );
+        List<Product> boughtTogether = Collections.emptyList();
+        List<Product> related = Collections.emptyList();
+
+        try {
+            boughtTogether = recommendationService.getFrequentlyBought(product.getId(), (int) product.getCategoryId());
+        } catch (Exception ignored) {
+            boughtTogether = Collections.emptyList();
+        }
+
+        try {
+            related = recommendationService.getRelatedProducts(product.getId(), (int) product.getCategoryId());
+        } catch (Exception ignored) {
+            related = Collections.emptyList();
+        }
 
         HttpSession session = req.getSession(false);
         User user = session == null ? null : (User) session.getAttribute("user");
 
-        boolean canReviewProduct =
-                user != null && reviewDAO.canUserReviewProduct(user.getId(), product.getId());
+        boolean canReviewProduct = user != null && reviewDAO.canUserReviewProduct(user.getId(), product.getId());
 
-        req.setAttribute("canReviewProduct", canReviewProduct);
-
-        WishlistDAO wishlistDAO = new WishlistDAO();
-
+        boolean inWishlist = false;
         if (user != null) {
-            // Sử dụng WishlistDAO đã có sẵn để kiểm tra
-            boolean inWishlist = wishlistDAO.exists(user.getId(), product.getId());
-            req.setAttribute("inWishlist", inWishlist);
-        } else {
-            req.setAttribute("inWishlist", false);
+            WishlistDAO wishlistDAO = new WishlistDAO();
+            inWishlist = wishlistDAO.exists(user.getId(), product.getId());
         }
 
+        req.setAttribute("product", product);
+        req.setAttribute("productMediaList", productMediaList);
+        req.setAttribute("variants", variants);
+        req.setAttribute("reviews", reviews);
+        req.setAttribute("reviewSort", reviewSort);
+        req.setAttribute("reviewRating", reviewRating);
+        req.setAttribute("reviewMedia", reviewMedia);
+        req.setAttribute("basePrice", basePrice);
+        req.setAttribute("priceSaved", priceSaved);
+        req.setAttribute("boughtTogetherProducts", boughtTogether);
+        req.setAttribute("relatedProducts", related);
+        req.setAttribute("canReviewProduct", canReviewProduct);
+        req.setAttribute("inWishlist", inWishlist);
         req.setAttribute("pageTitle", "MyCosmetic | " + product.getTitle());
         req.setAttribute("pageCss", "product-detail.css");
         req.setAttribute("pageContent", "/jsp/product/detail.jsp");
 
-        req.getRequestDispatcher("/jsp/common/base.jsp")
-                .forward(req, resp);
+        req.getRequestDispatcher("/jsp/common/base.jsp").forward(req, resp);
+    }
+
+    private Product resolveProduct(HttpServletRequest req) throws IOException {
+        int id = parseInt(req.getParameter("id"), 0);
+        String slug = extractSlug(req.getPathInfo());
+
+        Product product = null;
+
+        if (slug != null && !slug.isBlank()) {
+            product = productDAO.findBySlug(slug);
+        }
+
+        if (product == null && id > 0) {
+            product = productDAO.findById(id);
+        }
+
+        return product;
+    }
+
+    private String extractSlug(String pathInfo) throws IOException {
+        if (pathInfo == null || pathInfo.isBlank() || "/".equals(pathInfo)) {
+            return null;
+        }
+
+        String slug = pathInfo;
+        if (slug.startsWith("/")) {
+            slug = slug.substring(1);
+        }
+        if (slug.endsWith("/")) {
+            slug = slug.substring(0, slug.length() - 1);
+        }
+
+        slug = URLDecoder.decode(slug, StandardCharsets.UTF_8.name()).trim();
+        return slug.isBlank() ? null : slug;
+    }
+
+    private double calculateAvgRating(List<Review> reviews) {
+        if (reviews == null || reviews.isEmpty()) {
+            return 0.0;
+        }
+
+        int sum = 0;
+        for (Review review : reviews) {
+            sum += review.getRating();
+        }
+
+        return sum / (double) reviews.size();
     }
 
     private Integer parseNullableRating(String value) {
@@ -167,10 +187,20 @@ public class ProductDetailServlet extends HttpServlet {
             }
 
             int rating = Integer.parseInt(value.trim());
-
             return rating >= 1 && rating <= 5 ? rating : null;
         } catch (Exception e) {
             return null;
+        }
+    }
+
+    private int parseInt(String value, int defaultValue) {
+        try {
+            if (value == null || value.isBlank()) {
+                return defaultValue;
+            }
+            return Integer.parseInt(value.trim());
+        } catch (Exception e) {
+            return defaultValue;
         }
     }
 }
