@@ -730,35 +730,44 @@ public class UserDAO {
         }
     }
 
-    public void saveSocialUser(User user, String provider, String socialId) {
+    public boolean saveSocialUser(User user, String provider, String socialId) {
         String column = "google".equalsIgnoreCase(provider) ? "google_id" : "facebook_id";
-
         String sql = """
-                INSERT INTO users
-                (
-                    username,
-                    role,
-                    full_name,
-                    email,
-                    active,
-                    %s,
-                    manual_rank_code
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                """.formatted(column);
+        INSERT INTO users
+        (
+            username,
+            password,
+            role,
+            full_name,
+            email,
+            phone,
+            active,
+            %s,
+            manual_rank_code
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """.formatted(column);
 
         try (Connection connection = DBConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            statement.setString(1, user.getUsername());
-            statement.setString(2, DEFAULT_ROLE);
-            statement.setString(3, nullify(user.getFullName()));
-            statement.setString(4, nullify(user.getEmail()));
-            statement.setBoolean(5, true);
-            statement.setString(6, socialId);
-            statement.setString(7, normalizeNullableRankCode(user.getManualRankCode()));
+            // Tạo một mật khẩu giả ngẫu nhiên để thỏa mãn ràng buộc NOT NULL của Database
+            // Vì là đăng nhập qua Social, người dùng không cần dùng mật khẩu này
+            String dummyPassword = java.util.UUID.randomUUID().toString();
 
-            statement.executeUpdate();
+            statement.setString(1, user.getUsername());
+            statement.setString(2, dummyPassword); // Đưa mật khẩu giả vào đây
+            statement.setString(3, DEFAULT_ROLE);
+            statement.setString(4, nullify(user.getFullName()));
+            statement.setString(5, nullify(user.getEmail()));
+            statement.setString(6, nullify(user.getPhone()));
+            statement.setBoolean(7, true);
+            statement.setString(8, socialId);
+            statement.setString(9, normalizeNullableRankCode(user.getManualRankCode()));
+
+            int rows = statement.executeUpdate();
+
+            return rows > 0;
 
         } catch (SQLException e) {
             throw new RuntimeException("UserDAO.saveSocialUser error", e);
@@ -792,52 +801,35 @@ public class UserDAO {
      * Password được hash tại đây để tránh lưu mật khẩu thô vào database.
      */
     public boolean insert(User user) {
-        String sql = """
-                INSERT INTO users
-                (
-                    username,
-                    password,
-                    full_name,
-                    email,
-                    phone,
-                    role,
-                    active,
-                    google_id,
-                    facebook_id,
-                    birth_date,
-                    gender,
-                    manual_rank_code
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """;
+        // 1. Thêm gender và address vào câu SQL
+        String sql = "INSERT INTO users (username, password, full_name, email, phone, role, active, created_at, google_id, facebook_id, birth_date, manual_rank_code, gender, address) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?, ?, ?, ?, ?)";
 
         try (Connection connection = DBConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setString(1, user.getUsername());
-            statement.setString(2, PasswordUtils.hash(user.getPassword()));
-            statement.setString(3, nullify(user.getFullName()));
-            statement.setString(4, nullify(user.getEmail()));
-            statement.setString(5, nullify(user.getPhone()));
-            statement.setString(6, normalizeRole(user.getRole()));
+            statement.setString(2, user.getPassword());
+            statement.setString(3, user.getFullName());
+            statement.setString(4, user.getEmail());
+            statement.setString(5, user.getPhone());
+            statement.setString(6, user.getRole() != null ? user.getRole() : "USER");
             statement.setBoolean(7, user.isActive());
+            statement.setString(8, user.getGoogleId());
+            statement.setString(9, user.getFacebookId());
+            statement.setDate(10, user.getBirthDate() != null ? java.sql.Date.valueOf(user.getBirthDate().toString()) : null);
+            statement.setString(11, normalizeNullableRankCode(user.getManualRankCode()));
 
-            statement.setString(8, null);
-            statement.setString(9, null);
-
-            if (user.getBirthDate() != null && !user.getBirthDate().isBlank()) {
-                statement.setDate(10, java.sql.Date.valueOf(user.getBirthDate()));
-            } else {
-                statement.setNull(10, java.sql.Types.DATE);
-            }
-
-            statement.setString(11, normalizeGender(user.getGender()));
-            statement.setString(12, normalizeNullableRankCode(user.getManualRankCode()));
+            // 2. Thêm giá trị cho gender và address
+            // Nếu object User chưa có getGender/getAddress, hãy truyền chuỗi rỗng "" hoặc null
+            statement.setString(12, user.getGender() != null ? user.getGender() : "OTHER");
+            statement.setString(13, user.getAddress() != null ? user.getAddress() : "");
 
             return statement.executeUpdate() > 0;
 
         } catch (SQLException e) {
-            throw new RuntimeException("UserDAO.insert error", e);
+            // 3. QUAN TRỌNG: In lỗi chi tiết ra console để biết tại sao
+            e.printStackTrace();
+            throw new RuntimeException("Lỗi Database: " + e.getMessage());
         }
     }
 
