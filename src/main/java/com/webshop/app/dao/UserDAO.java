@@ -705,51 +705,85 @@ public class UserDAO {
 
     public User findBySocialId(String provider, String socialId) {
         String column = "google".equalsIgnoreCase(provider) ? "google_id" : "facebook_id";
-        String sql = "SELECT * FROM users WHERE " + column + " = ?";
 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, socialId);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return mapUser(rs);
+        String sql = """
+                SELECT %s
+                FROM users
+                WHERE %s = ?
+                """.formatted(USER_COLUMNS, column);
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, socialId);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (!resultSet.next()) {
+                    return null;
                 }
+
+                return mapUser(resultSet);
             }
+
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException("UserDAO.findBySocialId error", e);
         }
-        return null;
     }
 
     public void saveSocialUser(User user, String provider, String socialId) {
         String column = "google".equalsIgnoreCase(provider) ? "google_id" : "facebook_id";
-        String sql = "INSERT INTO users (username, email, full_name, role, active, " + column + ", created_at) VALUES (?, ?, ?, 'USER', 1, ?, NOW())";
 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, user.getUsername());
-            ps.setString(2, user.getEmail());
-            ps.setString(3, user.getFullName());
-            ps.setString(4, socialId);
-            ps.executeUpdate();
+        String sql = """
+                INSERT INTO users
+                (
+                    username,
+                    role,
+                    full_name,
+                    email,
+                    active,
+                    %s,
+                    manual_rank_code
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """.formatted(column);
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, user.getUsername());
+            statement.setString(2, DEFAULT_ROLE);
+            statement.setString(3, nullify(user.getFullName()));
+            statement.setString(4, nullify(user.getEmail()));
+            statement.setBoolean(5, true);
+            statement.setString(6, socialId);
+            statement.setString(7, normalizeNullableRankCode(user.getManualRankCode()));
+
+            statement.executeUpdate();
+
         } catch (SQLException e) {
-            e.printStackTrace();
-            throw new RuntimeException("Lỗi khi lưu Social User", e);
+            throw new RuntimeException("UserDAO.saveSocialUser error", e);
         }
     }
 
     public void updateSocialId(int userId, String provider, String socialId) {
         String column = "google".equalsIgnoreCase(provider) ? "google_id" : "facebook_id";
-        String sql = "UPDATE users SET " + column + " = ? WHERE id = ?";
 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, socialId);
-            ps.setInt(2, userId);
-            ps.executeUpdate();
+        String sql = """
+                UPDATE users
+                SET %s = ?
+                WHERE id = ?
+                """.formatted(column);
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, socialId);
+            statement.setInt(2, userId);
+
+            statement.executeUpdate();
+
         } catch (SQLException e) {
-            e.printStackTrace();
-            throw new RuntimeException("Lỗi khi update Social ID", e);
+            throw new RuntimeException("UserDAO.updateSocialId error", e);
         }
     }
 
@@ -806,6 +840,184 @@ public class UserDAO {
             throw new RuntimeException("UserDAO.insert error", e);
         }
     }
+
+    /* ================= NOTIFICATION HELPERS - ISSUE 114 ================= */
+
+    /**
+     * Lấy danh sách id user đang hoạt động.
+     * Dùng cho broadcast notification hoặc các tác vụ gửi thông báo hàng loạt.
+     */
+    public List<Integer> findActiveUserIds() {
+        String sql = """
+                SELECT id
+                FROM users
+                WHERE active = 1
+                  AND role = 'USER'
+                ORDER BY id ASC
+                """;
+
+        List<Integer> userIds = new ArrayList<>();
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet resultSet = statement.executeQuery()) {
+
+            while (resultSet.next()) {
+                userIds.add(resultSet.getInt("id"));
+            }
+
+            return userIds;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("UserDAO.findActiveUserIds error", e);
+        }
+    }
+
+    /**
+     * Lấy danh sách id admin đang hoạt động.
+     * Hiện NotificationDAO dùng role_target = ADMIN nên có thể không cần user_id,
+     * nhưng helper này hữu ích nếu sau này muốn gửi thông báo riêng từng admin.
+     */
+    public List<Integer> findAdminUserIds() {
+        String sql = """
+                SELECT id
+                FROM users
+                WHERE active = 1
+                  AND role = 'ADMIN'
+                ORDER BY id ASC
+                """;
+
+        List<Integer> adminIds = new ArrayList<>();
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet resultSet = statement.executeQuery()) {
+
+            while (resultSet.next()) {
+                adminIds.add(resultSet.getInt("id"));
+            }
+
+            return adminIds;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("UserDAO.findAdminUserIds error", e);
+        }
+    }
+
+    /**
+     * Lấy danh sách admin đang hoạt động để hiển thị hoặc xử lý notification.
+     */
+    public List<User> findActiveAdmins() {
+        String sql = """
+                SELECT %s
+                FROM users
+                WHERE active = 1
+                  AND role = 'ADMIN'
+                ORDER BY id ASC
+                """.formatted(USER_COLUMNS);
+
+        List<User> admins = new ArrayList<>();
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet resultSet = statement.executeQuery()) {
+
+            while (resultSet.next()) {
+                admins.add(mapUser(resultSet));
+            }
+
+            return admins;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("UserDAO.findActiveAdmins error", e);
+        }
+    }
+
+    /**
+     * Lấy tên hiển thị của user để tạo nội dung thông báo dễ đọc hơn.
+     */
+    public String findDisplayNameById(int userId) {
+        if (userId <= 0) {
+            return "Khách hàng";
+        }
+
+        String sql = """
+                SELECT
+                    COALESCE(NULLIF(full_name, ''), NULLIF(username, ''), CONCAT('User #', id)) AS display_name
+                FROM users
+                WHERE id = ?
+                LIMIT 1
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setInt(1, userId);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (!resultSet.next()) {
+                    return "Khách hàng";
+                }
+
+                return nullify(resultSet.getString("display_name")) == null
+                        ? "Khách hàng"
+                        : resultSet.getString("display_name");
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("UserDAO.findDisplayNameById error", e);
+        }
+    }
+
+    /**
+     * Kiểm tra user có tồn tại và đang hoạt động.
+     */
+    public boolean isActiveUser(int userId) {
+        if (userId <= 0) {
+            return false;
+        }
+
+        String sql = """
+                SELECT 1
+                FROM users
+                WHERE id = ?
+                  AND active = 1
+                LIMIT 1
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setInt(1, userId);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                return resultSet.next();
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("UserDAO.isActiveUser error", e);
+        }
+    }
+
+    public int countActiveUsers() {
+        String sql = """
+                SELECT COUNT(*)
+                FROM users
+                WHERE active = 1
+                  AND role = 'USER'
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet resultSet = statement.executeQuery()) {
+
+            return resultSet.next() ? resultSet.getInt(1) : 0;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("UserDAO.countActiveUsers error", e);
+        }
+    }
+
 
     /* ================= HELPERS ================= */
 
