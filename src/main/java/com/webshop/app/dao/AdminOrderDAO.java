@@ -12,6 +12,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -57,9 +58,252 @@ public class AdminOrderDAO {
             created_at
             """;
 
+
+    public static class OrderSearchFilter {
+        private String keyword;
+        private String orderStatus;
+        private String paymentStatus;
+        private String shippingStatus;
+        private String shippingProvider;
+        private LocalDate dateFrom;
+        private LocalDate dateTo;
+        private int page = 1;
+        private int pageSize = 20;
+
+        public String getKeyword() {
+            return keyword;
+        }
+
+        public void setKeyword(String keyword) {
+            this.keyword = keyword;
+        }
+
+        public String getOrderStatus() {
+            return orderStatus;
+        }
+
+        public void setOrderStatus(String orderStatus) {
+            this.orderStatus = orderStatus;
+        }
+
+        public String getPaymentStatus() {
+            return paymentStatus;
+        }
+
+        public void setPaymentStatus(String paymentStatus) {
+            this.paymentStatus = paymentStatus;
+        }
+
+        public String getShippingStatus() {
+            return shippingStatus;
+        }
+
+        public void setShippingStatus(String shippingStatus) {
+            this.shippingStatus = shippingStatus;
+        }
+
+        public String getShippingProvider() {
+            return shippingProvider;
+        }
+
+        public void setShippingProvider(String shippingProvider) {
+            this.shippingProvider = shippingProvider;
+        }
+
+        public LocalDate getDateFrom() {
+            return dateFrom;
+        }
+
+        public void setDateFrom(LocalDate dateFrom) {
+            this.dateFrom = dateFrom;
+        }
+
+        public LocalDate getDateTo() {
+            return dateTo;
+        }
+
+        public void setDateTo(LocalDate dateTo) {
+            this.dateTo = dateTo;
+        }
+
+        public int getPage() {
+            return Math.max(page, 1);
+        }
+
+        public void setPage(int page) {
+            this.page = Math.max(page, 1);
+        }
+
+        public int getPageSize() {
+            if (pageSize <= 0) {
+                return 20;
+            }
+
+            return Math.min(pageSize, 100);
+        }
+
+        public void setPageSize(int pageSize) {
+            if (pageSize <= 0) {
+                this.pageSize = 20;
+            } else {
+                this.pageSize = Math.min(pageSize, 100);
+            }
+        }
+
+        public int getOffset() {
+            return (getPage() - 1) * getPageSize();
+        }
+    }
+
     /* =========================================================
        FIND
     ========================================================= */
+
+
+    public List<Order> search(OrderSearchFilter filter) {
+        OrderSearchFilter safeFilter = filter == null ? new OrderSearchFilter() : filter;
+        List<Order> orders = new ArrayList<>();
+        List<Object> params = new ArrayList<>();
+
+        StringBuilder sql = new StringBuilder();
+        sql.append("""
+                SELECT
+                """).append(SELECT_COLUMNS).append("""
+                FROM store_order
+                WHERE 1 = 1
+                """);
+
+        appendSearchWhere(sql, params, safeFilter);
+        sql.append("""
+                ORDER BY created_at DESC, id DESC
+                LIMIT ? OFFSET ?
+                """);
+
+        params.add(safeFilter.getPageSize());
+        params.add(safeFilter.getOffset());
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql.toString())) {
+
+            bindParams(statement, params);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    orders.add(mapRow(resultSet));
+                }
+            }
+
+            return orders;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("AdminOrderDAO.search error", e);
+        }
+    }
+
+    public int count(OrderSearchFilter filter) {
+        OrderSearchFilter safeFilter = filter == null ? new OrderSearchFilter() : filter;
+        List<Object> params = new ArrayList<>();
+
+        StringBuilder sql = new StringBuilder("""
+                SELECT COUNT(*)
+                FROM store_order
+                WHERE 1 = 1
+                """);
+
+        appendSearchWhere(sql, params, safeFilter);
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql.toString())) {
+
+            bindParams(statement, params);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getInt(1);
+                }
+            }
+
+            return 0;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("AdminOrderDAO.count error", e);
+        }
+    }
+
+    private void appendSearchWhere(StringBuilder sql,
+                                   List<Object> params,
+                                   OrderSearchFilter filter) {
+        String keyword = trimToNull(filter.getKeyword());
+
+        if (keyword != null) {
+            String like = "%" + keyword + "%";
+            sql.append("""
+                    AND (
+                        CAST(id AS CHAR) LIKE ?
+                        OR full_name LIKE ?
+                        OR phone LIKE ?
+                        OR address LIKE ?
+                        OR shipping_code LIKE ?
+                        OR vnp_txn_ref LIKE ?
+                    )
+                    """);
+            params.add(like);
+            params.add(like);
+            params.add(like);
+            params.add(like);
+            params.add(like);
+            params.add(like);
+        }
+
+        String orderStatus = trimToNull(filter.getOrderStatus());
+        if (orderStatus != null) {
+            sql.append(" AND LOWER(COALESCE(status, '')) = ?\n");
+            params.add(normalizeOrderStatus(orderStatus));
+        }
+
+        String paymentStatus = trimToNull(filter.getPaymentStatus());
+        if (paymentStatus != null) {
+            sql.append(" AND UPPER(COALESCE(payment_status, '')) = ?\n");
+            params.add(normalizePaymentStatus(paymentStatus));
+        }
+
+        String shippingStatus = trimToNull(filter.getShippingStatus());
+        if (shippingStatus != null) {
+            sql.append(" AND UPPER(COALESCE(shipping_status, '')) = ?\n");
+            params.add(normalizeShippingStatus(shippingStatus));
+        }
+
+        String shippingProvider = trimToNull(filter.getShippingProvider());
+        if (shippingProvider != null) {
+            sql.append(" AND UPPER(COALESCE(shipping_provider, '')) = ?\n");
+            params.add(normalizeShippingProvider(shippingProvider));
+        }
+
+        if (filter.getDateFrom() != null) {
+            sql.append(" AND created_at >= ?\n");
+            params.add(java.sql.Date.valueOf(filter.getDateFrom()));
+        }
+
+        if (filter.getDateTo() != null) {
+            sql.append(" AND created_at < DATE_ADD(?, INTERVAL 1 DAY)\n");
+            params.add(java.sql.Date.valueOf(filter.getDateTo()));
+        }
+    }
+
+    private void bindParams(PreparedStatement statement, List<Object> params) throws SQLException {
+        for (int i = 0; i < params.size(); i++) {
+            Object value = params.get(i);
+            int index = i + 1;
+
+            if (value instanceof Integer number) {
+                statement.setInt(index, number);
+            } else if (value instanceof java.sql.Date date) {
+                statement.setDate(index, date);
+            } else {
+                statement.setString(index, String.valueOf(value));
+            }
+        }
+    }
 
     public List<Order> findAll() {
         List<Order> orders = new ArrayList<>();
