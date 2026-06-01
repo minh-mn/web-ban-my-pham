@@ -40,7 +40,49 @@ public class ProductListServlet extends HttpServlet {
         String sort = req.getParameter("sort");
 
         List<String> priceRangeList = parseStringList(req.getParameterValues("priceRange"));
-        List<Integer> selectedCategoryList = parseIntegerList(req.getParameterValues("category"));
+
+        /*
+         * Hỗ trợ cả 3 kiểu URL:
+         * - /products?category=14          : dùng cho sidebar filter và Danh mục hot mới.
+         * - /products?categoryIds=14       : tương thích link cũ đang có trên trang chủ.
+         * - /products?categoryId=14        : tương thích nếu file khác dùng dạng số ít.
+         *
+         * Khi bấm vào danh mục cha như "Son Môi", hệ thống sẽ tự mở rộng sang các danh mục con
+         * như Son Lót, Son Thỏi, Son Kem, Son Bóng/Son Tint,... để danh sách sản phẩm hiện đúng.
+         */
+        List<Integer> selectedCategoryList = parseCategoryRequest(req);
+
+        /*
+         * Load category tree sớm để:
+         * - Mở rộng danh mục cha sang danh mục con trước khi count/query sản phẩm.
+         * - Giữ đúng tên danh mục trong phần "Đang lọc".
+         */
+        List<Category> categories = categoryDAO.findParents();
+        List<Integer> productCategoryFilterList = expandCategoryIdsForProductFilter(categories, selectedCategoryList);
+
+        /*
+         * Collection Son Môi / Trang điểm môi:
+         * DB hiện tại có thể chưa gắn đúng cây category con cho son môi,
+         * nên nếu chỉ lọc cứng theo category_id sẽ ra 0 sản phẩm.
+         * Trường hợp này chuyển sang tìm theo bộ từ khóa sản phẩm môi để trang hiển thị chuyên nghiệp hơn.
+         */
+        String hotCollectionKey = resolveHotCollectionKey(categories, selectedCategoryList);
+        boolean useLipCollectionSearch = "lip-collection".equals(hotCollectionKey);
+
+        /*
+         * Fix trắng trang:
+         * Không gọi DAO custom nữa. Với collection Son Môi/Trang điểm môi,
+         * dùng lại hàm DAO sẵn có bằng keyword "son" và bỏ category_id rỗng.
+         * Cách này an toàn hơn vì không phụ thuộc cấu trúc bảng mới.
+         */
+        /*
+         * Sau khi database đã có cây danh mục Son Môi đúng:
+         * - Không dùng keyword "son" nữa, vì sẽ lọc nhầm sản phẩm không thuộc collection.
+         * - Chỉ lọc theo category cha/con của Son Môi để trang này chỉ chứa sản phẩm môi.
+         */
+        String effectiveKeyword = keyword;
+        List<Integer> effectiveCategoryFilterList = productCategoryFilterList;
+
         List<Integer> selectedBrandList = parseIntegerList(req.getParameterValues("brand"));
 
         Integer minRating = parseInt(req.getParameter("rating"));
@@ -66,8 +108,8 @@ public class ProductListServlet extends HttpServlet {
         }
 
         int total = productDAO.countProducts(
-                keyword,
-                selectedCategoryList,
+                effectiveKeyword,
+                effectiveCategoryFilterList,
                 selectedBrandList,
                 priceRangeList,
                 minRating
@@ -85,8 +127,8 @@ public class ProductListServlet extends HttpServlet {
 
         // ===== 3. TẢI DANH SÁCH SẢN PHẨM =====
         List<Product> products = productDAO.findProductsPaged(
-                keyword,
-                selectedCategoryList,
+                effectiveKeyword,
+                effectiveCategoryFilterList,
                 selectedBrandList,
                 sort,
                 priceRangeList,
@@ -105,15 +147,20 @@ public class ProductListServlet extends HttpServlet {
                 loadCategoryTagsByProductCategories(products);
 
         // ===== 6. DỮ LIỆU SIDEBAR =====
-        List<Category> categories = categoryDAO.findParents();
         List<Brand> brands = brandDAO.findWithProductCount();
+
+        Category primaryCategory = useLipCollectionSearch
+                ? resolveLipPrimaryCategory(categories)
+                : resolvePrimaryCategoryForSidebar(categories, selectedCategoryList);
 
         req.setAttribute("categories", categories);
         req.setAttribute("brands", brands);
+        req.setAttribute("primaryCategory", primaryCategory);
 
         // ===== 7. GIỮ LẠI TRẠNG THÁI FILTER =====
         req.setAttribute("priceRangeList", priceRangeList);
         req.setAttribute("selectedCategoryList", selectedCategoryList);
+        req.setAttribute("selectedCategoryFilterList", productCategoryFilterList);
         req.setAttribute("selectedBrandList", selectedBrandList);
         req.setAttribute("minRating", minRating);
 
@@ -176,7 +223,9 @@ public class ProductListServlet extends HttpServlet {
         req.setAttribute("total", total);
         req.setAttribute("pageSize", pageSize);
 
-        req.setAttribute("pageTitle", "MyCosmetic | Sản phẩm");
+        req.setAttribute("collectionTitle", resolveCollectionTitle(categories, selectedCategoryList));
+        req.setAttribute("collectionDesc", resolveCollectionDescription(categories, selectedCategoryList, total));
+        req.setAttribute("pageTitle", "MyCosmetic | " + resolveCollectionTitle(categories, selectedCategoryList));
         req.setAttribute("pageCss", "product-list.css");
         req.setAttribute("pageContent", "/jsp/product/list.jsp");
 
@@ -209,8 +258,16 @@ public class ProductListServlet extends HttpServlet {
         }
 
         if (selectedCategoryIds != null) {
+            LinkedHashSet<Integer> selectedCategorySet = new LinkedHashSet<>(selectedCategoryIds);
+
             for (Integer categoryId : selectedCategoryIds) {
                 if (categoryId == null || categoryId <= 0) {
+                    continue;
+                }
+
+                Category tagCategory = findCategoryById(categories, categoryId);
+
+                if (tagCategory != null && hasSelectedDescendant(tagCategory, selectedCategorySet)) {
                     continue;
                 }
 
@@ -320,7 +377,18 @@ public class ProductListServlet extends HttpServlet {
             String removeParamName,
             String removeParamValue
     ) {
-        if (!paramName.equals(removeParamName)) {
+        boolean sameParam = paramName.equals(removeParamName);
+
+        /*
+         * Tương thích link cũ:
+         * category, categoryId, categoryIds đều được xem là cùng một bộ lọc danh mục.
+         * Nhờ vậy khi bấm dấu x ở "Đang lọc", link từ Danh mục hot cũng được xóa đúng.
+         */
+        if (!sameParam && isCategoryParam(removeParamName) && isCategoryParam(paramName)) {
+            sameParam = true;
+        }
+
+        if (!sameParam) {
             return false;
         }
 
@@ -575,6 +643,550 @@ public class ProductListServlet extends HttpServlet {
         }
     }
 
+
+    /* =====================================================
+       CATEGORY URL / PARENT CATEGORY FILTER HELPERS
+    ===================================================== */
+
+    private List<Integer> parseCategoryRequest(HttpServletRequest req) {
+        if (req == null) {
+            return Collections.emptyList();
+        }
+
+        LinkedHashSet<Integer> categoryIds = new LinkedHashSet<>();
+
+        categoryIds.addAll(parseIntegerList(req.getParameterValues("category")));
+        categoryIds.addAll(parseIntegerList(req.getParameterValues("categoryId")));
+        categoryIds.addAll(parseIntegerList(req.getParameterValues("categoryIds")));
+
+        return new ArrayList<>(categoryIds);
+    }
+
+    private List<Integer> expandCategoryIdsForProductFilter(
+            List<Category> categories,
+            List<Integer> selectedCategoryIds
+    ) {
+        if (selectedCategoryIds == null || selectedCategoryIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        LinkedHashSet<Integer> selectedSet = new LinkedHashSet<>(selectedCategoryIds);
+        LinkedHashSet<Integer> result = new LinkedHashSet<>();
+
+        for (Integer selectedId : selectedCategoryIds) {
+            if (selectedId == null || selectedId <= 0) {
+                continue;
+            }
+
+            Category selectedCategory = findCategoryById(categories, selectedId);
+
+            if (selectedCategory == null) {
+                result.add(selectedId);
+                continue;
+            }
+
+            boolean selectedCategoryHasChildren = selectedCategory.getChildren() != null
+                    && !selectedCategory.getChildren().isEmpty();
+
+            /*
+             * Lọc đúng theo checkbox:
+             * - Nếu chỉ chọn danh mục cha Son Môi: mở rộng ra toàn bộ danh mục con.
+             * - Nếu vừa có danh mục cha ẩn + người dùng tick danh mục con: KHÔNG mở rộng cha,
+             *   chỉ lấy đúng danh mục con được tick.
+             * Nhờ vậy /products?category=22 hiển thị toàn bộ son môi,
+             * còn /products?category=22&category=30 chỉ hiển thị Son Kem.
+             */
+            if (selectedCategoryHasChildren) {
+                boolean hasSelectedChild = hasSelectedDescendant(selectedCategory, selectedSet);
+
+                if (hasSelectedChild) {
+                    continue;
+                }
+
+                collectCategoryAndChildren(selectedCategory, result);
+                result.addAll(resolveSemanticHotCategoryIds(categories, selectedCategory));
+                continue;
+            }
+
+            result.add(selectedId);
+        }
+
+        return new ArrayList<>(result);
+    }
+
+    private boolean hasSelectedDescendant(Category parent, Set<Integer> selectedIds) {
+        if (parent == null || selectedIds == null || selectedIds.isEmpty()
+                || parent.getChildren() == null || parent.getChildren().isEmpty()) {
+            return false;
+        }
+
+        for (Category child : parent.getChildren()) {
+            if (child == null) {
+                continue;
+            }
+
+            if (selectedIds.contains(child.getId())) {
+                return true;
+            }
+
+            if (hasSelectedDescendant(child, selectedIds)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void collectCategoryAndChildren(Category category, Set<Integer> output) {
+        if (category == null || output == null) {
+            return;
+        }
+
+        if (category.getId() > 0) {
+            output.add(category.getId());
+        }
+
+        if (category.getChildren() == null || category.getChildren().isEmpty()) {
+            return;
+        }
+
+        for (Category child : category.getChildren()) {
+            collectCategoryAndChildren(child, output);
+        }
+    }
+
+    private List<Integer> resolveSemanticHotCategoryIds(
+            List<Category> categories,
+            Category selectedCategory
+    ) {
+        if (selectedCategory == null) {
+            return Collections.emptyList();
+        }
+
+        String selectedKey = normalizeCategoryKey(
+                selectedCategory.getName() + " " + selectedCategory.getSlug()
+        );
+
+        if (selectedKey.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<Category> flatCategories = flattenCategories(categories);
+
+        if (flatCategories.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        LinkedHashSet<Integer> ids = new LinkedHashSet<>();
+
+        for (Category category : flatCategories) {
+            if (category == null || category.getId() <= 0) {
+                continue;
+            }
+
+            String categoryKey = normalizeCategoryKey(
+                    category.getName() + " " + category.getSlug()
+            );
+
+            if (matchesHotCategoryGroup(selectedKey, categoryKey)) {
+                ids.add(category.getId());
+            }
+        }
+
+        return new ArrayList<>(ids);
+    }
+
+    private boolean matchesHotCategoryGroup(String selectedKey, String categoryKey) {
+        if (selectedKey == null || categoryKey == null) {
+            return false;
+        }
+
+        // ===== SON MÔI / TRANG ĐIỂM MÔI =====
+        if (selectedKey.contains("son-moi")
+                || selectedKey.contains("trang-diem-moi")) {
+
+            return categoryKey.equals("son-moi")
+                    || categoryKey.startsWith("son-")
+                    || categoryKey.contains("son-lot")
+                    || categoryKey.contains("son-thoi")
+                    || categoryKey.contains("son-kem")
+                    || categoryKey.contains("son-bong")
+                    || categoryKey.contains("son-tint")
+                    || categoryKey.contains("son-duong")
+                    || categoryKey.contains("tri-tham-moi")
+                    || categoryKey.contains("mat-na-moi")
+                    || categoryKey.contains("tay-da-chet-moi");
+        }
+
+        // ===== MÁ HỒNG =====
+        if (selectedKey.contains("ma-hong") || selectedKey.contains("blush")) {
+            return categoryKey.contains("ma-hong")
+                    || categoryKey.contains("blush");
+        }
+
+        // ===== PHẤN MẮT =====
+        if (selectedKey.contains("phan-mat") || selectedKey.contains("eyeshadow")) {
+            return categoryKey.contains("phan-mat")
+                    || categoryKey.contains("eyeshadow")
+                    || categoryKey.contains("eye-shadow");
+        }
+
+        // ===== PHẤN NƯỚC =====
+        if (selectedKey.contains("phan-nuoc") || selectedKey.contains("cushion")) {
+            return categoryKey.contains("phan-nuoc")
+                    || categoryKey.contains("cushion");
+        }
+
+        // ===== XỊT KHÓA NỀN =====
+        if (selectedKey.contains("xit-khoa-nen")) {
+            return categoryKey.contains("xit-khoa-nen")
+                    || categoryKey.contains("setting-spray")
+                    || categoryKey.contains("fixing-spray");
+        }
+
+        // ===== PHỤ KIỆN =====
+        if (selectedKey.contains("phu-kien")) {
+            return categoryKey.contains("phu-kien")
+                    || categoryKey.contains("co-trang-diem")
+                    || categoryKey.contains("mut-trang-diem")
+                    || categoryKey.contains("dung-cu");
+        }
+
+        // ===== TẨY TRANG =====
+        if (selectedKey.contains("tay-trang")) {
+            return categoryKey.contains("tay-trang")
+                    || categoryKey.contains("cleansing")
+                    || categoryKey.contains("makeup-remover");
+        }
+
+        // ===== KEM CHỐNG NẮNG =====
+        if (selectedKey.contains("kem-chong-nang")) {
+            return categoryKey.contains("kem-chong-nang")
+                    || categoryKey.contains("chong-nang")
+                    || categoryKey.contains("sunscreen");
+        }
+
+        // ===== SỮA RỬA MẶT =====
+        if (selectedKey.contains("sua-rua-mat")) {
+            return categoryKey.contains("sua-rua-mat")
+                    || categoryKey.contains("rua-mat")
+                    || categoryKey.contains("cleanser");
+        }
+
+        // ===== NƯỚC HOA HỒNG / TONER =====
+        if (selectedKey.contains("nuoc-hoa-hong")
+                || selectedKey.contains("toner")
+                || selectedKey.contains("lotion")) {
+
+            return categoryKey.contains("nuoc-hoa-hong")
+                    || categoryKey.contains("toner")
+                    || categoryKey.contains("lotion");
+        }
+
+        // ===== TINH CHẤT DƯỠNG / SERUM / ESSENCE =====
+        if (selectedKey.contains("tinh-chat")
+                || selectedKey.contains("serum")
+                || selectedKey.contains("essence")) {
+
+            return categoryKey.contains("tinh-chat")
+                    || categoryKey.contains("serum")
+                    || categoryKey.contains("essence")
+                    || categoryKey.contains("ampoule");
+        }
+
+        // ===== KEM DƯỠNG / GEL DƯỠNG =====
+        if (selectedKey.contains("kem-duong")
+                || selectedKey.contains("gel-duong")) {
+
+            return categoryKey.contains("kem-duong")
+                    || categoryKey.contains("gel-duong")
+                    || categoryKey.contains("moisturizer")
+                    || categoryKey.contains("cream");
+        }
+
+        // ===== MẶT NẠ =====
+        if (selectedKey.contains("mat-na")) {
+            return categoryKey.contains("mat-na")
+                    || categoryKey.contains("mask");
+        }
+
+        return false;
+    }
+
+    private List<Category> flattenCategories(List<Category> categories) {
+        if (categories == null || categories.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<Category> result = new ArrayList<>();
+
+        for (Category category : categories) {
+            collectFlatCategory(category, result);
+        }
+
+        return result;
+    }
+
+    private void collectFlatCategory(Category category, List<Category> output) {
+        if (category == null || output == null) {
+            return;
+        }
+
+        output.add(category);
+
+        if (category.getChildren() == null || category.getChildren().isEmpty()) {
+            return;
+        }
+
+        for (Category child : category.getChildren()) {
+            collectFlatCategory(child, output);
+        }
+    }
+
+    private Category findCategoryById(List<Category> categories, Integer id) {
+        if (id == null || id <= 0 || categories == null || categories.isEmpty()) {
+            return null;
+        }
+
+        for (Category category : categories) {
+            if (category == null) {
+                continue;
+            }
+
+            if (category.getId() == id) {
+                return category;
+            }
+
+            Category child = findCategoryById(category.getChildren(), id);
+
+            if (child != null) {
+                return child;
+            }
+        }
+
+        return null;
+    }
+
+    private String normalizeCategoryKey(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return "";
+        }
+
+        String normalized = java.text.Normalizer.normalize(
+                value.trim(),
+                java.text.Normalizer.Form.NFD
+        );
+
+        normalized = normalized.replaceAll("\\p{M}", "");
+        normalized = normalized.replace('đ', 'd').replace('Đ', 'D');
+        normalized = normalized.toLowerCase(Locale.ROOT);
+        normalized = normalized.replaceAll("[^a-z0-9]+", "-");
+        normalized = normalized.replaceAll("^-+|-+$", "");
+
+        return normalized;
+    }
+
+    private boolean isCategoryParam(String paramName) {
+        if (paramName == null) {
+            return false;
+        }
+
+        return "category".equals(paramName)
+                || "categoryId".equals(paramName)
+                || "categoryIds".equals(paramName);
+    }
+
+    private String resolveCollectionTitle(
+            List<Category> categories,
+            List<Integer> selectedCategoryIds
+    ) {
+        if (selectedCategoryIds == null || selectedCategoryIds.isEmpty()) {
+            return "Tất cả sản phẩm";
+        }
+
+        if (selectedCategoryIds.size() == 1) {
+            if (isLipCategoryOrChild(categories, selectedCategoryIds.get(0))) {
+                return "Trang điểm môi";
+            }
+
+            Category category = findCategoryById(categories, selectedCategoryIds.get(0));
+
+            if (category != null && !isBlank(category.getName())) {
+                return category.getName();
+            }
+        }
+
+        return "Sản phẩm theo danh mục";
+    }
+
+    private String resolveCollectionDescription(
+            List<Category> categories,
+            List<Integer> selectedCategoryIds,
+            int total
+    ) {
+        String title = resolveCollectionTitle(categories, selectedCategoryIds);
+
+        if (selectedCategoryIds == null || selectedCategoryIds.isEmpty()) {
+            return "Khám phá toàn bộ sản phẩm đang hoạt động tại MyCosmetic.";
+        }
+
+        if ("Trang điểm môi".equalsIgnoreCase(title)) {
+            return "Khám phá bộ sưu tập son môi, son dưỡng và chăm sóc môi được chọn lọc để hiển thị chuyên nghiệp hơn giống trang collection thực tế.";
+        }
+
+        return "Đang hiển thị " + total + " sản phẩm thuộc danh mục " + title
+                + ". Bạn có thể lọc thêm theo thương hiệu, mức giá và đánh giá.";
+    }
+
+    private boolean isLipCategoryOrChild(List<Category> categories, Integer categoryId) {
+        Category category = findCategoryById(categories, categoryId);
+
+        if (category == null) {
+            return false;
+        }
+
+        String key = normalizeCategoryKey(category.getName() + " " + category.getSlug());
+
+        if (key.contains("son-moi") || key.contains("trang-diem-moi")) {
+            return true;
+        }
+
+        Category parent = findParentCategoryByChildId(categories, categoryId);
+
+        if (parent == null) {
+            return false;
+        }
+
+        String parentKey = normalizeCategoryKey(parent.getName() + " " + parent.getSlug());
+
+        return parentKey.contains("son-moi") || parentKey.contains("trang-diem-moi");
+    }
+
+    private String resolveHotCollectionKey(
+            List<Category> categories,
+            List<Integer> selectedCategoryIds
+    ) {
+        if (selectedCategoryIds == null || selectedCategoryIds.size() != 1) {
+            return null;
+        }
+
+        Category category = findCategoryById(categories, selectedCategoryIds.get(0));
+
+        if (category == null) {
+            return null;
+        }
+
+        String key = normalizeCategoryKey(category.getName() + " " + category.getSlug());
+
+        if (key.contains("son-moi")
+                || key.contains("trang-diem-moi")
+                || key.equals("moi")
+                || key.contains("lip")) {
+            return "lip-collection";
+        }
+
+        return null;
+    }
+
+    private List<String> buildSemanticCollectionKeywords(String hotCollectionKey) {
+        if (!"lip-collection".equals(hotCollectionKey)) {
+            return Collections.emptyList();
+        }
+
+        return Arrays.asList(
+                "son",
+                "môi",
+                "moi",
+                "lip",
+                "dưỡng môi",
+                "duong moi",
+                "son dưỡng",
+                "son duong",
+                "lip balm",
+                "tint"
+        );
+    }
+
+    private Category resolveLipPrimaryCategory(List<Category> categories) {
+        if (categories == null || categories.isEmpty()) {
+            return null;
+        }
+
+        for (Category category : flattenCategories(categories)) {
+            if (category == null) {
+                continue;
+            }
+
+            String key = normalizeCategoryKey(category.getName() + " " + category.getSlug());
+
+            if (key.contains("son-moi") || key.contains("trang-diem-moi")) {
+                return category;
+            }
+        }
+
+        return null;
+    }
+
+    private Category resolvePrimaryCategoryForSidebar(
+            List<Category> categories,
+            List<Integer> selectedCategoryIds
+    ) {
+        if (categories == null || categories.isEmpty()
+                || selectedCategoryIds == null || selectedCategoryIds.isEmpty()) {
+            return null;
+        }
+
+        for (Integer selectedId : selectedCategoryIds) {
+            if (selectedId == null || selectedId <= 0) {
+                continue;
+            }
+
+            Category selected = findCategoryById(categories, selectedId);
+
+            if (selected == null) {
+                continue;
+            }
+
+            if (selected.getChildren() != null && !selected.getChildren().isEmpty()) {
+                return selected;
+            }
+
+            Category parent = findParentCategoryByChildId(categories, selectedId);
+
+            if (parent != null) {
+                return parent;
+            }
+        }
+
+        return null;
+    }
+
+    private Category findParentCategoryByChildId(List<Category> categories, Integer childId) {
+        if (categories == null || categories.isEmpty() || childId == null || childId <= 0) {
+            return null;
+        }
+
+        for (Category parent : categories) {
+            if (parent == null || parent.getChildren() == null) {
+                continue;
+            }
+
+            for (Category child : parent.getChildren()) {
+                if (child != null && child.getId() == childId) {
+                    return parent;
+                }
+            }
+
+            Category nestedParent = findParentCategoryByChildId(parent.getChildren(), childId);
+
+            if (nestedParent != null) {
+                return nestedParent;
+            }
+        }
+
+        return null;
+    }
+
     /* =====================================================
        PARAM HELPERS
     ===================================================== */
@@ -608,21 +1220,40 @@ public class ProductListServlet extends HttpServlet {
             return Collections.emptyList();
         }
 
-        return Arrays.stream(values)
-                .filter(value -> !isBlank(value))
-                .map(String::trim)
-                .filter(value -> !value.equalsIgnoreCase("all"))
-                .map(value -> {
-                    try {
-                        return Integer.parseInt(value);
+        List<Integer> result = new ArrayList<>();
 
-                    } catch (NumberFormatException e) {
-                        return null;
+        for (String rawValue : values) {
+            if (isBlank(rawValue)) {
+                continue;
+            }
+
+            String[] parts = rawValue.split(",");
+
+            for (String part : parts) {
+                if (isBlank(part)) {
+                    continue;
+                }
+
+                String value = part.trim();
+
+                if (value.equalsIgnoreCase("all")) {
+                    continue;
+                }
+
+                try {
+                    int id = Integer.parseInt(value);
+
+                    if (id > 0 && !result.contains(id)) {
+                        result.add(id);
                     }
-                })
-                .filter(value -> value != null && value > 0)
-                .distinct()
-                .collect(Collectors.toList());
+
+                } catch (NumberFormatException ignored) {
+                    // Bỏ qua giá trị lỗi để tránh HTTP 500.
+                }
+            }
+        }
+
+        return result;
     }
 
     private List<String> parseStringList(String[] values) {
