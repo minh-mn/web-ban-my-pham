@@ -446,13 +446,8 @@ public class AdminUserDAO {
             return "USER";
         }
 
-        String normalized = role.trim().toUpperCase();
-
-        if (!"ADMIN".equals(normalized) && !"USER".equals(normalized)) {
-            return "USER";
-        }
-
-        return normalized;
+        String normalized = role.trim().toUpperCase().replaceAll("[^A-Z0-9_]", "_");
+        return normalized.isBlank() ? "USER" : normalized;
     }
 
     private String normalizeRoleFilter(String role) {
@@ -460,12 +455,7 @@ public class AdminUserDAO {
             return null;
         }
 
-        String normalized = role.trim().toUpperCase();
-
-        if (!"ADMIN".equals(normalized) && !"USER".equals(normalized)) {
-            return null;
-        }
-
-        return normalized;
+        String normalized = role.trim().toUpperCase().replaceAll("[^A-Z0-9_]", "_");
+        return normalized.isBlank() ? null : normalized;
     }
 }
