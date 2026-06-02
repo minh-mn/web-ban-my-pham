@@ -9,6 +9,7 @@ import com.webshop.app.dao.RoleDAO;
 import com.webshop.app.dao.UserRankDAO;
 import com.webshop.app.model.User;
 import com.webshop.app.model.UserRank;
+import com.webshop.app.service.AuditLogService;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -276,6 +277,7 @@ public class AdminUserServlet extends HttpServlet {
 
         if (ok) {
             setRequestSuccess(req, "Đã cập nhật role, trạng thái và rank của user.");
+            logUserUpdate(req, target, role, active, manualRankCode, "Đã cập nhật role, trạng thái hoặc rank của user.");
         } else {
             setRequestError(req, "Cập nhật thất bại.");
         }
@@ -327,6 +329,16 @@ public class AdminUserServlet extends HttpServlet {
 
         if (ok) {
             setRequestSuccess(req, "Đã đổi mật khẩu tài khoản hiện tại.");
+            AuditLogService.logUpdate(
+                    req,
+                    "USER",
+                    "User",
+                    target.getId(),
+                    target.getDisplayName(),
+                    "Admin đã đổi mật khẩu tài khoản hiện tại.",
+                    "Mật khẩu: đã mã hóa",
+                    "Mật khẩu: đã cập nhật"
+            );
         } else {
             setRequestError(req, "Đổi mật khẩu thất bại.");
         }
@@ -360,6 +372,16 @@ public class AdminUserServlet extends HttpServlet {
         boolean ok = userDAO.updateManualRank(id, manualRankCode);
 
         if (ok) {
+            AuditLogService.logUpdate(
+                    req,
+                    "USER",
+                    "User",
+                    target.getId(),
+                    target.getDisplayName(),
+                    "Đã cập nhật rank thủ công của user.",
+                    "Rank cũ: " + target.getManualRankDisplay(),
+                    "Rank mới: " + (manualRankCode == null ? "AUTO" : manualRankCode)
+            );
             redirectBackWithSuccess(req, resp, "Đã cập nhật rank thủ công của user.");
         } else {
             redirectBackWithError(req, resp, "Cập nhật rank thất bại.");
@@ -397,6 +419,16 @@ public class AdminUserServlet extends HttpServlet {
         boolean ok = userDAO.updateInfoAdmin(update);
 
         if (ok) {
+            AuditLogService.logSoftDelete(
+                    req,
+                    "USER",
+                    "User",
+                    target.getId(),
+                    target.getDisplayName(),
+                    "Đã khóa tài khoản user. Hệ thống không xóa cứng dữ liệu để bảo toàn lịch sử đơn hàng.",
+                    "Trạng thái: " + target.getStatusLabel(),
+                    "Trạng thái: Đã khóa"
+            );
             redirectBackWithSuccess(req, resp,
                     "Đã khóa tài khoản user. Hệ thống không xóa cứng dữ liệu để bảo toàn lịch sử đơn hàng.");
         } else {
@@ -440,6 +472,16 @@ public class AdminUserServlet extends HttpServlet {
         boolean ok = userDAO.updateRole(id, role);
 
         if (ok) {
+            AuditLogService.logUpdate(
+                    req,
+                    "USER",
+                    "User",
+                    target.getId(),
+                    target.getDisplayName(),
+                    "Đã cập nhật role của user.",
+                    "Role cũ: " + target.getRole(),
+                    "Role mới: " + role
+            );
             redirectBackWithSuccess(req, resp, "Đã cập nhật role của user.");
         } else {
             redirectBackWithError(req, resp, "Cập nhật role thất bại.");
@@ -476,10 +518,56 @@ public class AdminUserServlet extends HttpServlet {
         boolean ok = userDAO.toggleLock(id);
 
         if (ok) {
+            AuditLogService.logStatusChange(
+                    req,
+                    "USER",
+                    "User",
+                    target.getId(),
+                    target.getDisplayName(),
+                    "Đã cập nhật trạng thái khóa/mở khóa của user.",
+                    "Trạng thái cũ: " + target.getStatusLabel(),
+                    "Trạng thái mới: " + (target.isActive() ? "Đã khóa" : "Đang hoạt động")
+            );
             redirectBackWithSuccess(req, resp, "Đã cập nhật trạng thái khóa/mở khóa của user.");
         } else {
             redirectBackWithError(req, resp, "Cập nhật trạng thái tài khoản thất bại.");
         }
+    }
+
+    private void logUserUpdate(HttpServletRequest req,
+                               User target,
+                               String newRole,
+                               boolean newActive,
+                               String newManualRankCode,
+                               String description) {
+        if (target == null) {
+            return;
+        }
+
+        String oldValues = AuditLogService.changes(
+                AuditLogService.change("Role", target.getRole(), newRole),
+                AuditLogService.change("Trạng thái", target.isActive() ? "Đang hoạt động" : "Đã khóa", newActive ? "Đang hoạt động" : "Đã khóa"),
+                AuditLogService.change("Rank thủ công", target.getManualRankDisplay(), newManualRankCode == null ? "AUTO" : newManualRankCode)
+        );
+
+        if (oldValues == null) {
+            return;
+        }
+
+        AuditLogService.logUpdate(
+                req,
+                "USER",
+                "User",
+                target.getId(),
+                target.getDisplayName(),
+                description,
+                oldValues,
+                AuditLogService.changes(
+                        "Role hiện tại: " + newRole,
+                        "Trạng thái hiện tại: " + (newActive ? "Đang hoạt động" : "Đã khóa"),
+                        "Rank thủ công hiện tại: " + (newManualRankCode == null ? "AUTO" : newManualRankCode)
+                )
+        );
     }
 
     /* ===================== RANK HELPERS ===================== */
