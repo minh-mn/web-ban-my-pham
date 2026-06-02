@@ -1165,29 +1165,58 @@ public class AdminProductServlet extends HttpServlet {
 		return s == null ? "" : s.trim();
 	}
 
+	private String getArrayValue(String[] values, int index) {
+		if (values == null || index < 0 || index >= values.length || values[index] == null) {
+			return "";
+		}
+
+		return values[index].trim();
+	}
+
+	private String firstNonBlank(String first, String second) {
+		if (first != null && !first.trim().isEmpty()) {
+			return first.trim();
+		}
+
+		return second == null ? "" : second.trim();
+	}
+
 	private void saveVariants(HttpServletRequest req, int productId) {
 		// 1. Xóa các biến thể cũ để cập nhật lại danh sách mới
 		productVariantDAO.deleteByProductId(productId);
 
 		// 2. Lấy dữ liệu từ Request
+		String[] skus = req.getParameterValues("v_sku[]");
 		String[] sizes = req.getParameterValues("v_size[]");
-		String[] types = req.getParameterValues("v_type[]");
+		String[] colors = req.getParameterValues("v_color[]");
+		String[] legacyTypes = req.getParameterValues("v_type[]");
 		String[] prices = req.getParameterValues("v_price[]");
 		String[] stocks = req.getParameterValues("v_stock[]");
+		String[] minStocks = req.getParameterValues("v_min_stock[]");
 
 		// 3. Insert biến thể mới
 		if (sizes != null && sizes.length > 0) {
 			for (int i = 0; i < sizes.length; i++) {
-				// Bỏ qua nếu cả size và type đều bị người dùng để trống
-				if ((sizes[i] != null && !sizes[i].trim().isEmpty()) || (types[i] != null && !types[i].trim().isEmpty())) {
+				String sku = getArrayValue(skus, i);
+				String size = getArrayValue(sizes, i);
+				String color = firstNonBlank(getArrayValue(colors, i), getArrayValue(legacyTypes, i));
+				String price = getArrayValue(prices, i);
+				String stock = getArrayValue(stocks, i);
+				String minStock = getArrayValue(minStocks, i);
+
+				// Bỏ qua nếu SKU, size và màu đều bị người dùng để trống
+				if (!sku.isBlank() || !size.isBlank() || !color.isBlank()) {
 					ProductVariant v = new ProductVariant();
 					v.setProductId(productId);
-					v.setSize(sizes[i]);
-					v.setType(types[i]);
+					v.setSku(sku);
+					v.setSize(size);
+					v.setColor(color);
+					v.setType(color);
 
 					// Parse an toàn để tránh lỗi NumberFormatException nếu ô bị bỏ trống
-					v.setExtraPrice(parseBigDecimal(prices[i], BigDecimal.ZERO));
-					v.setStock(parseInt(stocks[i], 0));
+					v.setExtraPrice(parseBigDecimal(price, BigDecimal.ZERO));
+					v.setStock(parseInt(stock, 0));
+					v.setMinStock(parseInt(minStock, ProductVariant.DEFAULT_MIN_STOCK));
 
 					productVariantDAO.insert(v);
 				}
