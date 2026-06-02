@@ -5300,3 +5300,116 @@ td.product-actions {
     display: grid;
   }
 }
+
+/* =========================================================
+   Issue 147 - Variant SKU Inventory
+========================================================= */
+
+.inventory-variant-summary-grid {
+  margin-top: -2px;
+}
+
+.variant-alert-block {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--admin-border);
+}
+
+.variant-alert-title {
+  margin-bottom: 10px;
+  color: var(--admin-text);
+  font-size: 13px;
+  font-weight: 950;
+  line-height: 1.35;
+}
+
+.low-stock-list--variant {
+  max-height: 300px;
+}
+
+.inventory-variant-table-wrap {
+  border-radius: 0;
+}
+
+.inventory-variant-table {
+  min-width: 1580px;
+  border-left: 0;
+  border-right: 0;
+  border-radius: 0;
+}
+
+.inventory-sku-code {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(59, 130, 246, 0.26);
+  background: rgba(59, 130, 246, 0.08);
+  color: #1d4ed8;
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.inventory-min-stock {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(245, 158, 11, 0.28);
+  background: rgba(245, 158, 11, 0.08);
+  color: #92400e;
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.inventory-variant-alert-text {
+  margin-top: 5px;
+  max-width: 160px;
+  color: var(--admin-muted);
+  font-size: 11.5px;
+  line-height: 1.35;
+  font-weight: 700;
+}
+
+.inventory-add-variant-stock-form {
+  grid-template-columns: 76px 145px 70px;
+}
+
+.inventory-min-stock-form {
+  display: grid;
+  grid-template-columns: 82px 66px;
+  gap: 8px;
+  align-items: center;
+}
+
+.inventory-min-stock-form .admin-input,
+.inventory-min-stock-form .admin-btn {
+  min-height: 36px;
+  height: 36px;
+  border-radius: 10px;
+}
+
+.inventory-min-stock-form .admin-input {
+  padding: 0 10px;
+}
+
+.inventory-min-stock-form .admin-btn {
+  padding: 0 10px;
+}
+
+@media (max-width: 560px) {
+  .inventory-add-variant-stock-form,
+  .inventory-min-stock-form {
+    grid-template-columns: 1fr;
+  }
+
+  .inventory-min-stock-form .admin-btn {
+    width: 100%;
+  }
+}
