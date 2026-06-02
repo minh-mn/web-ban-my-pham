@@ -703,6 +703,12 @@ public class ProductListServlet extends HttpServlet {
             case "rating_desc":
                 return "Đánh giá cao";
 
+            case "best-selling":
+                return "Bán chạy nhất"; // Thêm nhãn cho filter bán chạy
+
+            case "updated_desc":
+                return "Mới cập nhật"; // Thêm nhãn cho filter hàng mới
+
             case "newest":
                 return "Mới nhất";
 
@@ -1339,4 +1345,5 @@ public class ProductListServlet extends HttpServlet {
     private boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
     }
+
 }
