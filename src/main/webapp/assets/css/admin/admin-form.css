@@ -3477,8 +3477,8 @@
   border: 1px solid rgba(255, 95, 162, 0.20);
   border-radius: 22px;
   background:
-    radial-gradient(circle at top left, rgba(255, 95, 162, 0.14), transparent 34%),
-    linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
+          radial-gradient(circle at top left, rgba(255, 95, 162, 0.14), transparent 34%),
+          linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.055);
 }
 
@@ -3699,5 +3699,67 @@
 
   .admin-notification-modal__actions {
     grid-template-columns: 1fr;
+  }
+}
+
+/* =====================================================
+   Issue 143 - Dynamic Role Permission Form
+===================================================== */
+.admin-form-head,
+.admin-list-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.admin-card--soft {
+  margin-top: 22px;
+  background: rgba(248, 250, 252, 0.82);
+}
+
+.admin-check-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--admin-border);
+  border-radius: 16px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.admin-check-card input {
+  margin-top: 4px;
+}
+
+.admin-check-card span {
+  display: grid;
+  gap: 4px;
+}
+
+.admin-check-card strong {
+  font-size: 13px;
+  color: var(--admin-text);
+}
+
+.admin-check-card small,
+.admin-check-card em {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--admin-muted);
+}
+
+.admin-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+@media (max-width: 768px) {
+  .admin-form-head,
+  .admin-list-head {
+    flex-direction: column;
   }
 }
