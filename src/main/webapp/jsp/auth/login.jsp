@@ -333,17 +333,69 @@
 			}
 		});
 
-		// 2. Chặn không cho submit nếu vẫn còn chữ in hoa
+		// 2. Chặn submit truyền thống, chuyển sang AJAX fetch không tải lại trang
 		loginForm.addEventListener("submit", function(e) {
+			e.preventDefault(); // Tuyệt đối chặn việc tải lại trang mặc định
+
 			if (/[A-Z]/.test(usernameInput.value)) {
-				e.preventDefault(); // Dừng việc gửi form
 				Swal.fire({
 					icon: 'error',
 					title: 'Lỗi định dạng',
 					text: 'Tên đăng nhập không được phép chứa chữ in hoa. Vui lòng sửa lại!'
 				});
 				usernameInput.focus();
+				return;
 			}
+
+			// Hiển thị hiệu ứng loading trong lúc chờ server phản hồi
+			Swal.fire({
+				title: 'Đang xử lý đăng nhập...',
+				allowOutsideClick: false,
+				didOpen: () => {
+					Swal.showLoading();
+				}
+			});
+
+			// Thu thập dữ liệu trong Form tự động (bao gồm cả csrf_token ẩn nếu có)
+			const formData = new URLSearchParams(new FormData(loginForm));
+
+			// Gửi AJAX request đến LoginServlet
+			fetch(loginForm.action, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/x-www-form-urlencoded"
+				},
+				body: formData
+			})
+					.then(res => {
+						if (!res.ok) throw new Error("Mạng có sự cố hoặc lỗi Server");
+						return res.json();
+					})
+					.then(data => {
+						if (data.status === "success") {
+							// Đăng nhập thành công hiển thị thông báo rồi chuyển trang
+							Swal.fire({
+								icon: "success",
+								title: "Thành công!",
+								text: data.message,
+								timer: 1200,
+								showConfirmButton: false
+							}).then(() => {
+								window.location.href = data.redirectUrl;
+							});
+						} else {
+							// Thất bại hoặc bị khóa -> Hiện popup thông báo lỗi và Giữ nguyên trang để nhập lại
+							Swal.fire({
+								icon: "error",
+								title: "Đăng nhập thất bại",
+								text: data.message
+							});
+						}
+					})
+					.catch(err => {
+						console.error("Login AJAX Error:", err);
+						Swal.fire("Lỗi", "Không thể kết nối đến hệ thống máy chủ.", "error");
+					});
 		});
 	});
 </script>
