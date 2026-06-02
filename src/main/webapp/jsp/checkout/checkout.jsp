@@ -395,13 +395,16 @@
           <div class="checkout-card-header payment-card-header">
             <div>
               <h2>Phương thức thanh toán</h2>
-              <p class="payment-support-note">Hỗ trợ cổng thanh toán trực tuyến VNPAY của website.</p>
+              <p class="payment-support-note">Hỗ trợ thanh toán khi nhận hàng (COD) và cổng thanh toán trực tuyến VNPAY của website.</p>
             </div>
           </div>
 
-          <div class="payment-supported-logos payment-supported-logos-vnpay" aria-label="Cổng thanh toán trực tuyến được hỗ trợ">
+          <div class="payment-supported-logos payment-supported-logos-supported" aria-label="Các phương thức thanh toán được hỗ trợ">
             <span class="payment-supported-logo payment-supported-logo-single" title="VNPAY">
               <img src="${pageContext.request.contextPath}/assets/images/payment/vnpay.svg" alt="VNPAY">
+            </span>
+            <span class="payment-supported-logo payment-supported-logo-cod" title="COD">
+              <img src="${pageContext.request.contextPath}/assets/images/payment/cod.svg" alt="COD">
             </span>
           </div>
 
@@ -416,7 +419,9 @@
 
               <span class="payment-dot"></span>
 
-              <span class="payment-icon payment-icon-text" aria-hidden="true">COD</span>
+              <span class="payment-icon payment-icon-logo payment-icon-cod">
+                <img src="${pageContext.request.contextPath}/assets/images/payment/cod.svg" alt="COD">
+              </span>
 
               <span class="payment-text">
                 <strong>Thanh toán khi giao hàng (COD)</strong>
