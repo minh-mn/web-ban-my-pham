@@ -234,10 +234,14 @@
   }
 
   .mc-left-filter__reset {
+    display: inline-flex;
+    justify-content: flex-end;
+    width: 100%;
     color: #a30624;
     text-decoration: none;
     font-size: 15px;
     font-weight: 700;
+    margin-top: 4px;
   }
 </style>
 
@@ -271,131 +275,26 @@
     <button type="button"
             class="mc-left-filter__title"
             onclick="this.closest('.mc-left-filter__section').classList.toggle('is-collapsed')">
-      <span>Danh mục sản phẩm</span>
-      <span class="mc-left-filter__chevron">⌃</span>
-    </button>
-
-    <div class="mc-left-filter__body">
-      <c:choose>
-        <c:when test="${not empty primaryCategory and not empty primaryCategory.children}">
-          <c:forEach var="child" items="${primaryCategory.children}">
-            <c:set var="checked" value="false" />
-            <c:forEach var="selectedId" items="${selectedCategoryList}">
-              <c:if test="${selectedId == child.id}">
-                <c:set var="checked" value="true" />
-              </c:if>
-            </c:forEach>
-
-            <label class="mc-left-filter__check">
-              <input type="checkbox" name="category" value="${child.id}" <c:if test="${checked}">checked</c:if>>
-              <span class="mc-left-filter__box"></span>
-              <span class="mc-left-filter__name"><c:out value="${fn:toUpperCase(child.name)}" /></span>
-            </label>
-          </c:forEach>
-        </c:when>
-
-        <c:otherwise>
-          <c:forEach var="parent" items="${categories}">
-            <div class="mc-left-filter__group">
-              <c:out value="${parent.name}" />
-              <c:if test="${parent.productCount > 0}"> (${parent.productCount})</c:if>
-            </div>
-
-            <c:choose>
-              <c:when test="${not empty parent.children}">
-                <c:forEach var="child" items="${parent.children}">
-                  <c:set var="checked" value="false" />
-                  <c:forEach var="selectedId" items="${selectedCategoryList}">
-                    <c:if test="${selectedId == child.id}">
-                      <c:set var="checked" value="true" />
-                    </c:if>
-                  </c:forEach>
-
-                  <label class="mc-left-filter__check">
-                    <input type="checkbox" name="category" value="${child.id}" <c:if test="${checked}">checked</c:if>>
-                    <span class="mc-left-filter__box"></span>
-                    <span class="mc-left-filter__name"><c:out value="${child.name}" /></span>
-                    <c:if test="${child.productCount > 0}">
-                      <span class="mc-left-filter__count">${child.productCount}</span>
-                    </c:if>
-                  </label>
-                </c:forEach>
-              </c:when>
-              <c:otherwise>
-                <c:set var="checked" value="false" />
-                <c:forEach var="selectedId" items="${selectedCategoryList}">
-                  <c:if test="${selectedId == parent.id}">
-                    <c:set var="checked" value="true" />
-                  </c:if>
-                </c:forEach>
-
-                <label class="mc-left-filter__check">
-                  <input type="checkbox" name="category" value="${parent.id}" <c:if test="${checked}">checked</c:if>>
-                  <span class="mc-left-filter__box"></span>
-                  <span class="mc-left-filter__name"><c:out value="${parent.name}" /></span>
-                </label>
-              </c:otherwise>
-            </c:choose>
-          </c:forEach>
-        </c:otherwise>
-      </c:choose>
-    </div>
-  </div>
-
-  <div class="mc-left-filter__section">
-    <button type="button"
-            class="mc-left-filter__title"
-            onclick="this.closest('.mc-left-filter__section').classList.toggle('is-collapsed')">
       <span>Loại sản phẩm</span>
       <span class="mc-left-filter__chevron">⌃</span>
     </button>
 
     <div class="mc-left-filter__body">
-      <c:choose>
-        <c:when test="${not empty primaryCategory and not empty primaryCategory.children}">
-          <c:forEach var="child" items="${primaryCategory.children}">
-            <c:set var="checked" value="false" />
-            <c:forEach var="selectedId" items="${selectedCategoryList}">
-              <c:if test="${selectedId == child.id}">
-                <c:set var="checked" value="true" />
-              </c:if>
-            </c:forEach>
+      <c:set var="singleTypeName"
+             value="${not empty collectionTitle ? collectionTitle : (not empty primaryCategory ? primaryCategory.name : 'Má Hồng')}" />
+      <c:set var="singleTypeId"
+             value="${not empty primaryCategory ? primaryCategory.id : (not empty selectedCategoryList ? selectedCategoryList[0] : '')}" />
 
-            <label class="mc-left-filter__check">
-              <input type="checkbox" name="category" value="${child.id}" <c:if test="${checked}">checked</c:if>>
-              <span class="mc-left-filter__box"></span>
-              <span class="mc-left-filter__name"><c:out value="${child.name}" /></span>
-            </label>
-          </c:forEach>
-        </c:when>
-        <c:otherwise>
-          <label class="mc-left-filter__check">
-            <input type="checkbox" disabled>
-            <span class="mc-left-filter__box"></span>
-            <span class="mc-left-filter__name">Son thỏi</span>
-          </label>
-          <label class="mc-left-filter__check">
-            <input type="checkbox" disabled>
-            <span class="mc-left-filter__box"></span>
-            <span class="mc-left-filter__name">Dưỡng môi</span>
-          </label>
-          <label class="mc-left-filter__check">
-            <input type="checkbox" disabled>
-            <span class="mc-left-filter__box"></span>
-            <span class="mc-left-filter__name">Tẩy da chết môi</span>
-          </label>
-          <label class="mc-left-filter__check">
-            <input type="checkbox" disabled>
-            <span class="mc-left-filter__box"></span>
-            <span class="mc-left-filter__name">Son kem</span>
-          </label>
-          <label class="mc-left-filter__check">
-            <input type="checkbox" disabled>
-            <span class="mc-left-filter__box"></span>
-            <span class="mc-left-filter__name">Son tint</span>
-          </label>
-        </c:otherwise>
-      </c:choose>
+      <label class="mc-left-filter__check">
+        <input type="checkbox"
+               name="category"
+               value="${singleTypeId}"
+               checked>
+        <span class="mc-left-filter__box"></span>
+        <span class="mc-left-filter__name">
+          <c:out value="${fn:toUpperCase(singleTypeName)}" />
+        </span>
+      </label>
     </div>
   </div>
 
@@ -436,6 +335,9 @@
     </div>
   </div>
 
+
+
+
   <div class="mc-left-filter__section">
     <button type="button"
             class="mc-left-filter__title"
@@ -446,21 +348,273 @@
 
     <div class="mc-left-filter__body mc-left-filter__brand-scroll">
       <c:forEach var="brand" items="${brands}">
-        <c:set var="checked" value="false" />
-        <c:forEach var="brandId" items="${selectedBrandList}">
-          <c:if test="${brandId == brand.id}">
-            <c:set var="checked" value="true" />
-          </c:if>
-        </c:forEach>
+        <c:set var="brandKey" value="${fn:toLowerCase(fn:replace(brand.name, '&', ' '))}" />
+        <c:if test="${brandKey == 'maybelline'}">
+          <c:set var="checked" value="false" />
+          <c:forEach var="brandId" items="${selectedBrandList}">
+            <c:if test="${brandId == brand.id}">
+              <c:set var="checked" value="true" />
+            </c:if>
+          </c:forEach>
 
-        <label class="mc-left-filter__check">
-          <input type="checkbox" name="brand" value="${brand.id}" <c:if test="${checked}">checked</c:if>>
-          <span class="mc-left-filter__box"></span>
-          <span class="mc-left-filter__name"><c:out value="${brand.name}" /></span>
-          <c:if test="${brand.productCount > 0}">
-            <span class="mc-left-filter__count">${brand.productCount}</span>
-          </c:if>
-        </label>
+          <label class="mc-left-filter__check">
+            <input type="checkbox" name="brand" value="${brand.id}" <c:if test="${checked}">checked</c:if>>
+            <span class="mc-left-filter__box"></span>
+            <span class="mc-left-filter__name">Maybelline</span>
+          </label>
+        </c:if>
+      </c:forEach>
+
+      <c:forEach var="brand" items="${brands}">
+        <c:set var="brandKey" value="${fn:toLowerCase(fn:replace(brand.name, '&', ' '))}" />
+        <c:if test="${brandKey == '3ce'}">
+          <c:set var="checked" value="false" />
+          <c:forEach var="brandId" items="${selectedBrandList}">
+            <c:if test="${brandId == brand.id}">
+              <c:set var="checked" value="true" />
+            </c:if>
+          </c:forEach>
+
+          <label class="mc-left-filter__check">
+            <input type="checkbox" name="brand" value="${brand.id}" <c:if test="${checked}">checked</c:if>>
+            <span class="mc-left-filter__box"></span>
+            <span class="mc-left-filter__name">3CE</span>
+          </label>
+        </c:if>
+      </c:forEach>
+
+      <c:forEach var="brand" items="${brands}">
+        <c:set var="brandKey" value="${fn:toLowerCase(fn:replace(brand.name, '&', ' '))}" />
+        <c:if test="${brandKey == 'silkygirl'}">
+          <c:set var="checked" value="false" />
+          <c:forEach var="brandId" items="${selectedBrandList}">
+            <c:if test="${brandId == brand.id}">
+              <c:set var="checked" value="true" />
+            </c:if>
+          </c:forEach>
+
+          <label class="mc-left-filter__check">
+            <input type="checkbox" name="brand" value="${brand.id}" <c:if test="${checked}">checked</c:if>>
+            <span class="mc-left-filter__box"></span>
+            <span class="mc-left-filter__name">Silkygirl</span>
+          </label>
+        </c:if>
+      </c:forEach>
+
+      <c:forEach var="brand" items="${brands}">
+        <c:set var="brandKey" value="${fn:toLowerCase(fn:replace(brand.name, '&', ' '))}" />
+        <c:if test="${brandKey == 'peripera'}">
+          <c:set var="checked" value="false" />
+          <c:forEach var="brandId" items="${selectedBrandList}">
+            <c:if test="${brandId == brand.id}">
+              <c:set var="checked" value="true" />
+            </c:if>
+          </c:forEach>
+
+          <label class="mc-left-filter__check">
+            <input type="checkbox" name="brand" value="${brand.id}" <c:if test="${checked}">checked</c:if>>
+            <span class="mc-left-filter__box"></span>
+            <span class="mc-left-filter__name">Peripera</span>
+          </label>
+        </c:if>
+      </c:forEach>
+
+      <c:forEach var="brand" items="${brands}">
+        <c:set var="brandKey" value="${fn:toLowerCase(fn:replace(brand.name, '&', ' '))}" />
+        <c:if test="${brandKey == 'lilybyred' || brandKey == 'lily by red'}">
+          <c:set var="checked" value="false" />
+          <c:forEach var="brandId" items="${selectedBrandList}">
+            <c:if test="${brandId == brand.id}">
+              <c:set var="checked" value="true" />
+            </c:if>
+          </c:forEach>
+
+          <label class="mc-left-filter__check">
+            <input type="checkbox" name="brand" value="${brand.id}" <c:if test="${checked}">checked</c:if>>
+            <span class="mc-left-filter__box"></span>
+            <span class="mc-left-filter__name">Lilybyred</span>
+          </label>
+        </c:if>
+      </c:forEach>
+
+      <c:forEach var="brand" items="${brands}">
+        <c:set var="brandKey" value="${fn:toLowerCase(fn:replace(brand.name, '&', ' '))}" />
+        <c:if test="${brandKey == 'dasique'}">
+          <c:set var="checked" value="false" />
+          <c:forEach var="brandId" items="${selectedBrandList}">
+            <c:if test="${brandId == brand.id}">
+              <c:set var="checked" value="true" />
+            </c:if>
+          </c:forEach>
+
+          <label class="mc-left-filter__check">
+            <input type="checkbox" name="brand" value="${brand.id}" <c:if test="${checked}">checked</c:if>>
+            <span class="mc-left-filter__box"></span>
+            <span class="mc-left-filter__name">Dasique</span>
+          </label>
+        </c:if>
+      </c:forEach>
+
+      <c:forEach var="brand" items="${brands}">
+        <c:set var="brandKey" value="${fn:toLowerCase(fn:replace(brand.name, '&', ' '))}" />
+        <c:if test="${brandKey == 'catrice'}">
+          <c:set var="checked" value="false" />
+          <c:forEach var="brandId" items="${selectedBrandList}">
+            <c:if test="${brandId == brand.id}">
+              <c:set var="checked" value="true" />
+            </c:if>
+          </c:forEach>
+
+          <label class="mc-left-filter__check">
+            <input type="checkbox" name="brand" value="${brand.id}" <c:if test="${checked}">checked</c:if>>
+            <span class="mc-left-filter__box"></span>
+            <span class="mc-left-filter__name">CATRICE</span>
+          </label>
+        </c:if>
+      </c:forEach>
+
+      <c:forEach var="brand" items="${brands}">
+        <c:set var="brandKey" value="${fn:toLowerCase(fn:replace(brand.name, '&', ' '))}" />
+        <c:if test="${brandKey == 'bbia'}">
+          <c:set var="checked" value="false" />
+          <c:forEach var="brandId" items="${selectedBrandList}">
+            <c:if test="${brandId == brand.id}">
+              <c:set var="checked" value="true" />
+            </c:if>
+          </c:forEach>
+
+          <label class="mc-left-filter__check">
+            <input type="checkbox" name="brand" value="${brand.id}" <c:if test="${checked}">checked</c:if>>
+            <span class="mc-left-filter__box"></span>
+            <span class="mc-left-filter__name">Bbia</span>
+          </label>
+        </c:if>
+      </c:forEach>
+
+      <c:forEach var="brand" items="${brands}">
+        <c:set var="brandKey" value="${fn:toLowerCase(fn:replace(brand.name, '&', ' '))}" />
+        <c:if test="${brandKey == 'vacosi'}">
+          <c:set var="checked" value="false" />
+          <c:forEach var="brandId" items="${selectedBrandList}">
+            <c:if test="${brandId == brand.id}">
+              <c:set var="checked" value="true" />
+            </c:if>
+          </c:forEach>
+
+          <label class="mc-left-filter__check">
+            <input type="checkbox" name="brand" value="${brand.id}" <c:if test="${checked}">checked</c:if>>
+            <span class="mc-left-filter__box"></span>
+            <span class="mc-left-filter__name">Vacosi</span>
+          </label>
+        </c:if>
+      </c:forEach>
+
+      <c:forEach var="brand" items="${brands}">
+        <c:set var="brandKey" value="${fn:toLowerCase(fn:replace(brand.name, '&', ' '))}" />
+        <c:if test="${brandKey == 'ofelia' || brandKey == 'ofélia'}">
+          <c:set var="checked" value="false" />
+          <c:forEach var="brandId" items="${selectedBrandList}">
+            <c:if test="${brandId == brand.id}">
+              <c:set var="checked" value="true" />
+            </c:if>
+          </c:forEach>
+
+          <label class="mc-left-filter__check">
+            <input type="checkbox" name="brand" value="${brand.id}" <c:if test="${checked}">checked</c:if>>
+            <span class="mc-left-filter__box"></span>
+            <span class="mc-left-filter__name">OFÉLIA</span>
+          </label>
+        </c:if>
+      </c:forEach>
+
+      <c:forEach var="brand" items="${brands}">
+        <c:set var="brandKey" value="${fn:toLowerCase(fn:replace(brand.name, '&', ' '))}" />
+        <c:if test="${brandKey == 'too cool for school'}">
+          <c:set var="checked" value="false" />
+          <c:forEach var="brandId" items="${selectedBrandList}">
+            <c:if test="${brandId == brand.id}">
+              <c:set var="checked" value="true" />
+            </c:if>
+          </c:forEach>
+
+          <label class="mc-left-filter__check">
+            <input type="checkbox" name="brand" value="${brand.id}" <c:if test="${checked}">checked</c:if>>
+            <span class="mc-left-filter__box"></span>
+            <span class="mc-left-filter__name">Too Cool For School</span>
+          </label>
+        </c:if>
+      </c:forEach>
+
+      <c:forEach var="brand" items="${brands}">
+        <c:set var="brandKey" value="${fn:toLowerCase(fn:replace(brand.name, '&', ' '))}" />
+        <c:if test="${brandKey == 'the saem' || brandKey == 'thesaem'}">
+          <c:set var="checked" value="false" />
+          <c:forEach var="brandId" items="${selectedBrandList}">
+            <c:if test="${brandId == brand.id}">
+              <c:set var="checked" value="true" />
+            </c:if>
+          </c:forEach>
+
+          <label class="mc-left-filter__check">
+            <input type="checkbox" name="brand" value="${brand.id}" <c:if test="${checked}">checked</c:if>>
+            <span class="mc-left-filter__box"></span>
+            <span class="mc-left-filter__name">The Saem</span>
+          </label>
+        </c:if>
+      </c:forEach>
+
+      <c:forEach var="brand" items="${brands}">
+        <c:set var="brandKey" value="${fn:toLowerCase(fn:replace(brand.name, '&', ' '))}" />
+        <c:if test="${brandKey == 'judydoll' || brandKey == 'judy doll'}">
+          <c:set var="checked" value="false" />
+          <c:forEach var="brandId" items="${selectedBrandList}">
+            <c:if test="${brandId == brand.id}">
+              <c:set var="checked" value="true" />
+            </c:if>
+          </c:forEach>
+
+          <label class="mc-left-filter__check">
+            <input type="checkbox" name="brand" value="${brand.id}" <c:if test="${checked}">checked</c:if>>
+            <span class="mc-left-filter__box"></span>
+            <span class="mc-left-filter__name">Judydoll</span>
+          </label>
+        </c:if>
+      </c:forEach>
+
+      <c:forEach var="brand" items="${brands}">
+        <c:set var="brandKey" value="${fn:toLowerCase(fn:replace(brand.name, '&', ' '))}" />
+        <c:if test="${brandKey == 'romand' || brandKey == 'rom&nd' || brandKey == 'rom nd'}">
+          <c:set var="checked" value="false" />
+          <c:forEach var="brandId" items="${selectedBrandList}">
+            <c:if test="${brandId == brand.id}">
+              <c:set var="checked" value="true" />
+            </c:if>
+          </c:forEach>
+
+          <label class="mc-left-filter__check">
+            <input type="checkbox" name="brand" value="${brand.id}" <c:if test="${checked}">checked</c:if>>
+            <span class="mc-left-filter__box"></span>
+            <span class="mc-left-filter__name">Romand</span>
+          </label>
+        </c:if>
+      </c:forEach>
+
+      <c:forEach var="brand" items="${brands}">
+        <c:set var="brandKey" value="${fn:toLowerCase(fn:replace(brand.name, '&', ' '))}" />
+        <c:if test="${brandKey == 'glamrr q' || brandKey == 'glamr q' || brandKey == 'glamrrq' || brandKey == 'glamrq'}">
+          <c:set var="checked" value="false" />
+          <c:forEach var="brandId" items="${selectedBrandList}">
+            <c:if test="${brandId == brand.id}">
+              <c:set var="checked" value="true" />
+            </c:if>
+          </c:forEach>
+
+          <label class="mc-left-filter__check">
+            <input type="checkbox" name="brand" value="${brand.id}" <c:if test="${checked}">checked</c:if>>
+            <span class="mc-left-filter__box"></span>
+            <span class="mc-left-filter__name">Glamrr Q</span>
+          </label>
+        </c:if>
       </c:forEach>
     </div>
   </div>
