@@ -3,6 +3,7 @@ package com.webshop.app.dao;
 import com.webshop.app.model.InventoryMovementView;
 import com.webshop.app.model.InventoryProductStat;
 import com.webshop.app.model.InventorySummary;
+import com.webshop.app.model.InventoryVariantStat;
 import com.webshop.app.utils.DBConnection;
 
 import java.math.BigDecimal;
@@ -835,6 +836,378 @@ public class InventoryDAO {
         }
     }
 
+
+    /**
+     * Issue 147:
+     * Tổng quan tồn kho theo biến thể/SKU. Mỗi biến thể có mức cảnh báo riêng.
+     */
+    public VariantInventorySummary getVariantSummary() {
+        VariantInventorySummary summary = new VariantInventorySummary();
+
+        String sql = """
+                SELECT
+                    COUNT(*) AS variant_count,
+                    COALESCE(SUM(v.stock), 0) AS total_stock,
+                    COALESCE(SUM(CASE WHEN v.stock <= 0 THEN 1 ELSE 0 END), 0) AS out_of_stock_count,
+                    COALESCE(SUM(CASE
+                        WHEN v.stock > 0
+                         AND v.stock < COALESCE(NULLIF(v.min_stock, 0), ?)
+                        THEN 1 ELSE 0 END), 0) AS low_stock_count,
+                    COALESCE(SUM(CASE
+                        WHEN v.stock >= COALESCE(NULLIF(v.min_stock, 0), ?)
+                        THEN 1 ELSE 0 END), 0) AS normal_stock_count
+                FROM store_product_variant v
+                JOIN store_product p ON p.id = v.product_id
+                WHERE p.is_active = 1
+                AND v.active = 1
+                """;
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, InventoryVariantStat.DEFAULT_MIN_STOCK);
+            ps.setInt(2, InventoryVariantStat.DEFAULT_MIN_STOCK);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    summary.setVariantCount(rs.getInt("variant_count"));
+                    summary.setTotalStock(rs.getInt("total_stock"));
+                    summary.setOutOfStockCount(rs.getInt("out_of_stock_count"));
+                    summary.setLowStockCount(rs.getInt("low_stock_count"));
+                    summary.setNormalStockCount(rs.getInt("normal_stock_count"));
+                }
+            }
+
+            return summary;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("InventoryDAO.getVariantSummary error", e);
+        }
+    }
+
+    /**
+     * Issue 147:
+     * Danh sách tồn kho theo SKU/Size/Màu sắc để admin nhập kho từng biến thể.
+     */
+    public List<InventoryVariantStat> findInventoryVariants(String keyword, String status) {
+        StringBuilder sql = new StringBuilder("""
+                SELECT
+                    p.id AS product_id,
+                    p.title AS product_title,
+                    COALESCE(c.name, 'Chưa phân loại') AS category_name,
+                    COALESCE(b.name, 'Chưa có thương hiệu') AS brand_name,
+                    p.price AS base_price,
+                    v.id AS variant_id,
+                    v.sku,
+                    v.size,
+                    v.color,
+                    v.type,
+                    v.extra_price,
+                    v.stock,
+                    COALESCE(NULLIF(v.min_stock, 0), ?) AS min_stock,
+                    COALESCE(SUM(CASE WHEN DATE(o.created_at) = CURDATE() THEN oi.quantity ELSE 0 END), 0) AS exported_today,
+                    COALESCE(SUM(CASE WHEN YEARWEEK(o.created_at, 1) = YEARWEEK(CURDATE(), 1) THEN oi.quantity ELSE 0 END), 0) AS exported_week,
+                    COALESCE(SUM(CASE WHEN YEAR(o.created_at) = YEAR(CURDATE()) AND MONTH(o.created_at) = MONTH(CURDATE()) THEN oi.quantity ELSE 0 END), 0) AS exported_month,
+                    COALESCE(SUM(CASE WHEN YEAR(o.created_at) = YEAR(CURDATE()) THEN oi.quantity ELSE 0 END), 0) AS exported_year
+                FROM store_product_variant v
+                JOIN store_product p ON p.id = v.product_id
+                LEFT JOIN store_category c ON c.id = p.category_id
+                LEFT JOIN store_brand b ON b.id = p.brand_id
+                LEFT JOIN store_orderitem oi ON oi.variant_id = v.id
+                LEFT JOIN store_order o ON o.id = oi.order_id
+                    AND
+                """)
+                .append(VALID_EXPORTED_ORDER_CONDITION)
+                .append("""
+                WHERE p.is_active = 1
+                AND v.active = 1
+                """);
+
+        List<Object> params = new ArrayList<>();
+        params.add(InventoryVariantStat.DEFAULT_MIN_STOCK);
+
+        String safeKeyword = keyword == null ? "" : keyword.trim();
+
+        if (!safeKeyword.isEmpty()) {
+            sql.append("""
+                    AND (
+                        LOWER(p.title) LIKE ?
+                        OR LOWER(p.slug) LIKE ?
+                        OR LOWER(COALESCE(v.sku, '')) LIKE ?
+                        OR LOWER(COALESCE(v.size, '')) LIKE ?
+                        OR LOWER(COALESCE(v.color, '')) LIKE ?
+                        OR LOWER(COALESCE(v.type, '')) LIKE ?
+                        OR LOWER(COALESCE(c.name, '')) LIKE ?
+                        OR LOWER(COALESCE(b.name, '')) LIKE ?
+                    )
+                    """);
+
+            String pattern = "%" + safeKeyword.toLowerCase() + "%";
+            params.add(pattern);
+            params.add(pattern);
+            params.add(pattern);
+            params.add(pattern);
+            params.add(pattern);
+            params.add(pattern);
+            params.add(pattern);
+            params.add(pattern);
+        }
+
+        String normalizedStatus = status == null ? "" : status.trim().toLowerCase();
+
+        switch (normalizedStatus) {
+            case "out" -> sql.append("AND v.stock <= 0\n");
+            case "low" -> sql.append("AND v.stock > 0 AND v.stock < COALESCE(NULLIF(v.min_stock, 0), "
+                    + InventoryVariantStat.DEFAULT_MIN_STOCK + ")\n");
+            case "normal" -> sql.append("AND v.stock >= COALESCE(NULLIF(v.min_stock, 0), "
+                    + InventoryVariantStat.DEFAULT_MIN_STOCK + ")\n");
+            default -> {
+                // Không lọc trạng thái.
+            }
+        }
+
+        sql.append("""
+                GROUP BY
+                    p.id,
+                    p.title,
+                    c.name,
+                    b.name,
+                    p.price,
+                    v.id,
+                    v.sku,
+                    v.size,
+                    v.color,
+                    v.type,
+                    v.extra_price,
+                    v.stock,
+                    v.min_stock
+                ORDER BY
+                    CASE
+                        WHEN v.stock <= 0 THEN 0
+                        WHEN v.stock > 0 AND v.stock < COALESCE(NULLIF(v.min_stock, 0), ?)
+                        THEN 1
+                        ELSE 2
+                    END,
+                    v.stock ASC,
+                    p.title ASC,
+                    v.id ASC
+                LIMIT 500
+                """);
+
+        params.add(InventoryVariantStat.DEFAULT_MIN_STOCK);
+
+        List<InventoryVariantStat> result = new ArrayList<>();
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+
+            bindParams(ps, params);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    result.add(mapInventoryVariantStat(rs));
+                }
+            }
+
+            return result;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("InventoryDAO.findInventoryVariants error", e);
+        }
+    }
+
+    public List<InventoryVariantStat> lowStockVariantAlerts(int limit) {
+        String sql = """
+                SELECT
+                    p.id AS product_id,
+                    p.title AS product_title,
+                    COALESCE(c.name, 'Chưa phân loại') AS category_name,
+                    COALESCE(b.name, 'Chưa có thương hiệu') AS brand_name,
+                    p.price AS base_price,
+                    v.id AS variant_id,
+                    v.sku,
+                    v.size,
+                    v.color,
+                    v.type,
+                    v.extra_price,
+                    v.stock,
+                    COALESCE(NULLIF(v.min_stock, 0), ?) AS min_stock,
+                    0 AS exported_today,
+                    0 AS exported_week,
+                    0 AS exported_month,
+                    0 AS exported_year
+                FROM store_product_variant v
+                JOIN store_product p ON p.id = v.product_id
+                LEFT JOIN store_category c ON c.id = p.category_id
+                LEFT JOIN store_brand b ON b.id = p.brand_id
+                WHERE p.is_active = 1
+                AND v.active = 1
+                AND v.stock < COALESCE(NULLIF(v.min_stock, 0), ?)
+                ORDER BY v.stock ASC, p.title ASC, v.id ASC
+                LIMIT ?
+                """;
+
+        List<InventoryVariantStat> result = new ArrayList<>();
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, InventoryVariantStat.DEFAULT_MIN_STOCK);
+            ps.setInt(2, InventoryVariantStat.DEFAULT_MIN_STOCK);
+            ps.setInt(3, Math.max(limit, 1));
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    result.add(mapInventoryVariantStat(rs));
+                }
+            }
+
+            return result;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("InventoryDAO.lowStockVariantAlerts error", e);
+        }
+    }
+
+    public VariantStockChange addVariantStock(
+            int productId,
+            int variantId,
+            int quantity,
+            String note,
+            Integer adminUserId
+    ) {
+        if (productId <= 0 || variantId <= 0) {
+            throw new IllegalArgumentException("Biến thể sản phẩm không hợp lệ.");
+        }
+
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("Số lượng nhập thêm phải lớn hơn 0.");
+        }
+
+        try (Connection conn = DBConnection.getConnection()) {
+            conn.setAutoCommit(false);
+
+            try {
+                VariantStockSnapshot variant = lockVariantForUpdate(conn, productId, variantId);
+
+                if (variant == null) {
+                    throw new IllegalArgumentException("Không tìm thấy biến thể cần nhập kho.");
+                }
+
+                int beforeStock = variant.stock();
+                int afterStock = beforeStock + quantity;
+
+                updateVariantStock(conn, variantId, afterStock);
+                syncProductStockByVariantSum(conn, productId);
+
+                insertVariantMovement(
+                        conn,
+                        productId,
+                        variantId,
+                        "IN",
+                        quantity,
+                        beforeStock,
+                        afterStock,
+                        "VARIANT_MANUAL",
+                        null,
+                        normalizeNote(note, "Nhập kho biến thể từ trang admin"),
+                        adminUserId
+                );
+
+                conn.commit();
+
+                return new VariantStockChange(
+                        productId,
+                        variantId,
+                        variant.productTitle(),
+                        variant.variantName(),
+                        variant.sku(),
+                        beforeStock,
+                        quantity,
+                        afterStock,
+                        variant.minStock()
+                );
+
+            } catch (Exception e) {
+                conn.rollback();
+                throw e;
+
+            } finally {
+                conn.setAutoCommit(true);
+            }
+
+        } catch (IllegalArgumentException e) {
+            throw e;
+
+        } catch (Exception e) {
+            throw new RuntimeException("InventoryDAO.addVariantStock error", e);
+        }
+    }
+
+    public VariantMinStockChange updateVariantMinStock(
+            int productId,
+            int variantId,
+            int minStock
+    ) {
+        if (productId <= 0 || variantId <= 0) {
+            throw new IllegalArgumentException("Biến thể sản phẩm không hợp lệ.");
+        }
+
+        if (minStock <= 0) {
+            throw new IllegalArgumentException("Mức cảnh báo tối thiểu phải lớn hơn 0.");
+        }
+
+        try (Connection conn = DBConnection.getConnection()) {
+            conn.setAutoCommit(false);
+
+            try {
+                VariantStockSnapshot variant = lockVariantForUpdate(conn, productId, variantId);
+
+                if (variant == null) {
+                    throw new IllegalArgumentException("Không tìm thấy biến thể cần cập nhật mức cảnh báo.");
+                }
+
+                String sql = """
+                        UPDATE store_product_variant
+                        SET min_stock = ?
+                        WHERE id = ? AND product_id = ?
+                        """;
+
+                try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                    ps.setInt(1, minStock);
+                    ps.setInt(2, variantId);
+                    ps.setInt(3, productId);
+                    ps.executeUpdate();
+                }
+
+                conn.commit();
+
+                return new VariantMinStockChange(
+                        productId,
+                        variantId,
+                        variant.productTitle(),
+                        variant.variantName(),
+                        variant.sku(),
+                        variant.minStock(),
+                        minStock
+                );
+
+            } catch (Exception e) {
+                conn.rollback();
+                throw e;
+
+            } finally {
+                conn.setAutoCommit(true);
+            }
+
+        } catch (IllegalArgumentException e) {
+            throw e;
+
+        } catch (Exception e) {
+            throw new RuntimeException("InventoryDAO.updateVariantMinStock error", e);
+        }
+    }
+
     private int sumExportedQuantity(Connection conn, ExportPeriod period) throws SQLException {
         StringBuilder sql = new StringBuilder("""
                 SELECT COALESCE(SUM(oi.quantity), 0) AS exported_qty
@@ -1014,6 +1387,182 @@ public class InventoryDAO {
         }
     }
 
+
+    private VariantStockSnapshot lockVariantForUpdate(
+            Connection conn,
+            int productId,
+            int variantId
+    ) throws SQLException {
+        String sql = """
+                SELECT
+                    v.id,
+                    v.product_id,
+                    COALESCE(v.sku, CONCAT('SKU-', v.product_id, '-', v.id)) AS sku,
+                    v.size,
+                    v.color,
+                    v.type,
+                    v.stock,
+                    COALESCE(NULLIF(v.min_stock, 0), ?) AS min_stock,
+                    COALESCE(p.title, CONCAT('Sản phẩm #', v.product_id)) AS product_title
+                FROM store_product_variant v
+                JOIN store_product p ON p.id = v.product_id
+                WHERE v.id = ?
+                AND v.product_id = ?
+                AND v.active = 1
+                FOR UPDATE
+                """;
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, InventoryVariantStat.DEFAULT_MIN_STOCK);
+            ps.setInt(2, variantId);
+            ps.setInt(3, productId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    return null;
+                }
+
+                String size = rs.getString("size");
+                String color = rs.getString("color");
+                String type = rs.getString("type");
+                String variantName = buildVariantName(size, color, type);
+
+                return new VariantStockSnapshot(
+                        rs.getInt("product_id"),
+                        rs.getInt("id"),
+                        rs.getString("product_title"),
+                        variantName,
+                        rs.getString("sku"),
+                        rs.getInt("stock"),
+                        rs.getInt("min_stock")
+                );
+            }
+        }
+    }
+
+    private void updateVariantStock(Connection conn, int variantId, int afterStock) throws SQLException {
+        String sql = """
+                UPDATE store_product_variant
+                SET stock = ?
+                WHERE id = ?
+                """;
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, Math.max(afterStock, 0));
+            ps.setInt(2, variantId);
+            ps.executeUpdate();
+        }
+    }
+
+    private void syncProductStockByVariantSum(Connection conn, int productId) throws SQLException {
+        String sql = """
+                UPDATE store_product p
+                SET p.stock = (
+                    SELECT COALESCE(SUM(v.stock), 0)
+                    FROM store_product_variant v
+                    WHERE v.product_id = p.id
+                    AND v.active = 1
+                )
+                WHERE p.id = ?
+                """;
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, productId);
+            ps.executeUpdate();
+        }
+    }
+
+    private void insertVariantMovement(
+            Connection conn,
+            int productId,
+            int variantId,
+            String movementType,
+            int quantity,
+            Integer beforeStock,
+            Integer afterStock,
+            String referenceType,
+            Integer referenceId,
+            String note,
+            Integer adminUserId
+    ) throws SQLException {
+
+        String sql = """
+                INSERT INTO inventory_movement
+                (
+                    product_id,
+                    variant_id,
+                    movement_type,
+                    quantity,
+                    before_stock,
+                    after_stock,
+                    reference_type,
+                    reference_id,
+                    note,
+                    created_by
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """;
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, productId);
+            ps.setInt(2, variantId);
+            ps.setString(3, movementType);
+            ps.setInt(4, quantity);
+            setNullableInteger(ps, 5, beforeStock);
+            setNullableInteger(ps, 6, afterStock);
+            ps.setString(7, referenceType);
+            setNullableInteger(ps, 8, referenceId);
+            ps.setString(9, note);
+            setNullableInteger(ps, 10, adminUserId);
+            ps.executeUpdate();
+        }
+    }
+
+    private InventoryVariantStat mapInventoryVariantStat(ResultSet rs) throws SQLException {
+        InventoryVariantStat stat = new InventoryVariantStat();
+
+        stat.setProductId(rs.getInt("product_id"));
+        stat.setProductTitle(rs.getString("product_title"));
+        stat.setCategoryName(rs.getString("category_name"));
+        stat.setBrandName(rs.getString("brand_name"));
+        stat.setBasePrice(rs.getBigDecimal("base_price"));
+        stat.setVariantId(rs.getInt("variant_id"));
+        stat.setSku(rs.getString("sku"));
+        stat.setSize(rs.getString("size"));
+        stat.setColor(rs.getString("color"));
+        stat.setType(rs.getString("type"));
+        stat.setExtraPrice(rs.getBigDecimal("extra_price"));
+        stat.setStock(rs.getInt("stock"));
+        stat.setMinStock(rs.getInt("min_stock"));
+        stat.setExportedToday(rs.getInt("exported_today"));
+        stat.setExportedThisWeek(rs.getInt("exported_week"));
+        stat.setExportedThisMonth(rs.getInt("exported_month"));
+        stat.setExportedThisYear(rs.getInt("exported_year"));
+
+        return stat;
+    }
+
+    private String buildVariantName(String size, String color, String type) {
+        String safeSize = size == null ? "" : size.trim();
+        String safeColor = color == null || color.trim().isEmpty()
+                ? (type == null ? "" : type.trim())
+                : color.trim();
+
+        if (!safeSize.isEmpty() && !safeColor.isEmpty()) {
+            return safeSize + " / " + safeColor;
+        }
+
+        if (!safeSize.isEmpty()) {
+            return safeSize;
+        }
+
+        if (!safeColor.isEmpty()) {
+            return safeColor;
+        }
+
+        return "Mặc định";
+    }
+
     private InventoryProductStat mapInventoryProductStat(ResultSet rs) throws SQLException {
         InventoryProductStat stat = new InventoryProductStat();
 
@@ -1177,6 +1726,95 @@ public class InventoryDAO {
                     status
             );
         }
+    }
+
+
+    public static class VariantInventorySummary {
+
+        private int variantCount;
+        private int totalStock;
+        private int outOfStockCount;
+        private int lowStockCount;
+        private int normalStockCount;
+
+        public int getVariantCount() {
+            return variantCount;
+        }
+
+        public void setVariantCount(int variantCount) {
+            this.variantCount = Math.max(variantCount, 0);
+        }
+
+        public int getTotalStock() {
+            return totalStock;
+        }
+
+        public void setTotalStock(int totalStock) {
+            this.totalStock = Math.max(totalStock, 0);
+        }
+
+        public int getOutOfStockCount() {
+            return outOfStockCount;
+        }
+
+        public void setOutOfStockCount(int outOfStockCount) {
+            this.outOfStockCount = Math.max(outOfStockCount, 0);
+        }
+
+        public int getLowStockCount() {
+            return lowStockCount;
+        }
+
+        public void setLowStockCount(int lowStockCount) {
+            this.lowStockCount = Math.max(lowStockCount, 0);
+        }
+
+        public int getNormalStockCount() {
+            return normalStockCount;
+        }
+
+        public void setNormalStockCount(int normalStockCount) {
+            this.normalStockCount = Math.max(normalStockCount, 0);
+        }
+
+        public int getAlertCount() {
+            return outOfStockCount + lowStockCount;
+        }
+    }
+
+    public record VariantStockChange(
+            int productId,
+            int variantId,
+            String productTitle,
+            String variantName,
+            String sku,
+            int beforeStock,
+            int quantity,
+            int afterStock,
+            int minStock
+    ) {
+    }
+
+    public record VariantMinStockChange(
+            int productId,
+            int variantId,
+            String productTitle,
+            String variantName,
+            String sku,
+            int oldMinStock,
+            int newMinStock
+    ) {
+    }
+
+    private record VariantStockSnapshot(
+            int productId,
+            int variantId,
+            String productTitle,
+            String variantName,
+            String sku,
+            int stock,
+            int minStock
+    ) {
     }
 
     public static class ImportSummary {
