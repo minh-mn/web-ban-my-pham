@@ -45,6 +45,18 @@
             </div>
         </c:if>
 
+        <c:if test="${param.success == 'variant_stock_added'}">
+            <div class="admin-alert admin-alert--success">
+                Đã nhập thêm tồn kho cho biến thể thành công.
+            </div>
+        </c:if>
+
+        <c:if test="${param.success == 'variant_min_stock_updated'}">
+            <div class="admin-alert admin-alert--success">
+                Đã cập nhật mức cảnh báo tồn kho cho biến thể.
+            </div>
+        </c:if>
+
         <c:if test="${not empty param.error}">
             <div class="admin-alert admin-alert--danger">
                 <c:out value="${param.error}"/>
@@ -82,6 +94,40 @@
                     <fmt:formatNumber value="${summary.outOfStockCount}" type="number"/>
                 </div>
                 <div class="inventory-card-note">Cần nhập hàng ngay</div>
+            </div>
+        </div>
+
+        <div class="inventory-summary-grid inventory-variant-summary-grid">
+            <div class="admin-card inventory-stat-card">
+                <div class="inventory-card-label">Tổng biến thể active</div>
+                <div class="inventory-card-value">
+                    <fmt:formatNumber value="${variantSummary.variantCount}" type="number"/>
+                </div>
+                <div class="inventory-card-note">SKU/Size/Màu đang kinh doanh</div>
+            </div>
+
+            <div class="admin-card inventory-stat-card inventory-stat-card--success">
+                <div class="inventory-card-label">Tổng tồn biến thể</div>
+                <div class="inventory-card-value">
+                    <fmt:formatNumber value="${variantSummary.totalStock}" type="number"/>
+                </div>
+                <div class="inventory-card-note">Tổng số lượng theo từng SKU</div>
+            </div>
+
+            <div class="admin-card inventory-stat-card inventory-stat-card--warning">
+                <div class="inventory-card-label">Biến thể sắp hết</div>
+                <div class="inventory-card-value">
+                    <fmt:formatNumber value="${variantSummary.lowStockCount}" type="number"/>
+                </div>
+                <div class="inventory-card-note">Tồn kho thấp hơn mức tối thiểu</div>
+            </div>
+
+            <div class="admin-card inventory-stat-card inventory-stat-card--danger">
+                <div class="inventory-card-label">Biến thể hết hàng</div>
+                <div class="inventory-card-value">
+                    <fmt:formatNumber value="${variantSummary.outOfStockCount}" type="number"/>
+                </div>
+                <div class="inventory-card-note">Cần nhập hàng theo SKU</div>
             </div>
         </div>
 
@@ -169,6 +215,40 @@
                             </div>
                         </c:otherwise>
                     </c:choose>
+
+                    <div class="variant-alert-block">
+                        <div class="variant-alert-title">Cảnh báo biến thể/SKU</div>
+                        <c:choose>
+                            <c:when test="${not empty lowStockVariantAlerts}">
+                                <div class="low-stock-list low-stock-list--variant">
+                                    <c:forEach var="variant" items="${lowStockVariantAlerts}">
+                                        <div class="low-stock-item">
+                                            <div>
+                                                <div class="low-stock-item-title">
+                                                    <c:out value="${variant.displayProductTitle}"/>
+                                                </div>
+                                                <div class="low-stock-item-meta">
+                                                    SKU: <c:out value="${variant.displaySku}"/>
+                                                    ·
+                                                    <c:out value="${variant.variantName}"/>
+                                                    ·
+                                                    Tối thiểu: <fmt:formatNumber value="${variant.minStock}" type="number"/>
+                                                </div>
+                                            </div>
+                                            <div class="low-stock-number">
+                                                <fmt:formatNumber value="${variant.stock}" type="number"/>
+                                            </div>
+                                        </div>
+                                    </c:forEach>
+                                </div>
+                            </c:when>
+                            <c:otherwise>
+                                <div class="admin-empty inventory-empty">
+                                    Chưa có biến thể nào dưới mức cảnh báo.
+                                </div>
+                            </c:otherwise>
+                        </c:choose>
+                    </div>
                 </div>
             </section>
         </div>
@@ -413,6 +493,186 @@
                                 <td colspan="12">
                                     <div class="admin-empty inventory-empty">
                                         Không tìm thấy sản phẩm phù hợp với bộ lọc hiện tại.
+                                    </div>
+                                </td>
+                            </tr>
+                        </c:otherwise>
+                    </c:choose>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="admin-card inventory-panel inventory-mt-20" id="variantInventory">
+            <div class="inventory-panel-header">
+                <div>
+                    <h2>Kho biến thể / SKU</h2>
+                    <span>
+                        Quản lý tồn kho theo từng biến thể Size/Màu sắc. Hệ thống cảnh báo khi tồn kho thấp hơn mức tối thiểu của từng SKU.
+                    </span>
+                </div>
+
+                <form class="inventory-filter" method="get" action="${pageContext.request.contextPath}/admin/inventory#variantInventory">
+                    <input type="hidden" name="keyword" value="${fn:escapeXml(keyword)}">
+                    <input type="hidden" name="status" value="${fn:escapeXml(status)}">
+
+                    <input
+                            class="admin-input inventory-search-input"
+                            type="text"
+                            name="variantKeyword"
+                            value="${fn:escapeXml(variantKeyword)}"
+                            placeholder="Tìm SKU, sản phẩm, size, màu">
+
+                    <select class="admin-select inventory-status-select" name="variantStatus">
+                        <option value="" ${empty variantStatus ? 'selected' : ''}>Tất cả biến thể</option>
+                        <option value="normal" ${variantStatus == 'normal' ? 'selected' : ''}>Còn hàng</option>
+                        <option value="low" ${variantStatus == 'low' ? 'selected' : ''}>Sắp hết hàng</option>
+                        <option value="out" ${variantStatus == 'out' ? 'selected' : ''}>Hết hàng</option>
+                    </select>
+
+                    <button class="admin-btn admin-btn--primary" type="submit">Lọc SKU</button>
+                </form>
+            </div>
+
+            <div class="admin-table-wrap inventory-variant-table-wrap">
+                <table class="admin-table inventory-variant-table">
+                    <thead>
+                    <tr>
+                        <th>SKU</th>
+                        <th>Sản phẩm</th>
+                        <th>Size</th>
+                        <th>Màu sắc / Loại</th>
+                        <th>Giá biến thể</th>
+                        <th>Tồn kho</th>
+                        <th>Mức cảnh báo</th>
+                        <th>Trạng thái</th>
+                        <th>Xuất tháng</th>
+                        <th>Nhập biến thể</th>
+                        <th>Cập nhật cảnh báo</th>
+                    </tr>
+                    </thead>
+
+                    <tbody>
+                    <c:choose>
+                        <c:when test="${not empty variantProducts}">
+                            <c:forEach var="variant" items="${variantProducts}">
+                                <tr>
+                                    <td>
+                                        <span class="inventory-sku-code">
+                                            <c:out value="${variant.displaySku}"/>
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        <div class="product-name">
+                                            <c:out value="${variant.displayProductTitle}"/>
+                                        </div>
+                                        <div class="product-meta">
+                                            <c:out value="${variant.displayCategoryName}"/>
+                                            ·
+                                            <c:out value="${variant.displayBrandName}"/>
+                                        </div>
+                                    </td>
+
+                                    <td>
+                                        <c:out value="${variant.displaySize}"/>
+                                    </td>
+
+                                    <td>
+                                        <c:out value="${variant.displayColor}"/>
+                                    </td>
+
+                                    <td>
+                                        <c:out value="${variant.formattedFinalPrice}"/>
+                                    </td>
+
+                                    <td>
+                                        <span class="stock-number">
+                                            <fmt:formatNumber value="${variant.stock}" type="number"/>
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        <span class="inventory-min-stock">
+                                            <fmt:formatNumber value="${variant.minStock}" type="number"/>
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        <span class="admin-pill ${variant.stockStatusClass}">
+                                            <c:out value="${variant.stockStatusLabel}"/>
+                                        </span>
+                                        <div class="inventory-variant-alert-text">
+                                            <c:out value="${variant.alertText}"/>
+                                        </div>
+                                    </td>
+
+                                    <td>
+                                        <fmt:formatNumber value="${variant.exportedThisMonth}" type="number"/>
+                                    </td>
+
+                                    <td>
+                                        <form class="inventory-add-stock-form inventory-add-variant-stock-form"
+                                              method="post"
+                                              action="${pageContext.request.contextPath}/admin/inventory#variantInventory">
+                                            <input type="hidden" name="action" value="addVariantStock">
+                                            <input type="hidden" name="productId" value="${variant.productId}">
+                                            <input type="hidden" name="variantId" value="${variant.variantId}">
+                                            <input type="hidden" name="csrf_token" value="${csrfValue}">
+                                            <input type="hidden" name="csrfToken" value="${csrfValue}">
+
+                                            <input class="admin-input"
+                                                   type="number"
+                                                   name="quantity"
+                                                   min="1"
+                                                   step="1"
+                                                   placeholder="SL"
+                                                   required>
+
+                                            <input class="admin-input"
+                                                   type="text"
+                                                   name="note"
+                                                   maxlength="255"
+                                                   placeholder="Ghi chú">
+
+                                            <button class="admin-btn admin-btn--primary" type="submit">
+                                                Nhập
+                                            </button>
+                                        </form>
+                                    </td>
+
+                                    <td>
+                                        <form class="inventory-min-stock-form"
+                                              method="post"
+                                              action="${pageContext.request.contextPath}/admin/inventory#variantInventory">
+                                            <input type="hidden" name="action" value="updateVariantMinStock">
+                                            <input type="hidden" name="productId" value="${variant.productId}">
+                                            <input type="hidden" name="variantId" value="${variant.variantId}">
+                                            <input type="hidden" name="csrf_token" value="${csrfValue}">
+                                            <input type="hidden" name="csrfToken" value="${csrfValue}">
+
+                                            <input class="admin-input"
+                                                   type="number"
+                                                   name="minStock"
+                                                   min="1"
+                                                   step="1"
+                                                   value="${variant.minStock}"
+                                                   required>
+
+                                            <button class="admin-btn" type="submit">
+                                                Lưu
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            </c:forEach>
+                        </c:when>
+
+                        <c:otherwise>
+                            <tr>
+                                <td colspan="11">
+                                    <div class="admin-empty inventory-empty">
+                                        Chưa có biến thể phù hợp. Hãy thêm biến thể trong form sản phẩm trước khi quản lý tồn kho theo SKU.
                                     </div>
                                 </td>
                             </tr>
