@@ -121,7 +121,7 @@
 
 	window.fbAsyncInit = function() {
 		FB.init({
-			appId      : 'APP_ID_FACEBOOK_CUA_BAN',
+			appId      : '1891459851533615',
 			cookie     : true,
 			xfbml      : true,
 			version    : 'v19.0'
@@ -135,16 +135,6 @@
 		js.src = "https://connect.facebook.net/vi_VN/sdk.js";
 		fjs.parentNode.insertBefore(js, fjs);
 	}(document, 'script', 'facebook-jssdk'));
-
-	document.getElementById('btn-facebook').addEventListener('click', () => {
-		FB.login(function(response) {
-			if (response.authResponse) {
-				sendTokenToServer('facebook', response.authResponse.accessToken);
-			} else {
-				Swal.fire('Lỗi', 'Bạn đã hủy đăng nhập Facebook', 'error');
-			}
-		}, {scope: 'public_profile,email'});
-	});
 
 
 	// 3. XỬ LÝ SỐ ĐIỆN THOẠI (Giả lập Frontend)
