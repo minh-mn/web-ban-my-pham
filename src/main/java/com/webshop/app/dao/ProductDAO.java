@@ -1391,16 +1391,6 @@ public class ProductDAO {
 		}
 	}
 
-	private void appendSort(StringBuilder sql, String sort) {
-		if ("price_asc".equals(sort)) {
-			sql.append("ORDER BY p.price ASC ");
-		} else if ("price_desc".equals(sort)) {
-			sql.append("ORDER BY p.price DESC ");
-		} else {
-			sql.append("ORDER BY p.created_at DESC ");
-		}
-	}
-
 	private String placeholders(int size) {
 		if (size <= 0) {
 			return "";
@@ -1823,4 +1813,49 @@ public class ProductDAO {
 				|| message.toLowerCase(Locale.ROOT).contains("unknown table"));
 	}
 
+	private void appendSort(StringBuilder sql, String sort) {
+		if (sort == null || sort.isBlank()) {
+			sql.append("ORDER BY p.id DESC "); // Sắp xếp mặc định khi không truyền tham số
+			return;
+		}
+
+		switch (sort.trim()) {
+			case "price_asc":
+				sql.append("ORDER BY p.price ASC ");
+				break;
+
+			case "price_desc":
+				sql.append("ORDER BY p.price DESC ");
+				break;
+
+			case "rating_desc":
+				sql.append("ORDER BY COALESCE(AVG(r.rating), 0) DESC ");
+				break;
+
+			case "best-selling":
+				/*
+				 * Sử dụng Subquery để tính tổng số lượng bán (SUM(oi.quantity))
+				 * từ các đơn hàng có trạng thái thanh toán là 'PAID' (Đã thanh toán).
+				 * Sản phẩm nào bán nhiều nhất sẽ được sắp xếp lên đầu (DESC).
+				 */
+				sql.append("ORDER BY (SELECT COALESCE(SUM(oi.quantity), 0) FROM store_orderitem oi ")
+						.append("JOIN store_order o ON o.id = oi.order_id ")
+						.append("WHERE o.payment_status = 'PAID' AND oi.product_id = p.id) DESC ");
+				break;
+
+			case "updated_desc":
+			case "newest":
+				/*
+				 * Sắp xếp theo thời gian mới nhất.
+				 * - Nếu trong Database của bạn có cột 'updated_at' (ngày cập nhật), hãy đổi thành: p.updated_at DESC
+				 * - Nếu không có, sử dụng cột 'created_at' (ngày tạo) có sẵn trong câu lệnh SELECT của bạn: p.created_at DESC
+				 */
+				sql.append("ORDER BY p.created_at DESC ");
+				break;
+
+			default:
+				sql.append("ORDER BY p.id DESC ");
+				break;
+		}
+	}
 }
