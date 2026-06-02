@@ -21,6 +21,7 @@
 <c:set var="canRoles" value="${isSuperAdmin or (not empty adminPermissions and adminPermissions.contains('ROLE_MANAGE'))}"/>
 <c:set var="canNotifications" value="${isSuperAdmin or (not empty adminPermissions and adminPermissions.contains('NOTIFICATION_MANAGE'))}"/>
 <c:set var="canRanks" value="${isSuperAdmin or (not empty adminPermissions and adminPermissions.contains('RANK_MANAGE'))}"/>
+<c:set var="canAuditLogs" value="${isSuperAdmin or (not empty adminPermissions and adminPermissions.contains('AUDIT_LOG_VIEW'))}"/>
 
 <aside class="admin-sidebar">
   <div class="admin-sidebar__inner">
@@ -194,7 +195,7 @@
         </a>
       </c:if>
 
-      <c:if test="${canUsers or canRoles or canRanks}">
+      <c:if test="${canUsers or canRoles or canRanks or canAuditLogs}">
         <div class="admin-nav__section">Hệ thống &amp; phân quyền</div>
       </c:if>
 
@@ -219,6 +220,14 @@
            href="${pageContext.request.contextPath}/admin/ranks">
           <span>User Ranks</span>
           <span class="admin-nav__meta">/admin/ranks</span>
+        </a>
+      </c:if>
+
+      <c:if test="${canAuditLogs}">
+        <a class="${activeMenu == 'auditLogs' ? 'is-active' : ''}"
+           href="${pageContext.request.contextPath}/admin/audit-logs">
+          <span>Nhật ký hệ thống</span>
+          <span class="admin-nav__meta">/admin/audit-logs</span>
         </a>
       </c:if>
 
