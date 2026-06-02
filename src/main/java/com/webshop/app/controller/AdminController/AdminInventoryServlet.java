@@ -2,6 +2,7 @@ package com.webshop.app.controller.AdminController;
 
 import com.webshop.app.dao.InventoryDAO;
 import com.webshop.app.model.User;
+import com.webshop.app.service.AuditLogService;
 import com.webshop.app.utils.DBConnection;
 
 import java.io.IOException;
@@ -167,6 +168,22 @@ public class AdminInventoryServlet extends HttpServlet {
         try {
             inventoryDAO.addStock(productId, quantity, note, adminUserId);
 
+            String productName = findProductNameForLog(productId);
+            AuditLogService.logImport(
+                    req,
+                    "INVENTORY",
+                    "Product",
+                    productId,
+                    productName,
+                    "Đã nhập thêm " + quantity + " sản phẩm vào kho"
+                            + (productName == null || productName.isBlank() ? " #" + productId : ": " + productName) + ".",
+                    AuditLogService.changes(
+                            "Sản phẩm: " + (productName == null || productName.isBlank() ? "#" + productId : productName),
+                            "Số lượng nhập: " + quantity,
+                            "Ghi chú: " + normalizeNote(note, "Nhập kho thủ công")
+                    )
+            );
+
             resp.sendRedirect(req.getContextPath()
                     + "/admin/inventory?success=stock_added");
 
@@ -257,6 +274,8 @@ public class AdminInventoryServlet extends HttpServlet {
 
         try (XSSFWorkbook workbook = new XSSFWorkbook(filePart.getInputStream())) {
             resultRows = processRestockWorkbook(workbook, adminUserId);
+
+            logRestockImport(req, resultRows, submittedFileName);
 
         } catch (Exception e) {
             throw new ServletException("AdminInventoryServlet.importRestockExcel read error", e);
@@ -824,6 +843,80 @@ public class AdminInventoryServlet extends HttpServlet {
                 .replace("\"", "\\\"")
                 .replace("\r", "\\r")
                 .replace("\n", "\\n");
+    }
+
+    private void logRestockImport(HttpServletRequest req,
+                                  List<RestockImportResultRow> resultRows,
+                                  String fileName) {
+        if (resultRows == null || resultRows.isEmpty()) {
+            return;
+        }
+
+        int successCount = 0;
+        int totalQuantity = 0;
+        List<String> detailLines = new ArrayList<>();
+
+        for (RestockImportResultRow row : resultRows) {
+            if (row == null || !"Thành công".equalsIgnoreCase(row.status())) {
+                continue;
+            }
+
+            successCount++;
+            totalQuantity += Math.max(row.quantity(), 0);
+
+            if (detailLines.size() < 30) {
+                detailLines.add("#" + row.productId()
+                        + " - " + row.title()
+                        + ": " + row.beforeStock()
+                        + " -> " + row.afterStock()
+                        + " (+" + row.quantity() + ")");
+            }
+        }
+
+        if (successCount <= 0) {
+            return;
+        }
+
+        AuditLogService.logImport(
+                req,
+                "INVENTORY",
+                "ExcelImport",
+                null,
+                fileName,
+                "Đã nhập kho từ file Excel " + fileName + ": "
+                        + successCount + " dòng thành công, tổng " + totalQuantity + " sản phẩm.",
+                AuditLogService.changes(
+                        "File: " + fileName,
+                        "Số dòng thành công: " + successCount,
+                        "Tổng số lượng nhập: " + totalQuantity,
+                        String.join("\n", detailLines)
+                )
+        );
+    }
+
+    private String findProductNameForLog(int productId) {
+        if (productId <= 0) {
+            return null;
+        }
+
+        String sql = "SELECT title FROM store_product WHERE id = ? LIMIT 1";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, productId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("title");
+                }
+            }
+
+        } catch (RuntimeException | SQLException e) {
+            e.printStackTrace();
+        }
+
+        return null;
     }
 
     private Integer getCurrentAdminUserId(HttpServletRequest req) {
