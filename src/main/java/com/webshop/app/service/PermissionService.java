@@ -30,6 +30,7 @@ public class PermissionService {
     public static final String SETTING_MANAGE = "SETTING_MANAGE";
     public static final String FLASHSALE_MANAGE = "FLASHSALE_MANAGE";
     public static final String RANK_MANAGE = "RANK_MANAGE";
+    public static final String AUDIT_LOG_VIEW = "AUDIT_LOG_VIEW";
 
     private final RoleDAO roleDAO = new RoleDAO();
 
@@ -65,6 +66,7 @@ public class PermissionService {
             permissions.add(SETTING_MANAGE);
             permissions.add(FLASHSALE_MANAGE);
             permissions.add(RANK_MANAGE);
+            permissions.add(AUDIT_LOG_VIEW);
             return permissions;
         }
 
@@ -167,6 +169,10 @@ public class PermissionService {
 
         if (path.startsWith("/admin/users")) {
             return USER_MANAGE;
+        }
+
+        if (path.startsWith("/admin/audit-logs")) {
+            return AUDIT_LOG_VIEW;
         }
 
         if (path.startsWith("/admin/roles")) {
