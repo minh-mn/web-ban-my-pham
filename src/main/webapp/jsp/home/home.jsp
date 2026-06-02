@@ -451,7 +451,8 @@ Layout theo mẫu: banner lớn bên trái, logo thương hiệu + sản phẩm 
 				display: block;
 			}
 
-			.skin-featured-brand-section .skin-featured-brand-discount {
+			.skin-featured-brand-section .skin-featured-brand-discount,
+			.skin-featured-brand-discount {
 				position: absolute;
 				right: 12px;
 				bottom: 12px;
@@ -462,14 +463,22 @@ Layout theo mẫu: banner lớn bên trái, logo thương hiệu + sản phẩm 
 				align-items: center;
 				justify-content: center;
 				border-radius: 999px;
-				background: linear-gradient(135deg, #ff4f97 0%, #d9154f 48%, #a4041b 100%) !important;
-				background-color: #d9154f !important;
+				background: #a8d83f !important;
+				background-color: #a8d83f !important;
 				color: #fff !important;
-				border: 2px solid rgba(255, 255, 255, .95);
+				border: 0 !important;
 				font-size: 13px;
 				font-weight: 950;
-				box-shadow: 0 10px 20px rgba(176, 18, 57, .22);
+				box-shadow: none !important;
 			}
+
+			.skin-featured-brand-section .skin-discount-bubble {
+				background: #a8d83f !important;
+				background-color: #a8d83f !important;
+				color: #fff !important;
+				box-shadow: none !important;
+			}
+
 
 			.skin-featured-brand-body {
 				padding: 14px 14px 0;
