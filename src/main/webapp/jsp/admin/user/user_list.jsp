@@ -195,8 +195,11 @@
             <span>Role</span>
             <select class="admin-select" name="role">
               <option value="" ${empty f_role ? 'selected' : ''}>Tất cả role</option>
-              <option value="USER" ${f_role == 'USER' ? 'selected' : ''}>USER</option>
-              <option value="ADMIN" ${f_role == 'ADMIN' ? 'selected' : ''}>ADMIN</option>
+              <c:forEach var="roleItem" items="${roles}">
+                <option value="${roleItem.code}" ${f_role == roleItem.code ? 'selected' : ''}>
+                  ${roleItem.code} - ${roleItem.name}
+                </option>
+              </c:forEach>
             </select>
           </label>
 
@@ -355,7 +358,7 @@
                           <span class="admin-pill admin-pill--danger">ADMIN</span>
                         </c:when>
                         <c:otherwise>
-                          <span class="admin-pill admin-pill--info">USER</span>
+                          <span class="admin-pill admin-pill--info"><c:out value="${u.role}"/></span>
                         </c:otherwise>
                       </c:choose>
                     </td>
