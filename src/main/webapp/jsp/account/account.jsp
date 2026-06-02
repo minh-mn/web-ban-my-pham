@@ -337,437 +337,387 @@
         <!-- ========================================================= -->
         <c:if test="${not sessionScope.user.admin}">
 
-          <div class="account-hero user-mode">
-            <div class="account-profile">
-              <div class="account-avatar">
-                <c:out value="${fn:toUpperCase(fn:substring(safeUsername, 0, 1))}" />
-              </div>
+          <c:choose>
+            <%-- CHẾ ĐỘ 1: GIAO DIỆN XEM TOÀN BỘ VÍ VOUCHER --%>
+            <c:when test="${param.view eq 'vouchers'}">
 
-              <div>
-                <h1 class="account-title">Tài khoản của tôi</h1>
-                <p class="account-subtitle">
-                  Xin chào, <strong><c:out value="${safeUsername}" /></strong>. Theo dõi đơn hàng, chi tiêu và hạng khách hàng tại đây.
-                </p>
+              <div class="account-card account-section-space">
+                <div class="account-card-body">
 
-                <div class="account-chip-row">
-                  <span class="account-chip user-chip">
-                    📧
-                    <c:choose>
-                      <c:when test="${not empty userEmail}">
-                        <c:out value="${userEmail}" />
-                      </c:when>
-                      <c:otherwise>Chưa cập nhật email</c:otherwise>
-                    </c:choose>
-                  </span>
+                  <!-- NÚT QUAY LẠI TRANG TÀI KHOẢN -->
+                  <div style="margin-bottom: 25px;">
+                    <a href="?" class="account-btn" style="background: #6b7280; color: #fff; padding: 8px 18px; border-radius: 20px; text-decoration: none; font-weight: bold; display: inline-flex; align-items: center; gap: 8px; border: none; transition: 0.3s;">
+                      ⬅ Quay lại trang tài khoản
+                    </a>
+                  </div>
 
-                  <span class="account-chip user-chip">
-                    📱
-                    <c:choose>
-                      <c:when test="${not empty userPhone}">
-                        <c:out value="${userPhone}" />
-                      </c:when>
-                      <c:otherwise>Chưa cập nhật SĐT</c:otherwise>
-                    </c:choose>
-                  </span>
-
-                  <c:if test="${not empty rankLabel}">
-                    <span class="account-chip user-chip ${rankCss}">
-                      🎖 <c:out value="${rankLabel}" />
-                      <c:if test="${rankDiscount > 0}">
-                        -<c:out value="${rankDiscount}" />%
-                      </c:if>
+                  <div class="account-card-head account-card-head-start">
+                    <div>
+                      <h2 class="account-card-title" style="color: var(--pink-dark); font-size: 22px;">💼 Ví voucher của bạn (Tất cả mã)</h2>
+                      <p class="account-muted">
+                        Danh sách đầy đủ các mã giảm giá bạn đã thu thập thành công.
+                      </p>
+                    </div>
+                    <span class="account-chip user-chip" style="background-color: var(--pink-soft); color: var(--pink-main); font-weight: bold;">
+                      🎰 Đã lưu: ${fn:length(savedCoupons)} mã
                     </span>
-                  </c:if>
-                </div>
-              </div>
-            </div>
-
-            <div class="account-actions">
-              <a href="${pageContext.request.contextPath}/orders" class="account-btn user-primary">📦 Xem đơn hàng</a>
-              <a href="${pageContext.request.contextPath}/account/change-password" class="account-btn">🔒 Đổi mật khẩu</a>
-            </div>
-          </div>
-
-          <!-- USER RANK DETAIL -->
-          <div class="account-card account-section-space">
-            <div class="account-card-body">
-              <div class="account-card-head account-card-head-start">
-                <div>
-                  <h2 class="account-card-title">🎖 Hạng khách hàng</h2>
-                  <p class="account-muted">Hạng được tính dựa trên tổng chi tiêu từ các đơn đã thanh toán thành công.</p>
-                </div>
-
-                <span class="account-chip user-chip ${rankCss}">
-                  <c:out value="${empty rankLabel ? 'Thành viên' : rankLabel}" />
-                  <c:if test="${rankDiscount > 0}">
-                    -<c:out value="${rankDiscount}" />%
-                  </c:if>
-                </span>
-              </div>
-
-              <div class="account-grid account-grid-3">
-                <div>
-                  <p class="account-kpi-label">Tổng chi tiêu xét hạng</p>
-                  <div class="account-kpi-value">
-                    <fmt:formatNumber value="${empty rankTotalSpent ? 0 : rankTotalSpent}"
-                                      type="number"
-                                      groupingUsed="true"
-                                      maxFractionDigits="0"/> ₫
                   </div>
-                  <div class="account-kpi-note">Không tính đơn đã hủy.</div>
-                </div>
 
-                <div>
-                  <p class="account-kpi-label">Ưu đãi hiện tại</p>
-                  <div class="account-kpi-value">
-                    <c:out value="${empty rankDiscount ? 0 : rankDiscount}" />%
-                  </div>
-                  <div class="account-kpi-note">Tự động áp dụng khi thanh toán.</div>
-                </div>
+                  <c:choose>
+                    <c:when test="${not empty savedCoupons}">
+                      <!-- Hiển thị toàn bộ không giới hạn số lượng -->
+                      <div class="account-coupon-grid">
+                        <c:forEach var="savedCp" items="${savedCoupons}">
+                          <div class="account-coupon-card" style="border: 1px dashed var(--pink-main); background: var(--pink-soft);">
+                            <div class="account-coupon-top">
+                              <div class="account-coupon-code">
+                                <span>🎁</span>
+                                <span style="color: var(--pink-dark); font-weight: bold;"><c:out value="${savedCp.code}" /></span>
+                              </div>
+                              <button type="button" class="account-coupon-copy" style="background: var(--pink-main); color: #fff;" data-coupon-code="<c:out value='${savedCp.code}'/>" onclick="copyCouponCode(this.dataset.couponCode)">
+                                Copy
+                              </button>
+                            </div>
 
-                <div>
-                  <p class="account-kpi-label">Số đơn đã thanh toán</p>
-                  <div class="account-kpi-value">
-                    <c:out value="${empty rankPaidOrderCount ? 0 : rankPaidOrderCount}" />
-                  </div>
-                  <div class="account-kpi-note">Chỉ tính đơn hợp lệ.</div>
-                </div>
-              </div>
+                            <div class="account-coupon-discount" style="color: var(--text-main);">
+                              <c:choose>
+                                <c:when test="${savedCp.type eq 'FREESHIP'}">🚚 Freeship Vận Chuyển</c:when>
+                                <c:otherwise>Giảm liền ${savedCp.discountPercent}%</c:otherwise>
+                              </c:choose>
+                            </div>
 
-              <div class="account-rank-next">
-                <c:choose>
-                  <c:when test="${maxRank}">
-                    <p class="account-muted">
-                      Bạn đã đạt hạng cao nhất. Cảm ơn bạn đã đồng hành cùng MyCosmetic.
-                    </p>
-
-                    <div class="account-rank-progress">
-                      <div class="account-rank-progress__bar is-full"></div>
-                    </div>
-                  </c:when>
-
-                  <c:otherwise>
-                    <p class="account-muted">
-                      Còn
-                      <strong>
-                        <fmt:formatNumber value="${empty amountToNextRank ? 0 : amountToNextRank}"
-                                          type="number"
-                                          groupingUsed="true"
-                                          maxFractionDigits="0"/> ₫
-                      </strong>
-                      để lên hạng
-                      <strong><c:out value="${empty nextRankLabel ? 'tiếp theo' : nextRankLabel}" /></strong>.
-                    </p>
-
-                    <div class="account-rank-progress">
-                      <div class="account-rank-progress__bar"
-                           data-progress="${empty rankProgressPercent ? 0 : rankProgressPercent}">
+                            <div class="account-coupon-meta">
+                              <div><strong>Mô tả:</strong> <c:out value="${not empty savedCp.description ? savedCp.description : 'Áp dụng giảm trừ trực tiếp vào hóa đơn khi thanh toán.'}" /></div>
+                              <div>
+                                <strong>Điều kiện:</strong>
+                                <c:choose>
+                                  <c:when test="${savedCp.minOrderAmount > 0}">
+                                    Đơn hàng từ <fmt:formatNumber value="${savedCp.minOrderAmount}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫
+                                  </c:when>
+                                  <c:otherwise>Không giới hạn đơn hàng tối thiểu</c:otherwise>
+                                </c:choose>
+                              </div>
+                              <div>
+                                <strong>Hạn dùng:</strong>
+                                <c:choose>
+                                  <c:when test="${not empty savedCp.endDate}">
+                                    <span style="color: #d97706; font-weight: 500;"><c:out value="${savedCp.endDate}" /></span>
+                                  </c:when>
+                                  <c:otherwise>Không giới hạn thời gian</c:otherwise>
+                                </c:choose>
+                              </div>
+                            </div>
+                            <div class="account-coupon-rank" style="border-top: 1px solid rgba(255, 95, 162, 0.2); background: rgba(255, 95, 162, 0.05);">
+                              ✔ Sẵn sàng sử dụng tại Checkout
+                            </div>
+                          </div>
+                        </c:forEach>
                       </div>
-                    </div>
-
-                    <p class="account-muted account-progress-note">
-                      Tiến độ:
-                      <strong><c:out value="${empty rankProgressPercent ? 0 : rankProgressPercent}" />%</strong>
-                    </p>
-                  </c:otherwise>
-                </c:choose>
-              </div>
-            </div>
-          </div>
-
-          <!-- USER AVAILABLE COUPONS -->
-          <div class="account-card account-section-space">
-            <div class="account-card-body">
-              <div class="account-card-head account-card-head-start">
-                <div>
-                  <h2 class="account-card-title" style="color: var(--pink-dark);">💼 Ví voucher của bạn</h2>
-                  <p class="account-muted">
-                    Danh sách các mã giảm giá bạn đã thu thập thành công từ trang chủ.
-                  </p>
-                </div>
-                <span class="account-chip user-chip" style="background-color: var(--pink-soft); color: var(--pink-main); font-weight: bold;">
-                  🎰 Đã lưu: ${fn:length(savedCoupons)} mã
-                </span>
-              </div>
-
-              <c:choose>
-                <c:when test="${not empty savedCoupons}">
-                  <div class="account-coupon-grid">
-                    <c:forEach var="savedCp" items="${savedCoupons}">
-                      <div class="account-coupon-card" style="border: 1px dashed var(--pink-main); background: var(--pink-soft);">
-
-                        <div class="account-coupon-top">
-                          <div class="account-coupon-code">
-                            <span>🎁</span>
-                            <span style="color: var(--pink-dark); font-weight: bold;"><c:out value="${savedCp.code}" /></span>
-                          </div>
-
-                          <button type="button"
-                                  class="account-coupon-copy"
-                                  style="background: var(--pink-main); color: #fff;"
-                                  data-coupon-code="<c:out value='${savedCp.code}'/>"
-                                  onclick="copyCouponCode(this.dataset.couponCode)">
-                            Copy
-                          </button>
-                        </div>
-
-                        <div class="account-coupon-discount" style="color: var(--text-main);">
-                          <c:choose>
-                            <c:when test="${savedCp.type eq 'FREESHIP'}">🚚 Freeship Vận Chuyển</c:when>
-                            <c:otherwise>Giảm liền ${savedCp.discountPercent}%</c:otherwise>
-                          </c:choose>
-                        </div>
-
-                        <div class="account-coupon-meta">
-                          <div>
-                            <strong>Mô tả:</strong>
-                            <c:out value="${not empty savedCp.description ? savedCp.description : 'Áp dụng giảm trừ trực tiếp vào hóa đơn khi thanh toán.'}" />
-                          </div>
-
-                          <div>
-                            <strong>Điều kiện:</strong>
-                            <c:choose>
-                              <c:when test="${savedCp.minOrderAmount > 0}">
-                                Đơn hàng từ <fmt:formatNumber value="${savedCp.minOrderAmount}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫
-                              </c:when>
-                              <c:otherwise>Không giới hạn đơn hàng tối thiểu</c:otherwise>
-                            </c:choose>
-                          </div>
-
-                          <div>
-                            <strong>Hạn dùng:</strong>
-                            <c:choose>
-                              <c:when test="${not empty savedCp.endDate}">
-                                <span style="color: #d97706; font-weight: 500;"><c:out value="${savedCp.endDate}" /></span>
-                              </c:when>
-                              <c:otherwise>Không giới hạn thời gian</c:otherwise>
-                            </c:choose>
-                          </div>
-                        </div>
-
-                        <div class="account-coupon-rank" style="border-top: 1px solid rgba(255, 95, 162, 0.2); background: rgba(255, 95, 162, 0.05);">
-                          ✔ Sẵn sàng sử dụng tại Checkout
-                        </div>
-
+                    </c:when>
+                    <c:otherwise>
+                      <div style="text-align: center; padding: 30px 10px; color: var(--text-muted);">
+                        <p style="font-size: 14px;">Bạn chưa lưu mã giảm giá nào.</p>
                       </div>
-                    </c:forEach>
-                  </div>
-                </c:when>
+                    </c:otherwise>
+                  </c:choose>
 
-                <c:otherwise>
-                  <div style="text-align: center; padding: 30px 10px; color: var(--text-muted);">
-                    <p style="font-size: 14px;">Bạn chưa lưu mã giảm giá nào từ trang chủ.</p>
-                    <a href="${pageContext.request.contextPath}/" style="display: inline-block; margin-top: 12px; font-size: 13px; color: #fff; background: var(--pink-main); padding: 6px 16px; border-radius: 20px; font-weight: bold;">
-                      Bấm vào đây để đi tìm mã uư đãi 🏃‍♂️
-                    </a>
-                  </div>
-                </c:otherwise>
-              </c:choose>
-            </div>
-          </div>
-
-          <!-- USER KPI -->
-          <div class="account-grid account-grid-3 account-section-space">
-            <div class="account-card">
-              <div class="account-card-body account-kpi">
-                <div>
-                  <p class="account-kpi-label">Tổng đơn hàng</p>
-                  <div class="account-kpi-value">
-                    <c:out value="${empty total_orders ? 0 : total_orders}" />
-                  </div>
-                  <div class="account-kpi-note">Tất cả đơn bạn đã tạo.</div>
                 </div>
-                <div class="account-kpi-icon user-kpi-icon">📦</div>
               </div>
-            </div>
+            </c:when>
 
-            <div class="account-card">
-              <div class="account-card-body account-kpi">
-                <div>
-                  <p class="account-kpi-label">Tổng chi tiêu</p>
-                  <div class="account-kpi-value">
+            <%-- CHẾ ĐỘ 2: TRANG TỔNG QUAN TÀI KHOẢN (MẶC ĐỊNH) --%>
+            <c:otherwise>
+
+              <div class="account-hero user-mode">
+                <div class="account-profile">
+                  <div class="account-avatar">
+                    <c:out value="${fn:toUpperCase(fn:substring(safeUsername, 0, 1))}" />
+                  </div>
+
+                  <div>
+                    <h1 class="account-title">Tài khoản của tôi</h1>
+                    <p class="account-subtitle">
+                      Xin chào, <strong><c:out value="${safeUsername}" /></strong>. Theo dõi đơn hàng, chi tiêu và hạng khách hàng tại đây.
+                    </p>
+
+                    <div class="account-chip-row">
+                      <span class="account-chip user-chip">
+                        📧 <c:choose><c:when test="${not empty userEmail}"><c:out value="${userEmail}" /></c:when><c:otherwise>Chưa cập nhật email</c:otherwise></c:choose>
+                      </span>
+                      <span class="account-chip user-chip">
+                        📱 <c:choose><c:when test="${not empty userPhone}"><c:out value="${userPhone}" /></c:when><c:otherwise>Chưa cập nhật SĐT</c:otherwise></c:choose>
+                      </span>
+                      <c:if test="${not empty rankLabel}">
+                        <span class="account-chip user-chip ${rankCss}">
+                          🎖 <c:out value="${rankLabel}" />
+                          <c:if test="${rankDiscount > 0}">-<c:out value="${rankDiscount}" />%</c:if>
+                        </span>
+                      </c:if>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="account-actions">
+                  <a href="${pageContext.request.contextPath}/orders" class="account-btn user-primary">📦 Xem đơn hàng</a>
+                  <a href="${pageContext.request.contextPath}/account/change-password" class="account-btn">🔒 Đổi mật khẩu</a>
+                </div>
+              </div>
+
+              <!-- USER RANK DETAIL -->
+              <div class="account-card account-section-space">
+                <div class="account-card-body">
+                  <div class="account-card-head account-card-head-start">
+                    <div>
+                      <h2 class="account-card-title">🎖 Hạng khách hàng</h2>
+                      <p class="account-muted">Hạng được tính dựa trên tổng chi tiêu từ các đơn đã thanh toán thành công.</p>
+                    </div>
+                    <span class="account-chip user-chip ${rankCss}">
+                      <c:out value="${empty rankLabel ? 'Thành viên' : rankLabel}" />
+                      <c:if test="${rankDiscount > 0}">-<c:out value="${rankDiscount}" />%</c:if>
+                    </span>
+                  </div>
+
+                  <div class="account-grid account-grid-3">
+                    <div>
+                      <p class="account-kpi-label">Tổng chi tiêu xét hạng</p>
+                      <div class="account-kpi-value">
+                        <fmt:formatNumber value="${empty rankTotalSpent ? 0 : rankTotalSpent}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫
+                      </div>
+                      <div class="account-kpi-note">Không tính đơn đã hủy.</div>
+                    </div>
+                    <div>
+                      <p class="account-kpi-label">Ưu đãi hiện tại</p>
+                      <div class="account-kpi-value"><c:out value="${empty rankDiscount ? 0 : rankDiscount}" />%</div>
+                      <div class="account-kpi-note">Tự động áp dụng khi thanh toán.</div>
+                    </div>
+                    <div>
+                      <p class="account-kpi-label">Số đơn đã thanh toán</p>
+                      <div class="account-kpi-value"><c:out value="${empty rankPaidOrderCount ? 0 : rankPaidOrderCount}" /></div>
+                      <div class="account-kpi-note">Chỉ tính đơn hợp lệ.</div>
+                    </div>
+                  </div>
+
+                  <div class="account-rank-next">
                     <c:choose>
-                      <c:when test="${not empty total_spent_vnd}">
-                        <fmt:formatNumber value="${total_spent_vnd}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫
+                      <c:when test="${maxRank}">
+                        <p class="account-muted">Bạn đã đạt hạng cao nhất. Cảm ơn bạn đã đồng hành cùng MyCosmetic.</p>
+                        <div class="account-rank-progress"><div class="account-rank-progress__bar is-full"></div></div>
                       </c:when>
-                      <c:otherwise>0 ₫</c:otherwise>
+                      <c:otherwise>
+                        <p class="account-muted">
+                          Còn <strong><fmt:formatNumber value="${empty amountToNextRank ? 0 : amountToNextRank}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫</strong> để lên hạng <strong><c:out value="${empty nextRankLabel ? 'tiếp theo' : nextRankLabel}" /></strong>.
+                        </p>
+                        <div class="account-rank-progress"><div class="account-rank-progress__bar" data-progress="${empty rankProgressPercent ? 0 : rankProgressPercent}"></div></div>
+                        <p class="account-muted account-progress-note">Tiến độ: <strong><c:out value="${empty rankProgressPercent ? 0 : rankProgressPercent}" />%</strong></p>
+                      </c:otherwise>
                     </c:choose>
                   </div>
-                  <div class="account-kpi-note">Tổng tiền từ các đơn đã mua.</div>
                 </div>
-                <div class="account-kpi-icon user-kpi-icon">💰</div>
               </div>
-            </div>
 
-            <div class="account-card">
-              <div class="account-card-body account-kpi">
-                <div>
-                  <p class="account-kpi-label">Đơn gần nhất</p>
-                  <div class="account-kpi-value">
-                    <c:choose>
-                      <c:when test="${not empty latest_order}">
-                        #<c:out value="${latest_order.id}" />
-                      </c:when>
-                      <c:otherwise>--</c:otherwise>
-                    </c:choose>
+              <!-- VÍ VOUCHER (CHỈ HIỂN THỊ TỐI ĐA 3 MÃ CÓ NÚT XEM TẤT CẢ) -->
+              <div class="account-card account-section-space">
+                <div class="account-card-body">
+                  <div class="account-card-head account-card-head-start">
+                    <div>
+                      <h2 class="account-card-title" style="color: var(--pink-dark);">💼 Ví voucher của bạn</h2>
+                      <p class="account-muted">Danh sách các mã giảm giá bạn đã thu thập thành công từ trang chủ.</p>
+                    </div>
+                    <span class="account-chip user-chip" style="background-color: var(--pink-soft); color: var(--pink-main); font-weight: bold;">
+                      🎰 Đã lưu: ${fn:length(savedCoupons)} mã
+                    </span>
                   </div>
-                  <div class="account-kpi-note">Đơn hàng mới nhất của bạn.</div>
-                </div>
-                <div class="account-kpi-icon user-kpi-icon">🕒</div>
-              </div>
-            </div>
-          </div>
 
+                  <c:choose>
+                    <c:when test="${not empty savedCoupons}">
+                      <div class="account-coupon-grid">
+                        <c:forEach var="savedCp" items="${savedCoupons}" end="2">
+                          <div class="account-coupon-card" style="border: 1px dashed var(--pink-main); background: var(--pink-soft);">
+                            <div class="account-coupon-top">
+                              <div class="account-coupon-code">
+                                <span>🎁</span>
+                                <span style="color: var(--pink-dark); font-weight: bold;"><c:out value="${savedCp.code}" /></span>
+                              </div>
+                              <button type="button" class="account-coupon-copy" style="background: var(--pink-main); color: #fff;" data-coupon-code="<c:out value='${savedCp.code}'/>" onclick="copyCouponCode(this.dataset.couponCode)">
+                                Copy
+                              </button>
+                            </div>
 
-          <!-- USER SEARCH HISTORY -->
-          <div class="account-card account-section-space account-search-history-card">
-            <div class="account-card-body">
-              <div class="account-card-head account-card-head-start">
-                <div>
-                  <h2 class="account-card-title">🔎 Lịch sử tìm kiếm</h2>
-                  <p class="account-muted">
-                    Lưu lại các từ khóa bạn đã tìm để có thể xem lại nhanh sản phẩm quan tâm.
-                  </p>
-                </div>
+                            <div class="account-coupon-discount" style="color: var(--text-main);">
+                              <c:choose>
+                                <c:when test="${savedCp.type eq 'FREESHIP'}">🚚 Freeship Vận Chuyển</c:when>
+                                <c:otherwise>Giảm liền ${savedCp.discountPercent}%</c:otherwise>
+                              </c:choose>
+                            </div>
 
-                <div class="account-search-history-actions">
-                  <span class="account-chip user-chip">
-                    <c:out value="${empty searchHistoryCount ? 0 : searchHistoryCount}" /> lượt tìm
-                  </span>
+                            <div class="account-coupon-meta">
+                              <div><strong>Mô tả:</strong> <c:out value="${not empty savedCp.description ? savedCp.description : 'Áp dụng giảm trừ trực tiếp vào hóa đơn khi thanh toán.'}" /></div>
+                              <div>
+                                <strong>Điều kiện:</strong>
+                                <c:choose>
+                                  <c:when test="${savedCp.minOrderAmount > 0}">
+                                    Đơn hàng từ <fmt:formatNumber value="${savedCp.minOrderAmount}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫
+                                  </c:when>
+                                  <c:otherwise>Không giới hạn đơn hàng tối thiểu</c:otherwise>
+                                </c:choose>
+                              </div>
+                            </div>
+                            <div class="account-coupon-rank" style="border-top: 1px solid rgba(255, 95, 162, 0.2); background: rgba(255, 95, 162, 0.05);">
+                              ✔ Sẵn sàng sử dụng tại Checkout
+                            </div>
+                          </div>
+                        </c:forEach>
+                      </div>
 
-                  <c:if test="${not empty searchHistories}">
-                    <form method="post"
-                          action="${pageContext.request.contextPath}/account/search-history/clear"
-                          class="account-inline-form"
-                          onsubmit="return confirm('Bạn có chắc muốn xóa toàn bộ lịch sử tìm kiếm không?');">
-                      <c:if test="${not empty csrfToken}">
-                        <input type="hidden" name="csrfToken" value="${fn:escapeXml(csrfToken)}" />
+                      <!-- NÚT XEM TẤT CẢ KHI CÓ TRÊN 3 VOUCHER -->
+                      <c:if test="${fn:length(savedCoupons) > 3}">
+                        <div style="text-align: center; margin-top: 20px;">
+                          <a href="?view=vouchers" class="account-btn"
+                             style="display: inline-block; padding: 10px 30px; border-radius: 25px; font-weight: bold; text-decoration: none; transition: 0.3s;
+                                    background: var(--pink-main);
+                                    color: #ffffff;
+                                    border: 1px solid var(--pink-main);">
+                            Xem tất cả mã giảm giá (${fn:length(savedCoupons)}) ➔
+                          </a>
+                        </div>
                       </c:if>
-                      <c:if test="${empty csrfToken and not empty sessionScope.csrfToken}">
-                        <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.csrfToken)}" />
-                      </c:if>
+                    </c:when>
 
-                      <button type="submit" class="search-history-clear-btn">
-                        Xóa tất cả
-                      </button>
-                    </form>
-                  </c:if>
-                </div>
-              </div>
-
-              <c:if test="${param.deleteSuccess == '1'}">
-                <p class="account-alert-success">Đã xóa lịch sử tìm kiếm.</p>
-              </c:if>
-              <c:if test="${param.deleteFailed == '1'}">
-                <p class="account-alert-error">Không thể xóa lịch sử tìm kiếm này.</p>
-              </c:if>
-              <c:if test="${param.clearSuccess == '1'}">
-                <p class="account-alert-success">Đã xóa toàn bộ lịch sử tìm kiếm.</p>
-              </c:if>
-              <c:if test="${param.clearEmpty == '1'}">
-                <p class="account-alert-success">Lịch sử tìm kiếm đang trống.</p>
-              </c:if>
-
-              <c:choose>
-                <c:when test="${not empty searchHistories}">
-                  <div class="search-history-list">
-                    <c:forEach var="history" items="${searchHistories}">
-                      <c:choose>
-                        <c:when test="${not empty history.searchUrl}">
-                          <c:set var="historyHref" value="${pageContext.request.contextPath}${history.searchUrl}" />
-                        </c:when>
-                        <c:otherwise>
-                          <c:url var="historyHref" value="/search">
-                            <c:param name="q" value="${history.keyword}" />
-                          </c:url>
-                        </c:otherwise>
-                      </c:choose>
-
-                      <div class="search-history-item">
-                        <a class="search-history-main"
-                           href="${fn:escapeXml(historyHref)}"
-                           title="Tìm lại: ${fn:escapeXml(history.keyword)}">
-                          <span class="search-history-icon">🔍</span>
-
-                          <span class="search-history-content">
-                            <strong class="search-history-keyword">
-                              <c:out value="${history.keyword}" />
-                            </strong>
-
-                            <span class="search-history-meta">
-                              <span>
-                                <c:out value="${empty history.resultCount ? 0 : history.resultCount}" /> kết quả
-                              </span>
-                              <span>•</span>
-                              <span>
-                                Đã tìm <c:out value="${empty history.searchCount ? 1 : history.searchCount}" /> lần
-                              </span>
-                              <span>•</span>
-                              <span>
-                                <c:out value="${history.displayLastSearchedAt}" />
-                              </span>
-                            </span>
-                          </span>
+                    <c:otherwise>
+                      <div style="text-align: center; padding: 30px 10px; color: var(--text-muted);">
+                        <p style="font-size: 14px;">Bạn chưa lưu mã giảm giá nào từ trang chủ.</p>
+                        <a href="${pageContext.request.contextPath}/" style="display: inline-block; margin-top: 12px; font-size: 13px; color: #fff; background: var(--pink-main); padding: 6px 16px; border-radius: 20px; font-weight: bold;">
+                          Bấm vào đây để đi tìm mã uư đãi 🏃‍♂️
                         </a>
-
-                        <form method="post"
-                              action="${pageContext.request.contextPath}/account/search-history/delete"
-                              class="account-inline-form"
-                              onsubmit="return confirm('Xóa từ khóa tìm kiếm này?');">
-                          <c:if test="${not empty csrfToken}">
-                            <input type="hidden" name="csrfToken" value="${fn:escapeXml(csrfToken)}" />
-                          </c:if>
-                          <c:if test="${empty csrfToken and not empty sessionScope.csrfToken}">
-                            <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.csrfToken)}" />
-                          </c:if>
-
-                          <input type="hidden" name="id" value="${history.id}" />
-
-                          <button type="submit" class="search-history-delete-btn" title="Xóa lịch sử">
-                            ×
-                          </button>
-                        </form>
                       </div>
-                    </c:forEach>
-                  </div>
-                </c:when>
-
-                <c:otherwise>
-                  <div class="search-history-empty">
-                    <div class="search-history-empty-icon">🕘</div>
-                    <p class="account-empty">
-                      Bạn chưa có lịch sử tìm kiếm. Hãy tìm kiếm sản phẩm để hệ thống lưu lại tại đây.
-                    </p>
-                    <a href="${pageContext.request.contextPath}/products" class="account-btn user-primary">
-                      Khám phá sản phẩm
-                    </a>
-                  </div>
-                </c:otherwise>
-              </c:choose>
-            </div>
-          </div>
-
-          <!-- USER CHART -->
-          <div class="account-card account-section-space">
-            <div class="account-card-body">
-              <div class="account-card-head account-card-head-center">
-                <div>
-                  <h2 class="account-card-title">📊 Chi tiêu theo thời gian</h2>
-                  <p class="account-muted">Theo dõi xu hướng mua hàng của bạn.</p>
+                    </c:otherwise>
+                  </c:choose>
                 </div>
-                <span class="account-chip user-chip">Spending</span>
               </div>
 
-              <c:choose>
-                <c:when test="${not empty chart_labels and not empty chart_values}">
-                  <canvas id="spendingChart" height="90"></canvas>
-                </c:when>
-                <c:otherwise>
-                  <p class="account-empty">Chưa có dữ liệu chi tiêu.</p>
-                </c:otherwise>
-              </c:choose>
-            </div>
-          </div>
+              <!-- USER KPI -->
+              <div class="account-grid account-grid-3 account-section-space">
+                <div class="account-card">
+                  <div class="account-card-body account-kpi">
+                    <div>
+                      <p class="account-kpi-label">Tổng đơn hàng</p>
+                      <div class="account-kpi-value"><c:out value="${empty total_orders ? 0 : total_orders}" /></div>
+                      <div class="account-kpi-note">Tất cả đơn bạn đã tạo.</div>
+                    </div>
+                    <div class="account-kpi-icon user-kpi-icon">📦</div>
+                  </div>
+                </div>
+
+                <div class="account-card">
+                  <div class="account-card-body account-kpi">
+                    <div>
+                      <p class="account-kpi-label">Tổng chi tiêu</p>
+                      <div class="account-kpi-value">
+                        <c:choose><c:when test="${not empty total_spent_vnd}"><fmt:formatNumber value="${total_spent_vnd}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫</c:when><c:otherwise>0 ₫</c:otherwise></c:choose>
+                      </div>
+                      <div class="account-kpi-note">Tổng tiền từ các đơn đã mua.</div>
+                    </div>
+                    <div class="account-kpi-icon user-kpi-icon">💰</div>
+                  </div>
+                </div>
+
+                <div class="account-card">
+                  <div class="account-card-body account-kpi">
+                    <div>
+                      <p class="account-kpi-label">Đơn gần nhất</p>
+                      <div class="account-kpi-value">
+                        <c:choose><c:when test="${not empty latest_order}">#<c:out value="${latest_order.id}" /></c:when><c:otherwise>--</c:otherwise></c:choose>
+                      </div>
+                      <div class="account-kpi-note">Đơn hàng mới nhất của bạn.</div>
+                    </div>
+                    <div class="account-kpi-icon user-kpi-icon">🕒</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- USER SEARCH HISTORY -->
+              <div class="account-card account-section-space account-search-history-card">
+                <div class="account-card-body">
+                  <div class="account-card-head account-card-head-start">
+                    <div>
+                      <h2 class="account-card-title">🔎 Lịch sử tìm kiếm</h2>
+                      <p class="account-muted">Lưu lại các từ khóa bạn đã tìm để có thể xem lại nhanh sản phẩm quan tâm.</p>
+                    </div>
+
+                    <div class="account-search-history-actions">
+                      <span class="account-chip user-chip"><c:out value="${empty searchHistoryCount ? 0 : searchHistoryCount}" /> lượt tìm</span>
+                      <c:if test="${not empty searchHistories}">
+                        <form method="post" action="${pageContext.request.contextPath}/account/search-history/clear" class="account-inline-form" onsubmit="return confirm('Bạn có chắc muốn xóa toàn bộ lịch sử tìm kiếm không?');">
+                          <c:if test="${not empty csrfToken}"><input type="hidden" name="csrfToken" value="${fn:escapeXml(csrfToken)}" /></c:if>
+                          <c:if test="${empty csrfToken and not empty sessionScope.csrfToken}"><input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.csrfToken)}" /></c:if>
+                          <button type="submit" class="search-history-clear-btn">Xóa tất cả</button>
+                        </form>
+                      </c:if>
+                    </div>
+                  </div>
+
+                  <c:choose>
+                    <c:when test="${not empty searchHistories}">
+                      <div class="search-history-list">
+                        <c:forEach var="history" items="${searchHistories}">
+                          <c:choose>
+                            <c:when test="${not empty history.searchUrl}"><c:set var="historyHref" value="${pageContext.request.contextPath}${history.searchUrl}" /></c:when>
+                            <c:otherwise><c:url var="historyHref" value="/search"><c:param name="q" value="${history.keyword}" /></c:url></c:otherwise>
+                          </c:choose>
+                          <div class="search-history-item">
+                            <a class="search-history-main" href="${fn:escapeXml(historyHref)}" title="Tìm lại: ${fn:escapeXml(history.keyword)}">
+                              <span class="search-history-icon">🔍</span>
+                              <span class="search-history-content">
+                                <strong class="search-history-keyword"><c:out value="${history.keyword}" /></strong>
+                                <span class="search-history-meta">
+                                  <span><c:out value="${empty history.resultCount ? 0 : history.resultCount}" /> kết quả</span>
+                                  <span>•</span>
+                                  <span>Đã tìm <c:out value="${empty history.searchCount ? 1 : history.searchCount}" /> lần</span>
+                                  <span>•</span>
+                                  <span><c:out value="${history.displayLastSearchedAt}" /></span>
+                                </span>
+                              </span>
+                            </a>
+                            <form method="post" action="${pageContext.request.contextPath}/account/search-history/delete" class="account-inline-form" onsubmit="return confirm('Xóa từ khóa tìm kiếm này?');">
+                              <c:if test="${not empty csrfToken}"><input type="hidden" name="csrfToken" value="${fn:escapeXml(csrfToken)}" /></c:if>
+                              <c:if test="${empty csrfToken and not empty sessionScope.csrfToken}"><input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.csrfToken)}" /></c:if>
+                              <input type="hidden" name="id" value="${history.id}" />
+                              <button type="submit" class="search-history-delete-btn" title="Xóa lịch sử">×</button>
+                            </form>
+                          </div>
+                        </c:forEach>
+                      </div>
+                    </c:when>
+                    <c:otherwise>
+                      <div class="search-history-empty">
+                        <div class="search-history-empty-icon">🕘</div>
+                        <p class="account-empty">Bạn chưa có lịch sử tìm kiếm. Hãy tìm kiếm sản phẩm để hệ thống lưu lại tại đây.</p>
+                        <a href="${pageContext.request.contextPath}/products" class="account-btn user-primary">Khám phá sản phẩm</a>
+                      </div>
+                    </c:otherwise>
+                  </c:choose>
+                </div>
+              </div>
+
+              <!-- USER CHART -->
+              <div class="account-card account-section-space">
+                <div class="account-card-body">
+                  <div class="account-card-head account-card-head-center">
+                    <div>
+                      <h2 class="account-card-title">📊 Chi tiêu theo thời gian</h2>
+                      <p class="account-muted">Theo dõi xu hướng mua hàng của bạn.</p>
+                    </div>
+                    <span class="account-chip user-chip">Spending</span>
+                  </div>
+                  <c:choose>
+                    <c:when test="${not empty chart_labels and not empty chart_values}"><canvas id="spendingChart" height="90"></canvas></c:when>
+                    <c:otherwise><p class="account-empty">Chưa có dữ liệu chi tiêu.</p></c:otherwise>
+                  </c:choose>
+                </div>
+              </div>
+
+            </c:otherwise>
+          </c:choose>
 
         </c:if>
 
