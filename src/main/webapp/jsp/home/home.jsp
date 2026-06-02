@@ -410,9 +410,9 @@ Layout theo mẫu: banner lớn bên trái, logo thương hiệu + sản phẩm 
 				display: grid;
 				grid-template-columns: repeat(4, minmax(0, 1fr));
 				margin-top: 16px;
-				border-top: 1px solid #f0d1db;
-				border-left: 1px solid #f0d1db;
-				background: #fff;
+				gap: 18px;
+				background: transparent;
+				align-items: start;
 			}
 
 			.skin-featured-brand-card {
@@ -420,8 +420,7 @@ Layout theo mẫu: banner lớn bên trái, logo thương hiệu + sản phẩm 
 				min-width: 0;
 				padding-bottom: 18px;
 				background: #fff;
-				border-right: 1px solid #f0d1db;
-				border-bottom: 1px solid #f0d1db;
+				border: 1px solid #f0d1db;
 				transition: box-shadow .22s ease, transform .22s ease, border-color .22s ease;
 			}
 
@@ -607,8 +606,9 @@ Layout theo mẫu: banner lớn bên trái, logo thương hiệu + sản phẩm 
 
 			.skin-featured-brand-view-more {
 				display: none;
-				justify-content: center;
+				justify-content: flex-end;
 				margin-top: 24px;
+				width: 100%;
 			}
 
 			.skin-featured-brand-view-more.is-show {
