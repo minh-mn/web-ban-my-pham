@@ -190,15 +190,14 @@
               <div class="admin-field">
                 <div class="admin-label">Role</div>
                 <select class="admin-select" name="role" ${canEditPermission ? '' : 'disabled'} required>
-                  <option value="USER" ${user.role == 'USER' ? 'selected' : ''}>
-                    USER - Khách hàng
-                  </option>
-                  <option value="ADMIN" ${user.role == 'ADMIN' ? 'selected' : ''}>
-                    ADMIN - Quản trị viên
-                  </option>
+                  <c:forEach var="roleItem" items="${roles}">
+                    <option value="${roleItem.code}" ${user.role == roleItem.code ? 'selected' : ''}>
+                      ${roleItem.code} - ${roleItem.name}
+                    </option>
+                  </c:forEach>
                 </select>
                 <div class="admin-help">
-                  Không cho tự đổi role chính mình hoặc chỉnh ADMIN khác.
+                  Role lấy từ màn hình Phân quyền role. Không cho tự đổi role chính mình hoặc chỉnh ADMIN khác.
                 </div>
               </div>
 
