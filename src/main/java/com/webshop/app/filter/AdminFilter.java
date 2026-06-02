@@ -1,8 +1,10 @@
 package com.webshop.app.filter;
 
-import java.io.IOException;
-
 import com.webshop.app.model.User;
+import com.webshop.app.service.PermissionService;
+
+import java.io.IOException;
+import java.util.Set;
 
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
@@ -15,6 +17,9 @@ import jakarta.servlet.http.HttpSession;
 
 public class AdminFilter implements Filter {
 
+    private final PermissionService permissionService = new PermissionService();
+
+    @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
 
@@ -29,20 +34,26 @@ public class AdminFilter implements Filter {
             return;
         }
 
-        String role = user.getRole();
-        boolean isAdmin = role != null && role.trim().equalsIgnoreCase("ADMIN");
+        Set<String> permissions = permissionService.getPermissions(user);
+        boolean isSuperAdmin = permissionService.isSuperAdmin(user);
 
-        if (!isAdmin) {
-            resp.sendError(HttpServletResponse.SC_FORBIDDEN);
+        session.setAttribute("adminPermissions", permissions);
+        session.setAttribute("isSuperAdmin", isSuperAdmin);
+        session.setAttribute("adminRoleCode", user.getRole());
+
+        if (!isSuperAdmin && !permissionService.canAccessAdmin(user)) {
+            resp.sendError(HttpServletResponse.SC_FORBIDDEN,
+                    "Tài khoản này chưa được cấp quyền truy cập khu vực quản trị.");
+            return;
+        }
+
+        String requiredPermission = permissionService.resolveRequiredPermission(req);
+        if (!isSuperAdmin && requiredPermission != null && !permissions.contains(requiredPermission)) {
+            resp.sendError(HttpServletResponse.SC_FORBIDDEN,
+                    "Bạn không có quyền truy cập chức năng này: " + requiredPermission);
             return;
         }
 
         chain.doFilter(request, response);
     }
-
-	
-	public boolean test(int arg0) {
-		// TODO Auto-generated method stub
-		return false;
-	}
 }
