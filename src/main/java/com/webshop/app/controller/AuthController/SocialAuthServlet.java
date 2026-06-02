@@ -165,6 +165,11 @@ public class SocialAuthServlet extends HttpServlet {
 
         EmailUtil.sendHtml(email, subject, content);
 
+        String accessToken = req.getParameter("accessToken");
+        if (accessToken == null || accessToken.isBlank()) {
+            accessToken = req.getParameter("token");
+        }
+
         resp.getWriter().write(
                 "{\"status\":\"otp_required\",\"redirectUrl\":\"/verify-registration\",\"message\":\"Mã OTP đã được gửi về email của bạn.\"}"
         );
