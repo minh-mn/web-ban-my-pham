@@ -1236,6 +1236,181 @@
                 min-width: 100%;
             }
         }
+
+
+        /* =========================================================
+           DISCOVER SECTION - WIDE & SHORT CARD
+           Card Khám phá to ngang hơn và ngắn lại giống Flash Deal.
+        ========================================================= */
+        .skin-product-section.is-discover {
+            padding-top: 46px !important;
+            padding-bottom: 52px !important;
+        }
+
+        .skin-product-section.is-discover .skin-product-scroll.discover-scroll {
+            display: flex !important;
+            gap: 18px !important;
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+            padding: 4px 2px 12px !important;
+            scroll-behavior: smooth;
+            scroll-snap-type: x mandatory;
+            scrollbar-width: thin;
+            scrollbar-color: #d9a8b8 #fff1f5;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .skin-product-section.is-discover .skin-product-scroll.discover-scroll::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .skin-product-section.is-discover .skin-product-scroll.discover-scroll::-webkit-scrollbar-track {
+            background: #fff1f5;
+            border-radius: 999px;
+        }
+
+        .skin-product-section.is-discover .skin-product-scroll.discover-scroll::-webkit-scrollbar-thumb {
+            background: #d9a8b8;
+            border-radius: 999px;
+        }
+
+        .skin-product-section.is-discover .skin-product-card.discover-card {
+            flex: 0 0 calc((100% - 54px) / 4) !important;
+            max-width: calc((100% - 54px) / 4) !important;
+            min-width: calc((100% - 54px) / 4) !important;
+            border: 1px solid #ececec;
+            background: #fff;
+            box-shadow: none;
+            scroll-snap-align: start;
+        }
+
+        .skin-product-section.is-discover .skin-product-image {
+            height: 210px !important;
+            aspect-ratio: auto !important;
+            background: #f6fbff;
+        }
+
+        .skin-product-section.is-discover .skin-product-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .skin-product-section.is-discover .skin-product-body {
+            padding: 12px 14px 14px !important;
+        }
+
+        .skin-product-section.is-discover .skin-discover-card-tags {
+            margin-bottom: 7px !important;
+        }
+
+        .skin-product-section.is-discover .skin-discover-card-tags span {
+            min-height: 24px !important;
+            padding: 5px 10px !important;
+            font-size: 10px !important;
+        }
+
+        .skin-product-section.is-discover .skin-product-title {
+            min-height: 42px !important;
+            max-height: 42px !important;
+            display: -webkit-box;
+            overflow: hidden;
+            color: #1b1b1b;
+            font-size: 14px !important;
+            line-height: 1.45 !important;
+            font-weight: 850;
+            text-decoration: none;
+            -webkit-line-clamp: 2 !important;
+            -webkit-box-orient: vertical;
+        }
+
+        .skin-product-section.is-discover .skin-price-row {
+            margin-top: 8px !important;
+            gap: 7px !important;
+        }
+
+        .skin-product-section.is-discover .skin-price-row strong {
+            color: #a90027;
+            font-size: 19px !important;
+            line-height: 1.1;
+            font-weight: 1000;
+        }
+
+        .skin-product-section.is-discover .skin-price-row del {
+            color: #8d8d8d;
+            font-size: 13px !important;
+        }
+
+        .skin-product-section.is-discover .skin-product-meta {
+            margin-top: 7px !important;
+            gap: 5px !important;
+        }
+
+        .skin-product-section.is-discover .skin-product-meta span {
+            min-height: 22px !important;
+            padding: 4px 8px !important;
+            font-size: 11px !important;
+        }
+
+        .skin-product-section.is-discover .skin-stock-line {
+            margin-top: 8px !important;
+            font-size: 12px !important;
+        }
+
+        .skin-product-section.is-discover .skin-product-actions {
+            margin-top: 12px !important;
+            gap: 10px !important;
+        }
+
+        .skin-product-section.is-discover .skin-card-view-btn,
+        .skin-product-section.is-discover .skin-card-cart-btn {
+            min-height: 42px !important;
+            padding: 10px 12px !important;
+            font-size: 12px !important;
+        }
+
+        .skin-product-section.is-discover .skin-discount-bubble {
+            width: 46px !important;
+            height: 46px !important;
+            font-size: 12px !important;
+        }
+
+        .skin-discover-nav {
+            top: 31% !important;
+        }
+
+        @media (max-width: 1200px) {
+            .skin-product-section.is-discover .skin-product-card.discover-card {
+                flex-basis: calc((100% - 36px) / 3) !important;
+                max-width: calc((100% - 36px) / 3) !important;
+                min-width: calc((100% - 36px) / 3) !important;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .skin-product-section.is-discover .skin-product-card.discover-card {
+                flex-basis: calc((100% - 18px) / 2) !important;
+                max-width: calc((100% - 18px) / 2) !important;
+                min-width: calc((100% - 18px) / 2) !important;
+            }
+
+            .skin-product-section.is-discover .skin-product-image {
+                height: 200px !important;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .skin-product-section.is-discover .skin-product-card.discover-card {
+                flex-basis: 100% !important;
+                max-width: 100% !important;
+                min-width: 100% !important;
+            }
+
+            .skin-product-section.is-discover .skin-product-image {
+                height: 210px !important;
+            }
+        }
     </style>
 
     <script>
