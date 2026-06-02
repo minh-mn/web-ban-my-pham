@@ -147,6 +147,16 @@
     <input type="text" id="otp_input" placeholder="******" maxlength="6" autocomplete="off"
            style="width: 80%; padding: 12px; margin-bottom: 20px; border: 2px solid #e0e0e0; border-radius: 8px; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 8px; color: #333; outline: none; transition: border-color 0.2s;">
 
+    <div style="margin-bottom: 20px;">
+      <p id="otpCountdownText" style="color: #666666; font-size: 13px; margin: 0 0 8px 0;">
+        Gửi lại mã sau: <span id="otpTimer" style="color: #d81b60; font-weight: bold;">30</span> giây
+      </p>
+      <button type="button" id="btnResendOtp" onclick="guiLaiOtp()" disabled
+              style="background: #e0e0e0; color: #999999; border: none; padding: 6px 15px; border-radius: 20px; font-size: 13px; font-weight: 500; cursor: not-allowed; transition: all 0.3s;">
+        Gửi lại mã OTP 🔄
+      </button>
+    </div>
+
     <div style="display: flex; gap: 12px; justify-content: center;">
       <button type="button" onclick="dongPopupOtp()"
               style="flex: 1; background: #f5f5f5; color: #555555; border: 1px solid #cccccc; padding: 12px; border-radius: 6px; font-size: 15px; font-weight: 500; cursor: pointer; transition: background 0.2s;">
@@ -586,10 +596,15 @@
                 }).then(() => window.location.href = contextPath + data.redirectUrl);
 
               } else if (data.status === 'error') {
+                let errorMsg = data.message;
+                if (errorMsg.toLowerCase().includes("tồn tại") || errorMsg.toLowerCase().includes("exist") || errorMsg.toLowerCase().includes("trùng")) {
+                  errorMsg = "Email đã tồn tại hoặc tài khoản này đã được đăng ký trước đó trên hệ thống!";
+                }
+
                 Swal.fire({
                   icon: 'error',
-                  title: 'Lỗi',
-                  text: data.message // Sẽ hiển thị: "Tài khoản đã tồn tại"
+                  title: 'Đăng ký không thành công',
+                  text: errorMsg
                 });
               }
             })
@@ -667,20 +682,27 @@
         })
                 .then(res => res.json())
                 .then(data => {
-                  Swal.close(); // Đóng thông báo đang xử lý
+                  Swal.close();
 
                   if (data.status === 'success') {
                     // Nếu tài khoản mạng xã hội này đã từng liên kết
                     Swal.fire({ icon: 'success', title: 'Thành công', text: 'Đăng ký và đăng nhập thành công', timer: 1500, showConfirmButton: false })
                             .then(() => window.location.href = contextPath + data.redirectUrl);
 
-                  } else if (data.status === 'otp_required') {
-                    // 🟢 THÊM MỚI ĐOẠN NÀY: Mở popup OTP nếu Backend yêu cầu
-                    moPopupOtp(data.message);
+                  } else if (data.status === 'otp_required') {moPopupOtp(data.message);
 
                   } else {
-                    // Các lỗi khác (ví dụ: trùng email)
-                    Swal.fire({ icon: 'error', title: 'Lỗi', text: data.message });
+                    // Đoạn xử lý các lỗi còn lại (Ví dụ: trùng email)
+                    let errorMsg = data.message;
+                    if (errorMsg.toLowerCase().includes("tồn tại") || errorMsg.toLowerCase().includes("exist") || errorMsg.toLowerCase().includes("trùng")) {
+                      errorMsg = "Email đã tồn tại hoặc tài khoản này đã được đăng ký trước đó trên hệ thống!";
+                    }
+
+                    Swal.fire({
+                      icon: 'error',
+                      title: 'Thông báo lỗi',
+                      text: errorMsg
+                    });
                   }
                 }).catch(() => {
           Swal.fire("Lỗi", "Không thể kết nối server", "error");
@@ -690,4 +712,77 @@
       }
     }, { scope: "public_profile,email" });
   });
+
+  let countdownInterval;
+
+  // Hàm kích hoạt đếm ngược 30 giây
+  function startOtpCountdown() {
+    let timeLeft = 30;
+    const timerSpan = document.getElementById("otpTimer");
+    const btnResend = document.getElementById("btnResendOtp");
+    const countdownText = document.getElementById("otpCountdownText");
+
+    // Reset trạng thái nút ban đầu
+    btnResend.disabled = true;
+    btnResend.style.background = "#e0e0e0";
+    btnResend.style.color = "#999999";
+    btnResend.style.cursor = "not-allowed";
+    countdownText.style.display = "block";
+    timerSpan.innerText = timeLeft;
+
+    clearInterval(countdownInterval);
+    countdownInterval = setInterval(() => {
+      timeLeft--;
+      timerSpan.innerText = timeLeft;
+
+      if (timeLeft <= 0) {
+        clearInterval(countdownInterval);
+        countdownText.style.display = "none"; // Ẩn chữ đếm ngược khi hết giờ
+        btnResend.disabled = false;
+        btnResend.style.background = "#ffffff";
+        btnResend.style.color = "#d81b60";
+        btnResend.style.border = "1px solid #d81b60";
+        btnResend.style.cursor = "pointer";
+      }
+    }, 1000);
+  }
+
+  // Sửa lại hàm moPopupOtp sẵn có để kích hoạt đếm ngược khi vừa mở popup
+  function moPopupOtp(messageText) {
+    document.getElementById('otp_input').value = "";
+    if (messageText) {
+      document.getElementById('otpSuccessMessage').innerText = messageText;
+    }
+    document.getElementById('otpModal').style.display = 'flex';
+    document.getElementById('otp_input').focus();
+
+    startOtpCountdown(); // Chạy đếm ngược ngay khi modal xuất hiện!
+  }
+
+  // Hàm gọi lên Servlet gửi lại mã OTP
+  function guiLaiOtp() {
+    Swal.fire({
+      title: 'Đang gửi lại mã...',
+      allowOutsideClick: false,
+      didOpen: () => { Swal.showLoading(); }
+    });
+
+    fetch('${pageContext.request.contextPath}/resend-otp', {
+      method: 'POST'
+    })
+            .then(res => res.json())
+            .then(data => {
+              Swal.close();
+              if (data.status === 'success') {
+                Swal.fire('Thành công', 'Mã OTP mới đã được gửi về email của bạn!', 'success');
+                startOtpCountdown(); // Khởi động lại vòng lặp đếm ngược 30s mới
+              } else {
+                Swal.fire('Thất bại', data.message, 'error');
+              }
+            })
+            .catch(err => {
+              Swal.close();
+              Swal.fire('Lỗi mạng', 'Không thể kết nối máy chủ để gửi lại mã!', 'error');
+            });
+  }
 </script>
