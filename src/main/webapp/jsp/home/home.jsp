@@ -175,26 +175,28 @@ VOUCHER STRIP
 
 <!-- =========================================================
 FLASH DEAL
-Ưu tiên flashSaleProducts từ flash_sale_items. Nếu chưa có Flash Sale đang chạy,
-fallback sang deepDiscountProducts để block không bị mất khỏi trang chủ.
+Chỉ hiển thị vào ngày đôi theo tháng và ngày 25 mỗi tháng.
+shouldShowFlashDeal được truyền từ HomeServlet.
 ========================================================= -->
-<c:choose>
-	<c:when test="${not empty flashSaleProducts}">
-		<c:set var="homeSectionProducts" value="${flashSaleProducts}" scope="request"/>
-	</c:when>
-	<c:otherwise>
-		<c:set var="homeSectionProducts" value="${deepDiscountProducts}" scope="request"/>
-	</c:otherwise>
-</c:choose>
-<c:set var="homeSectionTitle" value="FLASH DEAL" scope="request"/>
-<c:set var="homeSectionDesc" value="Deal nổi bật, giá tốt, số lượng có hạn trong hôm nay." scope="request"/>
-<c:set var="homeSectionLink" value="/flash-sale" scope="request"/>
-<c:set var="homeSectionViewAllText" value="XEM TẤT CẢ DEAL" scope="request"/>
-<c:set var="homeSectionMode" value="flash" scope="request"/>
-<c:set var="homeSectionShowSold" value="${true}" scope="request"/>
-<c:set var="homeSectionShowViews" value="${false}" scope="request"/>
-<c:set var="homeSectionShowDiscount" value="${true}" scope="request"/>
-<jsp:include page="/jsp/product/home-product-section.jsp"/>
+<c:if test="${shouldShowFlashDeal == true}">
+	<c:choose>
+		<c:when test="${not empty flashSaleProducts}">
+			<c:set var="homeSectionProducts" value="${flashSaleProducts}" scope="request"/>
+		</c:when>
+		<c:otherwise>
+			<c:set var="homeSectionProducts" value="${deepDiscountProducts}" scope="request"/>
+		</c:otherwise>
+	</c:choose>
+	<c:set var="homeSectionTitle" value="FLASH DEAL" scope="request"/>
+	<c:set var="homeSectionDesc" value="Deal nổi bật, giá tốt, số lượng có hạn trong hôm nay." scope="request"/>
+	<c:set var="homeSectionLink" value="/flash-sale" scope="request"/>
+	<c:set var="homeSectionViewAllText" value="XEM TẤT CẢ DEAL" scope="request"/>
+	<c:set var="homeSectionMode" value="flash" scope="request"/>
+	<c:set var="homeSectionShowSold" value="${true}" scope="request"/>
+	<c:set var="homeSectionShowViews" value="${false}" scope="request"/>
+	<c:set var="homeSectionShowDiscount" value="${true}" scope="request"/>
+	<jsp:include page="/jsp/product/home-product-section.jsp"/>
+</c:if>
 
 <!-- =========================================================
 DANH MỤC HOT
