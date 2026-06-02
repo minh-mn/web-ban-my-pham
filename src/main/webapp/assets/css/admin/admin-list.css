@@ -5164,3 +5164,139 @@ td.product-actions {
     flex-direction: column;
   }
 }
+
+/* =========================
+   Issue 144 - Audit logs
+========================= */
+
+.admin-mb-3 {
+  margin-bottom: 18px;
+}
+
+.admin-toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.admin-toolbar__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.admin-filter {
+  margin-top: 16px;
+  display: grid;
+  gap: 14px;
+}
+
+.admin-filter__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.admin-filter__grid--wide {
+  grid-template-columns: repeat(7, minmax(150px, 1fr));
+}
+
+.admin-filter__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.admin-field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.admin-field span {
+  color: var(--admin-muted);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.admin-field input,
+.admin-field select {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid var(--admin-border);
+  background: #fff;
+  color: var(--admin-text);
+  font-size: 13px;
+  outline: none;
+}
+
+.admin-field input:focus,
+.admin-field select:focus {
+  border-color: rgba(219, 39, 119, 0.45);
+  box-shadow: 0 0 0 3px rgba(219, 39, 119, 0.08);
+}
+
+.admin-nowrap {
+  white-space: nowrap;
+}
+
+.admin-table--audit {
+  min-width: 1280px;
+}
+
+.admin-audit-description {
+  min-width: 320px;
+  max-width: 440px;
+  line-height: 1.5;
+}
+
+.admin-audit-uri {
+  margin-top: 7px;
+  opacity: 0.76;
+}
+
+.admin-audit-value {
+  min-width: 220px;
+  max-width: 360px;
+  white-space: pre-line;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.admin-pagination {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.admin-btn.is-disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+@media (max-width: 1280px) {
+  .admin-filter__grid--wide {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .admin-filter__grid,
+  .admin-filter__grid--wide {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-toolbar {
+    display: grid;
+  }
+}
