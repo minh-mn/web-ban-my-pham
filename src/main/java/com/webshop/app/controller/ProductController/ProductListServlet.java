@@ -165,9 +165,30 @@ public class ProductListServlet extends HttpServlet {
                 ? resolveLipPrimaryCategory(categories)
                 : resolvePrimaryCategoryForSidebar(categories, selectedCategoryList);
 
+        boolean lipCollectionPage = isLipCollectionPage(categories, selectedCategoryList, primaryCategory);
+
         req.setAttribute("categories", categories);
         req.setAttribute("brands", brands);
         req.setAttribute("primaryCategory", primaryCategory);
+        req.setAttribute("lipCollectionPage", lipCollectionPage);
+
+        /*
+         * Dữ liệu riêng cho layout collection giống trang mẫu:
+         * - sidebarMainCategoryItems: khối DANH MỤC SẢN PHẨM.
+         * - sidebarTypeCategoryItems: khối LOẠI SẢN PHẨM.
+         *
+         * JSP có thể dùng trực tiếp 2 list này để render sidebar theo đúng thứ tự:
+         * DANH MỤC SẢN PHẨM -> LOẠI SẢN PHẨM -> GIÁ -> THƯƠNG HIỆU.
+         */
+        req.setAttribute(
+                "sidebarMainCategoryItems",
+                buildSidebarMainCategoryItems(primaryCategory, selectedCategoryList, lipCollectionPage)
+        );
+
+        req.setAttribute(
+                "sidebarTypeCategoryItems",
+                buildSidebarTypeCategoryItems(primaryCategory, selectedCategoryList, lipCollectionPage)
+        );
 
         // ===== 7. GIỮ LẠI TRẠNG THÁI FILTER =====
         req.setAttribute("priceRangeList", priceRangeList);
@@ -706,6 +727,7 @@ public class ProductListServlet extends HttpServlet {
                 return "Đánh giá cao";
 
             case "best-selling":
+            case "best_selling":
                 return "Bán chạy nhất";
 
             case "updated_desc":
@@ -1262,6 +1284,324 @@ public class ProductListServlet extends HttpServlet {
 
         return null;
     }
+
+
+    /* =====================================================
+       SIDEBAR COLLECTION HELPERS
+    ===================================================== */
+
+    private boolean isLipCollectionPage(
+            List<Category> categories,
+            List<Integer> selectedCategoryIds,
+            Category primaryCategory
+    ) {
+        if (primaryCategory != null) {
+            String primaryKey = normalizeCategoryKey(
+                    primaryCategory.getName() + " " + primaryCategory.getSlug()
+            );
+
+            if (primaryKey.contains("son-moi")
+                    || primaryKey.contains("trang-diem-moi")
+                    || primaryKey.equals("moi")
+                    || primaryKey.contains("lip")) {
+                return true;
+            }
+        }
+
+        if (selectedCategoryIds == null || selectedCategoryIds.isEmpty()) {
+            return false;
+        }
+
+        for (Integer selectedId : selectedCategoryIds) {
+            if (isLipCategoryOrChild(categories, selectedId)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private List<SidebarCategoryItem> buildSidebarMainCategoryItems(
+            Category primaryCategory,
+            List<Integer> selectedCategoryIds,
+            boolean lipCollectionPage
+    ) {
+        if (primaryCategory == null) {
+            return Collections.emptyList();
+        }
+
+        /*
+         * Với collection Trang điểm môi, khối DANH MỤC SẢN PHẨM phải giống mẫu:
+         * SON LÓT, SON THỎI, SON KEM, SON BÓNG/SON TINT,
+         * SON DƯỠNG/TRỊ THÂM MÔI, MẶT NẠ MÔI/TẨY DA CHẾT MÔI.
+         */
+        List<Category> children = primaryCategory.getChildren();
+
+        if (children == null || children.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        Set<Integer> selectedSet = selectedCategoryIds == null
+                ? Collections.emptySet()
+                : new LinkedHashSet<>(selectedCategoryIds);
+
+        List<Category> orderedChildren = lipCollectionPage
+                ? sortLipMainCategories(children)
+                : new ArrayList<>(children);
+
+        List<SidebarCategoryItem> items = new ArrayList<>();
+
+        for (Category child : orderedChildren) {
+            if (child == null || child.getId() <= 0) {
+                continue;
+            }
+
+            String label = lipCollectionPage
+                    ? resolveLipMainCategoryLabel(child)
+                    : child.getName();
+
+            if (isBlank(label)) {
+                continue;
+            }
+
+            items.add(new SidebarCategoryItem(
+                    child.getId(),
+                    label,
+                    child.getSlug(),
+                    selectedSet.contains(child.getId())
+            ));
+        }
+
+        return items;
+    }
+
+    private List<SidebarCategoryItem> buildSidebarTypeCategoryItems(
+            Category primaryCategory,
+            List<Integer> selectedCategoryIds,
+            boolean lipCollectionPage
+    ) {
+        if (primaryCategory == null) {
+            return Collections.emptyList();
+        }
+
+        List<Category> children = primaryCategory.getChildren();
+
+        if (children == null || children.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        Set<Integer> selectedSet = selectedCategoryIds == null
+                ? Collections.emptySet()
+                : new LinkedHashSet<>(selectedCategoryIds);
+
+        List<Category> sourceCategories = lipCollectionPage
+                ? filterLipTypeCategories(children)
+                : new ArrayList<>(children);
+
+        List<SidebarCategoryItem> items = new ArrayList<>();
+
+        for (Category child : sourceCategories) {
+            if (child == null || child.getId() <= 0) {
+                continue;
+            }
+
+            String label = lipCollectionPage
+                    ? resolveLipTypeCategoryLabel(child)
+                    : child.getName();
+
+            if (isBlank(label)) {
+                continue;
+            }
+
+            items.add(new SidebarCategoryItem(
+                    child.getId(),
+                    label,
+                    child.getSlug(),
+                    selectedSet.contains(child.getId())
+            ));
+        }
+
+        return items;
+    }
+
+    private List<Category> sortLipMainCategories(List<Category> categories) {
+        if (categories == null || categories.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return categories.stream()
+                .filter(Objects::nonNull)
+                .sorted(Comparator.comparingInt(this::resolveLipMainCategoryOrder))
+                .collect(Collectors.toList());
+    }
+
+    private List<Category> filterLipTypeCategories(List<Category> categories) {
+        if (categories == null || categories.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return categories.stream()
+                .filter(Objects::nonNull)
+                .filter(this::isVisibleLipTypeCategory)
+                .sorted(Comparator.comparingInt(this::resolveLipTypeCategoryOrder))
+                .collect(Collectors.toList());
+    }
+
+    private int resolveLipMainCategoryOrder(Category category) {
+        String key = normalizeCategoryKey(category.getName() + " " + category.getSlug());
+
+        if (key.contains("son-lot")) {
+            return 10;
+        }
+
+        if (key.contains("son-thoi")) {
+            return 20;
+        }
+
+        if (key.contains("son-kem")) {
+            return 30;
+        }
+
+        if (key.contains("son-bong") || key.contains("son-tint")) {
+            return 40;
+        }
+
+        if (key.contains("son-duong") || key.contains("tri-tham-moi")) {
+            return 50;
+        }
+
+        if (key.contains("mat-na-moi") || key.contains("tay-da-chet-moi")) {
+            return 60;
+        }
+
+        return 999;
+    }
+
+    private int resolveLipTypeCategoryOrder(Category category) {
+        String key = normalizeCategoryKey(category.getName() + " " + category.getSlug());
+
+        if (key.contains("son-thoi")) {
+            return 10;
+        }
+
+        if (key.contains("son-duong") || key.contains("duong-moi")) {
+            return 20;
+        }
+
+        if (key.contains("tay-da-chet-moi")) {
+            return 30;
+        }
+
+        if (key.contains("son-kem")) {
+            return 40;
+        }
+
+        if (key.contains("son-tint") || key.contains("son-bong")) {
+            return 50;
+        }
+
+        return 999;
+    }
+
+    private boolean isVisibleLipTypeCategory(Category category) {
+        String key = normalizeCategoryKey(category.getName() + " " + category.getSlug());
+
+        return key.contains("son-thoi")
+                || key.contains("son-duong")
+                || key.contains("duong-moi")
+                || key.contains("tay-da-chet-moi")
+                || key.contains("son-kem")
+                || key.contains("son-tint")
+                || key.contains("son-bong");
+    }
+
+    private String resolveLipMainCategoryLabel(Category category) {
+        String key = normalizeCategoryKey(category.getName() + " " + category.getSlug());
+
+        if (key.contains("son-lot")) {
+            return "SON LÓT";
+        }
+
+        if (key.contains("son-thoi")) {
+            return "SON THỎI";
+        }
+
+        if (key.contains("son-kem")) {
+            return "SON KEM";
+        }
+
+        if (key.contains("son-bong") || key.contains("son-tint")) {
+            return "SON BÓNG/SON TINT";
+        }
+
+        if (key.contains("son-duong") || key.contains("tri-tham-moi")) {
+            return "SON DƯỠNG/TRỊ THÂM MÔI";
+        }
+
+        if (key.contains("mat-na-moi") || key.contains("tay-da-chet-moi")) {
+            return "MẶT NẠ MÔI/TẨY DA CHẾT MÔI";
+        }
+
+        return category.getName() == null ? "" : category.getName().toUpperCase(Locale.ROOT);
+    }
+
+    private String resolveLipTypeCategoryLabel(Category category) {
+        String key = normalizeCategoryKey(category.getName() + " " + category.getSlug());
+
+        if (key.contains("son-thoi")) {
+            return "SON THỎI";
+        }
+
+        if (key.contains("son-duong") || key.contains("duong-moi")) {
+            return "DƯỠNG MÔI";
+        }
+
+        if (key.contains("tay-da-chet-moi")) {
+            return "TẨY DA CHẾT MÔI";
+        }
+
+        if (key.contains("son-kem")) {
+            return "SON KEM";
+        }
+
+        if (key.contains("son-tint") || key.contains("son-bong")) {
+            return "SON TINT";
+        }
+
+        return category.getName() == null ? "" : category.getName().toUpperCase(Locale.ROOT);
+    }
+
+    public static class SidebarCategoryItem {
+
+        private final int id;
+        private final String name;
+        private final String slug;
+        private final boolean selected;
+
+        public SidebarCategoryItem(int id, String name, String slug, boolean selected) {
+            this.id = id;
+            this.name = name;
+            this.slug = slug;
+            this.selected = selected;
+        }
+
+        public int getId() {
+            return id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getSlug() {
+            return slug;
+        }
+
+        public boolean isSelected() {
+            return selected;
+        }
+    }
+
 
     /* =====================================================
        PARAM HELPERS
