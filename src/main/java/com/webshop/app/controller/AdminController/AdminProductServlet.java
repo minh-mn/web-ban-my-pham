@@ -6,6 +6,7 @@ import com.webshop.app.model.Brand;
 import com.webshop.app.model.Category;
 import com.webshop.app.model.Product;
 import com.webshop.app.model.ProductVariant;
+import com.webshop.app.service.AuditLogService;
 import com.webshop.app.utils.DBConnection;
 
 import java.io.IOException;
@@ -208,6 +209,22 @@ public class AdminProductServlet extends HttpServlet {
 
 					uploadedFileUrlsForRollback.clear();
 
+					AuditLogService.logCreate(
+							req,
+							"PRODUCT",
+							"Product",
+							newId,
+							product.getTitle(),
+							"Đã thêm sản phẩm mới: " + product.getTitle(),
+							AuditLogService.changes(
+									"Tên: " + product.getTitle(),
+									"Giá: " + AuditLogService.formatMoney(product.getPrice()),
+									"Giảm giá: " + product.getDiscountPercent() + "%",
+									"Tồn kho: " + product.getStock(),
+									"Trạng thái: " + (product.isActive() ? "Đang bán" : "Ẩn")
+							)
+					);
+
 					resp.sendRedirect(req.getContextPath() + "/admin/products");
 					return;
 				}
@@ -264,6 +281,35 @@ public class AdminProductServlet extends HttpServlet {
 							new Thread(() -> {
 								notificationDAO.sendWishlistDiscountNotification(pId, pName);
 							}).start();
+						}
+					}
+
+					if (isUpdated && oldProduct != null) {
+						String oldValues = AuditLogService.changes(
+								AuditLogService.change("Tên", oldProduct.getTitle(), product.getTitle()),
+								AuditLogService.moneyChange("Giá", oldProduct.getPrice(), product.getPrice()),
+								AuditLogService.change("Giảm giá", oldProduct.getDiscountPercent() + "%", product.getDiscountPercent() + "%"),
+								AuditLogService.change("Tồn kho", oldProduct.getStock(), product.getStock()),
+								AuditLogService.change("Trạng thái", oldProduct.isActive() ? "Đang bán" : "Ẩn", product.isActive() ? "Đang bán" : "Ẩn")
+						);
+
+						if (oldValues != null) {
+							AuditLogService.logUpdate(
+									req,
+									"PRODUCT",
+									"Product",
+									id,
+									product.getTitle(),
+									"Đã cập nhật sản phẩm: " + product.getTitle(),
+									oldValues,
+									AuditLogService.changes(
+											"Tên hiện tại: " + product.getTitle(),
+											"Giá hiện tại: " + AuditLogService.formatMoney(product.getPrice()),
+											"Giảm giá hiện tại: " + product.getDiscountPercent() + "%",
+											"Tồn kho hiện tại: " + product.getStock(),
+											"Trạng thái hiện tại: " + (product.isActive() ? "Đang bán" : "Ẩn")
+									)
+							);
 						}
 					}
 
@@ -347,6 +393,17 @@ public class AdminProductServlet extends HttpServlet {
 							 * Product đã có trong đơn hàng:
 							 * Chỉ ẩn sản phẩm, không xóa file để bảo toàn dữ liệu lịch sử.
 							 */
+							AuditLogService.logSoftDelete(
+									req,
+									"PRODUCT",
+									"Product",
+									id,
+									oldProduct == null ? null : oldProduct.getTitle(),
+									"Đã ẩn sản phẩm vì sản phẩm đã phát sinh dữ liệu đơn hàng.",
+									oldProduct == null ? null : "Trạng thái: " + (oldProduct.isActive() ? "Đang bán" : "Ẩn"),
+									"Trạng thái: Ẩn"
+							);
+
 							resp.sendRedirect(req.getContextPath() + "/admin/products?delete=soft");
 							return;
 						}
@@ -356,6 +413,20 @@ public class AdminProductServlet extends HttpServlet {
 							 * Product chưa có đơn hàng:
 							 * SQL đã xóa thành công thì xóa tiếp file vật lý.
 							 */
+							AuditLogService.logDelete(
+									req,
+									"PRODUCT",
+									"Product",
+									id,
+									oldProduct == null ? null : oldProduct.getTitle(),
+									"Đã xóa sản phẩm khỏi hệ thống.",
+									oldProduct == null ? null : AuditLogService.changes(
+											"Tên: " + oldProduct.getTitle(),
+											"Giá: " + AuditLogService.formatMoney(oldProduct.getPrice()),
+											"Tồn kho: " + oldProduct.getStock()
+									)
+							);
+
 							deleteProductPhysicalFiles(oldMainImage, oldGalleryUrls, oldMediaUrls);
 
 							resp.sendRedirect(req.getContextPath() + "/admin/products?delete=hard");
