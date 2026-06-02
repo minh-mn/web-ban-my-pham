@@ -49,12 +49,6 @@
         </ul>
       </li>
 
-      <li>
-        <a href="${pageContext.request.contextPath}/flash-sale" class="menu-link-item hot-menu">
-          FLASH SALE
-        </a>
-      </li>
-
        <c:if test="${isFlashSaleActive}">
         <li>
           <a href="${pageContext.request.contextPath}/flash-sale" class="menu-link-item hot-menu">
