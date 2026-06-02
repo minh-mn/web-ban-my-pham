@@ -586,7 +586,6 @@
                 }).then(() => window.location.href = contextPath + data.redirectUrl);
 
               } else if (data.status === 'error') {
-                // TRƯỜNG HỢP TÀI KHOẢN ĐÃ TỒN TẠI
                 Swal.fire({
                   icon: 'error',
                   title: 'Lỗi',
@@ -663,18 +662,29 @@
           body: new URLSearchParams({
             provider: "facebook",
             accessToken: accessToken,
-            mode: "register" // <--- Chế độ đăng ký
+            mode: "register"
           })
         })
                 .then(res => res.json())
                 .then(data => {
+                  Swal.close(); // Đóng thông báo đang xử lý
+
                   if (data.status === 'success') {
+                    // Nếu tài khoản mạng xã hội này đã từng liên kết
                     Swal.fire({ icon: 'success', title: 'Thành công', text: 'Đăng ký và đăng nhập thành công', timer: 1500, showConfirmButton: false })
                             .then(() => window.location.href = contextPath + data.redirectUrl);
+
+                  } else if (data.status === 'otp_required') {
+                    // 🟢 THÊM MỚI ĐOẠN NÀY: Mở popup OTP nếu Backend yêu cầu
+                    moPopupOtp(data.message);
+
                   } else {
+                    // Các lỗi khác (ví dụ: trùng email)
                     Swal.fire({ icon: 'error', title: 'Lỗi', text: data.message });
                   }
-                }).catch(() => { Swal.fire("Lỗi", "Không thể kết nối server", "error"); });
+                }).catch(() => {
+          Swal.fire("Lỗi", "Không thể kết nối server", "error");
+        });
       } else {
         Swal.fire("Lỗi", "Bạn đã hủy đăng nhập Facebook", "error");
       }
