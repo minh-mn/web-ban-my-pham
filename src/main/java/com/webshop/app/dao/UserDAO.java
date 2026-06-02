@@ -1018,13 +1018,8 @@ public class UserDAO {
             return DEFAULT_ROLE;
         }
 
-        String normalized = role.trim().toUpperCase();
-
-        if (!"ADMIN".equals(normalized) && !"USER".equals(normalized)) {
-            return DEFAULT_ROLE;
-        }
-
-        return normalized;
+        String normalized = role.trim().toUpperCase().replaceAll("[^A-Z0-9_]", "_");
+        return normalized.isBlank() ? DEFAULT_ROLE : normalized;
     }
 
     private String normalizeRankCode(String rankCode) {
