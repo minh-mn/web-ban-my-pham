@@ -56,6 +56,8 @@ public class AdminInventoryServlet extends HttpServlet {
     private static final String JSP_INVENTORY = "/jsp/admin/inventory/inventory.jsp";
 
     private static final String ACTION_ADD_STOCK = "addStock";
+    private static final String ACTION_ADD_VARIANT_STOCK = "addVariantStock";
+    private static final String ACTION_UPDATE_VARIANT_MIN_STOCK = "updateVariantMinStock";
     private static final String ACTION_EXPORT_RESTOCK_EXCEL = "exportRestockExcel";
     private static final String ACTION_IMPORT_RESTOCK_EXCEL = "importRestockExcel";
 
@@ -73,6 +75,8 @@ public class AdminInventoryServlet extends HttpServlet {
 
         String keyword = req.getParameter("keyword");
         String status = req.getParameter("status");
+        String variantKeyword = req.getParameter("variantKeyword");
+        String variantStatus = req.getParameter("variantStatus");
 
         LocalDate today = LocalDate.now();
         int selectedImportMonth = parseInt(req.getParameter("importMonth"), today.getMonthValue());
@@ -93,6 +97,11 @@ public class AdminInventoryServlet extends HttpServlet {
         req.setAttribute("summary", inventoryDAO.getSummary());
         req.setAttribute("products", inventoryDAO.findInventoryProducts(keyword, status));
         req.setAttribute("lowStockAlerts", inventoryDAO.lowStockAlerts(8));
+        req.setAttribute("variantKeyword", variantKeyword);
+        req.setAttribute("variantStatus", variantStatus);
+        req.setAttribute("variantSummary", inventoryDAO.getVariantSummary());
+        req.setAttribute("variantProducts", inventoryDAO.findInventoryVariants(variantKeyword, variantStatus));
+        req.setAttribute("lowStockVariantAlerts", inventoryDAO.lowStockVariantAlerts(8));
         req.setAttribute("recentActivities", inventoryDAO.recentStockActivities(12));
 
         req.setAttribute("last7DaysExportLabelsJson",
@@ -144,6 +153,16 @@ public class AdminInventoryServlet extends HttpServlet {
             return;
         }
 
+        if (ACTION_ADD_VARIANT_STOCK.equalsIgnoreCase(action)) {
+            handleAddVariantStock(req, resp);
+            return;
+        }
+
+        if (ACTION_UPDATE_VARIANT_MIN_STOCK.equalsIgnoreCase(action)) {
+            handleUpdateVariantMinStock(req, resp);
+            return;
+        }
+
         if (ACTION_EXPORT_RESTOCK_EXCEL.equalsIgnoreCase(action)) {
             handleExportRestockExcel(req, resp);
             return;
@@ -192,6 +211,98 @@ public class AdminInventoryServlet extends HttpServlet {
 
         } catch (RuntimeException ex) {
             throw new ServletException("AdminInventoryServlet.addStock error", ex);
+        }
+    }
+
+    private void handleAddVariantStock(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
+
+        int productId = parseInt(req.getParameter("productId"), 0);
+        int variantId = parseInt(req.getParameter("variantId"), 0);
+        int quantity = parseInt(req.getParameter("quantity"), 0);
+        String note = req.getParameter("note");
+        Integer adminUserId = getCurrentAdminUserId(req);
+
+        try {
+            InventoryDAO.VariantStockChange change = inventoryDAO.addVariantStock(
+                    productId,
+                    variantId,
+                    quantity,
+                    note,
+                    adminUserId
+            );
+
+            AuditLogService.logImport(
+                    req,
+                    "INVENTORY",
+                    "ProductVariant",
+                    change.variantId(),
+                    change.productTitle() + " - " + change.variantName(),
+                    "Đã nhập thêm " + change.quantity()
+                            + " sản phẩm cho biến thể " + change.variantName()
+                            + " của " + change.productTitle() + ".",
+                    AuditLogService.changes(
+                            "SKU: " + change.sku(),
+                            "Sản phẩm: " + change.productTitle(),
+                            "Biến thể: " + change.variantName(),
+                            "Tồn kho: " + change.beforeStock() + " -> " + change.afterStock(),
+                            "Số lượng nhập: " + change.quantity(),
+                            "Mức cảnh báo: " + change.minStock(),
+                            "Ghi chú: " + normalizeNote(note, "Nhập kho biến thể thủ công")
+                    )
+            );
+
+            resp.sendRedirect(req.getContextPath()
+                    + "/admin/inventory?success=variant_stock_added#variantInventory");
+
+        } catch (IllegalArgumentException ex) {
+            redirectInventoryError(req, resp, ex.getMessage());
+
+        } catch (RuntimeException ex) {
+            throw new ServletException("AdminInventoryServlet.addVariantStock error", ex);
+        }
+    }
+
+    private void handleUpdateVariantMinStock(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
+
+        int productId = parseInt(req.getParameter("productId"), 0);
+        int variantId = parseInt(req.getParameter("variantId"), 0);
+        int minStock = parseInt(req.getParameter("minStock"), 0);
+
+        try {
+            InventoryDAO.VariantMinStockChange change = inventoryDAO.updateVariantMinStock(
+                    productId,
+                    variantId,
+                    minStock
+            );
+
+            AuditLogService.logUpdate(
+                    req,
+                    "INVENTORY",
+                    "ProductVariant",
+                    change.variantId(),
+                    change.productTitle() + " - " + change.variantName(),
+                    "Đã cập nhật mức cảnh báo tồn kho cho biến thể "
+                            + change.variantName() + " của " + change.productTitle() + ".",
+                    AuditLogService.changes(
+                            "SKU: " + change.sku(),
+                            "Mức cảnh báo cũ: " + change.oldMinStock()
+                    ),
+                    AuditLogService.changes(
+                            "SKU: " + change.sku(),
+                            "Mức cảnh báo mới: " + change.newMinStock()
+                    )
+            );
+
+            resp.sendRedirect(req.getContextPath()
+                    + "/admin/inventory?success=variant_min_stock_updated#variantInventory");
+
+        } catch (IllegalArgumentException ex) {
+            redirectInventoryError(req, resp, ex.getMessage());
+
+        } catch (RuntimeException ex) {
+            throw new ServletException("AdminInventoryServlet.updateVariantMinStock error", ex);
         }
     }
 
