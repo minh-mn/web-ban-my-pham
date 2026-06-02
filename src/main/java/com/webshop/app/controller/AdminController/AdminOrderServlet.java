@@ -6,6 +6,7 @@ import com.webshop.app.dao.AdminOrderDAO.OrderSearchFilter;
 import com.webshop.app.model.Order;
 import com.webshop.app.model.ShippingStatus;
 import com.webshop.app.model.User;
+import com.webshop.app.service.AuditLogService;
 
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -227,6 +228,7 @@ public class AdminOrderServlet extends HttpServlet {
 
         if (updatedOrder || updatedShipping) {
             setFlashSuccess(req, "Đã xác nhận đơn hàng thành công.");
+            logOrderStatusChange(req, order, "confirmed", "PENDING_PICKUP", paymentStatus, "Đã xác nhận đơn hàng.");
         } else {
             setFlashError(req, "Không thể xác nhận đơn hàng.");
         }
@@ -264,6 +266,7 @@ public class AdminOrderServlet extends HttpServlet {
 
         if (updatedOrder || updatedShipping) {
             setFlashSuccess(req, "Đã chuyển đơn hàng sang trạng thái đang giao.");
+            logOrderStatusChange(req, order, "shipping", "DELIVERING", paymentStatus, "Đã chuyển đơn hàng sang trạng thái đang giao.");
         } else {
             setFlashError(req, "Không thể bắt đầu giao đơn hàng.");
         }
@@ -309,6 +312,7 @@ public class AdminOrderServlet extends HttpServlet {
 
         if (updatedOrder || updatedShipping) {
             setFlashSuccess(req, "Đã xác nhận giao hàng thành công.");
+            logOrderStatusChange(req, order, "completed", "DELIVERED", "PAID", "Đã xác nhận giao hàng thành công.");
         } else {
             setFlashError(req, "Không thể xác nhận giao hàng thành công.");
         }
@@ -350,6 +354,7 @@ public class AdminOrderServlet extends HttpServlet {
 
         if (updatedOrder || updatedShipping) {
             setFlashSuccess(req, "Đã đánh dấu đơn hàng giao thất bại.");
+            logOrderStatusChange(req, order, "shipping", "FAILED", paymentStatus, "Đã đánh dấu đơn hàng giao thất bại.");
         } else {
             setFlashError(req, "Không thể cập nhật giao hàng thất bại.");
         }
@@ -386,6 +391,7 @@ public class AdminOrderServlet extends HttpServlet {
 
         if (updatedOrder || updatedShipping) {
             setFlashSuccess(req, "Đã hủy đơn hàng thành công.");
+            logOrderStatusChange(req, order, "cancelled", "CANCELED", "CANCELED", "Đã hủy đơn hàng.");
         } else {
             setFlashError(req, "Không thể hủy đơn hàng.");
         }
@@ -435,6 +441,7 @@ public class AdminOrderServlet extends HttpServlet {
 
             if (applyBulkWorkflowAction(order, bulkAction, adminId, note)) {
                 successCount++;
+                logBulkOrderStatusChange(req, order, bulkAction);
             } else {
                 skippedCount++;
             }
@@ -586,11 +593,108 @@ public class AdminOrderServlet extends HttpServlet {
 
         if (updated) {
             setFlashSuccess(req, "Cập nhật thông tin vận chuyển thành công.");
+            AuditLogService.logUpdate(
+                    req,
+                    "ORDER",
+                    "Order",
+                    id,
+                    "Đơn hàng #" + id,
+                    "Đã cập nhật thông tin vận chuyển đơn hàng #" + id + ".",
+                    AuditLogService.changes(
+                            AuditLogService.change("Đơn vị vận chuyển", order.getShippingProvider(), shippingProvider),
+                            AuditLogService.change("Mã vận đơn", order.getShippingCode(), shippingCode),
+                            AuditLogService.change("Phương thức giao", order.getShippingMethod(), shippingMethod),
+                            AuditLogService.moneyChange("Phí vận chuyển", order.getShippingFee(), shippingFee)
+                    ),
+                    AuditLogService.changes(
+                            "Đơn vị vận chuyển: " + shippingProvider,
+                            "Mã vận đơn: " + shippingCode,
+                            "Phương thức giao: " + shippingMethod,
+                            "Phí vận chuyển: " + AuditLogService.formatMoney(shippingFee)
+                    )
+            );
         } else {
             setFlashError(req, "Không thể cập nhật thông tin vận chuyển.");
         }
 
         resp.sendRedirect(detailUrl(req, id));
+    }
+
+    private void logOrderStatusChange(HttpServletRequest req,
+                                      Order oldOrder,
+                                      String newOrderStatus,
+                                      String newShippingStatus,
+                                      String newPaymentStatus,
+                                      String description) {
+        if (oldOrder == null) {
+            return;
+        }
+
+        AuditLogService.logStatusChange(
+                req,
+                "ORDER",
+                "Order",
+                oldOrder.getId(),
+                "Đơn hàng #" + oldOrder.getId(),
+                description + " Mã đơn: #" + oldOrder.getId(),
+                AuditLogService.changes(
+                        "Trạng thái đơn: " + getOrderStatus(oldOrder),
+                        "Trạng thái vận chuyển: " + getShippingStatus(oldOrder),
+                        "Thanh toán: " + normalizePaymentStatus(oldOrder.getPaymentStatus())
+                ),
+                AuditLogService.changes(
+                        "Trạng thái đơn: " + newOrderStatus,
+                        "Trạng thái vận chuyển: " + newShippingStatus,
+                        "Thanh toán: " + newPaymentStatus
+                )
+        );
+    }
+
+    private void logBulkOrderStatusChange(HttpServletRequest req, Order oldOrder, String bulkAction) {
+        if (oldOrder == null) {
+            return;
+        }
+
+        String newOrderStatus = getOrderStatus(oldOrder);
+        String newShippingStatus = getShippingStatus(oldOrder);
+        String newPaymentStatus = normalizePaymentStatus(oldOrder.getPaymentStatus());
+
+        switch (bulkAction) {
+            case ACTION_CONFIRM_ORDER -> {
+                newOrderStatus = "confirmed";
+                newShippingStatus = "PENDING_PICKUP";
+            }
+            case ACTION_START_SHIPPING -> {
+                newOrderStatus = "shipping";
+                newShippingStatus = "DELIVERING";
+            }
+            case ACTION_MARK_DELIVERED -> {
+                newOrderStatus = "completed";
+                newShippingStatus = "DELIVERED";
+                newPaymentStatus = "PAID";
+            }
+            case ACTION_MARK_FAILED -> {
+                newOrderStatus = "shipping";
+                newShippingStatus = "FAILED";
+            }
+            case ACTION_CANCEL_ORDER -> {
+                newOrderStatus = "cancelled";
+                newShippingStatus = "CANCELED";
+                newPaymentStatus = "CANCELED";
+            }
+            default -> {
+                return;
+            }
+        }
+
+        logOrderStatusChange(
+                req,
+                oldOrder,
+                newOrderStatus,
+                newShippingStatus,
+                newPaymentStatus,
+                "Đã xử lý đơn hàng bằng thao tác hàng loạt."
+        );
     }
 
     /* =========================================================
