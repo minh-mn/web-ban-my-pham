@@ -18,7 +18,7 @@ public class User {
     private String email;
     private String phone;
 
-    // ADMIN | USER
+    // Role code: USER, ADMIN, INVENTORY_STAFF, SALES_STAFF...
     private String role;
 
     private boolean active;
@@ -129,8 +129,8 @@ public class User {
             return;
         }
 
-        value = value.toUpperCase();
-        if (!ROLE_ADMIN.equals(value) && !ROLE_USER.equals(value)) {
+        value = value.toUpperCase().replaceAll("[^A-Z0-9_]", "_");
+        if (value.isBlank()) {
             this.role = ROLE_USER;
             return;
         }
