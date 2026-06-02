@@ -22,6 +22,8 @@ import com.webshop.app.model.User;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -37,6 +39,17 @@ import jakarta.servlet.http.HttpServletResponse;
 public class HomeServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
+
+    /*
+     * Flash Deal trang chủ chỉ chạy vào:
+     * - Ngày đôi theo tháng: 1/1, 2/2, 3/3, ..., 12/12
+     * - Ngày 25 hằng tháng
+     */
+    private static final ZoneId FLASH_DEAL_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
+    private static final int MONTHLY_FLASH_DEAL_DAY = 25;
+    private static final int HOME_PRODUCT_LIMIT = 12;
+    private static final int FEATURED_BRAND_LIMIT_PER_BRAND = 9;
+    private static final int FEATURED_BRAND_MAX_COUNT = 6;
 
     private final BannerDAO bannerDAO = new BannerDAO();
     private final ProductDAO productDAO = new ProductDAO();
@@ -54,82 +67,40 @@ public class HomeServlet extends HttpServlet {
         req.setCharacterEncoding("UTF-8");
         resp.setCharacterEncoding("UTF-8");
 
-        // 1. Banner
-        List<Banner> banners = bannerDAO.findActiveBanners();
-        req.setAttribute("banners", banners);
+        loadBanners(req);
 
-        // 2. Menu / danh mục / thương hiệu
-        List<Brand> brands = new ArrayList<>();
+        List<Brand> brands = loadMenuData(req);
 
-        try {
-            List<Category> categories = categoryDAO.findActiveTree();
-            req.setAttribute("categories", categories);
+        loadVouchers(req);
 
-            brands = brandDAO.findAllWithProductCount();
-            req.setAttribute("brands", brands);
-
-            // Danh mục hot: cố định theo bộ 13 mục, loại bỏ Blind Box / Hộp Mù.
-            List<Category> hotCategories = categoryDAO.findHotCategoriesForHome(13);
-            req.setAttribute("hotCategories", hotCategories);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        // 3. Voucher
-        try {
-            List<Coupon> vouchers = couponDAO.findActiveCouponsForHome();
-            req.setAttribute("vouchers", vouchers);
-        } catch (Exception e) {
-            e.printStackTrace();
-            req.setAttribute("vouchers", new ArrayList<Coupon>());
-        }
-
-        // 4. Sản phẩm trang chủ
-        List<Product> featuredProducts = loadFeaturedProducts(); // Hàm này của bạn bản chất đã lấy Top 12 Bán chạy từ câu SQL lồng (JOIN store_orderitem)
+        /*
+         * Sản phẩm trang chủ:
+         * - featuredProducts: nhóm nổi bật / giảm sâu / fallback chung.
+         * - bestSellingProducts: nhóm Bán chạy riêng, lấy theo lượt bán thật.
+         * - discoverProducts: nhóm Khám phá.
+         * - featuredBrandProducts: nhóm sản phẩm cho Thương hiệu nổi bật.
+         */
+        List<Product> featuredProducts = loadFeaturedProducts();
+        List<Product> bestSellingProducts = loadBestSellingProducts(featuredProducts);
         List<Product> discoverProducts = loadDiscoverProducts(featuredProducts);
         List<Product> featuredBrandProducts = loadFeaturedBrandProducts(brands, featuredProducts);
         List<Brand> featuredHomeBrands = loadFeaturedHomeBrands(brands, featuredBrandProducts);
-
-        List<Product> realNewProducts = productDAO.findProductsPaged(
-                null, null, null, "created_desc", null, null, 1, 12
-        );
+        List<Product> realNewProducts = loadNewProducts();
 
         req.setAttribute("products", featuredProducts);
         req.setAttribute("featuredProducts", featuredProducts);
-        req.setAttribute("featuredBrandProducts", featuredBrandProducts);
-        req.setAttribute("featuredHomeBrands", featuredHomeBrands);
-        req.setAttribute("discoverProducts", discoverProducts);
-
-
-        req.setAttribute("bestSellingProducts", featuredProducts);
+        req.setAttribute("bestSellingProducts", bestSellingProducts);
         req.setAttribute("mostViewedProducts", featuredProducts);
         req.setAttribute("newProducts", realNewProducts);
+        req.setAttribute("discoverProducts", discoverProducts);
+        req.setAttribute("featuredBrandProducts", featuredBrandProducts);
+        req.setAttribute("featuredHomeBrands", featuredHomeBrands);
 
-        // 5. Flash Deal ở trang chủ
-        List<Product> flashSaleProducts = loadFlashSaleProducts(req);
+        loadFlashDeal(req, featuredProducts);
 
-        if (!flashSaleProducts.isEmpty()) {
-            req.setAttribute("flashSaleProducts", flashSaleProducts);
-            req.setAttribute("deepDiscountProducts", flashSaleProducts);
-        } else {
-            // Fallback để block FLASH DEAL không biến mất khi chưa có active flash_sale_items.
-            req.setAttribute("flashSaleProducts", featuredProducts);
-            req.setAttribute("deepDiscountProducts", featuredProducts);
-        }
-
-        // 6. Sự kiện hot
-        try {
-            List<Event> recentEvents = eventDAO.getRecentEvents(2);
-            req.setAttribute("recentEvents", recentEvents);
-        } catch (Exception e) {
-            e.printStackTrace();
-            req.setAttribute("recentEvents", new ArrayList<Event>());
-        }
-
-        // 7. Wishlist state
+        loadEvents(req);
         loadWishlistIds(req);
 
-        // 8. Meta / layout
         req.setAttribute("pageTitle", "MyCosmetic | Trang chủ");
         req.setAttribute("pageCss", "home.css");
         req.setAttribute("pageContent", "/jsp/home/home.jsp");
@@ -137,17 +108,96 @@ public class HomeServlet extends HttpServlet {
         req.getRequestDispatcher("/jsp/common/base.jsp").forward(req, resp);
     }
 
+    private void loadBanners(HttpServletRequest req) {
+        try {
+            List<Banner> banners = bannerDAO.findActiveBanners();
+            req.setAttribute("banners", banners);
+        } catch (Exception e) {
+            e.printStackTrace();
+            req.setAttribute("banners", new ArrayList<Banner>());
+        }
+    }
+
+    private List<Brand> loadMenuData(HttpServletRequest req) {
+        List<Brand> brands = new ArrayList<>();
+
+        try {
+            List<Category> categories = categoryDAO.findActiveTree();
+            req.setAttribute("categories", categories);
+        } catch (Exception e) {
+            e.printStackTrace();
+            req.setAttribute("categories", new ArrayList<Category>());
+        }
+
+        try {
+            brands = brandDAO.findAllWithProductCount();
+            req.setAttribute("brands", brands);
+        } catch (Exception e) {
+            e.printStackTrace();
+            req.setAttribute("brands", new ArrayList<Brand>());
+        }
+
+        try {
+            /*
+             * Danh mục hot: cố định theo bộ 13 mục, loại bỏ Blind Box / Hộp Mù
+             * trong DAO nếu đã cấu hình.
+             */
+            List<Category> hotCategories = categoryDAO.findHotCategoriesForHome(13);
+            req.setAttribute("hotCategories", hotCategories);
+        } catch (Exception e) {
+            e.printStackTrace();
+            req.setAttribute("hotCategories", new ArrayList<Category>());
+        }
+
+        return brands;
+    }
+
+    private void loadVouchers(HttpServletRequest req) {
+        try {
+            List<Coupon> vouchers = couponDAO.findActiveCouponsForHome();
+            req.setAttribute("vouchers", vouchers);
+        } catch (Exception e) {
+            e.printStackTrace();
+            req.setAttribute("vouchers", new ArrayList<Coupon>());
+        }
+    }
+
     private List<Product> loadFeaturedProducts() {
         try {
-            return productDAO.findFeaturedTop12BestSellerDeepDiscount();
-        } catch (RuntimeException ex) {
-            try {
-                return productDAO.findFeaturedTop12DeepDiscount();
-            } catch (RuntimeException nestedEx) {
-                nestedEx.printStackTrace();
-                return new ArrayList<>();
+            List<Product> products = productDAO.findFeaturedTop12BestSellerDeepDiscount();
+
+            if (products != null && !products.isEmpty()) {
+                return products;
             }
+        } catch (RuntimeException ex) {
+            ex.printStackTrace();
         }
+
+        try {
+            List<Product> products = productDAO.findFeaturedTop12DeepDiscount();
+
+            if (products != null) {
+                return products;
+            }
+        } catch (RuntimeException nestedEx) {
+            nestedEx.printStackTrace();
+        }
+
+        return new ArrayList<>();
+    }
+
+    private List<Product> loadBestSellingProducts(List<Product> fallbackProducts) {
+        try {
+            List<Product> products = productDAO.findHomeBestSellingProducts(HOME_PRODUCT_LIMIT);
+
+            if (products != null && !products.isEmpty()) {
+                return products;
+            }
+        } catch (RuntimeException ex) {
+            ex.printStackTrace();
+        }
+
+        return fallbackProducts != null ? fallbackProducts : new ArrayList<>();
     }
 
     private List<Product> loadDiscoverProducts(List<Product> fallbackProducts) {
@@ -164,6 +214,29 @@ public class HomeServlet extends HttpServlet {
         return fallbackProducts != null ? fallbackProducts : new ArrayList<>();
     }
 
+    private List<Product> loadNewProducts() {
+        try {
+            List<Product> products = productDAO.findProductsPaged(
+                    null,
+                    null,
+                    null,
+                    "created_desc",
+                    null,
+                    null,
+                    1,
+                    HOME_PRODUCT_LIMIT
+            );
+
+            if (products != null) {
+                return products;
+            }
+        } catch (RuntimeException ex) {
+            ex.printStackTrace();
+        }
+
+        return new ArrayList<>();
+    }
+
     private List<Product> loadFeaturedBrandProducts(List<Brand> brands, List<Product> fallbackProducts) {
         if (brands == null || brands.isEmpty()) {
             return fallbackProducts != null ? fallbackProducts : new ArrayList<>();
@@ -178,7 +251,7 @@ public class HomeServlet extends HttpServlet {
 
             brandIds.add(brand.getId());
 
-            if (brandIds.size() >= 6) {
+            if (brandIds.size() >= FEATURED_BRAND_MAX_COUNT) {
                 break;
             }
         }
@@ -188,7 +261,15 @@ public class HomeServlet extends HttpServlet {
         }
 
         try {
-            List<Product> products = productDAO.findFeaturedProductsByBrandIds(brandIds, 9);
+            /*
+             * Lấy 9 sản phẩm mỗi thương hiệu:
+             * - Trang chủ chỉ hiển thị tối đa 8.
+             * - Sản phẩm thứ 9 dùng để biết cần hiện nút Xem thêm hay không.
+             */
+            List<Product> products = productDAO.findFeaturedProductsByBrandIds(
+                    brandIds,
+                    FEATURED_BRAND_LIMIT_PER_BRAND
+            );
 
             if (products != null && !products.isEmpty()) {
                 return products;
@@ -199,7 +280,6 @@ public class HomeServlet extends HttpServlet {
 
         return fallbackProducts != null ? fallbackProducts : new ArrayList<>();
     }
-
 
     private List<Brand> loadFeaturedHomeBrands(List<Brand> brands, List<Product> featuredBrandProducts) {
         List<Brand> result = new ArrayList<>();
@@ -229,7 +309,7 @@ public class HomeServlet extends HttpServlet {
 
             result.add(brand);
 
-            if (result.size() >= 6) {
+            if (result.size() >= FEATURED_BRAND_MAX_COUNT) {
                 break;
             }
         }
@@ -245,12 +325,63 @@ public class HomeServlet extends HttpServlet {
 
             result.add(brand);
 
-            if (result.size() >= 6) {
+            if (result.size() >= FEATURED_BRAND_MAX_COUNT) {
                 break;
             }
         }
 
         return result;
+    }
+
+    private void loadFlashDeal(HttpServletRequest req, List<Product> fallbackProducts) {
+        LocalDate today = LocalDate.now(FLASH_DEAL_ZONE);
+        boolean shouldShowFlashDeal = isFlashDealCampaignDay(today);
+
+        req.setAttribute("shouldShowFlashDeal", shouldShowFlashDeal);
+        req.setAttribute("flashDealToday", today);
+
+        if (!shouldShowFlashDeal) {
+            setEmptyFlashDealAttributes(req);
+            return;
+        }
+
+        List<Product> flashSaleProducts = loadFlashSaleProducts(req);
+
+        if (!flashSaleProducts.isEmpty()) {
+            req.setAttribute("flashSaleProducts", flashSaleProducts);
+            req.setAttribute("deepDiscountProducts", flashSaleProducts);
+            return;
+        }
+
+        /*
+         * Chỉ fallback trong đúng ngày campaign để block không trống khi admin chưa tạo
+         * active flash sale hoặc chưa thêm flash_sale_items.
+         */
+        List<Product> fallback = fallbackProducts != null ? fallbackProducts : new ArrayList<Product>();
+
+        req.setAttribute("flashSaleProducts", fallback);
+        req.setAttribute("deepDiscountProducts", fallback);
+    }
+
+    private boolean isFlashDealCampaignDay(LocalDate date) {
+        if (date == null) {
+            return false;
+        }
+
+        int month = date.getMonthValue();
+        int day = date.getDayOfMonth();
+
+        boolean doubleDay = day == month;
+        boolean monthlyPaydaySale = day == MONTHLY_FLASH_DEAL_DAY;
+
+        return doubleDay || monthlyPaydaySale;
+    }
+
+    private void setEmptyFlashDealAttributes(HttpServletRequest req) {
+        req.setAttribute("activeFlashSale", null);
+        req.setAttribute("fsItems", new ArrayList<FlashSaleItem>());
+        req.setAttribute("flashSaleProducts", new ArrayList<Product>());
+        req.setAttribute("deepDiscountProducts", new ArrayList<Product>());
     }
 
     private List<Product> loadFlashSaleProducts(HttpServletRequest req) {
@@ -278,6 +409,11 @@ public class HomeServlet extends HttpServlet {
                 BigDecimal originalPrice = product.getPrice();
                 BigDecimal flashPrice = BigDecimal.valueOf(item.getFlashPrice());
 
+                if (originalPrice == null || originalPrice.compareTo(BigDecimal.ZERO) <= 0) {
+                    originalPrice = flashPrice;
+                    product.setPrice(originalPrice);
+                }
+
                 if (flashPrice.compareTo(BigDecimal.ZERO) <= 0) {
                     flashPrice = originalPrice;
                 }
@@ -301,9 +437,20 @@ public class HomeServlet extends HttpServlet {
             }
         } catch (Exception e) {
             e.printStackTrace();
+            req.setAttribute("fsItems", fsItems);
         }
 
         return flashSaleProducts;
+    }
+
+    private void loadEvents(HttpServletRequest req) {
+        try {
+            List<Event> recentEvents = eventDAO.getRecentEvents(2);
+            req.setAttribute("recentEvents", recentEvents);
+        } catch (Exception e) {
+            e.printStackTrace();
+            req.setAttribute("recentEvents", new ArrayList<Event>());
+        }
     }
 
     private void loadWishlistIds(HttpServletRequest req) {
