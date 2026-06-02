@@ -102,7 +102,9 @@ public class ProductListServlet extends HttpServlet {
         req.setAttribute("wishlistIds", wishlistIds);
 
         // ===== 2. PHÂN TRANG =====
-        int pageSize = 18;
+        // Grid danh sách sản phẩm đang hiển thị 4 cột trên desktop.
+        // Dùng 24 sản phẩm/trang để mỗi trang đủ 6 hàng với layout 4 cột, tránh chưa đủ hàng đã sang trang mới.
+        int pageSize = 24;
         int page = parseIntOrDefault(req.getParameter("page"), 1);
 
         if (page < 1) {
@@ -704,10 +706,10 @@ public class ProductListServlet extends HttpServlet {
                 return "Đánh giá cao";
 
             case "best-selling":
-                return "Bán chạy nhất"; // Thêm nhãn cho filter bán chạy
+                return "Bán chạy nhất";
 
             case "updated_desc":
-                return "Mới cập nhật"; // Thêm nhãn cho filter hàng mới
+                return "Mới cập nhật";
 
             case "newest":
                 return "Mới nhất";
@@ -1345,5 +1347,4 @@ public class ProductListServlet extends HttpServlet {
     private boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
     }
-
 }
