@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="280" height="86" viewBox="0 0 280 86" preserveAspectRatio="xMidYMid meet" role="img" aria-label="VNPAY">
+  <rect x="2" y="2" width="276" height="82" rx="18" fill="#ffffff" stroke="#dbeafe" stroke-width="4"/>
+  <g transform="translate(19 14)">
+    <rect width="58" height="58" rx="14" fill="#0b63ce"/>
+    <rect x="10" y="10" width="14" height="14" rx="3" fill="#ffffff"/>
+    <rect x="34" y="10" width="14" height="14" rx="3" fill="#ffffff"/>
+    <rect x="10" y="34" width="14" height="14" rx="3" fill="#ffffff"/>
+    <rect x="34" y="34" width="14" height="14" rx="3" fill="#ef233c"/>
+  </g>
+  <text x="90" y="54" font-family="Arial, Helvetica, sans-serif" font-size="38" font-weight="900" letter-spacing="-1.5" fill="#005BAC">VN</text>
+  <text x="146" y="54" font-family="Arial, Helvetica, sans-serif" font-size="38" font-weight="900" letter-spacing="-1.5" fill="#E31E24">PAY</text>
+  <path d="M88 63H237" stroke="#005BAC" stroke-width="3" stroke-linecap="round" opacity="0.12"/>
+</svg>
