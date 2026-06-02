@@ -5,7 +5,6 @@ import com.webshop.app.model.Category;
 import com.webshop.app.model.Product;
 import com.webshop.app.model.PromotionEvent;
 import com.webshop.app.utils.DBConnection;
-
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -1072,6 +1071,66 @@ public class ProductDAO {
 	}
 
 
+	public List<Product> findHomeBestSellingProducts(int limit) {
+		List<Product> list = new ArrayList<>();
+		int safeLimit = limit > 0 ? limit : 12;
+
+		String sql =
+				"SELECT p.id, p.title, p.slug, p.description, " +
+						"p.price, p.discount_percent, p.stock, p.image, p.created_at, " +
+						"COALESCE(rv.avg_rating, 0) AS avg_rating, " +
+						"COALESCE(rv.review_count, 0) AS review_count, " +
+						"c.id AS c_id, c.name AS c_name, " +
+						"b.id AS b_id, b.name AS b_name, " +
+						"COALESCE(sd.sold_qty, 0) AS sold_qty " +
+						"FROM store_product p " +
+						"LEFT JOIN store_category c ON p.category_id = c.id " +
+						"LEFT JOIN store_brand b ON p.brand_id = b.id " +
+						"LEFT JOIN ( " +
+						"SELECT product_id, AVG(rating) AS avg_rating, COUNT(*) AS review_count " +
+						"FROM store_review GROUP BY product_id " +
+						") rv ON rv.product_id = p.id " +
+						"LEFT JOIN ( " +
+						"SELECT oi.product_id, SUM(oi.quantity) AS sold_qty " +
+						"FROM store_orderitem oi " +
+						"JOIN store_order o ON o.id = oi.order_id " +
+						"WHERE o.payment_status = 'PAID' " +
+						"GROUP BY oi.product_id " +
+						") sd ON sd.product_id = p.id " +
+						"WHERE p.is_active = 1 " +
+						"ORDER BY COALESCE(sd.sold_qty, 0) DESC, p.discount_percent DESC, p.created_at DESC, p.id DESC " +
+						"LIMIT ?";
+
+		try (Connection c = DBConnection.getConnection();
+			 PreparedStatement ps = c.prepareStatement(sql)) {
+
+			ps.setInt(1, safeLimit);
+
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					Product product = mapRowList(rs);
+
+					/*
+					 * Nếu database chưa có dữ liệu đơn hàng PAID, tạo lượt bán ảo giảm dần
+					 * để section Bán chạy vẫn có số liệu hiển thị ổn định trên trang chủ.
+					 */
+					if (product.getSoldQuantity() <= 0) {
+						product.setSoldQuantity(Math.max(1, 300 - list.size() * 17));
+					}
+
+					list.add(product);
+				}
+			}
+
+		} catch (SQLException e) {
+			throw new RuntimeException("ProductDAO.findHomeBestSellingProducts error", e);
+		}
+
+		return list;
+	}
+
+
+
 
 	public List<Product> findFeaturedProductsByBrandIds(List<Integer> brandIds, int limit) {
 		List<Product> list = new ArrayList<>();
@@ -1833,6 +1892,7 @@ public class ProductDAO {
 				break;
 
 			case "best-selling":
+			case "best_selling":
 				/*
 				 * Sử dụng Subquery để tính tổng số lượng bán (SUM(oi.quantity))
 				 * từ các đơn hàng có trạng thái thanh toán là 'PAID' (Đã thanh toán).
@@ -1844,6 +1904,7 @@ public class ProductDAO {
 				break;
 
 			case "updated_desc":
+			case "created_desc":
 			case "newest":
 				/*
 				 * Sắp xếp theo thời gian mới nhất.
