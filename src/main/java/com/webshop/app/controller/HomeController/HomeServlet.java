@@ -85,21 +85,25 @@ public class HomeServlet extends HttpServlet {
         }
 
         // 4. Sản phẩm trang chủ
-        List<Product> featuredProducts = loadFeaturedProducts();
+        List<Product> featuredProducts = loadFeaturedProducts(); // Hàm này của bạn bản chất đã lấy Top 12 Bán chạy từ câu SQL lồng (JOIN store_orderitem)
         List<Product> discoverProducts = loadDiscoverProducts(featuredProducts);
         List<Product> featuredBrandProducts = loadFeaturedBrandProducts(brands, featuredProducts);
         List<Brand> featuredHomeBrands = loadFeaturedHomeBrands(brands, featuredBrandProducts);
 
-        // Các section bên dưới dùng các biến này. Nếu DAO chưa tách riêng từng nhóm,
-        // dùng featuredProducts làm fallback để tránh section bị mất khỏi trang chủ.
+        List<Product> realNewProducts = productDAO.findProductsPaged(
+                null, null, null, "created_desc", null, null, 1, 12
+        );
+
         req.setAttribute("products", featuredProducts);
         req.setAttribute("featuredProducts", featuredProducts);
         req.setAttribute("featuredBrandProducts", featuredBrandProducts);
         req.setAttribute("featuredHomeBrands", featuredHomeBrands);
         req.setAttribute("discoverProducts", discoverProducts);
+
+
         req.setAttribute("bestSellingProducts", featuredProducts);
         req.setAttribute("mostViewedProducts", featuredProducts);
-        req.setAttribute("newProducts", featuredProducts);
+        req.setAttribute("newProducts", realNewProducts);
 
         // 5. Flash Deal ở trang chủ
         List<Product> flashSaleProducts = loadFlashSaleProducts(req);
