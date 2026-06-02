@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Objects;
 
 import com.webshop.app.dao.AdminUserDAO;
+import com.webshop.app.dao.RoleDAO;
 import com.webshop.app.dao.UserRankDAO;
 import com.webshop.app.model.User;
 import com.webshop.app.model.UserRank;
@@ -26,6 +27,7 @@ public class AdminUserServlet extends HttpServlet {
 
     private final AdminUserDAO userDAO = new AdminUserDAO();
     private final UserRankDAO rankDAO = new UserRankDAO();
+    private final RoleDAO roleDAO = new RoleDAO();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
@@ -62,6 +64,7 @@ public class AdminUserServlet extends HttpServlet {
 
                 req.setAttribute("user", user);
                 req.setAttribute("ranks", rankDAO.findAllActive());
+                req.setAttribute("roles", roleDAO.findAllActive());
 
                 req.getRequestDispatcher("/jsp/admin/user/user_detail.jsp").forward(req, resp);
                 return;
@@ -87,6 +90,7 @@ public class AdminUserServlet extends HttpServlet {
                 req.setAttribute("mode", "edit");
                 req.setAttribute("user", user);
                 req.setAttribute("ranks", rankDAO.findAllActive());
+                req.setAttribute("roles", roleDAO.findAllActive());
 
                 req.getRequestDispatcher("/jsp/admin/user/user_form.jsp").forward(req, resp);
                 return;
@@ -112,6 +116,7 @@ public class AdminUserServlet extends HttpServlet {
 
                 req.setAttribute("users", users);
                 req.setAttribute("ranks", rankDAO.findAllActive());
+                req.setAttribute("roles", roleDAO.findAllActive());
 
                 req.setAttribute("f_q", q);
                 req.setAttribute("f_role", role);
@@ -238,7 +243,7 @@ public class AdminUserServlet extends HttpServlet {
 
         String role = normalizeRole(req.getParameter("role"));
         if (role == null) {
-            setRequestError(req, "Role không hợp lệ. Chỉ chấp nhận ADMIN hoặc USER.");
+            setRequestError(req, "Role không hợp lệ hoặc đang bị tắt trong hệ thống.");
             forwardEdit(req, resp, id);
             return;
         }
@@ -418,7 +423,7 @@ public class AdminUserServlet extends HttpServlet {
 
         String role = normalizeRole(req.getParameter("role"));
         if (role == null) {
-            redirectBackWithError(req, resp, "Role không hợp lệ. Chỉ chấp nhận ADMIN hoặc USER.");
+            redirectBackWithError(req, resp, "Role không hợp lệ hoặc đang bị tắt trong hệ thống.");
             return;
         }
 
@@ -590,17 +595,13 @@ public class AdminUserServlet extends HttpServlet {
     }
 
     private String normalizeRole(String value) {
-        String role = safe(value).toUpperCase();
+        String role = safe(value).toUpperCase().replaceAll("[^A-Z0-9_]", "_");
 
-        if (ROLE_ADMIN.equals(role)) {
-            return ROLE_ADMIN;
+        if (role.isBlank()) {
+            return null;
         }
 
-        if (ROLE_USER.equals(role)) {
-            return ROLE_USER;
-        }
-
-        return null;
+        return roleDAO.existsActiveRole(role) ? role : null;
     }
 
     private String normalizeManualRank(String value) {
@@ -643,6 +644,7 @@ public class AdminUserServlet extends HttpServlet {
         req.setAttribute("mode", "edit");
         req.setAttribute("user", fresh);
         req.setAttribute("ranks", rankDAO.findAllActive());
+        req.setAttribute("roles", roleDAO.findAllActive());
 
         req.getRequestDispatcher("/jsp/admin/user/user_form.jsp").forward(req, resp);
     }
