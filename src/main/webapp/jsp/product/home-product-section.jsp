@@ -6,6 +6,7 @@
 <c:set var="ctx" value="${pageContext.request.contextPath}" />
 <c:set var="isFlashSection" value="${homeSectionMode == 'flash'}" />
 <c:set var="isDiscoverSection" value="${homeSectionMode == 'discover'}" />
+<c:set var="isBestSellingSection" value="${homeSectionMode == 'best-selling'}" />
 
 <c:set var="sectionViewAllText" value="${homeSectionViewAllText}" />
 <c:if test="${empty sectionViewAllText}">
@@ -20,10 +21,10 @@
 </c:if>
 
 <c:if test="${not empty homeSectionProducts}">
-    <section class="skin-product-section ${isFlashSection ? 'is-flash' : ''} ${isDiscoverSection ? 'is-discover' : ''}">
+    <section class="skin-product-section ${isFlashSection ? 'is-flash' : ''} ${isDiscoverSection ? 'is-discover' : ''} ${isBestSellingSection ? 'is-best-selling' : ''}">
         <div class="skin-container">
 
-            <div class="skin-section-top ${isFlashSection ? 'flash-top' : ''} ${isDiscoverSection ? 'discover-top' : ''}">
+            <div class="skin-section-top ${isFlashSection ? 'flash-top' : ''} ${isDiscoverSection ? 'discover-top' : ''} ${isBestSellingSection ? 'best-selling-top' : ''}">
                 <div>
                     <c:choose>
                         <c:when test="${isFlashSection}">
@@ -40,7 +41,18 @@
 
                         <c:when test="${isDiscoverSection}">
                             <div class="discover-heading-wrap">
-                                <h2 class="discover-heading" aria-label="Khám phá">KHÁM PHÁ</h2>
+                                <h2 class="discover-heading" aria-label="Khám phá">
+                                    KHÁM PHÁ
+                                </h2>
+                            </div>
+                        </c:when>
+
+                        <c:when test="${isBestSellingSection}">
+                            <div class="best-selling-heading-wrap">
+                                <span class="best-selling-eyebrow">BEST SELLER</span>
+                                <h2 class="best-selling-heading" aria-label="Bán chạy">
+                                    BÁN CHẠY
+                                </h2>
                             </div>
                         </c:when>
 
@@ -51,11 +63,11 @@
                     </c:choose>
 
                     <c:if test="${not empty homeSectionDesc}">
-                        <p class="${isFlashSection ? 'flash-deal-subtitle' : (isDiscoverSection ? 'discover-subtitle' : '')}">${homeSectionDesc}</p>
+                        <p class="${isFlashSection ? 'flash-deal-subtitle' : (isDiscoverSection ? 'discover-subtitle' : (isBestSellingSection ? 'best-selling-subtitle' : ''))}">${homeSectionDesc}</p>
                     </c:if>
                 </div>
 
-                <div class="skin-section-actions ${isDiscoverSection ? 'discover-actions' : ''}">
+                <div class="skin-section-actions ${isDiscoverSection ? 'discover-actions' : ''} ${isBestSellingSection ? 'best-selling-actions' : ''}">
                     <c:if test="${isFlashSection}">
                         <div class="skin-countdown" data-deal-countdown>
                             <span data-hh>00</span>
@@ -92,176 +104,184 @@
                                 aria-label="Khám phá trước">
                             ‹
                         </button>
-                        </c:if>
 
-                        <div class="skin-product-scroll ${isFlashSection ? 'flash-scroll skin-flash-track' : ''} ${isDiscoverSection ? 'discover-scroll skin-discover-track' : ''}">
-                            <c:forEach var="product" items="${homeSectionProducts}">
+                        <div class="skin-discover-viewport">
+                            </c:if>
 
-                                <c:choose>
-                                    <c:when test="${not empty product.slug}">
-                                        <c:set var="productUrl" value="${ctx}/product/${product.slug}?id=${product.id}" />
-                                    </c:when>
-                                    <c:otherwise>
-                                        <c:set var="productUrl" value="${ctx}/product?id=${product.id}" />
-                                    </c:otherwise>
-                                </c:choose>
+                            <div class="skin-product-scroll ${isFlashSection ? 'flash-scroll skin-flash-track' : ''} ${isDiscoverSection ? 'discover-scroll skin-discover-track' : ''} ${isBestSellingSection ? 'best-selling-grid' : ''}">
+                                <c:forEach var="product" items="${homeSectionProducts}" varStatus="productStatus">
 
-                                <article class="skin-product-card ${isFlashSection ? 'flash-card' : ''} ${isDiscoverSection ? 'discover-card' : ''}">
-                                    <a class="skin-product-image" href="${productUrl}">
-                                        <c:if test="${product.discountPercent > 0}">
-                                            <span class="skin-discount-bubble">-${product.discountPercent}%</span>
-                                        </c:if>
+                                    <c:choose>
+                                        <c:when test="${not empty product.slug}">
+                                            <c:set var="productUrl" value="${ctx}/product/${product.slug}?id=${product.id}" />
+                                        </c:when>
+                                        <c:otherwise>
+                                            <c:set var="productUrl" value="${ctx}/product?id=${product.id}" />
+                                        </c:otherwise>
+                                    </c:choose>
 
-                                        <c:choose>
-                                            <c:when test="${not empty product.imageUrl}">
-                                                <c:choose>
-                                                    <c:when test="${fn:startsWith(product.imageUrl, 'http')}">
-                                                        <img src="${product.imageUrl}" alt="${product.title}" loading="lazy">
-                                                    </c:when>
-                                                    <c:when test="${fn:startsWith(product.imageUrl, '/')}">
-                                                        <img src="${ctx}${product.imageUrl}" alt="${product.title}" loading="lazy">
-                                                    </c:when>
-                                                    <c:otherwise>
-                                                        <img src="${ctx}/uploads/product/${product.imageUrl}" alt="${product.title}" loading="lazy">
-                                                    </c:otherwise>
-                                                </c:choose>
-                                            </c:when>
-                                            <c:otherwise>
-                                                <div class="skin-no-image">No image</div>
-                                            </c:otherwise>
-                                        </c:choose>
-                                    </a>
+                                    <article class="skin-product-card ${isFlashSection ? 'flash-card' : ''} ${isDiscoverSection ? 'discover-card' : ''} ${isBestSellingSection ? 'best-selling-card' : ''}">
+                                        <a class="skin-product-image" href="${productUrl}">
+                                            <c:if test="${isBestSellingSection}">
+                                                <span class="skin-best-selling-rank">TOP ${productStatus.index + 1}</span>
+                                            </c:if>
 
-                                    <div class="skin-product-body">
-                                        <c:if test="${isFlashSection}">
-                                            <div class="skin-flash-card-tags">
-                                                <span>FLASH DEAL</span>
-                                            </div>
-                                        </c:if>
+                                            <c:if test="${product.discountPercent > 0}">
+                                                <span class="skin-discount-bubble">-${product.discountPercent}%</span>
+                                            </c:if>
 
-                                        <c:if test="${isDiscoverSection}">
-                                            <div class="skin-discover-card-tags">
-                                                <span>KHÁM PHÁ</span>
-                                            </div>
-                                        </c:if>
-
-                                        <a class="skin-product-title" href="${productUrl}">
-                                                ${product.title}
-                                        </a>
-
-                                        <div class="skin-price-row">
                                             <c:choose>
-                                                <c:when test="${product.discountPercent > 0}">
-                                                    <strong>
-                                                        <fmt:formatNumber value="${product.finalPrice}" type="number" groupingUsed="true"/>đ
-                                                    </strong>
-                                                    <del>
-                                                        <fmt:formatNumber value="${product.price}" type="number" groupingUsed="true"/>đ
-                                                    </del>
+                                                <c:when test="${not empty product.imageUrl}">
+                                                    <c:choose>
+                                                        <c:when test="${fn:startsWith(product.imageUrl, 'http')}">
+                                                            <img src="${product.imageUrl}" alt="${product.title}" loading="lazy">
+                                                        </c:when>
+                                                        <c:when test="${fn:startsWith(product.imageUrl, '/')}">
+                                                            <img src="${ctx}${product.imageUrl}" alt="${product.title}" loading="lazy">
+                                                        </c:when>
+                                                        <c:otherwise>
+                                                            <img src="${ctx}/uploads/product/${product.imageUrl}" alt="${product.title}" loading="lazy">
+                                                        </c:otherwise>
+                                                    </c:choose>
                                                 </c:when>
                                                 <c:otherwise>
-                                                    <strong>
-                                                        <fmt:formatNumber value="${product.price}" type="number" groupingUsed="true"/>đ
-                                                    </strong>
+                                                    <div class="skin-no-image">No image</div>
                                                 </c:otherwise>
                                             </c:choose>
-                                        </div>
+                                        </a>
 
-                                        <div class="skin-product-meta">
-                                            <c:if test="${homeSectionShowSold == true}">
-                                                <span>${product.soldQuantity} đã bán</span>
+                                        <div class="skin-product-body">
+                                            <c:if test="${isFlashSection}">
+                                                <div class="skin-flash-card-tags">
+                                                    <span>FLASH DEAL</span>
+                                                </div>
                                             </c:if>
 
-                                            <c:if test="${homeSectionShowViews == true}">
-                                                <span>${product.viewCount} lượt xem</span>
+                                            <c:if test="${isDiscoverSection}">
+                                                <div class="skin-discover-card-tags">
+                                                    <span>KHÁM PHÁ</span>
+                                                </div>
                                             </c:if>
 
-                                            <c:if test="${homeSectionShowDiscount == true && product.discountPercent > 0}">
-                                                <span>Giảm ${product.discountPercent}%</span>
-                                            </c:if>
+                                            <a class="skin-product-title" href="${productUrl}">
+                                                    ${product.title}
+                                            </a>
 
-                                            <c:if test="${product.reviewCount > 0}">
+                                            <div class="skin-price-row">
+                                                <c:choose>
+                                                    <c:when test="${product.discountPercent > 0}">
+                                                        <strong>
+                                                            <fmt:formatNumber value="${product.finalPrice}" type="number" groupingUsed="true"/>đ
+                                                        </strong>
+                                                        <del>
+                                                            <fmt:formatNumber value="${product.price}" type="number" groupingUsed="true"/>đ
+                                                        </del>
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        <strong>
+                                                            <fmt:formatNumber value="${product.price}" type="number" groupingUsed="true"/>đ
+                                                        </strong>
+                                                    </c:otherwise>
+                                                </c:choose>
+                                            </div>
+
+                                            <div class="skin-product-meta">
+                                                <c:if test="${homeSectionShowSold == true}">
+                                                    <span>${product.soldQuantity} đã bán</span>
+                                                </c:if>
+
+                                                <c:if test="${homeSectionShowViews == true}">
+                                                    <span>${product.viewCount} lượt xem</span>
+                                                </c:if>
+
+                                                <c:if test="${homeSectionShowDiscount == true && product.discountPercent > 0}">
+                                                    <span>Giảm ${product.discountPercent}%</span>
+                                                </c:if>
+
+                                                <c:if test="${product.reviewCount > 0}">
                                     <span>
                                         ★ <fmt:formatNumber value="${product.avgRating}" maxFractionDigits="1"/>
                                         (${product.reviewCount})
                                     </span>
-                                            </c:if>
+                                                </c:if>
+                                            </div>
+
+                                            <c:choose>
+                                                <c:when test="${isFlashSection}">
+                                                    <c:set var="flashSoldPercent" value="${empty product.saleProgressPercent ? 0 : product.saleProgressPercent}" />
+
+                                                    <div class="skin-progress skin-stock-progress"
+                                                         role="progressbar"
+                                                         aria-label="Tiến độ đã bán"
+                                                         aria-valuemin="0"
+                                                         aria-valuemax="100"
+                                                         aria-valuenow="${flashSoldPercent}">
+                                                        <span style="width: ${flashSoldPercent}%;"></span>
+                                                    </div>
+
+                                                    <div class="skin-progress-text skin-stock-progress-text">
+                                                        <c:choose>
+                                                            <c:when test="${flashSoldPercent >= 100 || product.stock <= 0}">
+                                                                Đã bán hết
+                                                            </c:when>
+                                                            <c:otherwise>
+                                                                Đã bán ${flashSoldPercent}%
+                                                            </c:otherwise>
+                                                        </c:choose>
+                                                    </div>
+                                                </c:when>
+
+                                                <c:otherwise>
+                                                    <div class="skin-stock-line">
+                                                        <c:choose>
+                                                            <c:when test="${product.stock == 0}">
+                                                                <span class="out">Hết hàng</span>
+                                                            </c:when>
+                                                            <c:when test="${product.stock <= 5}">
+                                                                <span class="low">Sắp hết hàng</span>
+                                                            </c:when>
+                                                            <c:otherwise>
+                                                                <span class="ok">Còn hàng</span>
+                                                            </c:otherwise>
+                                                        </c:choose>
+                                                    </div>
+                                                </c:otherwise>
+                                            </c:choose>
+
+                                            <div class="skin-product-actions">
+                                                <a class="skin-card-view-btn" href="${productUrl}">
+                                                    Xem sản phẩm
+                                                </a>
+
+                                                <form method="post" action="${ctx}/cart/add" class="skin-card-cart-form">
+                                                    <input type="hidden" name="csrf_token" value="${sessionScope.CSRF_TOKEN}">
+                                                    <input type="hidden" name="productId" value="${product.id}">
+                                                    <input type="hidden" name="quantity" value="1">
+                                                    <input type="hidden" name="quickAdd" value="1">
+                                                    <button type="submit" class="skin-card-cart-btn" ${product.stock <= 0 ? 'disabled' : ''}>
+                                                        Thêm giỏ
+                                                    </button>
+                                                </form>
+                                            </div>
                                         </div>
+                                    </article>
+                                </c:forEach>
+                            </div>
 
-                                        <c:choose>
-                                            <c:when test="${isFlashSection}">
-                                                <c:set var="flashSoldPercent" value="${empty product.saleProgressPercent ? 0 : product.saleProgressPercent}" />
-
-                                                <div class="skin-progress skin-stock-progress"
-                                                     role="progressbar"
-                                                     aria-label="Tiến độ đã bán"
-                                                     aria-valuemin="0"
-                                                     aria-valuemax="100"
-                                                     aria-valuenow="${flashSoldPercent}">
-                                                    <span style="width: ${flashSoldPercent}%;"></span>
-                                                </div>
-
-                                                <div class="skin-progress-text skin-stock-progress-text">
-                                                    <c:choose>
-                                                        <c:when test="${flashSoldPercent >= 100 || product.stock <= 0}">
-                                                            Đã bán hết
-                                                        </c:when>
-                                                        <c:otherwise>
-                                                            Đã bán ${flashSoldPercent}%
-                                                        </c:otherwise>
-                                                    </c:choose>
-                                                </div>
-                                            </c:when>
-
-                                            <c:otherwise>
-                                                <div class="skin-stock-line">
-                                                    <c:choose>
-                                                        <c:when test="${product.stock == 0}">
-                                                            <span class="out">Hết hàng</span>
-                                                        </c:when>
-                                                        <c:when test="${product.stock <= 5}">
-                                                            <span class="low">Sắp hết hàng</span>
-                                                        </c:when>
-                                                        <c:otherwise>
-                                                            <span class="ok">Còn hàng</span>
-                                                        </c:otherwise>
-                                                    </c:choose>
-                                                </div>
-                                            </c:otherwise>
-                                        </c:choose>
-
-                                        <div class="skin-product-actions">
-                                            <a class="skin-card-view-btn" href="${productUrl}">
-                                                Xem sản phẩm
-                                            </a>
-
-                                            <form method="post" action="${ctx}/cart/add" class="skin-card-cart-form">
-                                                <input type="hidden" name="csrf_token" value="${sessionScope.CSRF_TOKEN}">
-                                                <input type="hidden" name="productId" value="${product.id}">
-                                                <input type="hidden" name="quantity" value="1">
-                                                <input type="hidden" name="quickAdd" value="1">
-                                                <button type="submit" class="skin-card-cart-btn" ${product.stock <= 0 ? 'disabled' : ''}>
-                                                    Thêm giỏ
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </article>
-                            </c:forEach>
+                            <c:if test="${isFlashSection}">
                         </div>
 
-                        <c:if test="${isFlashSection}">
+                        <button type="button"
+                                class="skin-flash-nav skin-flash-next"
+                                aria-label="Sản phẩm tiếp theo">
+                            ›
+                        </button>
                     </div>
+                    </c:if>
 
-                    <button type="button"
-                            class="skin-flash-nav skin-flash-next"
-                            aria-label="Sản phẩm tiếp theo">
-                        ›
-                    </button>
+                    <c:if test="${isDiscoverSection}">
                 </div>
-                </c:if>
 
-                <c:if test="${isDiscoverSection}">
                 <button type="button"
                         class="skin-discover-nav skin-discover-next"
                         aria-label="Khám phá tiếp theo">
@@ -484,14 +504,16 @@
         }
 
         .skin-product-section.is-flash .skin-product-card.flash-card {
-            flex: 0 0 calc((100% - 72px) / 5);
-            max-width: calc((100% - 72px) / 5);
+            flex: 0 0 calc((100% - 54px) / 4);
+            max-width: calc((100% - 54px) / 4);
             min-width: 0 !important;
             border-radius: 0;
             border: 1px solid #ececec;
             background: #fff;
             box-shadow: none;
             scroll-snap-align: unset;
+            display: flex;
+            flex-direction: column;
             transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
         }
 
@@ -503,7 +525,8 @@
 
         .skin-product-section.is-flash .skin-product-image {
             position: relative;
-            aspect-ratio: 1 / 1;
+            height: 210px;
+            aspect-ratio: auto;
             background: #f6fbff;
             overflow: hidden;
         }
@@ -533,41 +556,44 @@
         }
 
         .skin-product-section.is-flash .skin-product-body {
-            padding: 14px 14px 16px;
+            padding: 12px 14px 14px;
+            display: flex;
+            flex-direction: column;
+            flex: 1 1 auto;
         }
 
         .skin-product-section.is-flash .skin-flash-card-tags {
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
-            margin-bottom: 8px;
+            margin-bottom: 7px;
         }
 
         .skin-product-section.is-flash .skin-flash-card-tags span {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            min-height: 28px;
-            padding: 6px 11px;
+            min-height: 24px;
+            padding: 5px 10px;
             border-radius: 999px;
             background: #b0002f;
             color: #fff;
-            font-size: 11px;
+            font-size: 10px;
             line-height: 1;
             font-weight: 950;
             text-transform: uppercase;
         }
 
         .skin-product-section.is-flash .skin-product-title {
-            min-height: 66px;
+            min-height: 42px;
             display: -webkit-box;
             overflow: hidden;
             color: #1b1b1b;
-            font-size: 15px;
-            line-height: 1.45;
+            font-size: 14.5px;
+            line-height: 1.42;
             font-weight: 850;
             text-decoration: none;
-            -webkit-line-clamp: 3;
+            -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
         }
 
@@ -576,7 +602,7 @@
         }
 
         .skin-product-section.is-flash .skin-price-row {
-            margin-top: 9px;
+            margin-top: 8px;
             display: flex;
             flex-wrap: wrap;
             align-items: baseline;
@@ -585,7 +611,7 @@
 
         .skin-product-section.is-flash .skin-price-row strong {
             color: #a90027;
-            font-size: 22px;
+            font-size: 20px;
             line-height: 1.1;
             font-weight: 1000;
         }
@@ -596,7 +622,7 @@
         }
 
         .skin-product-section.is-flash .skin-product-meta {
-            margin-top: 8px;
+            margin-top: 7px;
             display: flex;
             flex-wrap: wrap;
             gap: 6px;
@@ -605,18 +631,18 @@
         .skin-product-section.is-flash .skin-product-meta span {
             display: inline-flex;
             align-items: center;
-            min-height: 24px;
-            padding: 4px 8px;
+            min-height: 22px;
+            padding: 3px 8px;
             border-radius: 999px;
             background: #f5f5f5;
             color: #333;
-            font-size: 12px;
+            font-size: 11.5px;
             font-weight: 800;
         }
 
         .skin-product-section.is-flash .skin-progress {
-            height: 7px;
-            margin-top: 10px;
+            height: 6px;
+            margin-top: 8px;
             overflow: hidden;
             border-radius: 999px;
             background: #f3dbe2;
@@ -630,9 +656,9 @@
         }
 
         .skin-product-section.is-flash .skin-progress-text {
-            margin-top: 8px;
+            margin-top: 7px;
             color: #1f1f1f;
-            font-size: 13px;
+            font-size: 12.5px;
             font-weight: 900;
             text-transform: uppercase;
         }
@@ -682,8 +708,12 @@
 
         @media (max-width: 1200px) {
             .skin-product-section.is-flash .skin-product-card.flash-card {
-                flex-basis: calc((100% - 54px) / 4);
-                max-width: calc((100% - 54px) / 4);
+                flex-basis: calc((100% - 36px) / 3);
+                max-width: calc((100% - 36px) / 3);
+            }
+
+            .skin-product-section.is-flash .skin-product-image {
+                height: 200px;
             }
         }
 
@@ -691,6 +721,10 @@
             .skin-product-section.is-flash .skin-product-card.flash-card {
                 flex-basis: calc((100% - 18px) / 2);
                 max-width: calc((100% - 18px) / 2);
+            }
+
+            .skin-product-section.is-flash .skin-product-image {
+                height: 190px;
             }
 
             .skin-product-section.is-flash .flash-top {
@@ -715,6 +749,10 @@
             .skin-product-section.is-flash .skin-product-card.flash-card {
                 flex-basis: 100%;
                 max-width: 100%;
+            }
+
+            .skin-product-section.is-flash .skin-product-image {
+                height: 220px;
             }
 
             .skin-product-section.is-flash .flash-deal-heading {
@@ -837,10 +875,10 @@
                         }
 
                         if (width <= 1200) {
-                            return 4;
+                            return 3;
                         }
 
-                        return 5;
+                        return 4;
                     }
 
                     function getGap() {
@@ -961,6 +999,11 @@
 
         .skin-discover-carousel {
             position: relative;
+        }
+
+        .skin-discover-viewport {
+            width: 100%;
+            overflow: visible;
         }
 
         .skin-product-section.is-discover .skin-product-scroll.discover-scroll {
@@ -1124,7 +1167,6 @@
             line-height: 1;
             font-weight: 400;
             transition: transform .2s ease, opacity .2s ease, background .2s ease, color .2s ease;
-            transform: translateY(-50%);
         }
 
         .skin-discover-nav:hover {
@@ -1141,10 +1183,12 @@
 
         .skin-discover-prev {
             left: -24px;
+            transform: translateY(-50%);
         }
 
         .skin-discover-next {
             right: -24px;
+            transform: translateY(-50%);
         }
 
         @media (max-width: 1200px) {
@@ -1268,4 +1312,209 @@
             }
         })();
     </script>
+</c:if>
+
+
+<c:if test="${isBestSellingSection}">
+    <style>
+        .skin-product-section.is-best-selling {
+            padding-top: 56px;
+            padding-bottom: 58px;
+            background: linear-gradient(180deg, #fff 0%, #fff8fa 100%);
+        }
+
+        .skin-product-section.is-best-selling .best-selling-top {
+            align-items: center;
+            margin-bottom: 28px;
+            gap: 20px;
+        }
+
+        .skin-product-section.is-best-selling .best-selling-heading-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .skin-product-section.is-best-selling .best-selling-eyebrow {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            width: fit-content;
+            min-height: 30px;
+            padding: 7px 16px 7px 36px;
+            border: 1px solid rgba(176, 18, 57, .18);
+            border-radius: 999px;
+            background: linear-gradient(135deg, #fff6fb 0%, #ffe3ee 100%);
+            color: #b01239;
+            font-size: 12px;
+            line-height: 1;
+            font-weight: 950;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            box-shadow: 0 10px 24px rgba(176, 18, 57, .10);
+        }
+
+        .skin-product-section.is-best-selling .best-selling-eyebrow::before {
+            content: "";
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ffb100;
+            box-shadow: 0 0 0 5px rgba(255, 177, 0, .18);
+            transform: translateY(-50%);
+        }
+
+        .skin-product-section.is-best-selling .best-selling-heading {
+            margin: 0;
+            display: inline-block;
+            width: fit-content;
+            padding: 6px 0 5px;
+            color: #111;
+            font-family: "Be Vietnam Pro", "Montserrat", "Segoe UI", Arial, sans-serif;
+            font-size: clamp(30px, 3.6vw, 56px);
+            font-weight: 1000;
+            letter-spacing: .085em;
+            line-height: 1.14;
+            text-transform: uppercase;
+            text-shadow: 0 12px 28px rgba(176, 18, 57, .10);
+        }
+
+        .skin-product-section.is-best-selling .best-selling-subtitle {
+            max-width: 720px;
+            margin: 10px 0 0;
+            color: #6b7280;
+            font-size: 16px;
+            line-height: 1.65;
+            font-weight: 600;
+        }
+
+        .skin-product-section.is-best-selling .skin-view-all {
+            color: #b01239;
+            font-size: 17px;
+            font-weight: 950;
+            text-decoration: underline;
+            text-underline-offset: 5px;
+            text-decoration-color: rgba(176, 18, 57, .38);
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .skin-product-section.is-best-selling .skin-product-scroll.best-selling-grid {
+            display: grid !important;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 18px;
+        }
+
+        .skin-product-section.is-best-selling .skin-product-card.best-selling-card {
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #f0d6df;
+            border-radius: 22px;
+            background: #fff;
+            box-shadow: 0 12px 28px rgba(176, 18, 57, .08);
+        }
+
+        .skin-product-section.is-best-selling .skin-product-card.best-selling-card:hover {
+            transform: translateY(-5px);
+            border-color: #e7afbf;
+            box-shadow: 0 18px 38px rgba(176, 18, 57, .14);
+        }
+
+        .skin-product-section.is-best-selling .skin-product-image {
+            height: 270px;
+            background: linear-gradient(180deg, #fff8fb 0%, #f6fbff 100%);
+        }
+
+        .skin-product-section.is-best-selling .skin-product-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .skin-product-section.is-best-selling .skin-best-selling-rank {
+            position: absolute;
+            left: 12px;
+            top: 12px;
+            z-index: 4;
+            min-height: 30px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 7px 12px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #ff4f97 0%, #d9154f 48%, #a4041b 100%);
+            color: #fff;
+            font-size: 11px;
+            line-height: 1;
+            font-weight: 1000;
+            letter-spacing: .06em;
+            box-shadow: 0 10px 18px rgba(176, 18, 57, .24);
+        }
+
+        .skin-product-section.is-best-selling .skin-discount-bubble {
+            background: #a8d83f;
+            color: #fff;
+        }
+
+        .skin-product-section.is-best-selling .skin-product-body {
+            padding: 15px 15px 17px;
+        }
+
+        .skin-product-section.is-best-selling .skin-product-title {
+            min-height: 52px;
+            display: -webkit-box;
+            overflow: hidden;
+            color: #1b1b1b;
+            font-size: 15px;
+            line-height: 1.45;
+            font-weight: 850;
+            text-decoration: none;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+        .skin-product-section.is-best-selling .skin-product-title:hover {
+            color: #b01239;
+        }
+
+        .skin-product-section.is-best-selling .skin-price-row strong {
+            color: #b01239;
+            font-size: 21px;
+            font-weight: 1000;
+        }
+
+        .skin-product-section.is-best-selling .skin-product-meta span {
+            background: rgba(176, 18, 57, .08);
+            color: #9b001c;
+            font-weight: 900;
+        }
+
+        @media (max-width: 1200px) {
+            .skin-product-section.is-best-selling .skin-product-scroll.best-selling-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 800px) {
+            .skin-product-section.is-best-selling .best-selling-top {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .skin-product-section.is-best-selling .skin-product-scroll.best-selling-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 560px) {
+            .skin-product-section.is-best-selling .skin-product-scroll.best-selling-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </c:if>
