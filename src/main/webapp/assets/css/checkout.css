@@ -498,6 +498,66 @@
 	font-weight: 500;
 }
 
+.payment-card-header {
+	align-items: flex-start;
+}
+
+.payment-support-note {
+	margin: 7px 0 0;
+	color: var(--text-muted);
+	font-size: 13.5px;
+	line-height: 1.5;
+	font-weight: 650;
+}
+
+.payment-supported-logos {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 10px;
+	margin: -4px 0 16px;
+}
+
+.payment-supported-logo {
+	min-width: 0;
+	height: 58px;
+	padding: 7px 9px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border: 1px solid var(--border-soft);
+	border-radius: 16px;
+	background: linear-gradient(180deg, #ffffff 0%, #fffafd 100%);
+	box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
+	transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.payment-supported-logo:hover {
+	transform: translateY(-1px);
+	border-color: var(--brand-border);
+	box-shadow: 0 12px 22px rgba(201, 79, 124, 0.10);
+}
+
+.payment-supported-logo img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+}
+
+.payment-icon-logo {
+	width: 58px;
+	height: 42px;
+	padding: 4px;
+	overflow: hidden;
+}
+
+.payment-icon-logo img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+}
+
 /* =========================================================
    PRODUCTS
 ========================================================= */
@@ -1695,6 +1755,17 @@ body.coupon-modal-open {
 	}
 }
 
+@media (max-width: 640px) {
+	.payment-supported-logos {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.payment-icon-logo {
+		width: 52px;
+		height: 40px;
+	}
+}
+
 @media (max-width: 480px) {
 	.checkout-container {
 		width: calc(100% - 18px);
@@ -2593,4 +2664,2141 @@ body.address-map-open {
 .checkout-remove:hover,
 .address-map-note strong {
 	color: var(--brand-dark) !important;
+}
+
+/* =========================================================
+   MOVED FROM CHECKOUT.JSP - NO INLINE CSS IN JSP
+========================================================= */
+
+/* =========================================================
+     CHECKOUT PAGE OVERRIDES
+     Tone: hồng thương hiệu dịu, chữ xanh đen, nền sạch
+     ========================================================= */
+
+:root {
+	--checkout-brand: #d63384;
+	--checkout-brand-dark: #b1125b;
+	--checkout-brand-strong: #c21874;
+	--checkout-brand-soft: #fff3f8;
+	--checkout-brand-soft-2: #fff8fb;
+	--checkout-brand-border: #f3b8d2;
+	--checkout-good: #16a34a;
+	--checkout-warning: #ff8a00;
+
+	--checkout-text: #1f2a44;
+	--checkout-text-2: #475569;
+	--checkout-muted: #7b8794;
+	--checkout-muted-2: #a0a8b4;
+	--checkout-border: #e8edf3;
+	--checkout-surface: #ffffff;
+	--checkout-shadow: 0 22px 60px rgba(31, 42, 68, 0.18);
+}
+
+.checkout-page,
+.checkout-page *,
+.coupon-modal,
+.coupon-modal * {
+	font-family: "Inter", "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+/* ================= BUTTON STATE: NHẠT / ĐẬM ================= */
+
+.btn-apply-coupon,
+.btn-place-order {
+	transition: background-color 0.25s ease, opacity 0.25s ease, transform 0.2s ease, box-shadow 0.2s ease;
+	border: none;
+	outline: none;
+}
+
+.btn-apply-coupon:disabled,
+.btn-place-order:disabled {
+	background: #e7a3b8 !important;
+	color: #ffffff !important;
+	cursor: not-allowed !important;
+	opacity: 1 !important;
+	transform: none !important;
+	box-shadow: none !important;
+}
+
+.btn-apply-coupon:not(:disabled),
+.btn-place-order:not(:disabled) {
+	background: linear-gradient(180deg, #df4b93 0%, var(--checkout-brand) 100%) !important;
+	color: #ffffff !important;
+	cursor: pointer !important;
+	opacity: 1 !important;
+	box-shadow: 0 10px 24px rgba(214, 51, 132, 0.2);
+}
+
+.btn-apply-coupon:not(:disabled):hover,
+.btn-place-order:not(:disabled):hover {
+	background: linear-gradient(180deg, #cf3d84 0%, #bd256f 100%) !important;
+	transform: translateY(-1px);
+}
+
+/* ================= DELIVERY OPTIONS + FREESHIP ================= */
+
+.delivery-empty {
+	color: var(--checkout-muted);
+	font-size: 15px;
+}
+
+.delivery-options {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.delivery-options.hidden,
+.delivery-empty.hidden,
+.freeship-note.hidden {
+	display: none !important;
+}
+
+.delivery-option {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	padding: 14px 16px;
+	border: 1px solid var(--checkout-border);
+	border-radius: 16px;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	background: #fff;
+}
+
+.delivery-option:hover,
+.delivery-option:has(input:checked) {
+	border-color: var(--checkout-brand);
+	background: var(--checkout-brand-soft);
+}
+
+.delivery-option input {
+	accent-color: var(--checkout-brand);
+}
+
+.delivery-info {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+}
+
+.delivery-info strong {
+	font-size: 15px;
+	color: var(--checkout-text);
+}
+
+.delivery-info small {
+	margin-top: 4px;
+	color: var(--checkout-muted);
+	font-size: 13px;
+}
+
+.delivery-fee {
+	font-weight: 800;
+	color: var(--checkout-brand);
+	white-space: nowrap;
+}
+
+.freeship-note {
+	margin-top: 12px;
+	padding: 12px 14px;
+	border-radius: 14px;
+	background: #ecfdf5;
+	color: #047857;
+	font-weight: 800;
+	font-size: 14px;
+}
+
+.delivery-option.is-disabled {
+	opacity: 0.55;
+	cursor: not-allowed !important;
+	background: #f9fafb !important;
+	border-color: #e5e7eb !important;
+	box-shadow: none !important;
+}
+
+.delivery-option.is-disabled:hover {
+	border-color: #e5e7eb !important;
+	background: #f9fafb !important;
+}
+
+.delivery-option.is-disabled input {
+	cursor: not-allowed !important;
+}
+
+.delivery-option.is-disabled .delivery-info strong,
+.delivery-option.is-disabled .delivery-info small,
+.delivery-option.is-disabled .delivery-fee {
+	color: #9ca3af !important;
+}
+
+/* ================= COUPON BOX ================= */
+
+.coupon-select-btn {
+	border-color: var(--checkout-border) !important;
+	color: var(--checkout-text-2) !important;
+	background: #ffffff !important;
+	font-weight: 750 !important;
+	letter-spacing: 0.01em;
+	transition: all 0.2s ease;
+}
+
+.coupon-select-btn:hover {
+	border-color: var(--checkout-brand-border) !important;
+	background: var(--checkout-brand-soft-2) !important;
+	color: var(--checkout-brand) !important;
+	box-shadow: 0 8px 18px rgba(214, 51, 132, 0.08);
+}
+
+.coupon-select-btn.has-selected {
+	border-color: var(--checkout-brand-border) !important;
+	background: var(--checkout-brand-soft) !important;
+	color: var(--checkout-text) !important;
+}
+
+.coupon-select-btn.has-selected .coupon-open-text {
+	color: var(--checkout-brand);
+	font-weight: 900;
+	letter-spacing: 0.04em;
+}
+
+.coupon-arrow {
+	color: #a1a8b3 !important;
+}
+
+.coupon-input-row input {
+	color: var(--checkout-text) !important;
+	border-color: var(--checkout-border) !important;
+	font-weight: 600;
+	text-transform: uppercase;
+}
+
+.coupon-input-row input::placeholder {
+	color: #98a2b3;
+	text-transform: none;
+}
+
+.coupon-input-row input:focus {
+	border-color: var(--checkout-brand-border) !important;
+	box-shadow: 0 0 0 4px rgba(214, 51, 132, 0.10) !important;
+}
+
+.coupon-message.success {
+	color: #15803d !important;
+}
+
+.coupon-message.error {
+	color: #dc2626 !important;
+}
+
+/* ================= COUPON MODAL - 1 LIST / BEST SUGGESTION ================= */
+
+.coupon-modal {
+	position: fixed;
+	inset: 0;
+	z-index: 9999;
+	display: none;
+	align-items: center;
+	justify-content: center;
+	padding: 26px;
+}
+
+.coupon-modal.show {
+	display: flex;
+}
+
+.coupon-modal-backdrop {
+	position: absolute;
+	inset: 0;
+	background: rgba(15, 23, 42, 0.50);
+	backdrop-filter: blur(2.5px);
+}
+
+.coupon-modal-dialog {
+	position: relative;
+	width: min(700px, calc(100vw - 32px));
+	max-height: min(86vh, 780px);
+	background: var(--checkout-surface);
+	border-radius: 22px;
+	box-shadow: var(--checkout-shadow);
+	overflow: hidden;
+	z-index: 1;
+	border: 1px solid rgba(243, 184, 210, 0.62);
+}
+
+.coupon-modal-header {
+	position: relative;
+	min-height: 72px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 20px 74px;
+	border-bottom: 1px solid #f0f2f5;
+	background: linear-gradient(180deg, #ffffff 0%, #fff9fc 100%);
+}
+
+.coupon-modal-header h3 {
+	margin: 0;
+	color: var(--checkout-text);
+	font-size: 22px;
+	line-height: 1.25;
+	font-weight: 900;
+	text-align: center;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
+.coupon-modal-close {
+	position: absolute;
+	right: 18px;
+	top: 50%;
+	width: 42px;
+	height: 42px;
+	transform: translateY(-50%);
+	border: none;
+	border-radius: 50%;
+	background: transparent;
+	color: #475569;
+	cursor: pointer;
+	transition: 0.18s ease;
+	font-size: 0;
+}
+
+.coupon-modal-close::before,
+.coupon-modal-close::after {
+	content: "";
+	position: absolute;
+	left: 12px;
+	top: 20px;
+	width: 18px;
+	height: 2px;
+	border-radius: 999px;
+	background: currentColor;
+}
+
+.coupon-modal-close::before {
+	transform: rotate(45deg);
+}
+
+.coupon-modal-close::after {
+	transform: rotate(-45deg);
+}
+
+.coupon-modal-close:hover {
+	background: #fff0f6;
+	color: var(--checkout-brand);
+}
+
+.coupon-modal-body {
+	max-height: calc(min(86vh, 780px) - 150px);
+	overflow-y: auto;
+	padding: 22px 24px 96px;
+	background: #ffffff;
+}
+
+.coupon-modal-body::-webkit-scrollbar {
+	width: 8px;
+}
+
+.coupon-modal-body::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+.coupon-modal-body::-webkit-scrollbar-thumb {
+	background: #d6dae2;
+	border-radius: 999px;
+}
+
+.coupon-list-title {
+	margin: 4px 0 16px;
+	color: var(--checkout-text);
+	font-size: 15px;
+	line-height: 1.35;
+	font-weight: 850;
+	letter-spacing: 0.01em;
+}
+
+.coupon-list {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	margin-bottom: 22px;
+}
+
+.coupon-item {
+	width: 100%;
+	min-height: 132px;
+	position: relative;
+	display: grid;
+	grid-template-columns: 92px 1fr 54px;
+	align-items: center;
+	gap: 14px;
+	padding: 18px 18px 18px 20px;
+	border: 1.5px solid #f1c2d6;
+	border-radius: 18px;
+	background: linear-gradient(180deg, #fff8fb 0%, #fff3f8 100%);
+	cursor: pointer;
+	text-align: left;
+	transition: 0.2s ease;
+	color: var(--checkout-text);
+	box-shadow: 0 8px 18px rgba(31, 42, 68, 0.04);
+}
+
+.coupon-item::before,
+.coupon-item::after {
+	content: "";
+	position: absolute;
+	left: 92px;
+	width: 14px;
+	height: 14px;
+	background: #ffffff;
+	border: 1.5px solid #f1c2d6;
+	border-radius: 50%;
+	z-index: 2;
+	transform: translateX(-50%);
+}
+
+.coupon-item::before {
+	top: -8px;
+}
+
+.coupon-item::after {
+	bottom: -8px;
+}
+
+.coupon-item.is-usable {
+	border-color: #ee7cb2;
+	background: linear-gradient(180deg, #fff8fc 0%, #fff 100%);
+}
+
+.coupon-item.is-usable:hover {
+	border-color: var(--checkout-brand);
+	box-shadow: 0 14px 30px rgba(214, 51, 132, 0.13);
+	transform: translateY(-1px);
+}
+
+.coupon-item.is-selected {
+	border-color: var(--checkout-brand);
+	background: linear-gradient(180deg, #fff4f9 0%, #ffedf5 100%);
+	box-shadow: 0 16px 34px rgba(214, 51, 132, 0.16);
+}
+
+.coupon-item.is-disabled {
+	border-color: #e9edf3;
+	background: #fcfcfd;
+	color: #8a94a6;
+	opacity: 0.48;
+	cursor: not-allowed !important;
+	pointer-events: none;
+	box-shadow: none;
+	filter: grayscale(0.18);
+}
+
+.coupon-item.is-disabled .coupon-voucher-content,
+.coupon-item.is-disabled .coupon-discount-label,
+.coupon-item.is-disabled .coupon-title-line,
+.coupon-item.is-disabled .coupon-condition,
+.coupon-item.is-disabled .coupon-meta-line,
+.coupon-item.is-disabled .coupon-meta-code {
+	color: #a4adbb !important;
+}
+
+.coupon-item.is-disabled:hover {
+	transform: none;
+	box-shadow: none;
+	border-color: #e9edf3;
+}
+
+.coupon-best-badge {
+	position: absolute;
+	top: 12px;
+	right: 68px;
+	left: auto;
+	transform: none;
+	display: none;
+	align-items: center;
+	justify-content: center;
+	min-width: 62px;
+	height: 20px;
+	padding: 0 9px;
+	border-radius: 999px;
+	background: linear-gradient(135deg, #f4a9c8 0%, #d7659a 100%);
+	color: #ffffff;
+	font-size: 11px;
+	line-height: 1;
+	font-weight: 850;
+	letter-spacing: 0.01em;
+	box-shadow: 0 6px 14px rgba(215, 101, 154, 0.24);
+	z-index: 4;
+	pointer-events: none;
+}
+
+.coupon-item.is-best .coupon-best-badge {
+	display: inline-flex;
+}
+
+.coupon-voucher-icon {
+	width: 62px;
+	height: 62px;
+	border-radius: 50%;
+	background: linear-gradient(180deg, #f8b7cc 0%, #ea91b0 100%);
+	color: #ffffff;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 27px;
+	box-shadow: inset 0 -5px 12px rgba(177, 18, 91, 0.08);
+}
+
+.coupon-item.is-disabled .coupon-voucher-icon {
+	background: #e7eaf0;
+	color: #ffffff;
+}
+
+.coupon-voucher-content {
+	min-width: 0;
+}
+
+.coupon-discount-label {
+	margin-bottom: 4px;
+	color: var(--checkout-text-2);
+	font-size: 14px;
+	font-weight: 800;
+}
+
+.coupon-title-line {
+	margin: 0;
+	color: var(--checkout-text);
+	font-size: 22px;
+	line-height: 1.22;
+	font-weight: 900;
+}
+
+.coupon-condition {
+	margin-top: 5px;
+	color: var(--checkout-muted);
+	font-size: 13.5px;
+	line-height: 1.45;
+	font-weight: 650;
+}
+
+.coupon-meta-line {
+	margin-top: 8px;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px 10px;
+	align-items: center;
+	color: #98a2b3;
+	font-size: 13px;
+	line-height: 1.4;
+	font-weight: 650;
+}
+
+.coupon-meta-code {
+	color: var(--checkout-text-2);
+	font-weight: 900;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
+.coupon-detail-link {
+	border: none;
+	background: transparent;
+	color: #4b72d9;
+	font-size: 13.5px;
+	font-weight: 800;
+	cursor: default;
+	padding: 0;
+}
+
+.coupon-disabled-reason {
+	display: none;
+	margin-top: 7px;
+	color: #b45309;
+	font-size: 13px;
+	line-height: 1.4;
+	font-weight: 800;
+}
+
+.coupon-item.is-disabled .coupon-disabled-reason {
+	display: block;
+}
+
+.coupon-ticket-right {
+	width: 42px;
+	height: 42px;
+	justify-self: end;
+	border-radius: 50%;
+	border: 2px solid #efc2d8;
+	background: #fff8fb;
+	color: #c65b8c;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 0;
+	font-weight: 900;
+	transition: 0.18s ease;
+	box-shadow: 0 4px 10px rgba(214, 51, 132, 0.06);
+}
+
+.coupon-ticket-right::before {
+	content: "+";
+	font-size: 25px;
+	line-height: 1;
+	font-weight: 650;
+}
+
+.coupon-item.is-usable:hover .coupon-ticket-right {
+	border-color: #d7659a;
+	background: #fff0f6;
+	color: #b1125b;
+}
+
+.coupon-item.is-selected .coupon-ticket-right {
+	background: linear-gradient(180deg, #fde1ee 0%, #f7bfd7 100%);
+	border-color: #d63384;
+	color: #b1125b;
+	box-shadow: 0 8px 18px rgba(214, 51, 132, 0.18);
+}
+
+.coupon-item.is-selected .coupon-ticket-right::before {
+	content: "✓";
+	font-size: 23px;
+	font-weight: 950;
+}
+
+.coupon-item.is-disabled .coupon-ticket-right {
+	background: #f6f7f9;
+	border-color: #e5e8ee;
+	color: #c1c7d0;
+	box-shadow: none;
+}
+
+.coupon-empty {
+	padding: 34px 20px;
+	text-align: center;
+	color: var(--checkout-muted);
+	background: #fafafa;
+	border: 1px dashed #d7dee8;
+	border-radius: 18px;
+}
+
+.coupon-empty-icon {
+	width: 58px;
+	height: 58px;
+	margin: 0 auto 10px;
+	border-radius: 50%;
+	background: #fff0f6;
+	color: var(--checkout-brand);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 28px;
+}
+
+.coupon-modal-footer {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	min-height: 78px;
+	padding: 14px 24px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 18px;
+	background: rgba(255, 255, 255, 0.96);
+	border-top: 1px solid #f0f2f5;
+	box-shadow: 0 -10px 22px rgba(31, 42, 68, 0.06);
+	backdrop-filter: blur(8px);
+}
+
+.coupon-selected-count {
+	color: var(--checkout-text-2);
+	font-size: 15px;
+	font-weight: 750;
+}
+
+.coupon-selected-count strong {
+	color: var(--checkout-brand);
+	font-weight: 900;
+}
+
+.coupon-confirm-btn {
+	min-width: 160px;
+	height: 50px;
+	border: none;
+	border-radius: 12px;
+	background: linear-gradient(180deg, var(--checkout-brand) 0%, var(--checkout-brand-dark) 100%);
+	color: #ffffff;
+	font-size: 15.5px;
+	font-weight: 850;
+	cursor: pointer;
+	box-shadow: 0 12px 24px rgba(177, 18, 91, 0.22);
+	transition: 0.18s ease;
+}
+
+.coupon-confirm-btn:hover {
+	transform: translateY(-1px);
+	box-shadow: 0 14px 28px rgba(177, 18, 91, 0.26);
+}
+
+body.coupon-modal-open {
+	overflow: hidden;
+}
+
+@media (max-width: 768px) {
+	.coupon-modal {
+		padding: 14px;
+	}
+
+	.coupon-modal-dialog {
+		width: 100%;
+		border-radius: 18px;
+	}
+
+	.coupon-modal-header {
+		min-height: 64px;
+		padding: 17px 64px;
+	}
+
+	.coupon-modal-header h3 {
+		font-size: 18px;
+		letter-spacing: 0.05em;
+	}
+
+	.coupon-modal-body {
+		padding: 18px 16px 92px;
+	}
+
+	.coupon-item {
+		grid-template-columns: 64px 1fr 42px;
+		min-height: 124px;
+		gap: 12px;
+		padding: 15px;
+	}
+
+	.coupon-item::before,
+	.coupon-item::after {
+		left: 70px;
+	}
+
+	.coupon-best-badge {
+		top: 10px;
+		right: 56px;
+		left: auto;
+		min-width: 56px;
+		height: 19px;
+		font-size: 10.5px;
+		padding: 0 8px;
+	}
+
+	.coupon-voucher-icon {
+		width: 48px;
+		height: 48px;
+		font-size: 23px;
+	}
+
+	.coupon-title-line {
+		font-size: 18px;
+	}
+
+	.coupon-condition,
+	.coupon-meta-line,
+	.coupon-disabled-reason {
+		font-size: 12.5px;
+	}
+
+	.coupon-modal-footer {
+		padding: 12px 16px;
+	}
+
+	.coupon-confirm-btn {
+		min-width: 128px;
+	}
+}
+
+
+/* ================= ADDRESS VALIDATION / CURRENT LOCATION ================= */
+
+.btn-use-location {
+	margin-top: 10px;
+	min-height: 42px;
+	padding: 0 16px;
+	border: 1px solid var(--checkout-brand-border);
+	border-radius: 12px;
+	background: var(--checkout-brand-soft);
+	color: var(--checkout-brand-strong);
+	font-size: 14px;
+	font-weight: 850;
+	cursor: pointer;
+	transition: 0.2s ease;
+}
+
+.btn-use-location:hover:not(:disabled) {
+	background: #ffe6f1;
+	border-color: var(--checkout-brand);
+	transform: translateY(-1px);
+}
+
+.btn-use-location:disabled {
+	opacity: 0.68;
+	cursor: not-allowed;
+	transform: none;
+}
+
+.field-hint {
+	margin-top: 8px;
+	color: #64748b;
+	font-size: 13px;
+	line-height: 1.45;
+	font-weight: 600;
+}
+
+.location-detected-hint {
+	display: none;
+	margin-top: 8px;
+	padding: 10px 12px;
+	border-radius: 12px;
+	background: #f0fdf4;
+	border: 1px solid #bbf7d0;
+	color: #166534;
+	font-size: 13px;
+	line-height: 1.45;
+	font-weight: 700;
+}
+
+.location-detected-hint.show {
+	display: block;
+}
+
+.location-detected-hint strong {
+	color: #14532d;
+	font-weight: 900;
+}
+
+
+/* ================= MANUAL COUPON INPUT VALIDATION ================= */
+
+.coupon-input-row input.is-valid {
+	border-color: #16a34a !important;
+	background: #f0fdf4 !important;
+	box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.08) !important;
+}
+
+.coupon-input-row input.is-invalid {
+	border-color: #ef4444 !important;
+	background: #fff1f2 !important;
+	box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.08) !important;
+}
+
+.coupon-input-row input.is-warning {
+	border-color: #f59e0b !important;
+	background: #fffbeb !important;
+	box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.08) !important;
+}
+
+.coupon-message.warning {
+	color: #b45309 !important;
+}
+
+.coupon-message.success {
+	color: #15803d !important;
+}
+
+.coupon-message.error {
+	color: #dc2626 !important;
+}
+
+/* ================= ADDRESS MAP PICKER ================= */
+
+.address-map-modal,
+.address-map-modal *,
+.leaflet-container,
+.leaflet-container * {
+	font-family: "Inter", "Segoe UI", Roboto, Arial, sans-serif !important;
+	box-sizing: border-box;
+}
+
+.address-map-modal {
+	position: fixed;
+	inset: 0;
+	z-index: 10020;
+	display: none;
+	align-items: center;
+	justify-content: center;
+	padding: 20px;
+}
+
+.address-map-modal.show {
+	display: flex;
+}
+
+.address-map-backdrop {
+	position: absolute;
+	inset: 0;
+	background: rgba(15, 23, 42, 0.58);
+	backdrop-filter: blur(4px);
+}
+
+.address-map-dialog {
+	position: relative;
+	z-index: 1;
+	width: min(1080px, calc(100vw - 28px));
+	max-height: min(92vh, 880px);
+	border-radius: 26px;
+	background: #ffffff;
+	overflow: hidden;
+	box-shadow: 0 30px 90px rgba(15, 23, 42, 0.30);
+	border: 1px solid rgba(243, 184, 210, 0.85);
+}
+
+.address-map-header {
+	position: relative;
+	min-height: 88px;
+	padding: 22px 78px 18px 28px;
+	border-bottom: 1px solid #f1f5f9;
+	background: linear-gradient(180deg, #ffffff 0%, #fff7fb 100%);
+}
+
+.address-map-header h3 {
+	margin: 0;
+	color: var(--checkout-text);
+	font-size: 25px;
+	line-height: 1.25;
+	font-weight: 950;
+	letter-spacing: 0.015em;
+}
+
+.address-map-header p {
+	margin: 8px 0 0;
+	color: var(--checkout-text-2);
+	font-size: 15.5px;
+	line-height: 1.55;
+	font-weight: 700;
+}
+
+.address-map-close {
+	position: absolute;
+	top: 18px;
+	right: 20px;
+	width: 46px;
+	height: 46px;
+	border: none;
+	border-radius: 50%;
+	background: #fff1f7;
+	color: #b1125b;
+	cursor: pointer;
+	font-size: 25px;
+	line-height: 1;
+	font-weight: 800;
+	transition: 0.18s ease;
+}
+
+.address-map-close:hover {
+	background: #ffdce9;
+	transform: rotate(6deg);
+}
+
+.address-map-body {
+	padding: 20px 22px 0;
+	background: #ffffff;
+}
+
+.address-map-status {
+	min-height: 46px;
+	display: flex;
+	align-items: center;
+	padding: 12px 16px;
+	margin-bottom: 14px;
+	border-radius: 16px;
+	background: #f8fafc;
+	color: var(--checkout-text-2);
+	font-size: 15px;
+	line-height: 1.45;
+	font-weight: 800;
+}
+
+.address-map-status.is-error {
+	background: #fff1f2;
+	color: #dc2626;
+}
+
+.address-map-status.is-success {
+	background: #ecfdf5;
+	color: #166534;
+}
+
+.address-map-layout {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) 340px;
+	gap: 16px;
+	align-items: stretch;
+}
+
+.address-map-left,
+.address-map-side {
+	min-width: 0;
+}
+
+.address-map-canvas {
+	width: 100%;
+	height: min(58vh, 520px);
+	min-height: 410px;
+	position: relative;
+	display: block;
+	border-radius: 20px;
+	overflow: hidden !important;
+	border: 1px solid #dce3ee;
+	background: #eef2f7;
+	isolation: isolate;
+	box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.75);
+}
+
+.address-map-leaflet,
+#addressMap {
+	width: 100% !important;
+	height: 100% !important;
+	min-height: inherit !important;
+	display: block !important;
+	border-radius: 20px;
+	overflow: hidden !important;
+	background: #eef2f7;
+}
+
+#addressMap.leaflet-container,
+.address-map-canvas .leaflet-container {
+	width: 100% !important;
+	height: 100% !important;
+	min-height: inherit !important;
+	border-radius: 20px;
+	overflow: hidden !important;
+	background: #eef2f7 !important;
+}
+
+/*
+ * Fix quan trọng cho Leaflet:
+ * CSS global của web thường set img { max-width: 100%; }
+ * làm tile bản đồ bị co lại, vỡ hoặc lệch khung.
+ */
+.leaflet-container img,
+.leaflet-container .leaflet-tile {
+	max-width: none !important;
+	max-height: none !important;
+}
+
+.leaflet-container .leaflet-pane,
+.leaflet-container .leaflet-map-pane,
+.leaflet-container .leaflet-tile-pane,
+.leaflet-container .leaflet-overlay-pane,
+.leaflet-container .leaflet-shadow-pane,
+.leaflet-container .leaflet-marker-pane,
+.leaflet-container .leaflet-tooltip-pane,
+.leaflet-container .leaflet-popup-pane {
+	box-sizing: content-box !important;
+}
+
+.address-map-side {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.address-map-detected {
+	padding: 16px 16px 14px;
+	border-radius: 18px;
+	border: 1px solid #bbf7d0;
+	background: #f0fdf4;
+	color: #166534;
+	font-size: 15px;
+	line-height: 1.55;
+	font-weight: 760;
+}
+
+.address-map-detected-title {
+	margin-bottom: 8px;
+	color: #14532d;
+	font-size: 16px;
+	font-weight: 950;
+}
+
+.address-map-detected strong {
+	color: #14532d;
+	font-weight: 950;
+}
+
+.address-map-detected small {
+	display: block;
+	margin-top: 8px;
+	color: #3f7f54;
+	font-size: 13.5px;
+	line-height: 1.45;
+	font-weight: 700;
+}
+
+.address-map-suggestion-actions {
+	margin-top: 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 9px;
+}
+
+.address-map-note {
+	padding: 14px 15px;
+	border-radius: 18px;
+	background: #fff7fb;
+	border: 1px solid #f7c8dd;
+	color: var(--checkout-text-2);
+	font-size: 14.5px;
+	line-height: 1.55;
+	font-weight: 730;
+}
+
+.address-map-note strong {
+	color: var(--checkout-brand);
+}
+
+.address-map-footer {
+	margin-top: 20px;
+	padding: 17px 22px;
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 14px;
+	border-top: 1px solid #f1f5f9;
+	background: #ffffff;
+}
+
+.address-map-footer-left {
+	display: none !important;
+}
+
+.address-map-footer-actions {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.address-map-btn {
+	min-width: 142px;
+	height: 48px;
+	padding: 0 19px;
+	border-radius: 14px;
+	font-size: 15px;
+	font-weight: 900;
+	cursor: pointer;
+	border: 1px solid #e2e8f0;
+	background: #ffffff;
+	color: var(--checkout-text-2);
+	transition: 0.18s ease;
+}
+
+.address-map-btn:hover {
+	background: #f8fafc;
+	transform: translateY(-1px);
+}
+
+.address-map-btn.suggestion {
+	width: 100%;
+	min-width: 0;
+	border-color: #f2a7cb;
+	background: #fff2f8;
+	color: #b1125b;
+	box-shadow: 0 8px 18px rgba(214, 51, 132, 0.10);
+}
+
+.address-map-btn.suggestion:hover {
+	background: #ffe5f0;
+	border-color: var(--checkout-brand);
+}
+
+.address-map-btn.primary {
+	border: none;
+	background: linear-gradient(180deg, #df4b93 0%, var(--checkout-brand) 100%);
+	color: #ffffff;
+	box-shadow: 0 12px 24px rgba(214, 51, 132, 0.24);
+}
+
+.address-map-btn.primary:hover {
+	background: linear-gradient(180deg, #cf3d84 0%, #bd256f 100%);
+	transform: translateY(-1px);
+}
+
+.address-map-btn:disabled {
+	opacity: 0.52;
+	cursor: not-allowed;
+	transform: none !important;
+	box-shadow: none !important;
+}
+
+.custom-red-map-marker {
+	background: transparent;
+	border: none;
+}
+
+.custom-red-map-pin {
+	position: relative;
+	width: 44px;
+	height: 54px;
+	filter: drop-shadow(0 12px 12px rgba(220, 38, 38, 0.28));
+	transform: translateY(-3px);
+}
+
+.custom-red-map-pin::before {
+	content: "";
+	position: absolute;
+	left: 50%;
+	top: 1px;
+	width: 36px;
+	height: 36px;
+	border-radius: 50% 50% 50% 0;
+	background: linear-gradient(135deg, #ff4d6d 0%, #dc2626 58%, #991b1b 100%);
+	border: 3px solid #ffffff;
+	transform: translateX(-50%) rotate(-45deg);
+	box-shadow: 0 6px 16px rgba(220, 38, 38, 0.35);
+}
+
+.custom-red-map-pin::after {
+	content: "";
+	position: absolute;
+	left: 50%;
+	top: 13px;
+	width: 13px;
+	height: 13px;
+	border-radius: 50%;
+	background: #ffffff;
+	transform: translateX(-50%);
+	box-shadow: inset 0 0 0 2px rgba(220, 38, 38, 0.22);
+}
+
+.custom-red-map-pin .pin-pulse {
+	position: absolute;
+	left: 50%;
+	bottom: 0;
+	width: 28px;
+	height: 10px;
+	border-radius: 50%;
+	background: rgba(220, 38, 38, 0.20);
+	transform: translateX(-50%);
+	animation: mapPinPulse 1.8s infinite ease-in-out;
+}
+
+.shipping-selected-dot {
+	filter: drop-shadow(0 0 10px rgba(220, 38, 38, 0.45));
+}
+
+.leaflet-marker-icon.custom-red-map-marker {
+	z-index: 1000 !important;
+}
+
+@keyframes mapPinPulse {
+	0%, 100% {
+		transform: translateX(-50%) scale(0.9);
+		opacity: 0.55;
+	}
+	50% {
+		transform: translateX(-50%) scale(1.25);
+		opacity: 0.22;
+	}
+}
+
+.address-map-canvas .leaflet-control-container {
+	font-family: "Inter", "Segoe UI", Roboto, Arial, sans-serif !important;
+}
+
+.address-map-canvas .leaflet-control-zoom {
+	border: none !important;
+	border-radius: 12px !important;
+	overflow: hidden !important;
+	box-shadow: 0 8px 18px rgba(15, 23, 42, 0.16) !important;
+}
+
+.address-map-canvas .leaflet-control-zoom a {
+	width: 34px !important;
+	height: 34px !important;
+	line-height: 34px !important;
+	color: #1f2a44 !important;
+	font-size: 18px !important;
+	font-weight: 900 !important;
+}
+
+body.address-map-open {
+	overflow: hidden;
+}
+
+@media (max-width: 900px) {
+	.address-map-layout {
+		grid-template-columns: 1fr;
+	}
+
+	.address-map-canvas {
+		min-height: 340px;
+		height: 48vh;
+	}
+
+	.address-map-leaflet,
+	#addressMap {
+		min-height: inherit !important;
+		height: 100% !important;
+	}
+}
+
+@media (max-width: 768px) {
+	.address-map-modal {
+		padding: 10px;
+	}
+
+	.address-map-dialog {
+		border-radius: 18px;
+		max-height: 94vh;
+	}
+
+	.address-map-header {
+		padding: 17px 60px 15px 18px;
+	}
+
+	.address-map-header h3 {
+		font-size: 21px;
+	}
+
+	.address-map-header p {
+		font-size: 14px;
+	}
+
+	.address-map-body {
+		padding: 14px 14px 0;
+	}
+
+	.address-map-canvas {
+		min-height: 300px;
+		height: 44vh;
+	}
+
+	.address-map-leaflet,
+	#addressMap {
+		min-height: inherit !important;
+		height: 100% !important;
+	}
+
+	.address-map-footer {
+		padding: 14px;
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.address-map-footer-actions {
+		flex-direction: column-reverse;
+		align-items: stretch;
+	}
+
+	.address-map-btn {
+		width: 100%;
+	}
+}
+
+
+
+/* ===== LEAFLET HARD FIX V2: giữ tile đúng kích thước và phủ kín khung ===== */
+.address-map-canvas {
+	position: relative !important;
+	width: 100% !important;
+	height: 520px !important;
+	min-height: 520px !important;
+	overflow: hidden !important;
+	background: #eef2f7 !important;
+}
+
+.address-map-leaflet,
+#addressMap {
+	position: absolute !important;
+	inset: 0 !important;
+	width: 100% !important;
+	height: 100% !important;
+	min-height: 100% !important;
+	z-index: 1 !important;
+}
+
+#addressMap.leaflet-container,
+#addressMap .leaflet-container,
+.address-map-canvas .leaflet-container {
+	width: 100% !important;
+	height: 100% !important;
+	min-height: 100% !important;
+}
+
+#addressMap .leaflet-tile,
+.address-map-canvas .leaflet-tile,
+.leaflet-container .leaflet-tile {
+	width: 256px !important;
+	height: 256px !important;
+	max-width: none !important;
+	max-height: none !important;
+}
+
+#addressMap .leaflet-map-pane,
+#addressMap .leaflet-tile-pane,
+#addressMap .leaflet-overlay-pane,
+#addressMap .leaflet-marker-pane,
+#addressMap .leaflet-shadow-pane,
+#addressMap .leaflet-tooltip-pane,
+#addressMap .leaflet-popup-pane {
+	position: absolute !important;
+}
+
+@media (max-width: 900px) {
+	.address-map-canvas {
+		height: 430px !important;
+		min-height: 430px !important;
+	}
+}
+
+@media (max-width: 768px) {
+	.address-map-canvas {
+		height: 360px !important;
+		min-height: 360px !important;
+	}
+}
+
+/* ================= ELECTRONIC INVOICE REQUEST ================= */
+
+.e-invoice-card {
+	border: 1px solid #f1d3df;
+	background: linear-gradient(180deg, #ffffff 0%, #fff8fb 100%);
+}
+
+.e-invoice-header-line {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 14px;
+}
+
+.e-invoice-info {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	min-width: 0;
+}
+
+.e-invoice-icon {
+	width: 46px;
+	height: 46px;
+	flex: 0 0 46px;
+	border-radius: 16px;
+	background: #fff0f6;
+	color: var(--checkout-brand);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 22px;
+	box-shadow: inset 0 -4px 10px rgba(214, 51, 132, 0.08);
+}
+
+.e-invoice-info h2 {
+	margin: 0;
+	color: var(--checkout-text);
+	font-size: 19px;
+	line-height: 1.3;
+	font-weight: 950;
+}
+
+.e-invoice-info p {
+	margin: 4px 0 0;
+	color: var(--checkout-muted);
+	font-size: 13.5px;
+	line-height: 1.45;
+	font-weight: 650;
+}
+
+.e-invoice-open-btn {
+	min-width: 172px;
+	min-height: 44px;
+	padding: 0 18px;
+	border: none;
+	border-radius: 999px;
+	background: linear-gradient(180deg, #df4b93 0%, var(--checkout-brand) 100%);
+	color: #ffffff;
+	font-size: 14px;
+	font-weight: 950;
+	cursor: pointer;
+	white-space: nowrap;
+	box-shadow: 0 12px 24px rgba(214, 51, 132, 0.22);
+	transition: 0.18s ease;
+}
+
+.e-invoice-open-btn:hover {
+	background: linear-gradient(180deg, #cf3d84 0%, #bd256f 100%);
+	transform: translateY(-1px);
+}
+
+.e-invoice-open-btn.is-selected {
+	background: linear-gradient(180deg, #16a34a 0%, #12804a 100%);
+	box-shadow: 0 12px 24px rgba(22, 163, 74, 0.18);
+}
+
+.e-invoice-selected-box {
+	display: none;
+	margin-top: 14px;
+	padding: 13px 14px;
+	border: 1px solid #bbf7d0;
+	border-radius: 15px;
+	background: #f0fdf4;
+	color: #166534;
+	font-size: 13.5px;
+	line-height: 1.55;
+	font-weight: 750;
+}
+
+.e-invoice-selected-box.show {
+	display: block;
+}
+
+.e-invoice-selected-box strong {
+	color: #14532d;
+	font-weight: 950;
+}
+
+.e-invoice-modal,
+.e-invoice-modal * {
+	font-family: "Inter", "Segoe UI", Roboto, Arial, sans-serif;
+	box-sizing: border-box;
+}
+
+.e-invoice-modal {
+	position: fixed;
+	inset: 0;
+	z-index: 10030;
+	display: none;
+	align-items: center;
+	justify-content: center;
+	padding: 22px;
+}
+
+.e-invoice-modal.show {
+	display: flex;
+}
+
+.e-invoice-backdrop {
+	position: absolute;
+	inset: 0;
+	background: rgba(15, 23, 42, 0.56);
+	backdrop-filter: blur(3px);
+}
+
+.e-invoice-dialog {
+	position: relative;
+	z-index: 1;
+	width: min(720px, calc(100vw - 28px));
+	max-height: min(92vh, 860px);
+	overflow: hidden;
+	border-radius: 24px;
+	background: #ffffff;
+	border: 1px solid rgba(243, 184, 210, 0.72);
+	box-shadow: 0 26px 78px rgba(15, 23, 42, 0.30);
+}
+
+.e-invoice-modal-header {
+	position: relative;
+	min-height: 84px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 24px 86px 20px;
+	border-bottom: 1px solid #edf0f5;
+	background: #ffffff;
+}
+
+.e-invoice-modal-header h3 {
+	margin: 0;
+	color: var(--checkout-text);
+	font-size: 23px;
+	line-height: 1.25;
+	font-weight: 950;
+	text-align: center;
+}
+
+.e-invoice-close {
+	position: absolute;
+	left: 22px;
+	top: 18px;
+	width: 54px;
+	height: 54px;
+	border: none;
+	border-radius: 16px;
+	background: #f4f4f5;
+	color: #111827;
+	font-size: 32px;
+	line-height: 1;
+	cursor: pointer;
+	transition: 0.18s ease;
+}
+
+.e-invoice-close:hover {
+	background: #fff0f6;
+	color: var(--checkout-brand);
+	transform: rotate(4deg);
+}
+
+.e-invoice-modal-body {
+	max-height: calc(min(92vh, 860px) - 164px);
+	overflow-y: auto;
+	padding: 20px 24px 22px;
+	background: #ffffff;
+}
+
+.e-invoice-type-row {
+	display: flex;
+	align-items: center;
+	gap: 34px;
+	margin-bottom: 18px;
+}
+
+.e-invoice-radio {
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	color: #111827;
+	font-size: 16px;
+	font-weight: 850;
+	cursor: pointer;
+}
+
+.e-invoice-radio input {
+	width: 22px;
+	height: 22px;
+	accent-color: #e88ba4;
+}
+
+.e-invoice-form {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+
+.e-invoice-grid-2 {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 14px;
+}
+
+.e-invoice-input {
+	width: 100%;
+	min-height: 58px;
+	padding: 0 17px;
+	border: 1px solid #dedede;
+	border-radius: 14px;
+	background: #ffffff;
+	color: #111827;
+	font-size: 15.5px;
+	line-height: 1.4;
+	font-weight: 650;
+	outline: none;
+	transition: 0.18s ease;
+}
+
+.e-invoice-input:focus {
+	border-color: #e88ba4;
+	box-shadow: 0 0 0 4px rgba(232, 139, 164, 0.16);
+}
+
+.e-invoice-input.is-invalid {
+	border-color: #ef4444;
+	background: #fff1f2;
+}
+
+.e-invoice-use-address {
+	width: 100%;
+	min-height: 52px;
+	border: none;
+	border-radius: 14px;
+	background: #eeeeef;
+	color: #111827;
+	font-size: 16px;
+	font-weight: 950;
+	cursor: pointer;
+	transition: 0.18s ease;
+}
+
+.e-invoice-use-address:hover {
+	background: #e7e7e9;
+}
+
+.e-invoice-save-row {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	color: #111827;
+	font-size: 15px;
+	font-weight: 750;
+	cursor: pointer;
+}
+
+.e-invoice-save-row input {
+	width: 18px;
+	height: 18px;
+	accent-color: var(--checkout-brand);
+}
+
+.e-invoice-note {
+	display: grid;
+	grid-template-columns: 34px 1fr;
+	gap: 10px;
+	padding: 16px;
+	border: 1px solid #cfefff;
+	border-radius: 15px;
+	background: #f0fbff;
+	color: #111827;
+}
+
+.e-invoice-note-icon {
+	color: #0284c7;
+	font-size: 25px;
+	font-weight: 950;
+}
+
+.e-invoice-note strong {
+	display: block;
+	margin-bottom: 5px;
+	color: #111827;
+	font-size: 16px;
+	font-weight: 950;
+}
+
+.e-invoice-note ul {
+	margin: 0;
+	padding-left: 18px;
+}
+
+.e-invoice-note li {
+	margin: 4px 0;
+	color: #1f2937;
+	font-size: 14.5px;
+	line-height: 1.45;
+	font-weight: 650;
+}
+
+.e-invoice-error {
+	display: none;
+	padding: 11px 13px;
+	border-radius: 13px;
+	background: #fff1f2;
+	color: #dc2626;
+	font-size: 14px;
+	line-height: 1.45;
+	font-weight: 800;
+}
+
+.e-invoice-error.show {
+	display: block;
+}
+
+.e-invoice-modal-footer {
+	padding: 16px 24px 20px;
+	border-top: 1px solid #edf0f5;
+	background: #ffffff;
+}
+
+.e-invoice-submit {
+	width: 100%;
+	min-height: 58px;
+	border: none;
+	border-radius: 14px;
+	background: #eba0b2;
+	color: #ffffff;
+	font-size: 17px;
+	font-weight: 950;
+	cursor: pointer;
+	transition: 0.18s ease;
+}
+
+.e-invoice-submit:hover {
+	background: var(--checkout-brand);
+}
+
+body.e-invoice-modal-open {
+	overflow: hidden;
+}
+
+@media (max-width: 640px) {
+	.e-invoice-header-line {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.e-invoice-open-btn {
+		width: 100%;
+	}
+
+	.e-invoice-modal {
+		padding: 12px;
+	}
+
+	.e-invoice-dialog {
+		width: 100%;
+		border-radius: 18px;
+	}
+
+	.e-invoice-modal-header {
+		min-height: 74px;
+		padding: 20px 70px 18px;
+	}
+
+	.e-invoice-modal-header h3 {
+		font-size: 19px;
+	}
+
+	.e-invoice-close {
+		left: 16px;
+		width: 48px;
+		height: 48px;
+	}
+
+	.e-invoice-type-row {
+		gap: 20px;
+	}
+
+	.e-invoice-grid-2 {
+		grid-template-columns: 1fr;
+	}
+}
+
+
+/* ================= E-INVOICE / CHECKOUT REFINEMENT ================= */
+
+.checkout-container {
+	max-width: 1360px !important;
+	padding: 26px 20px 44px !important;
+}
+
+.checkout-grid {
+	display: grid !important;
+	grid-template-columns: minmax(0, 1.38fr) minmax(340px, 0.92fr) !important;
+	gap: 22px !important;
+	align-items: start !important;
+}
+
+.checkout-left,
+.checkout-right {
+	display: flex !important;
+	flex-direction: column !important;
+	gap: 18px !important;
+}
+
+.checkout-right {
+	position: sticky;
+	top: 18px;
+	align-self: start;
+}
+
+.checkout-card {
+	padding: 18px 20px !important;
+	border-radius: 22px !important;
+}
+
+.checkout-card-header {
+	margin-bottom: 14px !important;
+}
+
+.checkout-card-header h2 {
+	font-size: 21px !important;
+	line-height: 1.25 !important;
+}
+
+.payment-methods,
+.delivery-options {
+	gap: 10px !important;
+}
+
+.payment-option,
+.delivery-option {
+	padding: 13px 14px !important;
+	border-radius: 16px !important;
+}
+
+.e-invoice-card {
+	padding: 16px 18px !important;
+}
+
+.e-invoice-header-line {
+	gap: 12px;
+}
+
+.e-invoice-info {
+	gap: 12px;
+}
+
+.e-invoice-icon {
+	width: 42px;
+	height: 42px;
+	flex: 0 0 42px;
+	border-radius: 14px;
+	font-size: 20px;
+}
+
+.e-invoice-info h2 {
+	font-size: 18px;
+}
+
+.e-invoice-info p {
+	font-size: 13px;
+	line-height: 1.4;
+}
+
+.e-invoice-open-btn {
+	min-width: 162px;
+	min-height: 42px;
+	padding: 0 16px;
+	font-size: 13.5px;
+}
+
+.e-invoice-selected-box {
+	margin-top: 12px;
+	padding: 12px 13px;
+	border-radius: 14px;
+	font-size: 13px;
+}
+
+.e-invoice-dialog {
+	display: flex;
+	flex-direction: column;
+	width: min(660px, calc(100vw - 32px));
+	max-height: min(84vh, 760px);
+	border-radius: 22px;
+}
+
+.e-invoice-modal-header {
+	min-height: 76px;
+	padding: 18px 78px 16px;
+}
+
+.e-invoice-modal-header h3 {
+	font-size: 20px;
+}
+
+.e-invoice-close {
+	left: 16px;
+	top: 14px;
+	width: 46px;
+	height: 46px;
+	padding: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 14px;
+	background: #fff1f6;
+	color: var(--checkout-brand);
+	font-size: 0;
+	line-height: 1;
+	box-shadow: inset 0 0 0 1px #f7cade;
+}
+
+.e-invoice-close:hover {
+	background: #ffe5f0;
+	color: var(--checkout-brand-dark);
+	transform: none;
+}
+
+.e-invoice-close-icon {
+	display: block;
+	font-size: 32px;
+	line-height: 1;
+	font-weight: 500;
+	transform: translateY(-1px);
+}
+
+.e-invoice-modal-body {
+	max-height: calc(min(84vh, 760px) - 144px);
+	padding: 16px 18px 18px;
+	scrollbar-gutter: stable;
+}
+
+.e-invoice-type-row {
+	gap: 24px;
+	margin-bottom: 14px;
+}
+
+.e-invoice-radio {
+	font-size: 15px;
+}
+
+.e-invoice-radio input {
+	width: 20px;
+	height: 20px;
+}
+
+.e-invoice-form {
+	gap: 12px;
+}
+
+.e-invoice-grid-2 {
+	gap: 12px;
+}
+
+.e-invoice-input {
+	min-height: 52px;
+	padding: 0 15px;
+	border-radius: 13px;
+	font-size: 14.5px;
+}
+
+.e-invoice-use-address {
+	min-height: 48px;
+	border-radius: 13px;
+	font-size: 15px;
+}
+
+.e-invoice-save-row {
+	font-size: 14.5px;
+}
+
+.e-invoice-note {
+	grid-template-columns: 30px 1fr;
+	gap: 10px;
+	padding: 14px;
+	border-radius: 14px;
+}
+
+.e-invoice-note-icon {
+	font-size: 22px;
+}
+
+.e-invoice-note strong {
+	margin-bottom: 4px;
+	font-size: 15px;
+}
+
+.e-invoice-note li {
+	font-size: 13.5px;
+	margin: 3px 0;
+}
+
+.e-invoice-modal-footer {
+	padding: 14px 18px 18px;
+}
+
+.e-invoice-submit {
+	min-height: 52px;
+	border-radius: 13px;
+	font-size: 16px;
+}
+
+@media (max-width: 1100px) {
+	.checkout-grid {
+		grid-template-columns: 1fr !important;
+	}
+
+	.checkout-right {
+		position: static;
+	}
+}
+
+@media (max-width: 640px) {
+	.checkout-container {
+		padding: 18px 12px 28px !important;
+	}
+
+	.checkout-card {
+		padding: 15px 14px !important;
+		border-radius: 18px !important;
+	}
+
+	.e-invoice-dialog {
+		width: 100%;
+		max-height: 88vh;
+		border-radius: 18px;
+	}
+
+	.e-invoice-modal-header {
+		min-height: 68px;
+		padding: 16px 58px 14px;
+	}
+
+	.e-invoice-modal-header h3 {
+		font-size: 18px;
+	}
+
+	.e-invoice-close {
+		left: 12px;
+		top: 11px;
+		width: 42px;
+		height: 42px;
+		border-radius: 12px;
+	}
+
+	.e-invoice-close-icon {
+		font-size: 28px;
+	}
+
+	.e-invoice-modal-body {
+		max-height: calc(88vh - 132px);
+		padding: 14px 14px 16px;
+	}
+
+	.e-invoice-type-row {
+		gap: 18px;
+		flex-wrap: wrap;
+	}
+
+	.e-invoice-grid-2 {
+		grid-template-columns: 1fr;
+		gap: 10px;
+	}
+
+	.e-invoice-header-line {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.e-invoice-open-btn {
+		width: 100%;
+	}
+}
+
+
+/* =========================================================
+   ISSUE 146 - VNPAY ONLY PAYMENT ICON
+========================================================= */
+
+.payment-supported-logos {
+	display: flex !important;
+	align-items: center !important;
+	justify-content: flex-start !important;
+	gap: 10px !important;
+	margin: -4px 0 16px !important;
+}
+
+.payment-supported-logo-single {
+	width: 176px !important;
+	max-width: 100% !important;
+}
+
+.payment-supported-logo img,
+.payment-icon-logo img {
+	display: block !important;
+	width: 100% !important;
+	height: 100% !important;
+	object-fit: contain !important;
+}
+
+.payment-icon-text {
+	font-size: 13px !important;
+	font-weight: 900 !important;
+	letter-spacing: 0.04em !important;
+	color: var(--text-main) !important;
+}
+
+.e-invoice-form.is-hidden {
+	display: none !important;
+}
+
+.e-invoice-form-spacing {
+	margin-top: 14px !important;
+}
+
+@media (max-width: 640px) {
+	.payment-supported-logo-single {
+		width: 150px !important;
+	}
 }
