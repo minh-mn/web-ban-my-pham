@@ -5141,3 +5141,26 @@ td.product-actions {
     font-size: 22px;
   }
 }
+
+/* =====================================================
+   Issue 143 - Dynamic Role Permission List
+===================================================== */
+.admin-list-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.admin-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+@media (max-width: 768px) {
+  .admin-list-head {
+    flex-direction: column;
+  }
+}
