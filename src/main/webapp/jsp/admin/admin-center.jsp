@@ -26,6 +26,7 @@
 <c:set var="canRoles" value="${isSuperAdmin or (not empty adminPermissions and adminPermissions.contains('ROLE_MANAGE'))}"/>
 <c:set var="canNotifications" value="${isSuperAdmin or (not empty adminPermissions and adminPermissions.contains('NOTIFICATION_MANAGE'))}"/>
 <c:set var="canRanks" value="${isSuperAdmin or (not empty adminPermissions and adminPermissions.contains('RANK_MANAGE'))}"/>
+<c:set var="canAuditLogs" value="${isSuperAdmin or (not empty adminPermissions and adminPermissions.contains('AUDIT_LOG_VIEW'))}"/>
 
 <jsp:include page="/jsp/admin/layout/header.jsp"/>
 <jsp:include page="/jsp/admin/layout/sidebar.jsp"/>
@@ -193,6 +194,16 @@
               <div class="admin-menu-card__title">Hệ thống Thông báo</div>
               <p class="admin-menu-card__desc">Gửi thông báo sự kiện, voucher, ưu đãi giảm giá đến khách hàng.</p>
               <span class="admin-chip">Hệ thống / Broadcast</span>
+            </a>
+          </c:if>
+
+          <c:if test="${canAuditLogs}">
+            <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/audit-logs">
+              <div class="admin-menu-card__title">Nhật ký hệ thống</div>
+              <p class="admin-menu-card__desc">
+                Truy vết admin đã sửa sản phẩm, đổi trạng thái đơn hàng, nhập kho hoặc thay đổi dữ liệu nhạy cảm.
+              </p>
+              <span class="admin-chip">Hệ thống / Audit</span>
             </a>
           </c:if>
         </div>
