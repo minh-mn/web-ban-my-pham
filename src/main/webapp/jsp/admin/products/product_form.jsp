@@ -241,55 +241,57 @@
           <!-- =====================================================
                QUẢN LÝ BIỂN THỂ SẢN PHẨM
           ====================================================== -->
-          <div class="admin-card" style="margin-top: 20px;">
-            <div class="admin-form-section__title">
-              <h2>Quản lý Biến thể sản phẩm</h2>
-            </div>
-            <div class="admin-card__body">
-              <table class="admin-table" id="variantTable">
+          <section class="admin-form-section product-form-section" style="margin-top: 14px;">
+            <h2 class="admin-form-section__title">Quản lý Biến thể sản phẩm</h2>
+
+            <div class="category-tag-table-wrap">
+              <table class="category-tag-table" id="variantTable">
                 <thead>
                 <tr>
-                  <th>SKU</th>
                   <th>Kích thước (Size)</th>
-                  <th>Màu sắc</th>
-                  <th>Giá cộng thêm</th>
+                  <th>Loại (Type)</th>
+                  <th>Giá cộng thêm (VNĐ)</th>
                   <th>Tồn kho</th>
-                  <th>Mức cảnh báo</th>
-                  <th>Hành động</th>
+                  <th style="width: 90px; text-align: center;">Hành động</th>
                 </tr>
                 </thead>
                 <tbody>
                 <c:choose>
                   <c:when test="${not empty variants}">
                     <c:forEach var="v" items="${variants}">
-                      <tr>
-                        <td><input type="text" name="v_sku[]" class="admin-input" value="${fn:escapeXml(v.sku)}" placeholder="SKU tự động nếu bỏ trống"></td>
-                        <td><input type="text" name="v_size[]" class="admin-input" value="${fn:escapeXml(v.size)}"></td>
-                        <td><input type="text" name="v_color[]" class="admin-input" value="${fn:escapeXml(empty v.color ? v.type : v.color)}"></td>
-                        <td><input type="number" name="v_price[]" class="admin-input" value="${v.extraPrice}"></td>
-                        <td><input type="number" name="v_stock[]" class="admin-input" value="${v.stock}"></td>
-                        <td><input type="number" name="v_min_stock[]" class="admin-input" min="1" value="${v.minStock}"></td>
-                        <td><button type="button" class="admin-btn admin-btn--danger" onclick="removeRow(this)">Xóa</button></td>
+                      <tr class="category-tag-row">
+                        <td><input type="text" name="v_size[]" class="admin-input" value="${fn:escapeXml(v.size)}" placeholder="VD: XL"></td>
+                        <td><input type="text" name="v_type[]" class="admin-input" value="${fn:escapeXml(v.type)}" placeholder="VD: Đỏ"></td>
+                        <td><input type="number" name="v_price[]" class="admin-input" value="${v.extraPrice}" min="0"></td>
+                        <td><input type="number" name="v_stock[]" class="admin-input" value="${v.stock}" min="0"></td>
+                        <td style="text-align: center;">
+                          <button type="button" class="admin-btn admin-btn--danger category-tag-remove" onclick="removeRow(this)">Xóa</button>
+                        </td>
                       </tr>
                     </c:forEach>
                   </c:when>
                   <c:otherwise>
-                    <tr>
-                      <td><input type="text" name="v_sku[]" class="admin-input" placeholder="SKU tự động nếu bỏ trống"></td>
+                    <tr class="category-tag-row">
                       <td><input type="text" name="v_size[]" class="admin-input" placeholder="VD: XL"></td>
-                      <td><input type="text" name="v_color[]" class="admin-input" placeholder="VD: Đỏ / Hồng đất"></td>
-                      <td><input type="number" name="v_price[]" class="admin-input" value="0"></td>
-                      <td><input type="number" name="v_stock[]" class="admin-input" value="0"></td>
-                      <td><input type="number" name="v_min_stock[]" class="admin-input" min="1" value="5"></td>
-                      <td><button type="button" class="admin-btn admin-btn--danger" onclick="removeRow(this)">Xóa</button></td>
+                      <td><input type="text" name="v_type[]" class="admin-input" placeholder="VD: Đỏ"></td>
+                      <td><input type="number" name="v_price[]" class="admin-input" value="0" min="0"></td>
+                      <td><input type="number" name="v_stock[]" class="admin-input" value="0" min="0"></td>
+                      <td style="text-align: center;">
+                        <button type="button" class="admin-btn admin-btn--danger category-tag-remove" onclick="removeRow(this)">Xóa</button>
+                      </td>
                     </tr>
                   </c:otherwise>
                 </c:choose>
                 </tbody>
               </table>
-              <button type="button" class="admin-btn" onclick="addRow()" style="margin-top: 10px;">+ Thêm biến thể</button>
             </div>
-          </div>
+
+            <div style="margin-top: 14px; display: flex; justify-content: flex-end;">
+              <button type="button" class="admin-btn" onclick="addRow()" style="background: #fff; border: 1px solid var(--admin-border); color: var(--admin-text); height: 38px;">
+                + Thêm biến thể
+              </button>
+            </div>
+          </section>
 
 
           <!-- =====================================================
@@ -645,12 +647,10 @@ function addRow() {
     const tableBody = document.querySelector("#variantTable tbody");
     const newRow = document.createElement("tr");
     newRow.innerHTML = `
-        <td><input type="text" name="v_sku[]" class="admin-input" placeholder="SKU tự động nếu bỏ trống"></td>
         <td><input type="text" name="v_size[]" class="admin-input"></td>
-        <td><input type="text" name="v_color[]" class="admin-input"></td>
+        <td><input type="text" name="v_type[]" class="admin-input"></td>
         <td><input type="number" name="v_price[]" class="admin-input" value="0"></td>
         <td><input type="number" name="v_stock[]" class="admin-input" value="0"></td>
-        <td><input type="number" name="v_min_stock[]" class="admin-input" min="1" value="5"></td>
         <td><button type="button" class="admin-btn admin-btn--danger" onclick="removeRow(this)">Xóa</button></td>
     `;
     tableBody.appendChild(newRow);
@@ -658,6 +658,25 @@ function addRow() {
 
   function removeRow(btn) {
     btn.closest("tr").remove();
+  }
+
+  function addRow() {
+    const tableBody = document.querySelector("#variantTable tbody");
+    const newRow = document.createElement("tr");
+
+    // Áp dụng class chuẩn của Admin table cho row khi thêm mới
+    newRow.className = "category-tag-row";
+
+    newRow.innerHTML = `
+        <td><input type="text" name="v_size[]" class="admin-input" placeholder="VD: XL"></td>
+        <td><input type="text" name="v_type[]" class="admin-input" placeholder="VD: Đỏ"></td>
+        <td><input type="number" name="v_price[]" class="admin-input" value="0" min="0"></td>
+        <td><input type="number" name="v_stock[]" class="admin-input" value="0" min="0"></td>
+        <td style="text-align: center;">
+          <button type="button" class="admin-btn admin-btn--danger category-tag-remove" onclick="removeRow(this)">Xóa</button>
+        </td>
+    `;
+    tableBody.appendChild(newRow);
   }
 </script>
 
