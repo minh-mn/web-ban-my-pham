@@ -765,3 +765,58 @@
         height: 250px;
     }
 }
+
+.pd-variant-box {
+    padding: 8px 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    background: #fff;
+    color: #475569;
+    transition: all 0.2s ease;
+    font-weight: 500;
+    user-select: none;
+}
+
+/* Hiệu ứng khi di chuột qua */
+.pd-variant-box:hover {
+    border-color: #ff5fa2;
+    color: #ff5fa2;
+    background-color: #fff7fa;
+}
+
+/* Kỹ thuật CSS Sibling: Tự động kích hoạt style khi ô Radio được Checked */
+.pd-variant-radio:checked + .pd-variant-box {
+    border-color: #ff5fa2 !important;
+    background-color: #fff1f6 !important;
+    color: #ff5fa2 !important;
+    font-weight: 600;
+    box-shadow: 0 0 0 1px #ff5fa2;
+}
+
+/* Ẩn radio mặc định */
+.pd-variant-item input[type="radio"] {
+    display: none;
+}
+
+/* Box biến thể */
+.pd-variant-box {
+    padding: 10px 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    background: #fff;
+    transition: all .2s ease;
+}
+
+/* Hover */
+.pd-variant-item:hover .pd-variant-box {
+    border-color: #ec4899;
+}
+
+/* Được chọn */
+.pd-variant-item input[type="radio"]:checked + .pd-variant-box {
+    border-color: #ec4899;
+    background: #fdf2f8;
+    color: #be185d;
+    font-weight: 600;
+}
