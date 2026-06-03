@@ -201,6 +201,13 @@ public class CartServlet extends HttpServlet {
             System.out.println("[CartServlet] enrich flash sale limit skipped: " + e.getMessage());
         }
 
+        /*
+         * Cập nhật lại session và lưu xuống database sau khi thêm sản phẩm.
+         * Nếu không lưu ở đây, giỏ hàng đăng nhập có thể bị lệch giữa session và cart_items.
+         */
+        session.setAttribute(CartUtil.CART_SESSION_KEY, cart);
+        CartUtil.saveCartForLoggedUser(session);
+
         resp.sendRedirect(req.getContextPath() + "/cart?added=1");
     }
 
