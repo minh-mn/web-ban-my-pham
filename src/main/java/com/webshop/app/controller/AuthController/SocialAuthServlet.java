@@ -7,8 +7,6 @@ import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.webshop.app.dao.UserDAO;
 import com.webshop.app.model.User;
-import com.webshop.app.utils.EmailUtil;
-import jakarta.mail.MessagingException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,7 +16,6 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.Collections;
-import java.util.Random;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Scanner;
@@ -32,6 +29,7 @@ public class SocialAuthServlet extends HttpServlet {
 
     private final UserDAO userDAO = new UserDAO();
 
+    // Giữ nguyên Client ID của bạn
     private static final String GOOGLE_CLIENT_ID = "78979081819-fo21lsm5idv3pp22779bais8l1f5csnm.apps.googleusercontent.com";
 
     @Override
@@ -39,14 +37,12 @@ public class SocialAuthServlet extends HttpServlet {
         req.setCharacterEncoding("UTF-8");
         System.out.println("Đã nhận được request tại SocialAuthServlet!");
         System.out.println("Provider: " + req.getParameter("provider"));
-        System.out.println("Mode: " + req.getParameter("mode"));
 
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 
         String provider = req.getParameter("provider");
         String credential = req.getParameter("credential");
-        String mode = req.getParameter("mode");
 
         if (!"google".equalsIgnoreCase(provider) && !"facebook".equalsIgnoreCase(provider)) {
             resp.getWriter().write("{\"status\":\"error\",\"message\":\"Provider không hỗ trợ\"}");
@@ -58,6 +54,7 @@ public class SocialAuthServlet extends HttpServlet {
             String socialId = null;
             String fullName = null;
 
+            // 1. Xác thực và lấy thông tin từ Google/Facebook
             if ("google".equalsIgnoreCase(provider)) {
                 GoogleIdToken.Payload payload = verifyGoogleCredential(credential);
                 email = payload.getEmail();
@@ -83,27 +80,20 @@ public class SocialAuthServlet extends HttpServlet {
                 return;
             }
 
-            if ("register".equalsIgnoreCase(mode)) {
-                handleRegister(req, resp, email, fullName, socialId, provider);
-            } else {
-                handleLogin(req, resp, email, fullName, socialId, provider);
-            }
+            // 2. Gom tất cả về một hàm xử lý tài khoản thông minh (Bỏ phân biệt register/login qua OTP)
+            handleSocialAuthUnified(req, resp, email, fullName, socialId, provider);
 
         } catch (Exception e) {
             e.printStackTrace();
             resp.getWriter().write(
-                    "{\"status\":\"error\",\"message\":\"" +
-                            e.getMessage().replace("\"", "") +
-                            "\"}"
+                    "{\"status\":\"error\",\"message\":\"" + e.getMessage().replace("\"", "") + "\"}"
             );
         }
     }
 
     private GoogleIdToken.Payload verifyGoogleCredential(String credential)
             throws GeneralSecurityException, IOException {
-
         NetHttpTransport transport = GoogleNetHttpTransport.newTrustedTransport();
-
         GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
                 transport,
                 JacksonFactory.getDefaultInstance()
@@ -112,73 +102,16 @@ public class SocialAuthServlet extends HttpServlet {
                 .build();
 
         GoogleIdToken idToken = verifier.verify(credential);
-
         if (idToken == null) {
             throw new RuntimeException("Google token không hợp lệ");
         }
-
         return idToken.getPayload();
     }
 
     // =========================================================================
-    // HÀM XỬ LÝ ĐĂNG KÝ (TỰ ĐỘNG CHUYỂN ĐĂNG NHẬP NẾU TỒN TẠI TÀI KHOẢN)
+    // HÀM XỬ LÝ ĐĂNG NHẬP & GỘP TÀI KHOẢN TỰ ĐỘNG (UNIFIED FLOW)
     // =========================================================================
-    private void handleRegister(
-            HttpServletRequest req,
-            HttpServletResponse resp,
-            String email,
-            String fullName,
-            String socialId,
-            String provider
-    ) throws IOException, MessagingException {
-
-        User existingUser = userDAO.findByEmail(email);
-
-        if (existingUser != null) {
-            resp.getWriter().write("{\"status\":\"error\",\"message\":\"Tài khoản đã tồn tại\"}");
-            return;
-        }
-
-        HttpSession session = req.getSession();
-        User pendingUser = new User();
-
-        pendingUser.setUsername(email);
-        pendingUser.setEmail(email);
-        pendingUser.setFullName(fullName);
-        pendingUser.setActive(true);
-
-        session.setAttribute("pendingUser", pendingUser);
-        session.setAttribute("pendingProvider", provider);
-        session.setAttribute("pendingSocialId", socialId);
-
-        String otp = String.format("%06d", new Random().nextInt(999999));
-        session.setAttribute("REGISTER_OTP", otp);
-        session.setAttribute("OTP_TIME", System.currentTimeMillis());
-
-        String subject = "Mã OTP xác thực tài khoản";
-        String content = """
-                <h2>Xác thực tài khoản</h2>
-                <p>Mã OTP của bạn:</p>
-                <h1 style='color:#e91e63'>%s</h1>
-                <p>Mã có hiệu lực 5 phút.</p>
-                """.formatted(otp);
-
-        EmailUtil.sendHtml(email, subject, content);
-
-        String accessToken = req.getParameter("accessToken");
-        if (accessToken == null || accessToken.isBlank()) {
-            accessToken = req.getParameter("token");
-        }
-
-        resp.getWriter().write(
-                "{\"status\":\"otp_required\",\"redirectUrl\":\"/verify-registration\",\"message\":\"Mã OTP đã được gửi về email của bạn.\"}"
-        );
-    }
-
-    // =========================================================================
-    // HÀM XỬ LÝ ĐĂNG NHẬP
-    // =========================================================================
-    private void handleLogin(
+    private void handleSocialAuthUnified(
             HttpServletRequest req,
             HttpServletResponse resp,
             String email,
@@ -187,26 +120,44 @@ public class SocialAuthServlet extends HttpServlet {
             String provider
     ) throws IOException {
 
+        // Bước 1: Kiểm tra xem ID mạng xã hội này đã từng liên kết với tài khoản nào chưa
         User user = userDAO.findBySocialId(provider, socialId);
 
         if (user == null) {
+            // Bước 2: Nếu chưa kết nối Social ID, tìm tài khoản theo Email hệ thống
             user = userDAO.findByEmail(email);
 
             if (user == null) {
+                // TRƯỜNG HỢP A: Email chưa từng tồn tại -> Tạo mới tài khoản hoàn toàn
                 User newUser = new User();
                 newUser.setUsername(email);
                 newUser.setEmail(email);
                 newUser.setFullName(fullName);
                 newUser.setActive(true);
 
+                // Lưu ý: Không set giá trị password tại đây để đảm bảo password lưu xuống DB là NULL 
+                // (Hãy kiểm tra hàm userDAO.saveSocialUser của bạn xem có đang truyền trực tiếp giá trị NULL vào câu lệnh INSERT SQL không)
                 userDAO.saveSocialUser(newUser, provider, socialId);
-                user = userDAO.findBySocialId(provider, socialId);
 
+                // Lấy lại thông tin user vừa tạo
+                user = userDAO.findBySocialId(provider, socialId);
             } else {
+                // TRƯỜNG HỢP B: Email ĐÃ TỒN TẠI trên hệ thống (Do đăng ký thường hoặc social khác trước đó)
+                // Tiến hành cập nhật thêm social_id (google_id hoặc facebook_id) vào chính tài khoản đó mà KHÔNG ĐỔI mật khẩu cũ.
                 userDAO.updateSocialId(user.getId(), provider, socialId);
+
+                // Đọc lại dữ liệu mới nhất sau khi cập nhật liên kết
+                user = userDAO.findByEmail(email);
             }
         }
-        
+
+        // Bước 3: Kiểm tra trạng thái hoạt động của tài khoản
+        if (user != null && !user.isActive()) {
+            resp.getWriter().write("{\"status\":\"error\",\"message\":\"Tài khoản của bạn hiện đang bị khóa!\"}");
+            return;
+        }
+
+        // Bước 4: Đăng nhập thành công và ghi nhận Session giống luồng cũ của bạn
         HttpSession session = req.getSession();
         session.setAttribute("user", user);
 
@@ -225,13 +176,12 @@ public class SocialAuthServlet extends HttpServlet {
             throw new RuntimeException("Facebook token không hợp lệ hoặc đã hết hạn");
         }
 
-        Scanner scanner = new Scanner(url.openStream());
-        StringBuilder response = new StringBuilder();
-        while (scanner.hasNext()) {
-            response.append(scanner.nextLine());
+        try (Scanner scanner = new Scanner(url.openStream())) {
+            StringBuilder response = new StringBuilder();
+            while (scanner.hasNext()) {
+                response.append(scanner.nextLine());
+            }
+            return JsonParser.parseString(response.toString()).getAsJsonObject();
         }
-        scanner.close();
-
-        return JsonParser.parseString(response.toString()).getAsJsonObject();
     }
 }
