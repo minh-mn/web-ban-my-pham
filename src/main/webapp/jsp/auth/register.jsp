@@ -785,4 +785,75 @@
               Swal.fire('Lỗi mạng', 'Không thể kết nối máy chủ để gửi lại mã!', 'error');
             });
   }
+
+  function handleGoogleRegisterResponse(response) {
+    // 1. Hiển thị hiệu ứng chờ loading của SweetAlert2
+    Swal.fire({
+      title: 'Đang xác thực tài khoản Google...',
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+
+    // 2. Gửi dữ liệu qua AJAX lên SocialAuthServlet
+    fetch('${pageContext.request.contextPath}/social-auth', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: 'provider=google&credential=' + encodeURIComponent(response.credential)
+    })
+            .then(res => {
+              if (!res.ok) throw new Error("Mạng có sự cố hoặc lỗi Server");
+              return res.json();
+            })
+            .then(data => {
+              if (data.status === "success") {
+                // 3. HIỂN THỊ THÔNG BÁO CHO NGƯỜI DÙNG BIẾT VÀ ĐƯA VÀO HOME THẲNG
+                Swal.fire({
+                  icon: "success",
+                  title: "Thành công!",
+                  text: data.message, // Hiển thị "Đăng nhập và liên kết tài khoản thành công!"
+                  timer: 1500, // Hiển thị trong 1.5 giây rồi tự đóng
+                  showConfirmButton: false
+                }).then(() => {
+                  // Đưa người dùng vào thẳng trang chủ mà không cần đăng nhập lại
+                  window.location.href = data.redirectUrl;
+                });
+              } else {
+                // Hiển thị lỗi nếu có sự cố từ hệ thống
+                Swal.fire({
+                  icon: "error",
+                  title: "Thất bại",
+                  text: data.message
+                });
+              }
+            })
+            .catch(err => {
+              Swal.fire({
+                icon: "error",
+                title: "Lỗi kết nối",
+                text: "Không thể kết nối đến máy chủ, vui lòng thử lại sau!"
+              });
+            });
+  }
+
+  window.navigator.id || (window.onload = function () {
+    google.accounts.id.initialize({
+      client_id: "78979081819-fo21lsm5idv3pp22779bais8l1f5csnm.apps.googleusercontent.com",
+      callback: handleGoogleRegisterResponse
+    });
+
+    const btnContainer = document.getElementById("googleRegisterBtn");
+    if(btnContainer) {
+      google.accounts.id.renderButton(btnContainer, {
+        theme: "outline",       // Hoặc "filled_blue" nếu muốn nút nền xanh dương
+        size: "large",          // Kích thước nút lớn
+        text: "signup_with",    // Hiển thị chữ "Đăng ký với Google"
+        shape: "pill",   // Hình chữ nhật bo góc nhẹ (giống kiểu nút Facebook của bạn)
+        width: "350"            // ĐIỀN ĐỘ RỘNG (PIXEL) Ở ĐÂY: Thay số 320 thành kích thước bằng với nút Facebook của bạn
+      });
+    }
+  });
 </script>
