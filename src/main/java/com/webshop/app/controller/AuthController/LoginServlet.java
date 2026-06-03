@@ -71,19 +71,12 @@ public class LoginServlet extends HttpServlet {
                 long minutesLeft = secondsLeft / 60;
                 String timeStr = minutesLeft > 0 ? minutesLeft + " phút" : secondsLeft + " giây";
 
-                sendJsonResponse(resp, "error", "Tài khoản bị khóa do đăng nhập sai quá 5 lần. Thử lại sau " + timeStr + ".", null);
+                sendJsonResponse(resp, "error", "Tài khoản bị khóa. Thử lại sau " + timeStr + ".", null);
                 return;
             } else {
-                // Quá thời gian khóa -> Mở khóa tự động
                 lockTime.remove(lowerUsername);
                 failedAttempts.remove(lowerUsername);
             }
-        }
-
-        // 2. Kiểm tra định dạng đầu vào cơ bản
-        if (username != null && !username.equals(username.toLowerCase())) {
-            sendJsonResponse(resp, "error", "Tên đăng nhập không được phép chứa chữ in hoa.", null);
-            return;
         }
 
         if (username == null || username.isBlank() || password == null || password.isBlank()) {
@@ -91,11 +84,30 @@ public class LoginServlet extends HttpServlet {
             return;
         }
 
-        // 3. Tiến hành xác thực qua DB
-        User user = userDAO.login(username.trim(), password);
+        // 2. Tìm User theo Username hoặc Email
+        User user = userDAO.findByUsernameOrEmail(username.trim());
+        boolean isLoginSuccess = false;
 
-        if (user == null) {
-            // Xử lý tăng số lần đăng nhập sai
+        if (user != null) {
+            // Kiểm tra: Nếu là user đăng nhập bằng Social (password là null)
+            if (user.getPassword() == null || user.getPassword().isBlank()) {
+                sendJsonResponse(resp, "error", "Tài khoản này được tạo bằng Google/Facebook. Vui lòng đăng nhập bằng mạng xã hội.", null);
+                return;
+            }
+
+            // Kiểm tra mật khẩu bình thường
+            if (com.webshop.app.utils.PasswordUtils.verify(password, user.getPassword())) {
+                if (user.isActive()) {
+                    isLoginSuccess = true;
+                } else {
+                    sendJsonResponse(resp, "error", "Tài khoản của bạn đã bị khóa.", null);
+                    return;
+                }
+            }
+        }
+
+        // 3. Xử lý kết quả đăng nhập
+        if (!isLoginSuccess) {
             int attempts = failedAttempts.getOrDefault(lowerUsername, 0) + 1;
             failedAttempts.put(lowerUsername, attempts);
 
@@ -108,24 +120,13 @@ public class LoginServlet extends HttpServlet {
             return;
         }
 
-        if (user.getId() <= 0) {
-            sendJsonResponse(resp, "error", "Tài khoản không hợp lệ, không tìm thấy ID người dùng.", null);
-            return;
-        }
-
         // Đăng nhập thành công -> Reset bộ đếm sai
         failedAttempts.remove(lowerUsername);
         lockTime.remove(lowerUsername);
 
-        // Khởi tạo session lưu thông tin đăng nhập
         HttpSession session = req.getSession(true);
         session.setAttribute("user", user);
 
-        /*
-         * Issue 132:
-         * Sau khi đăng nhập thành công, gộp giỏ hàng đã lưu trong database
-         * với giỏ hàng hiện có trong session.
-         */
         CartUtil.mergeDatabaseCartIntoSession(session, user.getId());
 
         boolean rememberMe = "on".equalsIgnoreCase(remember) || "true".equalsIgnoreCase(remember);
@@ -137,14 +138,10 @@ public class LoginServlet extends HttpServlet {
 
         clearLegacyRememberToken(resp, req.getContextPath());
 
-        // Điều hướng sau đăng nhập thành công
         String ctx = req.getContextPath();
         String redirectUrl = ctx + "/";
-
-        if (redirect != null && !redirect.isBlank()) {
-            if (redirect.startsWith("/") && !redirect.startsWith("//")) {
-                redirectUrl = ctx + redirect;
-            }
+        if (redirect != null && !redirect.isBlank() && redirect.startsWith("/") && !redirect.startsWith("//")) {
+            redirectUrl = ctx + redirect;
         }
 
         sendJsonResponse(resp, "success", "Đăng nhập thành công!", redirectUrl);
