@@ -135,12 +135,12 @@
                                     <c:param name="productId" value="${item.productId}" />
                                 </c:url>
 
-                                <c:set var="calcSubtotal" value="${calcSubtotal + itemSubtotal}" />
+                                <c:set var="calcSubtotal" value="${calcSubtotal + itemOriginalSubtotal}" />
                                 <c:set var="calcDiscount" value="${calcDiscount + itemDiscount}" />
                                 <c:set var="calcSelectedCount" value="${calcSelectedCount + 1}" />
 
                                 <tr class="cart-row ${item.flashSaleItem ? 'cart-row--flash-sale' : ''} ${item.flashSaleLimitReached ? 'cart-row--flash-limit' : ''}"
-                                    data-subtotal="${itemSubtotal}"
+                                    data-subtotal="${itemOriginalSubtotal}"
                                     data-discount="${itemDiscount}"
                                     data-flash-sale="${item.flashSaleItem}"
                                     data-flash-limit-reached="${item.flashSaleLimitReached}">
@@ -260,7 +260,7 @@
                         </table>
                     </div>
 
-                    <c:set var="summarySubtotal" value="${empty requestScope.subtotal ? (empty requestScope.total ? calcSubtotal : requestScope.total) : requestScope.subtotal}" />
+                    <c:set var="summarySubtotal" value="${empty requestScope.subtotal ? calcSubtotal : requestScope.subtotal}" />
                     <c:set var="summaryDiscount" value="${empty requestScope.discountAmount ? calcDiscount : requestScope.discountAmount}" />
                     <c:set var="summaryTotal" value="${empty requestScope.totalAmount ? summarySubtotal - summaryDiscount : requestScope.totalAmount}" />
                     <c:set var="summarySelectedCount" value="${empty requestScope.selectedCount ? calcSelectedCount : requestScope.selectedCount}" />
