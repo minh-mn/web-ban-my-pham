@@ -3,6 +3,7 @@ package com.webshop.app.controller.AuthController;
 import com.webshop.app.dao.UserDAO;
 import com.webshop.app.model.User;
 import com.webshop.app.utils.CartUtil;
+import com.webshop.app.utils.PasswordUtils;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -82,10 +83,7 @@ public class VerifyRegistrationServlet extends HttpServlet {
 
             } else {
 
-                boolean inserted =
-                        userDAO.insert(
-                                pendingUser
-                        );
+                boolean inserted = userDAO.insert(pendingUser);
 
                 if (!inserted) {
 
