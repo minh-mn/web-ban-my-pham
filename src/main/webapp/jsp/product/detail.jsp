@@ -133,7 +133,7 @@
 
             <div class="pd-price-panel">
               <div class="pd-price-line">
-                <strong class="pd-current-price">
+                <strong class="pd-current-price" id="price-display" data-base-price="${currentPrice}">
                   <fmt:formatNumber value="${currentPrice}" type="number" groupingUsed="true" />đ
                 </strong>
 
@@ -165,6 +165,41 @@
               <input type="hidden" name="quickAdd" value="1" />
               <input type="hidden" name="productId" value="${p.id}" />
               <input type="hidden" name="csrf_token" value="${sessionScope.CSRF_TOKEN}" />
+
+              <c:if test="${not empty variants}">
+                <div class="pd-variants-wrapper" style="margin: 15px 0 20px 0;">
+                  <span class="pd-variant-label" style="font-weight: 600; display: block; margin-bottom: 10px; color: #334155; font-size: 0.9rem;">
+                    Chọn phân loại:
+                  </span>
+
+                  <div class="pd-variants-list" style="display: flex; flex-wrap: wrap; gap: 10px;">
+                    <c:forEach var="v" items="${variants}" varStatus="st">
+                      <label class="pd-variant-item" style="cursor: pointer; position: relative;">
+                        <input type="radio"
+                               name="variantId"
+                               value="${v.id}"
+                               class="variant-option"
+                               data-extra-price="${empty v.extraPrice ? 0 : v.extraPrice}"
+                               onchange="updatePrice()"
+                          ${st.first ? 'checked' : ''} />
+
+                        <div class="pd-variant-box">
+                          <c:out value="${v.size}" />
+                          <c:if test="${not empty v.size && not empty v.type}"> - </c:if>
+                          <c:out value="${v.type}" />
+
+                            <%-- Nếu có giá cộng thêm thì hiển thị kèm theo --%>
+                          <c:if test="${not empty v.extraPrice && v.extraPrice > 0}">
+                            <span style="font-size: 0.8rem; margin-left: 4px; opacity: 0.8;">
+                              (+<fmt:formatNumber value="${v.extraPrice}" type="number" groupingUsed="true" />đ)
+                            </span>
+                          </c:if>
+                        </div>
+                      </label>
+                    </c:forEach>
+                  </div>
+                </div>
+              </c:if>
 
               <div class="pd-buy-row">
                 <label class="pd-qty-label" for="pdQuantity">Số lượng:</label>
@@ -276,6 +311,95 @@
             </c:forEach>
           </div>
         </section>
+
+        <section class="pd-section pd-reviews-section">
+          <div class="pd-section-head">
+            <span></span>
+            <div>
+              <h2>Đánh giá từ khách hàng</h2>
+              <p>Tổng số <c:out value="${empty p.reviewCount ? 0 : p.reviewCount}" /> lượt đánh giá dành cho sản phẩm này.</p>
+            </div>
+          </div>
+
+          <div class="pd-reviews-container" style="margin-top: 25px;">
+            <c:choose>
+              <%-- Trường hợp chưa có bình luận nào --%>
+              <c:when test="${empty reviews}">
+                <div class="pd-no-reviews" style="padding: 40px; text-align: center; color: #777; background: #f9f9f9; border-radius: 8px;">
+                  <p>Chưa có đánh giá nào cho sản phẩm này.</p>
+                </div>
+              </c:when>
+
+              <%-- Trường hợp có bình luận --%>
+              <c:otherwise>
+                <div class="pd-reviews-list" style="display: flex; flex-direction: column; gap: 20px;">
+                  <c:forEach var="rev" items="${reviews}">
+
+                    <div class="pd-review-item" style="display: flex; gap: 15px; padding: 20px; border: 1px solid #f0f0f0; border-radius: 8px; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+
+                        <%-- 1. KHỐI ẢNH ĐẠI DIỆN (AVATAR TỰ ĐỘNG) --%>
+                      <div class="pd-review-avatar" style="flex-shrink: 0;">
+                        <div style="width: 45px; height: 45px; background-color: #e2e8f0; color: #4a5568; display: flex; align-items: center; justify-content: center; font-weight: bold; border-radius: 50%; font-size: 1.2rem; text-transform: uppercase; border: 1px solid #cbd5e1;">
+                          <c:out value="${fn:substring(not empty rev.authorName ? rev.authorName : 'K', 0, 1)}" />
+                        </div>
+                      </div>
+
+                        <%-- KHỐI NỘI DUNG ĐÁNH GIÁ --%>
+                      <div class="pd-review-content" style="flex-grow: 1;">
+
+                          <%-- Tên người dùng & Nhãn Xác thực mua hàng --%>
+                        <div class="pd-review-header" style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px; flex-wrap: wrap;">
+                        <span class="pd-review-author" style="font-weight: 600; color: #1e293b; font-size: 1rem;">
+                          <c:out value="${not empty rev.authorFullName ? rev.authorFullName : (not empty rev.authorName ? rev.authorName : 'Khách hàng ẩn danh')}" />
+                        </span>
+
+                            <%-- Thẻ Đã mua hàng (Nếu có orderId tức là đã mua sản phẩm) --%>
+                          <c:if test="${not empty rev.orderId && rev.orderId > 0}">
+                          <span class="pd-verified-badge" style="font-size: 0.75rem; color: #16a34a; background: #f0fdf4; padding: 2px 8px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px; font-weight: 500; border: 1px solid #bbf7d0;">
+                            ✓ Đã mua hàng
+                          </span>
+                          </c:if>
+                        </div>
+
+                          <%-- Số sao & Ngày tháng bình luận --%>
+                        <div class="pd-review-meta" style="display: flex; align-items: center; gap: 15px; margin-bottom: 6px; font-size: 0.85rem;">
+                        <span class="pd-review-stars" style="color: #ffb400; font-size: 0.95rem;">
+                          <c:forEach begin="1" end="${rev.rating}">★</c:forEach>
+                          <c:forEach begin="${rev.rating + 1}" end="5">☆</c:forEach>
+                        </span>
+                          <span class="pd-review-date" style="color: #94a3b8;">
+                          <fmt:formatDate value="${rev.createdAtDate}" pattern="dd/MM/yyyy HH:mm" />
+                        </span>
+                        </div>
+
+                          <%-- 2. THÔNG TIN SẢN PHẨM ĐÃ MUA --%>
+                        <div class="pd-purchased-product" style="font-size: 0.85rem; color: #64748b; margin-bottom: 10px; background: #f8fafc; padding: 6px 10px; border-radius: 4px; display: inline-block;">
+                          <span style="font-weight: 500;">Sản phẩm:</span>
+                          <c:out value="${not empty rev.productName ? rev.productName : p.title}" />
+                        </div>
+
+                          <%-- Nội dung văn bản bình luận --%>
+                        <div class="pd-review-body" style="color: #334155; line-height: 1.6; font-size: 0.95rem; word-break: break-word;">
+                          <c:out value="${rev.comment}" />
+                        </div>
+
+                          <%-- 3. HÌNH ẢNH ĐÍNH KÈM THỰC TẾ (NẾU CÓ) --%>
+                        <c:if test="${rev.hasImage && not empty rev.imageUrl}">
+                          <div class="pd-review-images" style="margin-top: 12px;">
+                            <img src="${ctx}/${rev.imageUrl}" alt="Ảnh thực tế từ khách hàng" style="max-width: 100px; max-height: 100px; border-radius: 6px; object-fit: cover; border: 1px solid #e2e8f0; cursor: pointer;" />
+                          </div>
+                        </c:if>
+
+                      </div>
+                    </div>
+
+                  </c:forEach>
+                </div>
+              </c:otherwise>
+            </c:choose>
+          </div>
+        </section>
+
       </c:if>
     </div>
   </section>
@@ -322,5 +446,30 @@
         });
       });
     })();
+
+    function updatePrice() {
+      // 1. Lấy giá gốc từ thẻ hiển thị giá
+      const priceDisplay = document.getElementById('price-display');
+      const basePrice = parseFloat(priceDisplay.getAttribute('data-base-price'));
+
+      // 2. Lấy biến thể đang được chọn
+      const selectedVariant = document.querySelector('input[name="variantId"]:checked');
+
+      // 3. Lấy giá trị cộng thêm (nếu có)
+      const extraPrice = selectedVariant ? parseFloat(selectedVariant.getAttribute('data-extra-price')) : 0;
+
+      // 4. Tính tổng
+      const finalPrice = basePrice + extraPrice;
+
+      // 5. Cập nhật lại giao diện
+      // Sử dụng Intl.NumberFormat để định dạng lại dấu chấm ngăn cách hàng nghìn
+      const formatter = new Intl.NumberFormat('vi-VN');
+      priceDisplay.textContent = formatter.format(finalPrice) + "đ";
+    }
+
+    // Chạy hàm 1 lần khi load trang để hiển thị đúng giá của biến thể mặc định
+    window.onload = function() {
+      updatePrice();
+    };
   </script>
 </c:if>
