@@ -673,32 +673,40 @@ public class UserDAO {
     /* ================= FIND BY EMAIL ================= */
 
     public User findByEmail(String email) {
+        String sql = "SELECT " + USER_COLUMNS + " FROM users WHERE email = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, email);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return mapUser(rs);
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return null;
+    }
+
+    public User findByUsernameOrEmail(String identifier) {
         String sql = """
                 SELECT %s
                 FROM users
-                WHERE email = ?
+                WHERE username = ? OR email = ?
+                LIMIT 1
                 """.formatted(USER_COLUMNS);
 
         try (Connection connection = DBConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            statement.setString(1, email);
+            statement.setString(1, identifier);
+            statement.setString(2, identifier);
 
             try (ResultSet resultSet = statement.executeQuery()) {
-                if (!resultSet.next()) {
-                    return null;
+                if (resultSet.next()) {
+                    return mapUser(resultSet);
                 }
-
-                if (!resultSet.getBoolean("active")) {
-                    return null;
-                }
-
-                return mapUser(resultSet);
             }
-
         } catch (SQLException e) {
-            throw new RuntimeException("UserDAO.findByEmail error", e);
+            throw new RuntimeException("UserDAO.findByUsernameOrEmail error", e);
         }
+        return null;
     }
 
     /* ================= SOCIAL LOGIN METHODS ================= */
@@ -732,67 +740,32 @@ public class UserDAO {
 
     public boolean saveSocialUser(User user, String provider, String socialId) {
         String column = "google".equalsIgnoreCase(provider) ? "google_id" : "facebook_id";
-        String sql = """
-        INSERT INTO users
-        (
-            username,
-            password,
-            role,
-            full_name,
-            email,
-            phone,
-            active,
-            %s,
-            manual_rank_code
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """.formatted(column);
+        String sql = "INSERT INTO users (username, password, role, full_name, email, active, " + column + ") VALUES (?, NULL, 'USER', ?, ?, 1, ?)";
 
-        try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-
-            // Tạo một mật khẩu giả ngẫu nhiên để thỏa mãn ràng buộc NOT NULL của Database
-            // Vì là đăng nhập qua Social, người dùng không cần dùng mật khẩu này
-            String dummyPassword = java.util.UUID.randomUUID().toString();
-
-            statement.setString(1, user.getUsername());
-            statement.setString(2, dummyPassword); // Đưa mật khẩu giả vào đây
-            statement.setString(3, DEFAULT_ROLE);
-            statement.setString(4, nullify(user.getFullName()));
-            statement.setString(5, nullify(user.getEmail()));
-            statement.setString(6, nullify(user.getPhone()));
-            statement.setBoolean(7, true);
-            statement.setString(8, socialId);
-            statement.setString(9, normalizeNullableRankCode(user.getManualRankCode()));
-
-            int rows = statement.executeUpdate();
-
-            return rows > 0;
-
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, user.getUsername());
+            ps.setString(2, user.getFullName());
+            ps.setString(3, user.getEmail());
+            ps.setString(4, socialId);
+            return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            throw new RuntimeException("UserDAO.saveSocialUser error", e);
+            e.printStackTrace();
         }
+        return false;
     }
 
     public void updateSocialId(int userId, String provider, String socialId) {
         String column = "google".equalsIgnoreCase(provider) ? "google_id" : "facebook_id";
+        String sql = "UPDATE users SET " + column + " = ? WHERE id = ?";
 
-        String sql = """
-                UPDATE users
-                SET %s = ?
-                WHERE id = ?
-                """.formatted(column);
-
-        try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-
-            statement.setString(1, socialId);
-            statement.setInt(2, userId);
-
-            statement.executeUpdate();
-
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, socialId);
+            ps.setInt(2, userId);
+            ps.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException("UserDAO.updateSocialId error", e);
+            e.printStackTrace();
         }
     }
 
@@ -808,7 +781,7 @@ public class UserDAO {
              PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setString(1, user.getUsername());
-            statement.setString(2, user.getPassword());
+            statement.setString(2, PasswordUtils.hash(user.getPassword()));
             statement.setString(3, user.getFullName());
             statement.setString(4, user.getEmail());
             statement.setString(5, user.getPhone());
@@ -832,6 +805,7 @@ public class UserDAO {
             throw new RuntimeException("Lỗi Database: " + e.getMessage());
         }
     }
+
 
     /* ================= NOTIFICATION HELPERS - ISSUE 114 ================= */
 
