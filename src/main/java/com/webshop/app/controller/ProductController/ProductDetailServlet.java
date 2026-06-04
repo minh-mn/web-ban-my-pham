@@ -107,10 +107,10 @@ public class ProductDetailServlet extends HttpServlet {
 
         boolean canReviewProduct = user != null && reviewDAO.canUserReviewProduct(user.getId(), product.getId());
 
-        boolean inWishlist = false;
+        boolean isWishlisted = false;
         if (user != null) {
             WishlistDAO wishlistDAO = new WishlistDAO();
-            inWishlist = wishlistDAO.exists(user.getId(), product.getId());
+            isWishlisted = wishlistDAO.exists(user.getId(), product.getId());
         }
 
         req.setAttribute("product", product);
@@ -125,7 +125,7 @@ public class ProductDetailServlet extends HttpServlet {
         req.setAttribute("boughtTogetherProducts", boughtTogether);
         req.setAttribute("relatedProducts", related);
         req.setAttribute("canReviewProduct", canReviewProduct);
-        req.setAttribute("inWishlist", inWishlist);
+        req.setAttribute("isWishlisted", isWishlisted);
         req.setAttribute("pageTitle", "MyCosmetic | " + product.getTitle());
         req.setAttribute("pageCss", "product-detail.css");
         req.setAttribute("pageContent", "/jsp/product/detail.jsp");
