@@ -6,37 +6,60 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <style>
-    .site-footer-v2 {
-        background-color: #1a1a1a;
-        color: #ffffff;
-        padding: 50px 0 0;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        line-height: 1.6;
-        margin-top: 40px;
+    :root {
+        --primary: #e11d48;
+        --primary-hover: #be123c;
+        --primary-soft: #fff1f5;
+
+        --surface: #ffffff;
+        --surface-soft: #f8fafc;
+        --background: #f5f7fb;
+
+        --text-main: #111827;
+        --text-muted: #6b7280;
+
+        --border-color: #dbe3ee;
+
+        --shadow-sm: 0 1px 2px rgba(15,23,42,0.05);
+        --shadow-md: 0 8px 24px rgba(15,23,42,0.12);
+        --shadow-lg: 0 18px 40px rgba(15,23,42,0.18);
     }
 
+    /* FOOTER BASE */
+    .site-footer-v2 {
+        background: linear-gradient(180deg, var(--surface) 0%, var(--surface-soft) 100%);
+        color: var(--text-main);
+        padding: 60px 0 0;
+        margin-top: 60px;
+        border-top: 1px solid var(--border-color);
+    }
+
+    /* CONTAINER */
     .footer-container {
         max-width: 1200px;
         margin: 0 auto;
         padding: 0 20px;
     }
 
+    /* GRID */
     .footer-grid {
         display: grid;
         grid-template-columns: 2fr 1fr 1.5fr 2fr;
-        gap: 30px;
+        gap: 32px;
         padding-bottom: 40px;
     }
 
+    /* TITLE */
     .footer-col h4 {
-        color: #ffffff;
-        font-size: 14px;
-        font-weight: bold;
-        margin-bottom: 20px;
+        font-size: 13px;
+        font-weight: 900;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.08em;
+        margin-bottom: 18px;
+        color: var(--text-main);
     }
 
+    /* LIST */
     .footer-col ul {
         list-style: none;
         padding: 0;
@@ -44,110 +67,153 @@
     }
 
     .footer-col ul li {
-        margin-bottom: 8px;
+        margin-bottom: 10px;
         font-size: 13px;
-        color: #bbbbbb;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
 
+    .footer-col ul li i {
+        color: var(--primary);
+    }
+
+    /* LINKS */
     .footer-col ul li a {
-        color: #bbbbbb;
+        color: var(--text-muted);
         text-decoration: none;
-        transition: 0.3s;
+        transition: 0.2s ease;
+        position: relative;
     }
 
     .footer-col ul li a:hover {
-        color: #ff4d94;
-        padding-left: 5px;
+        color: var(--primary);
+        transform: translateX(4px);
     }
 
+    /* COMPANY INFO */
     .company-info {
         font-size: 12px;
-        color: #888;
-        margin-top: 15px;
-        border-top: 1px solid #333;
-        padding-top: 15px;
+        color: var(--text-muted);
+        margin-top: 16px;
+        border-top: 1px solid var(--border-color);
+        padding-top: 16px;
+        line-height: 1.6;
     }
 
+    .company-info strong {
+        color: var(--text-main);
+    }
+
+    /* NEWSLETTER */
     .footer-newsletter {
         display: flex;
-        border-bottom: 1px solid #444;
-        padding: 5px 0;
-        margin-bottom: 20px;
         align-items: center;
+        border: 1px solid var(--border-color);
+        border-radius: 999px;
+        overflow: hidden;
+        padding: 6px 10px;
+        margin-bottom: 20px;
+        background: var(--surface);
+        box-shadow: var(--shadow-sm);
     }
 
     .footer-newsletter input {
-        background: transparent;
-        border: none;
-        color: #fff;
         flex: 1;
+        border: none;
         outline: none;
         font-size: 13px;
+        background: transparent;
+        color: var(--text-main);
     }
 
     .footer-newsletter button {
-        background: transparent;
         border: none;
+        background: var(--primary);
         color: #fff;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
         cursor: pointer;
-        padding: 0 5px;
+        transition: 0.2s ease;
     }
 
+    .footer-newsletter button:hover {
+        background: var(--primary-hover);
+        transform: scale(1.05);
+    }
+
+    /* SOCIAL */
     .footer-social {
         display: flex;
         gap: 12px;
-        margin-bottom: 25px;
+        margin-bottom: 20px;
     }
 
     .social-icon {
-        width: 35px;
-        height: 35px;
-        background: #333;
+        width: 38px;
+        height: 38px;
+        background: var(--surface);
+        border: 1px solid var(--border-color);
         display: flex;
         align-items: center;
         justify-content: center;
         border-radius: 50%;
-        color: #fff;
-        text-decoration: none;
-        font-size: 16px;
-        transition: 0.3s ease;
+        color: var(--text-muted);
+        transition: 0.25s ease;
+        box-shadow: var(--shadow-sm);
     }
 
     .social-icon:hover {
-        background: #ff4d94;
-        transform: translateY(-3px);
-    }
-
-    .footer-trust {
-        display: flex;
-        flex-direction: column;
-        gap: 15px;
-    }
-
-    .bct-badge {
-        width: 150px;
-    }
-
-    .store-system {
-        font-size: 13px;
-        font-weight: bold;
+        background: var(--primary);
         color: #fff;
-        text-transform: uppercase;
-        border: 1px solid #444;
-        padding: 8px 12px;
-        display: inline-block;
-        border-radius: 4px;
-        text-decoration: none;
-        text-align: center;
+        border-color: var(--primary);
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-md);
     }
 
-    .footer-bottom {
-        background-color: #111111;
-        padding: 20px 0;
-        text-align: center;
-        border-top: 1px solid #222;
-        color: #666;
+    /* TRUST */
+    .store-system {
         font-size: 12px;
+        font-weight: 800;
+        color: var(--primary);
+        border: 1px solid var(--primary);
+        padding: 8px 12px;
+        border-radius: 10px;
+        display: inline-block;
+        text-decoration: none;
+        transition: 0.2s ease;
+        background: var(--primary-soft);
+    }
+
+    .store-system:hover {
+        background: var(--primary);
+        color: #fff;
+    }
+
+    /* BOTTOM */
+    .footer-bottom {
+        background: var(--surface);
+        border-top: 1px solid var(--border-color);
+        padding: 18px 0;
+        text-align: center;
+        font-size: 12px;
+        color: var(--text-muted);
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 992px) {
+        .footer-grid {
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+    }
+
+    @media (max-width: 600px) {
+        .footer-grid {
+            grid-template-columns: 1fr;
+        }
     }
 </style>
 
@@ -258,7 +324,7 @@
                         <i class="fa-brands fa-tiktok"></i>
                     </a>
 
-                    <a href="${settings.zalo}" class="social-icon">
+                    <a href="${pageContext.request.contextPath}/lien-he" class="social-icon">
                         <i class="fa-solid fa-comment-dots"></i>
                     </a>
 
