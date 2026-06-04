@@ -48,8 +48,14 @@ public class NotificationDAO {
 
     public long create(Connection connection, Notification notification) throws SQLException {
         if (connection == null) {
-            throw new SQLException("Connection must not be null");
-        }
+            System.out.println("❌ [DEBUG DAO] Connection bị NULL, không thể tạo thông báo!");
+            return -1;        }
+
+        System.out.println("=== [DEBUG STEP 2: NOTIFICATION_DAO - INSERT] ===");
+        System.out.println("-> SQL chuẩn bị chạy trên đối tượng Notification:");
+        System.out.println("   + Type thực tế (Sau normalize): " + notification.getType());
+        System.out.println("   + Role Target: " + notification.getRoleTarget());
+        System.out.println("   + Target URL: " + notification.getTargetUrl());
 
         if (notification == null) {
             throw new SQLException("Notification must not be null");
@@ -1022,20 +1028,16 @@ public class NotificationDAO {
                  "ORDER_DELIVERED",
                  "ORDER_DELIVERY_FAILED",
                  "ORDER_CANCELLED",
-
                  "CANCEL_REQUEST_CREATED",
                  "CANCEL_REQUEST_APPROVED",
                  "CANCEL_REQUEST_REJECTED",
-
                  "RETURN_REQUEST_CREATED",
                  "RETURN_REQUEST_APPROVED",
                  "RETURN_REQUEST_REJECTED",
-
                  "REVIEW_CREATED",
                  "REVIEW_APPROVED",
                  "REVIEW_REJECTED",
                  "REVIEW_HIDDEN",
-
                  "WISHLIST_DISCOUNT",
                  "SYSTEM",
                  "ORDER",
@@ -1044,7 +1046,8 @@ public class NotificationDAO {
                  "REFUND",
                  "SHIPPING",
                  "RECEIVED",
-                 "VOUCHER" -> value;
+                 "VOUCHER",
+                 "CONTACT_CREATED" -> value;
 
             default -> "SYSTEM";
         };
