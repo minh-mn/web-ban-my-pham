@@ -2395,3 +2395,76 @@ body {
     font-size: 13px;
     line-height: 1;
 }
+
+/* ================= HOME DISCOVER REPLACEMENT =================
+   Block KHÁM PHÁ thay thế SỰ KIỆN HOT.
+   Chỉ giữ chữ KHÁM PHÁ theo tinh thần tiêu đề DANH MỤC HOT.
+========================================================= */
+.skin-product-section.is-discover {
+    padding: 62px 0 58px;
+    background: #fff;
+}
+
+.skin-product-section.is-discover .skin-section-top.discover-top {
+    align-items: flex-end;
+    margin-bottom: 28px;
+}
+
+.skin-discover-heading {
+    position: relative;
+    margin: 0;
+    color: var(--skin-text);
+    font-size: clamp(34px, 4.8vw, 58px);
+    font-weight: 1000;
+    line-height: 1;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+}
+
+.skin-discover-heading::before {
+    content: "";
+    display: inline-block;
+    width: 24px;
+    height: 2px;
+    margin-right: 13px;
+    border-radius: 999px;
+    background: var(--skin-red);
+    vertical-align: middle;
+    transform: translateY(-8px);
+}
+
+.skin-product-section.is-discover .skin-view-all {
+    color: #111;
+    font-size: 17px;
+    font-weight: 950;
+    text-decoration: underline;
+    text-underline-offset: 5px;
+    text-decoration-color: var(--skin-red);
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.skin-product-section.is-discover .skin-product-scroll {
+    row-gap: 22px;
+}
+
+.skin-product-section.is-discover .skin-product-card {
+    background: #fff;
+    border: 1px solid #f0f0f0;
+}
+
+.skin-product-section.is-discover .skin-product-card:hover {
+    border-color: rgba(155, 0, 18, .18);
+    box-shadow: 0 14px 35px rgba(15, 23, 42, .08);
+}
+
+@media (max-width: 768px) {
+    .skin-product-section.is-discover .skin-section-top.discover-top {
+        align-items: flex-start;
+    }
+
+    .skin-discover-heading {
+        font-size: 34px;
+        letter-spacing: .12em;
+    }
+}
