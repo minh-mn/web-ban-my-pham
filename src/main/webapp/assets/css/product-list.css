@@ -1271,84 +1271,6 @@ html.is-restoring-product-scroll body {
 }
 
 /* =========================================================
-   HEADER DROPDOWN COMPATIBILITY
-========================================================= */
-
-.menu-horizontal-list {
-	display: flex;
-	align-items: center;
-	gap: 12px;
-	flex-wrap: wrap;
-}
-
-.menu-link-item {
-	padding: 10px 16px;
-	border-radius: 10px;
-	transition: .2s;
-	font-weight: 600;
-}
-
-.menu-link-item:hover {
-	background: var(--mc-pink-soft);
-	color: var(--mc-pink);
-}
-
-.hot-menu {
-	background: linear-gradient(135deg, var(--mc-pink), #ff85bc);
-	color: #ffffff !important;
-}
-
-.menu-horizontal-list li {
-	position: relative;
-}
-
-.dropdown-menu,
-.sub-dropdown-menu {
-	display: none;
-	position: absolute;
-	background-color: #ffffff;
-	min-width: 220px;
-	box-shadow: 0 8px 16px rgba(0, 0, 0, .15);
-	z-index: 1000;
-	list-style: none;
-	padding: 0;
-	margin: 0;
-}
-
-.dropdown-menu {
-	top: 100%;
-	left: 0;
-}
-
-.sub-dropdown-menu {
-	top: 0;
-	left: 100%;
-	max-height: 400px;
-	overflow-y: auto;
-}
-
-.menu-horizontal-list li:hover > .dropdown-menu,
-.dropdown-menu li:hover > .sub-dropdown-menu {
-	display: block;
-}
-
-.dropdown-menu li a,
-.sub-dropdown-menu li a {
-	display: block;
-	padding: 12px 20px;
-	color: #333333;
-	text-decoration: none;
-	transition: background .2s ease, color .2s ease;
-	border-bottom: 1px solid #f0f0f0;
-}
-
-.dropdown-menu li a:hover,
-.sub-dropdown-menu li a:hover {
-	background-color: #f8f8f8;
-	color: #e44d26;
-}
-
-/* =========================================================
    RESPONSIVE
 ========================================================= */
 
@@ -1482,4 +1404,173 @@ html.is-restoring-product-scroll body {
 		height: 32px;
 		padding: 0 10px;
 	}
+}
+
+/* ==========================================
+   WISHLIST EMPTY STATE
+========================================== */
+
+.wishlist-empty {
+	grid-column: 1 / -1;
+
+	display: flex;
+	justify-content: center;
+	align-items: center;
+
+	min-height: 420px;
+	width: 100%;
+
+	text-align: center;
+}
+
+.wishlist-empty-content {
+	max-width: 500px;
+	padding: 40px;
+}
+
+.wishlist-empty-icon {
+	font-size: 64px;
+	line-height: 1;
+	margin-bottom: 18px;
+}
+
+.wishlist-empty-title {
+	margin-bottom: 12px;
+	color: #222;
+	font-size: 28px;
+	font-weight: 800;
+}
+
+.wishlist-empty-text {
+	margin-bottom: 30px;
+	color: #666;
+	line-height: 1.7;
+	font-size: 15px;
+}
+
+.wishlist-shop-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+
+	min-width: 220px;
+	height: 52px;
+
+	padding: 0 28px;
+
+	border-radius: 999px;
+
+	text-decoration: none;
+
+	background: linear-gradient(
+			135deg,
+			#ff5fa2,
+			#ff7eb7,
+			#d9154f
+	);
+
+	color: #fff;
+	font-size: 15px;
+	font-weight: 700;
+
+	box-shadow: 0 12px 24px rgba(217,21,79,.25);
+
+	transition: all .25s ease;
+}
+
+.wishlist-shop-btn:hover {
+	transform: translateY(-2px);
+
+	color: #fff;
+
+	box-shadow: 0 18px 32px rgba(217,21,79,.35);
+}
+
+
+/* Đảm bảo khung lưới hiển thị dạng lưới (Grid) */
+.product-grid {
+	display: grid;
+	/* Tự động chia cột: nhỏ nhất 200px, lấp đầy không gian còn lại */
+	grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+	gap: 20px; /* Khoảng cách giữa các card */
+	margin-top: 20px;
+}
+
+/* Định nghĩa lại Card để đảm bảo giống list.jsp */
+.product-card {
+	background: #ffffff;
+	border: 1px solid #f0f0f0;      /* Viền xám rất nhạt */
+	border-radius: 12px;            /* Bo góc mềm mại */
+	padding: 16px;
+	position: relative;
+	transition: all 0.3s ease;      /* Hiệu ứng mượt mà khi di chuột */
+	box-shadow: 0 2px 8px rgba(0,0,0,0.05); /* Đổ bóng nhẹ ban đầu */
+}
+
+.product-card:hover {
+	box-shadow: 0 8px 20px rgba(0,0,0,0.12); /* Đổ bóng đậm hơn khi hover */
+	border-color: #ff5fa2;           /* Viền đổi màu hồng khi hover */
+	transform: translateY(-5px);    /* Nhích lên một chút */
+}
+
+/* Định dạng hình ảnh trong card */
+.product-card img {
+	width: 100%;
+	height: auto;
+	aspect-ratio: 1 / 1; /* Đảm bảo ảnh vuông */
+	object-fit: cover;
+	margin-bottom: 10px;
+}
+
+
+/* Định dạng thông tin */
+.product-title {
+	font-size: 14px;
+	font-weight: 500;
+	margin: 5px 0;
+	color: #333;
+}
+
+.product-title a {
+	color: #333;
+	font-weight: 600;
+}
+
+.product-price {
+	color: #ff5fa2;
+	font-weight: 700;
+	font-size: 16px;
+}
+
+/* Container bọc ảnh */
+.card-image-wrap {
+	position: relative;
+	width: 100%;
+	aspect-ratio: 1 / 1; /* Giữ ảnh hình vuông */
+	overflow: hidden;
+	background: #f5f5f5; /* Màu nền xám nhẹ khi chưa load được ảnh */
+	border-radius: 8px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+/* Ẩn cái placeholder khi ảnh load bình thường */
+.no-image-placeholder {
+	display: none; /* Mặc định ẩn */
+	width: 100%;
+	height: 100%;
+	align-items: center;
+	justify-content: center;
+	background: #e0e0e0;
+	color: #888;
+	font-size: 14px;
+	text-align: center;
+}
+
+/* Đảm bảo ảnh hiển thị đúng */
+.card-img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
 }
