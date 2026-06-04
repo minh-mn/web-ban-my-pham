@@ -29,7 +29,6 @@ public class SocialAuthServlet extends HttpServlet {
 
     private final UserDAO userDAO = new UserDAO();
 
-    // Giữ nguyên Client ID của bạn
     private static final String GOOGLE_CLIENT_ID = "78979081819-fo21lsm5idv3pp22779bais8l1f5csnm.apps.googleusercontent.com";
 
     @Override
@@ -80,7 +79,7 @@ public class SocialAuthServlet extends HttpServlet {
                 return;
             }
 
-            // 2. Gom tất cả về một hàm xử lý tài khoản thông minh (Bỏ phân biệt register/login qua OTP)
+            // 2. Gom tất cả về một hàm xử lý tài khoản
             handleSocialAuthUnified(req, resp, email, fullName, socialId, provider);
 
         } catch (Exception e) {
@@ -135,15 +134,12 @@ public class SocialAuthServlet extends HttpServlet {
                 newUser.setFullName(fullName);
                 newUser.setActive(true);
 
-                // Lưu ý: Không set giá trị password tại đây để đảm bảo password lưu xuống DB là NULL 
-                // (Hãy kiểm tra hàm userDAO.saveSocialUser của bạn xem có đang truyền trực tiếp giá trị NULL vào câu lệnh INSERT SQL không)
                 userDAO.saveSocialUser(newUser, provider, socialId);
 
                 // Lấy lại thông tin user vừa tạo
                 user = userDAO.findBySocialId(provider, socialId);
             } else {
-                // TRƯỜNG HỢP B: Email ĐÃ TỒN TẠI trên hệ thống (Do đăng ký thường hoặc social khác trước đó)
-                // Tiến hành cập nhật thêm social_id (google_id hoặc facebook_id) vào chính tài khoản đó mà KHÔNG ĐỔI mật khẩu cũ.
+                // TRƯỜNG HỢP B: Email ĐÃ TỒN TẠI trên hệ thống
                 userDAO.updateSocialId(user.getId(), provider, socialId);
 
                 // Đọc lại dữ liệu mới nhất sau khi cập nhật liên kết
@@ -161,8 +157,10 @@ public class SocialAuthServlet extends HttpServlet {
         HttpSession session = req.getSession();
         session.setAttribute("user", user);
 
+        String contextPath = req.getContextPath();
+
         resp.getWriter().write(
-                "{\"status\":\"success\",\"redirectUrl\":\"/home\",\"message\":\"Đăng nhập thành công!\"}"
+                "{\"status\":\"success\",\"redirectUrl\":\"" + contextPath + "/\",\"message\":\"Đăng nhập thành công!\"}"
         );
     }
 
