@@ -345,6 +345,8 @@ public class Notification {
             case "REVIEW_REJECTED" -> "Đánh giá bị từ chối";
             case "REVIEW_HIDDEN" -> "Đánh giá bị ẩn";
 
+            case "CONTACT_CREATED" -> "Liên hệ mới";
+
             default -> "Thông báo";
         };
     }
@@ -372,7 +374,8 @@ public class Notification {
                  "REVIEW_HIDDEN" -> "danger";
 
             case "CANCEL_REQUEST_CREATED",
-                 "RETURN_REQUEST_CREATED" -> "warning";
+                 "RETURN_REQUEST_CREATED",
+                 "CONTACT_CREATED" -> "warning";
 
             case "REVIEW_CREATED" -> "review";
 
@@ -406,6 +409,7 @@ public class Notification {
             case "RETURN_REQUEST_REJECTED" -> "🚫";
 
             case "REVIEW_CREATED" -> "⭐";
+            case "CONTACT_CREATED" -> "📞";
             case "REVIEW_APPROVED" -> "🌟";
             case "REVIEW_REJECTED", "REVIEW_HIDDEN" -> "🚫";
 
