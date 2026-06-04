@@ -3,7 +3,7 @@
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
-<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/checkout.css?v=20260602_issue146_vnpay_only_clean_jsp">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/checkout.css?v=20260604_map_picker_full_fix">
 <link rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
       integrity="sha256-p4NxAoJBhIINfQh3Hh1q8CgFyuzL4P8rNQ3Drx0Kz5E="
@@ -876,7 +876,7 @@
         </div>
       </div>
 
-      <div class="e-invoice-form" id="companyInvoiceForm" class="is-hidden">
+      <div class="e-invoice-form is-hidden" id="companyInvoiceForm">
         <div class="e-invoice-grid-2">
           <input type="text"
                  class="e-invoice-input"
@@ -3779,19 +3779,22 @@
     const confirmBtn = document.getElementById("confirmMapLocationBtn");
     const useSuggestedAddressBtn = document.getElementById("useSuggestedAddressBtn");
 
-    if (!useCurrentLocationBtn) {
+    if (!useCurrentLocationBtn || !modal || !mapEl) {
       return;
     }
 
     let map = null;
     let marker = null;
     let selectedDot = null;
+
     let currentLat = null;
     let currentLon = null;
     let currentGeoData = null;
     let currentStreetAddress = "";
     let currentDetectedAddress = "";
     let currentDetectedProvince = "";
+
+    let reverseGeocodeRequestId = 0;
 
     function normalizeText(value) {
       return String(value || "")
@@ -3803,6 +3806,12 @@
               .replace(/[^a-z0-9\s./,-]/g, " ")
               .replace(/\s+/g, " ")
               .trim();
+    }
+
+    function wait(ms) {
+      return new Promise(function (resolve) {
+        window.setTimeout(resolve, ms);
+      });
     }
 
     function setAddressError(message) {
@@ -3853,9 +3862,9 @@
       }
     }
 
-    function showDetectedAddressHint(detectedAddress) {
+    function showDetectedAddressHint() {
       /*
-       * Không hiển thị thêm dòng gợi ý ở ngoài form checkout.
+       * Không hiển thị thêm dòng gợi ý ngoài form checkout.
        * Địa chỉ gợi ý chỉ nằm trong modal bản đồ để tránh rối giao diện.
        */
       if (!detectedAddressHint) {
@@ -3870,7 +3879,9 @@
     function showMapDetected(streetAddress, detectedAddress) {
       const target = mapDetectedText || mapDetected;
 
-      if (!target) return;
+      if (!target) {
+        return;
+      }
 
       const street = String(streetAddress || "").trim();
       const full = String(detectedAddress || "").trim();
@@ -3905,14 +3916,19 @@
       if (addressInput) {
         addressInput.value = suggestion;
         addressInput.classList.remove("is-invalid");
+        addressInput.dispatchEvent(new Event("input", { bubbles: true }));
       }
 
       setAddressError("");
-      showDetectedAddressHint(suggestion);
+      showDetectedAddressHint();
       setMapStatus("Đã điền địa chỉ gợi ý vào ô Địa chỉ cụ thể. Bạn vẫn có thể sửa lại nếu cần.", "success");
 
       if (window.checkoutLocationSelector && window.checkoutLocationSelector.updateShippingAddress) {
         window.checkoutLocationSelector.updateShippingAddress();
+      }
+
+      if (window.updateShippingFeeByLocation) {
+        window.updateShippingFeeByLocation();
       }
 
       if (window.updateCheckoutButtonsState) {
@@ -3953,9 +3969,11 @@
               .filter(Boolean)
               .filter(function (part) {
                 const key = normalizeText(part);
+
                 if (seen.has(key)) {
                   return false;
                 }
+
                 seen.add(key);
                 return true;
               });
@@ -4015,6 +4033,7 @@
                 .filter(Boolean)
                 .filter(function (part) {
                   const normalized = normalizeText(part);
+
                   return normalized !== "viet nam"
                           && normalized !== "vietnam"
                           && !/^\d{5,6}$/.test(normalized)
@@ -4054,32 +4073,88 @@
       ]);
     }
 
+    function getMapCanvas() {
+      return mapEl.closest(".address-map-canvas") || mapEl.parentElement;
+    }
+
+    function forceMapElementSize() {
+      const canvas = getMapCanvas();
+
+      if (!canvas || !mapEl) {
+        return false;
+      }
+
+      const rect = canvas.getBoundingClientRect();
+
+      if (rect.width <= 0 || rect.height <= 0) {
+        return false;
+      }
+
+      /*
+       * Fix quan trọng:
+       * Khi modal vừa mở, Leaflet đôi khi đọc sai kích thước vì khung trước đó bị ẩn.
+       * Ép #addressMap theo kích thước thật của .address-map-canvas trước khi invalidateSize().
+       */
+      mapEl.style.width = Math.round(rect.width) + "px";
+      mapEl.style.height = Math.round(rect.height) + "px";
+      mapEl.style.minHeight = Math.round(rect.height) + "px";
+      mapEl.style.position = "absolute";
+      mapEl.style.left = "0";
+      mapEl.style.top = "0";
+      mapEl.style.right = "0";
+      mapEl.style.bottom = "0";
+      mapEl.style.display = "block";
+
+      return true;
+    }
+
+    async function waitForVisibleMapFrame() {
+      for (let i = 0; i < 14; i += 1) {
+        forceMapElementSize();
+
+        const rect = mapEl.getBoundingClientRect();
+
+        if (rect.width > 120 && rect.height > 120) {
+          return true;
+        }
+
+        await wait(i < 2 ? 60 : 100);
+      }
+
+      return forceMapElementSize();
+    }
+
     function refreshMapSize(lat, lon) {
       if (!map) {
         return;
       }
+
+      forceMapElementSize();
 
       const parsedLat = Number(lat);
       const parsedLon = Number(lon);
 
       const targetLat = Number.isFinite(parsedLat)
               ? parsedLat
-              : (currentLat != null ? currentLat : map.getCenter().lat);
+              : (currentLat != null ? Number(currentLat) : map.getCenter().lat);
 
       const targetLon = Number.isFinite(parsedLon)
               ? parsedLon
-              : (currentLon != null ? currentLon : map.getCenter().lng);
+              : (currentLon != null ? Number(currentLon) : map.getCenter().lng);
 
       function doRefresh() {
         if (!map) {
           return;
         }
 
-        map.invalidateSize({ pan: false, debounceMoveend: false });
+        forceMapElementSize();
+
+        map.invalidateSize(true);
 
         if (Number.isFinite(targetLat) && Number.isFinite(targetLon)) {
           map.setView([targetLat, targetLon], map.getZoom() || 17, {
-            animate: false
+            animate: false,
+            pan: false
           });
 
           if (marker) {
@@ -4091,34 +4166,23 @@
       }
 
       requestAnimationFrame(doRefresh);
-      setTimeout(doRefresh, 120);
-      setTimeout(doRefresh, 360);
-      setTimeout(doRefresh, 700);
+      setTimeout(doRefresh, 80);
+      setTimeout(doRefresh, 220);
+      setTimeout(doRefresh, 480);
+      setTimeout(doRefresh, 850);
     }
 
-    function openMapModal() {
-      if (!modal) return;
-
+    async function openMapModal() {
       modal.classList.add("show");
       modal.setAttribute("aria-hidden", "false");
       document.body.classList.add("address-map-open");
 
-      /*
-       * Leaflet phải được render lại sau khi modal hiện ra.
-       * Nếu không, tile sẽ bị vỡ/lệch và không nằm gọn trong khung.
-       */
-      setTimeout(function () {
-        refreshMapSize(currentLat, currentLon);
-      }, 120);
+      await waitForVisibleMapFrame();
 
-      setTimeout(function () {
-        refreshMapSize(currentLat, currentLon);
-      }, 420);
+      refreshMapSize(currentLat, currentLon);
     }
 
     function closeMapModal() {
-      if (!modal) return;
-
       modal.classList.remove("show");
       modal.setAttribute("aria-hidden", "true");
       document.body.classList.remove("address-map-open");
@@ -4131,7 +4195,7 @@
       if (detectedAddressInput) detectedAddressInput.value = "";
       if (mapConfirmedInput) mapConfirmedInput.value = "";
 
-      showDetectedAddressHint("");
+      showDetectedAddressHint();
       useCurrentLocationBtn.textContent = "📍 Dùng vị trí hiện tại";
     }
 
@@ -4157,9 +4221,11 @@
     }
 
     async function updateSelectedPin(lat, lon) {
-      currentLat = lat;
-      currentLon = lon;
-      updateSelectedDot(lat, lon);
+      const requestId = ++reverseGeocodeRequestId;
+
+      currentLat = Number(lat);
+      currentLon = Number(lon);
+      updateSelectedDot(currentLat, currentLon);
 
       if (confirmBtn) {
         confirmBtn.disabled = true;
@@ -4168,7 +4234,12 @@
       setMapStatus("Đang xác định địa chỉ tại vị trí ghim...", "");
 
       try {
-        const geoData = await reverseGeocode(lat, lon);
+        const geoData = await reverseGeocode(currentLat, currentLon);
+
+        if (requestId !== reverseGeocodeRequestId) {
+          return;
+        }
+
         const address = extractAddressObject(geoData);
         const streetAddress = buildStreetAddress(address, geoData);
         const detectedAddress = geoData && geoData.display_name ? geoData.display_name : "";
@@ -4193,17 +4264,38 @@
           confirmBtn.disabled = false;
         }
       } catch (error) {
+        if (requestId !== reverseGeocodeRequestId) {
+          return;
+        }
+
         console.error(error);
+
         currentGeoData = null;
         currentStreetAddress = "";
         currentDetectedAddress = "";
         currentDetectedProvince = "";
+
         showMapDetected("", "");
         setMapStatus("Không thể lấy địa chỉ từ ghim hiện tại. Vui lòng thử kéo ghim hoặc thử lại sau.", "error");
       }
     }
 
+    function resetMapContainerClasses() {
+      if (!mapEl) {
+        return;
+      }
+
+      mapEl.innerHTML = "";
+      mapEl.className = "address-map-leaflet";
+      mapEl.removeAttribute("tabindex");
+      mapEl.removeAttribute("style");
+
+      forceMapElementSize();
+    }
+
     function destroyMap() {
+      reverseGeocodeRequestId += 1;
+
       if (map) {
         try {
           map.off();
@@ -4217,12 +4309,7 @@
       marker = null;
       selectedDot = null;
 
-      if (mapEl) {
-        mapEl.innerHTML = "";
-        mapEl.classList.remove("leaflet-container", "leaflet-touch", "leaflet-retina", "leaflet-fade-anim", "leaflet-grab", "leaflet-touch-drag", "leaflet-touch-zoom");
-        mapEl.removeAttribute("tabindex");
-        mapEl.style.position = "";
-      }
+      resetMapContainerClasses();
     }
 
     function ensureMap(lat, lon) {
@@ -4230,22 +4317,34 @@
         throw new Error("Leaflet library is not available");
       }
 
+      const safeLat = Number(lat);
+      const safeLon = Number(lon);
+
+      if (!Number.isFinite(safeLat) || !Number.isFinite(safeLon)) {
+        throw new Error("Invalid map coordinates");
+      }
+
+      forceMapElementSize();
+
       if (!map) {
-        map = L.map("addressMap", {
+        map = L.map(mapEl, {
           zoomControl: true,
           scrollWheelZoom: true,
           trackResize: true,
           fadeAnimation: false,
           zoomAnimation: false,
-          markerZoomAnimation: false
-        }).setView([lat, lon], 17);
+          markerZoomAnimation: false,
+          preferCanvas: true
+        }).setView([safeLat, safeLon], 17);
 
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
           maxZoom: 19,
           tileSize: 256,
           zoomOffset: 0,
           updateWhenIdle: false,
-          keepBuffer: 4,
+          updateWhenZooming: false,
+          keepBuffer: 6,
+          crossOrigin: true,
           attribution: "&copy; OpenStreetMap contributors"
         }).addTo(map);
 
@@ -4257,7 +4356,7 @@
           popupAnchor: [0, -48]
         });
 
-        marker = L.marker([lat, lon], {
+        marker = L.marker([safeLat, safeLon], {
           icon: redPinIcon,
           draggable: true,
           autoPan: true,
@@ -4265,33 +4364,57 @@
           riseOffset: 700
         }).addTo(map);
 
-        updateSelectedDot(lat, lon);
+        updateSelectedDot(safeLat, safeLon);
+
+        marker.on("dragstart", function () {
+          if (confirmBtn) {
+            confirmBtn.disabled = true;
+          }
+        });
 
         marker.on("dragend", function () {
           const pos = marker.getLatLng();
+          refreshMapSize(pos.lat, pos.lng);
           updateSelectedPin(pos.lat, pos.lng);
         });
 
         map.on("click", function (event) {
           marker.setLatLng(event.latlng);
+          refreshMapSize(event.latlng.lat, event.latlng.lng);
           updateSelectedPin(event.latlng.lat, event.latlng.lng);
         });
 
         map.whenReady(function () {
-          refreshMapSize(lat, lon);
+          refreshMapSize(safeLat, safeLon);
         });
       } else {
-        map.setView([lat, lon], 17, {
-          animate: false
+        map.setView([safeLat, safeLon], 17, {
+          animate: false,
+          pan: false
         });
 
         if (marker) {
-          marker.setLatLng([lat, lon]);
+          marker.setLatLng([safeLat, safeLon]);
         }
 
-        updateSelectedDot(lat, lon);
+        updateSelectedDot(safeLat, safeLon);
       }
 
+      refreshMapSize(safeLat, safeLon);
+    }
+
+    async function buildFreshMap(lat, lon) {
+      destroyMap();
+
+      await waitForVisibleMapFrame();
+
+      ensureMap(lat, lon);
+      refreshMapSize(lat, lon);
+
+      await wait(120);
+      refreshMapSize(lat, lon);
+
+      await wait(320);
       refreshMapSize(lat, lon);
     }
 
@@ -4320,7 +4443,7 @@
       if (detectedAddressInput) detectedAddressInput.value = detectedAddress;
       if (mapConfirmedInput) mapConfirmedInput.value = "true";
 
-      showDetectedAddressHint(streetAddress || detectedAddress);
+      showDetectedAddressHint();
 
       /*
        * Không tự ghi đè ô Địa chỉ cụ thể khi xác nhận vị trí.
@@ -4329,52 +4452,65 @@
 
       if (!window.checkoutLocationSelector || !window.checkoutLocationSelector.autoFillFromCurrentLocation) {
         setMapStatus("Không tìm thấy bộ tự điền địa chỉ. Vui lòng tải lại trang và thử lại.", "error");
-        if (confirmBtn) confirmBtn.disabled = false;
+
+        if (confirmBtn) {
+          confirmBtn.disabled = false;
+        }
+
         return;
       }
 
-      const result = await window.checkoutLocationSelector.autoFillFromCurrentLocation({
-        provinceCandidates: provinceCandidates,
-        wardCandidates: wardCandidates,
-        streetAddress: streetAddress,
-        detectedAddress: detectedAddress,
-        latitude: currentLat,
-        longitude: currentLon
-      });
+      try {
+        const result = await window.checkoutLocationSelector.autoFillFromCurrentLocation({
+          provinceCandidates: provinceCandidates,
+          wardCandidates: wardCandidates,
+          streetAddress: streetAddress,
+          detectedAddress: detectedAddress,
+          latitude: currentLat,
+          longitude: currentLon
+        });
 
-      if (!result || !result.ok) {
-        setLocationError(result && result.reason ? result.reason : "Không thể khớp Tỉnh/TP từ vị trí đã chọn.");
-        setMapStatus(result && result.reason ? result.reason : "Không thể khớp địa chỉ từ vị trí đã chọn.", "error");
-        if (confirmBtn) confirmBtn.disabled = false;
-        return;
-      }
+        if (!result || !result.ok) {
+          setLocationError(result && result.reason ? result.reason : "Không thể khớp Tỉnh/TP từ vị trí đã chọn.");
+          setMapStatus(result && result.reason ? result.reason : "Không thể khớp địa chỉ từ vị trí đã chọn.", "error");
 
-      setAddressError("");
+          if (confirmBtn) {
+            confirmBtn.disabled = false;
+          }
 
-      if (result.partial) {
-        setLocationError("Đã xác minh Tỉnh/TP theo vị trí trên bản đồ. Vui lòng chọn lại Phường/Xã nếu hệ thống chưa nhận diện đúng.");
-        useCurrentLocationBtn.textContent = "✅ Đã xác minh Tỉnh/TP";
-      } else {
-        setLocationError("");
-        useCurrentLocationBtn.textContent = "✅ Đã xác minh vị trí";
-      }
+          return;
+        }
 
-      if (window.checkoutLocationSelector.updateShippingAddress) {
-        window.checkoutLocationSelector.updateShippingAddress();
-      }
+        setAddressError("");
 
-      if (window.updateShippingFeeByLocation) {
-        window.updateShippingFeeByLocation();
-      }
+        if (result.partial) {
+          setLocationError("Đã xác minh Tỉnh/TP theo vị trí trên bản đồ. Vui lòng chọn lại Phường/Xã nếu hệ thống chưa nhận diện đúng.");
+          useCurrentLocationBtn.textContent = "✅ Đã xác minh Tỉnh/TP";
+        } else {
+          setLocationError("");
+          useCurrentLocationBtn.textContent = "✅ Đã xác minh vị trí";
+        }
 
-      if (window.updateCheckoutButtonsState) {
-        window.updateCheckoutButtonsState();
-      }
+        if (window.checkoutLocationSelector.updateShippingAddress) {
+          window.checkoutLocationSelector.updateShippingAddress();
+        }
 
-      closeMapModal();
+        if (window.updateShippingFeeByLocation) {
+          window.updateShippingFeeByLocation();
+        }
 
-      if (confirmBtn) {
-        confirmBtn.disabled = false;
+        if (window.updateCheckoutButtonsState) {
+          window.updateCheckoutButtonsState();
+        }
+
+        closeMapModal();
+      } catch (error) {
+        console.error(error);
+        setMapStatus("Không thể xác nhận vị trí. Vui lòng thử lại.", "error");
+      } finally {
+        if (confirmBtn) {
+          confirmBtn.disabled = false;
+        }
       }
     }
 
@@ -4392,8 +4528,14 @@
     });
 
     document.addEventListener("keydown", function (event) {
-      if (event.key === "Escape" && modal && modal.classList.contains("show")) {
+      if (event.key === "Escape" && modal.classList.contains("show")) {
         closeMapModal();
+      }
+    });
+
+    window.addEventListener("resize", function () {
+      if (modal.classList.contains("show")) {
+        refreshMapSize(currentLat, currentLon);
       }
     });
 
@@ -4411,61 +4553,64 @@
         return;
       }
 
+      if (!window.L) {
+        setAddressError("Không tải được thư viện bản đồ Leaflet. Vui lòng kiểm tra kết nối mạng và tải lại trang.");
+        return;
+      }
+
       useCurrentLocationBtn.disabled = true;
       useCurrentLocationBtn.textContent = "Đang lấy vị trí...";
       setAddressError("");
       setLocationError("");
+      setMapStatus("Đang lấy vị trí hiện tại...", "");
 
       navigator.geolocation.getCurrentPosition(
               async function (position) {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+
+                currentLat = lat;
+                currentLon = lon;
+                currentGeoData = null;
+                currentStreetAddress = "";
+                currentDetectedAddress = "";
+                currentDetectedProvince = "";
+
                 try {
-                  const lat = position.coords.latitude;
-                  const lon = position.coords.longitude;
+                  await openMapModal();
 
-                  currentLat = lat;
-                  currentLon = lon;
-
-                  openMapModal();
                   setMapStatus("Đang mở bản đồ và xác định địa chỉ tại vị trí hiện tại...", "");
 
                   /*
-                   * FIX V2:
-                   * Không khởi tạo Leaflet khi modal còn ẩn.
-                   * Mở modal trước, xóa map cũ, chờ khung có kích thước thật,
-                   * rồi mới init lại map. Cách này xử lý triệt để lỗi tile bị đứt/vỡ.
+                   * Fix triệt để Leaflet trong modal:
+                   * 1. Mở modal trước.
+                   * 2. Đợi khung bản đồ có width/height thật.
+                   * 3. Xóa instance cũ.
+                   * 4. Khởi tạo lại map.
+                   * 5. invalidateSize nhiều lần sau khi tile bắt đầu render.
                    */
-                  setTimeout(async function () {
-                    try {
-                      destroyMap();
-                      ensureMap(lat, lon);
-                      refreshMapSize(lat, lon);
-                      await updateSelectedPin(lat, lon);
-                      refreshMapSize(lat, lon);
+                  await buildFreshMap(lat, lon);
+                  await updateSelectedPin(lat, lon);
 
-                      setTimeout(function () {
-                        refreshMapSize(lat, lon);
-                      }, 500);
+                  refreshMapSize(lat, lon);
 
-                      useCurrentLocationBtn.textContent = "📍 Chọn lại vị trí";
-                      useCurrentLocationBtn.disabled = false;
-                    } catch (innerError) {
-                      console.error(innerError);
-                      setAddressError("Không thể mở bản đồ xác nhận vị trí. Vui lòng kiểm tra kết nối mạng hoặc thử lại sau.");
-                      closeMapModal();
-                      useCurrentLocationBtn.textContent = "📍 Dùng vị trí hiện tại";
-                      useCurrentLocationBtn.disabled = false;
-                    }
-                  }, 320);
+                  setTimeout(function () {
+                    refreshMapSize(lat, lon);
+                  }, 650);
+
+                  useCurrentLocationBtn.textContent = "📍 Chọn lại vị trí";
                 } catch (error) {
                   console.error(error);
                   setAddressError("Không thể mở bản đồ xác nhận vị trí. Vui lòng kiểm tra kết nối mạng hoặc thử lại sau.");
-                  useCurrentLocationBtn.textContent = "📍 Dùng vị trí hiện tại";
+                  closeMapModal();
+                  resetDetectedLocation();
+                } finally {
                   useCurrentLocationBtn.disabled = false;
                 }
               },
               function () {
                 setAddressError("Không thể lấy vị trí hiện tại. Vui lòng cấp quyền vị trí cho trình duyệt.");
-                useCurrentLocationBtn.textContent = "📍 Dùng vị trí hiện tại";
+                resetDetectedLocation();
                 useCurrentLocationBtn.disabled = false;
               },
               {
@@ -4477,4 +4622,3 @@
     });
   })();
 </script>
-
