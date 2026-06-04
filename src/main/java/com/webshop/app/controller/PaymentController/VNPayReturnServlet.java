@@ -2,6 +2,7 @@ package com.webshop.app.controller.PaymentController;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -11,6 +12,7 @@ import com.webshop.app.model.Order;
 import com.webshop.app.model.User;
 import com.webshop.app.service.CheckoutService;
 import com.webshop.app.utils.CartUtil;
+import com.webshop.app.utils.VNPayConfig;
 import com.webshop.app.utils.VNPayUtil;
 
 import jakarta.servlet.ServletException;
@@ -28,10 +30,6 @@ public class VNPayReturnServlet extends HttpServlet {
     private final OrderDAO orderDAO = new OrderDAO();
     private final CheckoutService checkoutService = new CheckoutService();
 
-    private boolean isBlank(String s) {
-        return s == null || s.trim().isEmpty();
-    }
-
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
@@ -39,112 +37,196 @@ public class VNPayReturnServlet extends HttpServlet {
         req.setCharacterEncoding("UTF-8");
         resp.setCharacterEncoding("UTF-8");
 
-        // ===== 1) Collect vnp_* params =====
-        Map<String, String> params = new HashMap<>();
-
-        req.getParameterMap().forEach((key, values) -> {
-            if (key.startsWith("vnp_") && values.length > 0) {
-                params.put(key, values[0]);
-            }
-        });
+        Map<String, String> params = collectVnpParams(req);
 
         String secureHash = req.getParameter("vnp_SecureHash");
         String txnRef = req.getParameter("vnp_TxnRef");
         String responseCode = req.getParameter("vnp_ResponseCode");
-        String vnpAmountStr = req.getParameter("vnp_Amount");
+        String transactionStatus = req.getParameter("vnp_TransactionStatus");
+        String amountStr = req.getParameter("vnp_Amount");
 
-        if (isBlank(txnRef) || isBlank(secureHash) || isBlank(responseCode) || isBlank(vnpAmountStr)) {
-            resp.sendRedirect(req.getContextPath()
-                    + "/checkout/success?success=false&message=vnp_missing_params");
+        if (VNPayConfig.DEBUG) {
+            System.out.println("===== VNPAY RETURN DEBUG =====");
+            System.out.println("txnRef=" + txnRef);
+            System.out.println("responseCode=" + responseCode);
+            System.out.println("transactionStatus=" + transactionStatus);
+            System.out.println("amount=" + amountStr);
+            System.out.println("secureHash=" + secureHash);
+        }
+
+        if (VNPayUtil.isBlank(txnRef)
+                || VNPayUtil.isBlank(secureHash)
+                || VNPayUtil.isBlank(responseCode)
+                || VNPayUtil.isBlank(amountStr)) {
+            redirectFail(req, resp, null, "vnp_missing_params");
             return;
         }
 
-        // ===== 2) Verify signature =====
-        params.remove("vnp_SecureHash");
-        params.remove("vnp_SecureHashType");
-
         boolean validSignature = VNPayUtil.verifySignature(params, secureHash);
+        Integer orderId = resolveOrderId(req, txnRef);
 
-        // ===== 3) Find order by txnRef =====
-        Integer orderId = orderDAO.findIdByTxnRef(txnRef);
-
-        if (orderId == null || orderId <= 0) {
-            resp.sendRedirect(req.getContextPath()
-                    + "/checkout/success?success=false&message=order_not_found");
-            return;
+        if (VNPayConfig.DEBUG) {
+            System.out.println("resolvedOrderId=" + orderId);
+            System.out.println("validSignature=" + validSignature);
+            System.out.println("===============================");
         }
 
         if (!validSignature) {
-            orderDAO.markVnpayAwaitingRetry(orderId, txnRef, "VNPay payment failed or needs retry.");
+            if (orderId != null && orderId > 0) {
+                orderDAO.markVnpayAwaitingRetry(orderId, txnRef, "VNPay return invalid signature.");
+            }
             cleanupVnpayOnly(req.getSession(false));
-
-            resp.sendRedirect(req.getContextPath()
-                    + "/checkout/success?success=false&orderId=" + orderId
-                    + "&message=invalid_signature");
+            redirectFail(req, resp, orderId, "invalid_signature");
             return;
         }
 
-        // ===== 4) Verify amount =====
-        BigDecimal total = orderDAO.getTotalByTxnRef(txnRef);
-
-        if (total == null) {
-            total = BigDecimal.ZERO;
-        }
-
-        long dbAmount = total.multiply(BigDecimal.valueOf(100)).longValue();
-
-        long vnpAmount;
-
-        try {
-            vnpAmount = Long.parseLong(vnpAmountStr);
-        } catch (Exception e) {
-            orderDAO.markVnpayAwaitingRetry(orderId, txnRef, "VNPay payment failed or needs retry.");
+        if (orderId == null || orderId <= 0) {
             cleanupVnpayOnly(req.getSession(false));
-
-            resp.sendRedirect(req.getContextPath()
-                    + "/checkout/success?success=false&orderId=" + orderId
-                    + "&message=invalid_amount");
+            redirectFail(req, resp, null, "order_not_found");
             return;
         }
 
-        if (dbAmount != vnpAmount) {
-            orderDAO.markVnpayAwaitingRetry(orderId, txnRef, "VNPay payment failed or needs retry.");
-            cleanupVnpayOnly(req.getSession(false));
+        // Đồng bộ lại txnRef vào đơn nếu trước đó DB chưa lưu được.
+        orderDAO.setVnpTxnRef(orderId, txnRef);
 
-            resp.sendRedirect(req.getContextPath()
-                    + "/checkout/success?success=false&orderId=" + orderId
-                    + "&message=amount_mismatch");
+        if (!isAmountMatched(orderId, amountStr)) {
+            orderDAO.markVnpayAwaitingRetry(orderId, txnRef, "VNPay amount mismatch.");
+            cleanupVnpayOnly(req.getSession(false));
+            redirectFail(req, resp, orderId, "amount_mismatch");
             return;
         }
 
-        // ===== 5) Success / Fail =====
-        if ("00".equals(responseCode)) {
+        if ("00".equals(responseCode)
+                && (VNPayUtil.isBlank(transactionStatus) || "00".equals(transactionStatus))) {
             handleSuccess(req, resp, orderId, txnRef);
             return;
         }
 
-        orderDAO.markVnpayAwaitingRetry(orderId, txnRef, "VNPay payment failed or needs retry.");
+        orderDAO.markVnpayAwaitingRetry(orderId, txnRef,
+                "VNPay payment failed. responseCode=" + responseCode
+                        + ", transactionStatus=" + transactionStatus);
         cleanupVnpayOnly(req.getSession(false));
 
-        resp.sendRedirect(req.getContextPath()
-                + "/checkout/success?success=false&orderId=" + orderId
-                + "&method=VNPAY");
+        redirectFail(req, resp, orderId, "vnpay_failed");
     }
 
-    private void handleSuccess(
-            HttpServletRequest req,
-            HttpServletResponse resp,
-            int orderId,
-            String txnRef
-    ) throws IOException {
+    private Map<String, String> collectVnpParams(HttpServletRequest req) {
+        Map<String, String> params = new HashMap<>();
+
+        req.getParameterMap().forEach((key, values) -> {
+            if (key != null && key.startsWith("vnp_") && values != null && values.length > 0) {
+                params.put(key, values[0]);
+            }
+        });
+
+        return params;
+    }
+
+    private Integer resolveOrderId(HttpServletRequest req, String txnRef) {
+        Integer orderId = null;
+
+        try {
+            orderId = orderDAO.findIdByTxnRef(txnRef);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        if (orderId != null && orderId > 0) {
+            return orderId;
+        }
+
+        HttpSession session = req.getSession(false);
+        orderId = getOrderIdFromSession(session);
+
+        if (orderId != null && orderId > 0 && orderDAO.findById(orderId) != null) {
+            return orderId;
+        }
+
+        orderId = parseOrderIdFromTxnRef(txnRef);
+
+        if (orderId != null && orderId > 0 && orderDAO.findById(orderId) != null) {
+            return orderId;
+        }
+
+        return null;
+    }
+
+    private Integer getOrderIdFromSession(HttpSession session) {
+        if (session == null) {
+            return null;
+        }
+
+        Object rawOrderId = session.getAttribute("VNP_ORDER_ID");
+        if (rawOrderId == null) {
+            return null;
+        }
+
+        try {
+            return Integer.parseInt(rawOrderId.toString().trim());
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
+     * Hỗ trợ cả định dạng mới MC{orderId}T{timestamp}
+     * và định dạng cũ MC{orderId}{13-digit timestamp}.
+     */
+    private Integer parseOrderIdFromTxnRef(String txnRef) {
+        if (VNPayUtil.isBlank(txnRef) || !txnRef.startsWith("MC")) {
+            return null;
+        }
+
+        String body = txnRef.substring(2).trim();
+        if (body.isEmpty()) {
+            return null;
+        }
+
+        int separatorIndex = body.indexOf('T');
+        String orderIdText;
+
+        if (separatorIndex > 0) {
+            orderIdText = body.substring(0, separatorIndex);
+        } else if (body.length() > 13) {
+            orderIdText = body.substring(0, body.length() - 13);
+        } else {
+            return null;
+        }
+
+        try {
+            return Integer.parseInt(orderIdText);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private boolean isAmountMatched(int orderId, String amountStr) {
+        Order order = orderDAO.findById(orderId);
+        BigDecimal total = order != null && order.getTotal() != null
+                ? order.getTotal()
+                : BigDecimal.ZERO;
+
+        long dbAmount = total
+                .setScale(0, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(100))
+                .longValue();
+
+        try {
+            long vnpAmount = Long.parseLong(amountStr);
+            return dbAmount == vnpAmount;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private void handleSuccess(HttpServletRequest req,
+                               HttpServletResponse resp,
+                               int orderId,
+                               String txnRef) throws IOException {
 
         HttpSession session = req.getSession(false);
         User currentUser = getCurrentUser(session);
 
-        /*
-         * Nếu đơn đã PAID rồi thì không finalize lại.
-         * Chỉ cleanup theo VNP_CART nếu còn snapshot.
-         */
         Order order = orderDAO.findById(orderId);
 
         if (order != null
@@ -154,42 +236,24 @@ public class VNPayReturnServlet extends HttpServlet {
             sendOrderSuccessEmailSafely(session, currentUser, orderId);
 
             resp.sendRedirect(req.getContextPath()
-                    + "/checkout/success?success=true&orderId=" + orderId
-                    + "&method=VNPAY");
+                    + "/checkout/success?success=true&orderId=" + orderId + "&method=VNPAY");
             return;
         }
 
         Map<String, CartItem> vnpCart = getVnpCart(session);
-
-        String couponCode =
-                (session != null) ? (String) session.getAttribute("VNP_COUPON") : null;
+        String couponCode = session != null ? (String) session.getAttribute("VNP_COUPON") : null;
 
         try {
-            /*
-             * finalizeVnpayPaid:
-             * - tạo order item nếu cần
-             * - trừ tồn kho
-             * - tăng used_count coupon nếu có
-             * - cập nhật payment_status = PAID
-             */
             checkoutService.finalizeVnpayPaid(orderId, vnpCart, couponCode);
-
-            /*
-             * Mục 68:
-             * Chỉ xóa các sản phẩm đã thanh toán trong VNP_CART.
-             * Sản phẩm chưa tích chọn vẫn giữ trong CART.
-             */
             cleanupPaidItems(session);
             sendOrderSuccessEmailSafely(session, currentUser, orderId);
 
             resp.sendRedirect(req.getContextPath()
-                    + "/checkout/success?success=true&orderId=" + orderId
-                    + "&method=VNPAY");
-
+                    + "/checkout/success?success=true&orderId=" + orderId + "&method=VNPAY");
         } catch (Exception e) {
             e.printStackTrace();
-
-            orderDAO.markVnpayAwaitingRetry(orderId, txnRef, "Không thể hoàn tất đơn sau khi VNPay trả về thành công.");
+            orderDAO.markVnpayAwaitingRetry(orderId, txnRef,
+                    "Không thể hoàn tất đơn sau khi VNPay trả về thành công.");
             cleanupVnpayOnly(session);
 
             resp.sendRedirect(req.getContextPath()
@@ -198,13 +262,27 @@ public class VNPayReturnServlet extends HttpServlet {
         }
     }
 
+    private void redirectFail(HttpServletRequest req,
+                              HttpServletResponse resp,
+                              Integer orderId,
+                              String message) throws IOException {
+        StringBuilder url = new StringBuilder(req.getContextPath())
+                .append("/checkout/success?success=false");
+
+        if (orderId != null && orderId > 0) {
+            url.append("&orderId=").append(orderId);
+        }
+
+        url.append("&message=").append(message == null ? "vnpay_failed" : message);
+        resp.sendRedirect(url.toString());
+    }
+
     private User getCurrentUser(HttpSession session) {
         if (session == null) {
             return null;
         }
 
         Object rawUser = session.getAttribute("user");
-
         if (rawUser instanceof User) {
             return (User) rawUser;
         }
@@ -212,10 +290,6 @@ public class VNPayReturnServlet extends HttpServlet {
         return null;
     }
 
-    /**
-     * Mục 91 - gửi email xác nhận đơn hàng sau khi VNPAY thanh toán thành công.
-     * Hàm này không làm hỏng luồng thanh toán nếu gửi mail lỗi.
-     */
     private void sendOrderSuccessEmailSafely(HttpSession session, User user, int orderId) {
         if (orderId <= 0) {
             return;
@@ -243,11 +317,8 @@ public class VNPayReturnServlet extends HttpServlet {
 
             sent = tryInvokeEmailMethod(serviceClass, emailService, "sendOrderSuccessEmail", orderId, email)
                     || tryInvokeEmailMethod(serviceClass, emailService, "sendOrderConfirmationEmail", orderId, email);
-
         } catch (ClassNotFoundException ignored) {
-            /*
-             * Chưa có OrderEmailService thì bỏ qua để không làm lỗi thanh toán.
-             */
+            // Chưa có OrderEmailService thì bỏ qua, không làm hỏng luồng thanh toán.
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -268,10 +339,9 @@ public class VNPayReturnServlet extends HttpServlet {
                                          String methodName,
                                          int orderId,
                                          String email) {
-        if (!isBlank(email)) {
+        if (!VNPayUtil.isBlank(email)) {
             try {
-                serviceClass
-                        .getMethod(methodName, int.class, String.class)
+                serviceClass.getMethod(methodName, int.class, String.class)
                         .invoke(service, orderId, email);
                 return true;
             } catch (NoSuchMethodException ignored) {
@@ -282,8 +352,7 @@ public class VNPayReturnServlet extends HttpServlet {
             }
 
             try {
-                serviceClass
-                        .getMethod(methodName, String.class, int.class)
+                serviceClass.getMethod(methodName, String.class, int.class)
                         .invoke(service, email, orderId);
                 return true;
             } catch (NoSuchMethodException ignored) {
@@ -295,9 +364,7 @@ public class VNPayReturnServlet extends HttpServlet {
         }
 
         try {
-            serviceClass
-                    .getMethod(methodName, int.class)
-                    .invoke(service, orderId);
+            serviceClass.getMethod(methodName, int.class).invoke(service, orderId);
             return true;
         } catch (NoSuchMethodException ignored) {
             return false;
@@ -314,15 +381,10 @@ public class VNPayReturnServlet extends HttpServlet {
 
         try {
             Object value = user.getClass().getMethod("getEmail").invoke(user);
-
-            if (value != null) {
-                return value.toString().trim();
-            }
+            return value == null ? "" : value.toString().trim();
         } catch (Exception ignored) {
-            // User model chưa có getEmail thì để rỗng.
+            return "";
         }
-
-        return "";
     }
 
     @SuppressWarnings("unchecked")
@@ -332,7 +394,6 @@ public class VNPayReturnServlet extends HttpServlet {
         }
 
         Object rawCart = session.getAttribute("VNP_CART");
-
         if (rawCart instanceof Map<?, ?>) {
             return (Map<String, CartItem>) rawCart;
         }
@@ -340,17 +401,12 @@ public class VNPayReturnServlet extends HttpServlet {
         return null;
     }
 
-    /*
-     * Dùng khi VNPAY thành công.
-     * Chỉ xóa item đã thanh toán khỏi CART.
-     */
     private void cleanupPaidItems(HttpSession session) {
         if (session == null) {
             return;
         }
 
         Map<String, CartItem> vnpCart = getVnpCart(session);
-
         if (vnpCart != null && !vnpCart.isEmpty()) {
             CartUtil.removeItems(session, vnpCart.keySet());
         }
@@ -359,10 +415,6 @@ public class VNPayReturnServlet extends HttpServlet {
         CartUtil.clearSelectedCartKeys(session);
     }
 
-    /*
-     * Dùng khi VNPAY thất bại / sai chữ ký / sai tiền.
-     * Không xóa CART để người dùng còn có thể thanh toán lại.
-     */
     private void cleanupVnpayOnly(HttpSession session) {
         if (session == null) {
             return;
@@ -379,7 +431,6 @@ public class VNPayReturnServlet extends HttpServlet {
 
         session.removeAttribute("CHECKOUT_COUPON");
         session.removeAttribute("CHECKOUT_COUPON_DISCOUNT");
-
         session.removeAttribute("VNP_ORDER_ID");
         session.removeAttribute("VNP_COUPON");
         session.removeAttribute("VNP_CART");
