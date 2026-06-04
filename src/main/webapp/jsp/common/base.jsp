@@ -3,6 +3,32 @@
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
+<%
+	if (request.getAttribute("headerNotifications") == null) {
+		com.webshop.app.model.User loggedUser = (com.webshop.app.model.User) session.getAttribute("user");
+		if (loggedUser == null) {
+			loggedUser = (com.webshop.app.model.User) session.getAttribute("authUser");
+		}
+		if (loggedUser != null) {
+			com.webshop.app.dao.NotificationDAO navNotifDAO = new com.webshop.app.dao.NotificationDAO();
+			try {
+				if (loggedUser.isAdmin()) {
+					java.util.List<com.webshop.app.model.Notification> adminNotifs = navNotifDAO.findLatestByAdmin(5);
+					int adminUnread = navNotifDAO.countUnreadByAdmin();
+					request.setAttribute("headerNotifications", adminNotifs);
+					request.setAttribute("adminUnreadCount", adminUnread);
+				} else {
+					java.util.List<com.webshop.app.model.Notification> userNotifs = navNotifDAO.findLatestByUser(loggedUser.getId(), 5);
+					int userUnread = navNotifDAO.countUnreadByUserId(loggedUser.getId());
+					request.setAttribute("headerNotifications", userNotifs);
+					request.setAttribute("unreadNotificationCount", userUnread);
+				}
+			} catch (Exception ignored) {}
+		}
+	}
+%>
+
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -150,137 +176,76 @@
 				</c:if>
 			</a>
 
-			<c:set var="headerUnreadCount" value="0" />
-			<c:choose>
-				<c:when test="${not empty requestScope.unreadNotificationCount}">
-					<c:set var="headerUnreadCount" value="${requestScope.unreadNotificationCount}" />
-				</c:when>
-				<c:when test="${not empty requestScope.unreadCount}">
-					<c:set var="headerUnreadCount" value="${requestScope.unreadCount}" />
-				</c:when>
-			</c:choose>
+			<c:set var="unreadCount" value="${sessionScope.user.admin ? adminUnreadCount : unreadNotificationCount}" />
 
-			<c:choose>
-				<c:when test="${not empty requestScope.latestNotifications}">
-					<c:set var="headerNotifications" value="${requestScope.latestNotifications}" />
-				</c:when>
-				<c:otherwise>
-					<c:set var="headerNotifications" value="${requestScope.notifications}" />
-				</c:otherwise>
-			</c:choose>
+			<button id="notifBellBtn" class="notification-bell" type="button" aria-haspopup="true" aria-expanded="false">
+				<span class="notification-bell__icon">🔔</span>
 
-			<div class="notification-container">
-				<button id="notifBellBtn"
-				        class="notification-bell"
-				        type="button"
-				        aria-label="Thông báo"
-				        aria-haspopup="true"
-				        aria-expanded="false">
-					<span class="notification-bell__icon">🔔</span>
+				<%-- Hiển thị số lượng thông báo chưa đọc màu đỏ nếu > 0 --%>
+				<c:if test="${unreadCount > 0}">
+        <span class="notif-badge" style="background: red; color: white; padding: 2px 6px; border-radius: 50%; font-size: 11px; position: absolute; top: -5px; right: -5px;">
+            <c:out value="${unreadCount > 99 ? '99+' : unreadCount}" />
+        </span>
+				</c:if>
+			</button>
 
-					<c:if test="${headerUnreadCount > 0}">
-						<span class="notif-badge">
-							<c:out value="${headerUnreadCount > 99 ? '99+' : headerUnreadCount}" />
-						</span>
-					</c:if>
-				</button>
+			<div class="notif-dropdown" id="notifDropdown">
+				<div class="notif-dropdown__header" style="padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between;">
+					<strong>Thông báo mới nhận</strong>
+				</div>
 
-				<div class="notif-dropdown"
-				     id="notifDropdown"
-				     aria-label="Danh sách thông báo">
+				<div class="notif-dropdown__body" style="max-height: 300px; overflow-y: auto;">
 					<c:choose>
-						<c:when test="${not empty sessionScope.user}">
-							<div class="notif-dropdown__head">
-								<span>Thông báo mới nhận</span>
+						<c:when test="${not empty headerNotifications}">
+							<%-- Vòng lặp duyệt danh sách thông báo --%>
+							<c:forEach var="notif" items="${headerNotifications}">
 
-								<c:if test="${headerUnreadCount > 0}">
-									<form class="notification-mark-all-form"
-									      method="post"
-									      action="${pageContext.request.contextPath}/notifications">
-										<input type="hidden" name="action" value="markAllRead">
-										<input type="hidden"
-										       name="csrf_token"
-										       value="<c:out value='${sessionScope.CSRF_TOKEN}'/>">
-										<button type="submit" class="notification-mark-all-btn">
-											Đánh dấu đã đọc
-										</button>
-									</form>
-								</c:if>
-							</div>
+								<%-- Đường dẫn chuyển hướng khi click đọc thông báo --%>
+								<c:url var="notifReadUrl" value="/notifications/read">
+									<c:param name="id" value="${notif.id}" />
+									<c:param name="redirect" value="${empty notif.targetUrl ? '/admin/notifications' : notif.targetUrl}" />
+								</c:url>
 
-							<div class="notif-dropdown__body">
-								<c:choose>
-									<c:when test="${not empty headerNotifications}">
-										<c:forEach var="notif" items="${headerNotifications}">
-											<c:url var="notifReadUrl" value="/notifications">
-												<c:param name="action" value="read" />
-												<c:param name="id" value="${notif.id}" />
-												<c:param name="returnUrl" value="${empty notif.targetUrl ? '/notifications' : notif.targetUrl}" />
-											</c:url>
+								<a href="${notifReadUrl}" class="notification-item ${notif.read ? 'is-read' : 'is-unread'}"
+								   style="display: flex; padding: 10px; border-bottom: 1px solid #f9f9f9; text-decoration: none; color: #333; ${!notif.read ? 'background-color: #f0f7ff;' : ''}">
 
-											<a href="${notifReadUrl}"
-											   class="notification-item ${notif.read ? 'is-read' : 'is-unread'}">
-												<span class="notification-item__icon">
-													<c:choose>
-														<c:when test="${notif.type == 'ORDER_CREATED'}">🛒</c:when>
-														<c:when test="${notif.type == 'ORDER_CONFIRMED'}">✅</c:when>
-														<c:when test="${notif.type == 'ORDER_SHIPPING'}">🚚</c:when>
-														<c:when test="${notif.type == 'ORDER_DELIVERED'}">📦</c:when>
-														<c:when test="${notif.type == 'ORDER_DELIVERY_FAILED'}">⚠️</c:when>
-														<c:when test="${notif.type == 'ORDER_CANCELLED'}">❌</c:when>
-														<c:when test="${fn:startsWith(notif.type, 'CANCEL_REQUEST')}">📝</c:when>
-														<c:when test="${fn:startsWith(notif.type, 'RETURN_REQUEST')}">↩️</c:when>
-														<c:when test="${fn:startsWith(notif.type, 'REVIEW')}">⭐</c:when>
-														<c:when test="${notif.type == 'VOUCHER'}">🎟️</c:when>
-														<c:otherwise>🔔</c:otherwise>
-													</c:choose>
-												</span>
+			                        <span class="notification-item__icon" style="font-size: 20px; margin-right: 10px;">
+			                            <c:choose>
+											<c:when test="${notif.type == 'CONTACT_CREATED'}">✉️</c:when>
+											<c:when test="${notif.type == 'ORDER_CREATED'}">🛒</c:when>
+											<c:otherwise>🔔</c:otherwise>
+										</c:choose>
+			                        </span>
 
-												<span class="notification-item__content">
-													<strong><c:out value="${notif.title}" /></strong>
-													<small><c:out value="${notif.message}" /></small>
-												</span>
+									<span class="notification-item__content" style="display: flex; flex-direction: column;">
+			                            <strong style="font-size: 13px; color: #111;">
+			                                <c:out value="${notif.title}" />
+			                            </strong>
+			                            <small style="font-size: 12px; color: #666; margin-top: 2px;">
+			                                <c:out value="${notif.message}" />
+			                            </small>
+			                        </span>
 
-												<c:if test="${not notif.read}">
-													<span class="notification-item__dot" aria-hidden="true"></span>
-												</c:if>
-											</a>
-										</c:forEach>
-									</c:when>
-
-									<c:otherwise>
-										<div class="notification-empty">
-											<div class="notification-empty__icon">🔔</div>
-											<p>Bạn chưa có thông báo nào mới.</p>
-										</div>
-									</c:otherwise>
-								</c:choose>
-							</div>
-
-							<a href="${pageContext.request.contextPath}/notifications"
-							   class="notification-view-all">
-								Xem tất cả thông báo
-							</a>
+									<c:if test="${not notif.read}">
+										<span class="notification-item__dot" style="width: 8px; height: 8px; background-color: #007bff; border-radius: 50%; margin-left: auto; align-self: center;"></span>
+									</c:if>
+								</a>
+							</c:forEach>
 						</c:when>
 
+						<%-- Nếu không có thông báo nào --%>
 						<c:otherwise>
-							<div class="notification-guest">
-								<div class="notification-guest__icon">🔔</div>
-
-								<h4>Bạn có thông báo mới không?</h4>
-
-								<p>
-									Đăng nhập ngay để xem các thông báo khuyến mãi,
-									voucher và theo dõi hành trình đơn hàng.
-								</p>
-
-								<a href="${pageContext.request.contextPath}/login"
-								   class="notification-login-link">
-									Đăng nhập ngay
-								</a>
+							<div class="notification-empty" style="padding: 20px; text-align: center; color: #999;">
+								<p>Bạn không có thông báo nào mới.</p>
 							</div>
 						</c:otherwise>
 					</c:choose>
+				</div>
+
+				<div class="notif-dropdown__footer" style="padding: 10px; text-align: center; border-top: 1px solid #eee;">
+					<a href="${pageContext.request.contextPath}${sessionScope.user.admin ? '/admin/notifications' : '/notifications'}" style="font-size: 12px; color: #ff5fa2; text-decoration: none; font-weight: bold;">
+						Xem tất cả thông báo
+					</a>
 				</div>
 			</div>
 
