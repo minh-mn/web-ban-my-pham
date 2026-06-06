@@ -1,0 +1,205 @@
+/* =========================================================
+   WISHLIST DESIGN SYSTEM (Đồng bộ theo hệ màu :root mới)
+========================================================= */
+
+.wishlist-section {
+  background-color: var(--background, #f5f7fb);
+  padding: 50px 0;
+  min-height: 85vh;
+}
+
+.wishlist-page-header h2 {
+  color: var(--text-main, #111827);
+  font-size: 30px;
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+
+.wishlist-page-header p {
+  color: var(--text-muted, #6b7280);
+  font-size: 16px;
+}
+
+/* Khung lưới Grid chuẩn hiển thị danh sách */
+.product-grid.collection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 24px;
+  margin-top: 30px;
+}
+
+/* Thẻ sản phẩm nổi bật, chống chìm trên nền trắng */
+.product-card.collection-card {
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--border-color, #dbe3ee);
+  border-radius: var(--radius-md, 12px);
+  box-shadow: var(--shadow-sm, 0 1px 2px 0 rgb(15 23 42 / 0.05));
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+  box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+  border-color 0.3s ease;
+}
+
+/* Hiệu ứng nhấc nhẹ thẻ khi rê chuột */
+.product-card.collection-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-lg, 0 18px 40px -18px rgb(15 23 42 / 0.22));
+  border-color: var(--primary, #e11d48);
+}
+
+/* Khung ảnh vuông tỉ lệ 1:1 */
+.card-image-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background-color: var(--surface-soft, #f8fafc);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.product-card.collection-card:hover .card-img {
+  transform: scale(1.06);
+}
+
+/* Khối text giữ chỗ khi ảnh gốc bị lỗi */
+.no-image-placeholder {
+  display: none;
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background-color: var(--surface-soft, #f8fafc);
+  color: var(--text-muted, #6b7280);
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Vùng thông tin nội dung */
+.card-content {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.product-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  line-height: 1.4;
+}
+
+.product-title a {
+  color: var(--text-main, #111827);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.product-title a:hover {
+  color: var(--primary, #e11d48);
+}
+
+.product-price {
+  color: var(--primary, #e11d48);
+  font-weight: 700;
+  font-size: 16px;
+  margin-top: auto; /* Giúp giá tiền luôn thẳng hàng đáy */
+}
+
+/* Form đặt vị trí nút Tim */
+.wishlist-form {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 5;
+}
+
+/* Nút trái tim tròn nổi trên ảnh */
+.wishlist-btn {
+  background: var(--surface, #ffffff);
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--shadow-md, 0 8px 24px -12px rgb(15 23 42 / 0.14));
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.2s ease;
+}
+
+.wishlist-btn:hover {
+  transform: scale(1.15);
+  background-color: var(--primary-soft, #fff1f5);
+}
+
+.wishlist-btn i {
+  color: var(--primary, #e11d48);
+  font-size: 18px;
+}
+
+/* Giao diện danh sách trống */
+.wishlist-empty {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  background: var(--surface, #ffffff);
+  border-radius: var(--radius-lg, 18px);
+  border: 2px dashed var(--border-color, #dbe3ee);
+  padding: 40px;
+  box-shadow: var(--shadow-sm, 0 1px 2px 0 rgb(15 23 42 / 0.05));
+}
+
+.wishlist-empty-icon {
+  color: var(--primary, #e11d48);
+  font-size: 64px;
+  margin-bottom: 18px;
+}
+
+.wishlist-empty-title {
+  color: var(--text-main, #111827);
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+}
+
+.wishlist-empty p {
+  color: var(--text-muted, #6b7280);
+  margin: 0 0 24px 0;
+  font-size: 15px;
+}
+
+/* Nút quay lại mua sắm */
+.btn-continue-shopping {
+  display: inline-block;
+  padding: 12px 36px;
+  text-decoration: none;
+  border-radius: var(--radius-md, 12px);
+  background: var(--primary, #e11d48);
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 15px;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+}
+
+.btn-continue-shopping:hover {
+  background: var(--primary-hover, #be123c);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
