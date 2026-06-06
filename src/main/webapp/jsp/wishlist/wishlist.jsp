@@ -5,61 +5,62 @@
 <c:set var="ctx" value="${pageContext.request.contextPath}" />
 
 <link rel="stylesheet" href="${ctx}/assets/css/product-list.css">
+<link rel="stylesheet" href="${ctx}/assets/css/wishlist.css">
 
-<section class="section">
-    <div class="container page-header" style="text-align:center; max-width:760px; margin-bottom: 40px; margin-top: 30px;">
-        <h2 class="section-title" style="font-size: 28px; font-weight: 800; color: #222; margin-bottom: 8px;">Danh sách yêu thích của bạn</h2>
-        <p style="color:#666; font-size:16px;">Những sản phẩm bạn đã lưu lại để mua sau.</p>
+
+<section class="section wishlist-section">
+    <div class="container wishlist-page-header" style="text-align:center; max-width:760px; margin-bottom: 40px; margin-top: 10px;">
+        <h2>Danh sách yêu thích của bạn</h2>
+        <p>Những sản phẩm bạn đã lưu lại để mua sau.</p>
     </div>
 
     <div class="container collection-container">
         <div class="product-grid collection-grid">
-
             <c:choose>
                 <c:when test="${not empty products}">
-                    <%-- CHỈ DÙNG 1 VÒNG LẶP DUY NHẤT --%>
                     <c:forEach var="p" items="${products}">
-                        <article class="product-card collection-card" id="wishlist-item-${p.id}" style="border: 1px solid #eee; position: relative;">
+                        <article class="product-card collection-card" id="wishlist-item-${p.id}">
 
                                 <%-- 1. Hình ảnh --%>
-                                    <div class="card-image-wrap">
-                                        <img src="${ctx}${p.image}" alt="${p.title}" class="card-img"
-                                             onerror="this.onerror=null; this.style.display='none'; this.parentElement.querySelector('.no-image-placeholder').style.display='flex';">
-                                            <%-- Khối hiển thị khi không có ảnh --%>
-                                        <div class="no-image-placeholder">
-                                            <span>Chưa có ảnh</span>
-                                        </div>
-                                    </div>
+                            <div class="card-image-wrap">
+                                <img src="${ctx}${p.image}" alt="${p.title}" class="card-img"
+                                     onerror="this.onerror=null; this.style.display='none'; this.parentElement.querySelector('.no-image-placeholder').style.display='flex';">
 
-                                <%-- 2. Thông tin --%>
-                            <div class="card-content" style="padding: 10px;">
-                                <h3 class="product-title" style="font-size: 16px; margin-bottom: 5px;">
+                                    <%-- Khối hiển thị khi không có ảnh gốc hoặc ảnh bị lỗi mạng --%>
+                                <div class="no-image-placeholder">
+                                    <span>Chưa có ảnh</span>
+                                </div>
+                            </div>
+
+                                <%-- 2. Thông tin chữ --%>
+                            <div class="card-content">
+                                <h3 class="product-title">
                                     <a href="${ctx}/product/detail?id=${p.id}">${p.title}</a>
                                 </h3>
-                                <p class="product-price" style="color: #d92c74; font-weight: 600;">
+                                <p class="product-price">
                                     <fmt:formatNumber value="${not empty p.finalPrice ? p.finalPrice : p.price}" type="number" pattern="#,###"/>₫
                                 </p>
                             </div>
 
-                                <%-- 3. Nút xóa --%>
-                            <form method="post" action="${ctx}/wishlist/toggle" class="wishlist-form" style="position: absolute; top: 10px; right: 10px;">
+                                <%-- 3. Nút xóa dạng Trái Tim Nổi độc lập --%>
+                            <form method="post" action="${ctx}/wishlist/toggle" class="wishlist-form">
                                 <input type="hidden" name="productId" value="${p.id}">
-                                <button type="submit" class="wishlist-btn active" style="background:none; border:none; cursor:pointer;">
-                                    <i class="fa-solid fa-heart" style="color: #ff5fa2; font-size: 20px;"></i>
+                                <button type="submit" class="wishlist-btn active" title="Xóa khỏi danh sách yêu thích">
+                                    <i class="fa-solid fa-heart"></i>
                                 </button>
                             </form>
                         </article>
                     </c:forEach>
                 </c:when>
 
-                <%-- KHI DANH SÁCH TRỐNG --%>
+                <%-- TRẠNG THÁI DANH SÁCH TRỐNG --%>
                 <c:otherwise>
-                    <div class="wishlist-empty" style="grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; min-height: 350px;">
+                    <div class="wishlist-empty">
                         <div class="wishlist-empty-content" style="text-align: center;">
-                            <div class="wishlist-empty-icon" style="color: #ff5fa2; font-size: 56px; margin-bottom: 16px;"><i class="fa-regular fa-heart"></i></div>
-                            <h3 class="wishlist-empty-title" style="color: #222; font-size: 22px; margin-bottom: 8px;">Danh sách trống</h3>
-                            <p style="color: #666; margin-bottom: 24px;">Bạn chưa lưu sản phẩm nào vào danh mục yêu thích.</p>
-                            <a href="${ctx}/products" class="collection-card__cart-btn" style="display: inline-block; padding: 12px 30px; text-decoration: none; border-radius: 999px; background: #eee; color: #333;">
+                            <div class="wishlist-empty-icon"><i class="fa-regular fa-heart"></i></div>
+                            <h3 class="wishlist-empty-title">Danh sách trống</h3>
+                            <p>Bạn chưa lưu sản phẩm nào vào danh mục yêu thích.</p>
+                            <a href="${ctx}/products" class="btn-continue-shopping">
                                 Tiếp tục mua sắm
                             </a>
                         </div>
@@ -70,6 +71,7 @@
     </div>
 </section>
 
+<%-- JS xử lý bất đồng bộ JSON để đổi màu / xóa trực tiếp card sản phẩm --%>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         const wishlistForms = document.querySelectorAll(".wishlist-form");
@@ -85,19 +87,21 @@
                     headers: { "Content-Type": "application/x-www-form-urlencoded" },
                     body: formData
                 })
-                    .then(response => response.text()) // Lấy text trả về
+                    .then(response => response.json())
                     .then(data => {
-                        if (data === "REMOVED") {
+                        if (data.wishlisted === false || data.status === "REMOVED") {
                             const card = document.getElementById("wishlist-item-" + productId);
                             if(card) {
+                                // Tạo hiệu ứng thu nhỏ và mờ dần biến mất
                                 card.style.opacity = '0';
-                                card.style.transition = 'all 0.3s ease';
+                                card.style.transform = 'scale(0.9) translateY(10px)';
+                                card.style.transition = 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)';
+
                                 setTimeout(() => {
-                                    card.remove();
-                                    // Nếu xóa hết thì reload để hiện thông báo danh sách trống
+                                    card.remove(); 
                                     const remaining = document.querySelectorAll(".collection-card");
                                     if(remaining.length === 0) window.location.reload();
-                                }, 300);
+                                }, 350);
                             }
                         }
                     })
