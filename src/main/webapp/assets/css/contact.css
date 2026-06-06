@@ -1,0 +1,149 @@
+/* =========================================================
+   CONTACT PAGE - MODERN LUXURY COSMETIC UI
+========================================================= */
+
+.contact-page {
+  padding: 40px 0 60px;
+}
+
+.contact-hero {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.contact-hero h1 {
+  color: #e11d48;
+  font-size: 36px;
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+
+.contact-hero p {
+  color: #6b7280;
+  font-size: 15px;
+}
+
+.contact-layout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 32px;
+}
+
+.contact-info-card,
+.contact-form-card {
+  background: #ffffff;
+  border: 1px solid #dbe3ee;
+  border-radius: 18px;
+  padding: 30px;
+  box-shadow: 0 8px 24px -12px rgb(15 23 42 / 0.12);
+}
+
+.contact-info-card {
+  flex: 1;
+  min-width: 300px;
+  background: linear-gradient(
+          135deg,
+          #fff7fa 0%,
+          #ffffff 100%
+  );
+}
+
+.contact-form-card {
+  flex: 1.5;
+  min-width: 300px;
+}
+
+.contact-info-card h3,
+.contact-form-card h3 {
+  color: #111827;
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 24px;
+}
+
+.contact-item {
+  margin-bottom: 18px;
+  color: #4b5563;
+  line-height: 1.7;
+}
+
+.contact-item i {
+  color: #e11d48;
+  width: 22px;
+}
+
+.contact-success {
+  background: #ecfdf5;
+  border: 1px solid #bbf7d0;
+  color: #059669;
+  padding: 14px 18px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  font-weight: 600;
+}
+
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.contact-form input,
+.contact-form textarea {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid #dbe3ee;
+  border-radius: 12px;
+  outline: none;
+  font-size: 14px;
+  color: #111827;
+  transition: all .2s ease;
+}
+
+.contact-form input:focus,
+.contact-form textarea:focus {
+  border-color: #e11d48;
+  box-shadow: 0 0 0 4px rgba(225,29,72,.10);
+}
+
+.contact-form textarea {
+  resize: vertical;
+  min-height: 140px;
+}
+
+.contact-submit {
+  background: linear-gradient(
+          180deg,
+          #e11d48 0%,
+          #be123c 100%
+  );
+  color: #fff;
+  border: none;
+  padding: 14px 24px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  align-self: flex-start;
+  box-shadow: 0 16px 30px -18px rgba(225,29,72,.75);
+  transition: all .2s ease;
+}
+
+.contact-submit:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 34px -18px rgba(225,29,72,.85);
+}
+
+@media (max-width: 768px) {
+  .contact-layout {
+    flex-direction: column;
+  }
+
+  .contact-hero h1 {
+    font-size: 28px;
+  }
+
+  .contact-submit {
+    width: 100%;
+  }
+}
