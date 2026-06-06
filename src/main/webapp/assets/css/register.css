@@ -2,13 +2,42 @@
    AUTH PAGE – MYCOSMETIC (LOGIN / REGISTER)
 ========================================================= */
 
+:root {
+  --primary: #e11d48;
+  --primary-hover: #be123c;
+  --primary-soft: #fff1f5;
+
+  --surface: #ffffff;
+  --surface-soft: #f8fafc;
+  --background: #f5f7fb;
+
+  --text-main: #111827;
+  --text-muted: #6b7280;
+
+  --border-color: #dbe3ee;
+
+  --success: #059669;
+  --success-soft: #ecfdf5;
+
+  --warning: #d97706;
+  --warning-soft: #fffbeb;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+
+  --shadow-sm: 0 1px 2px 0 rgb(15 23 42 / 0.05);
+  --shadow-md: 0 8px 24px -12px rgb(15 23 42 / 0.14);
+  --shadow-lg: 0 18px 40px -18px rgb(15 23 42 / 0.22);
+}
+
 .auth-page {
   min-height: calc(100vh - 120px);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 64px 16px;
-  background: linear-gradient(180deg, #fff1f7 0%, #fff9fc 100%);
+  background: linear-gradient(180deg, #f5f7fb 0%, #ffffff 100%);
 }
 
 /* =========================================================
@@ -21,8 +50,9 @@
   border-radius: 28px;
   padding: 38px 34px;
   text-align: center;
-  box-shadow: 0 24px 56px rgba(255, 95, 162, 0.28);
+  box-shadow: 0 24px 56px rgba(15, 23, 42, 0.10);
   animation: authFadeUp .55s ease;
+  border: 1px solid var(--border-color);
 }
 
 .auth-card-sm {
@@ -35,13 +65,13 @@
 .auth-title {
   font-size: 28px;
   font-weight: 900;
-  color: #ff5fa2;
+  color: var(--primary);
   margin-bottom: 8px;
 }
 
 .auth-subtitle {
   font-size: 14px;
-  color: #777;
+  color: var(--text-muted);
   margin-bottom: 28px;
   line-height: 1.6;
 }
@@ -61,7 +91,7 @@
   display: block;
   font-size: 14px;
   font-weight: 700;
-  color: #444;
+  color: var(--text-main);
   margin-bottom: 6px;
 }
 
@@ -78,7 +108,7 @@
   position: absolute;
   left: 16px;
   font-size: 16px;
-  color: #ff5fa2;
+  color: var(--primary);
 }
 
 .input-group input {
@@ -86,21 +116,22 @@
   height: 48px;
   padding: 0 46px;
   border-radius: 999px;
-  border: 1.5px solid #ffd6e6;
+  border: 1.5px solid var(--border-color);
   font-size: 14px;
   background: #fff;
-
-  transition: border-color .2s ease, box-shadow .2s ease;
+  color: var(--text-main);
+  transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
 }
 
 .input-group input::placeholder {
-  color: #aaa;
+  color: #94a3b8;
 }
 
 .input-group input:focus {
   outline: none;
-  border-color: #ff5fa2;
-  box-shadow: 0 0 0 4px rgba(255,95,162,.16);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(225, 29, 72, 0.12);
+  background: #fff;
 }
 
 /* =========================================================
@@ -112,11 +143,13 @@
   font-size: 15px;
   cursor: pointer;
   opacity: .7;
-  transition: opacity .2s ease;
+  transition: opacity .2s ease, color .2s ease;
+  color: var(--text-muted);
 }
 
 .toggle-password:hover {
   opacity: 1;
+  color: var(--primary);
 }
 
 /* =========================================================
@@ -130,7 +163,7 @@
   border-radius: 999px;
   border: none;
 
-  background: linear-gradient(135deg,#ff5fa2,#ff86c3);
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
   color: #ffffff;
 
   font-size: 16px;
@@ -138,35 +171,32 @@
   letter-spacing: .4px;
   cursor: pointer;
 
-  box-shadow: 0 18px 40px rgba(255,95,162,.45);
+  box-shadow: 0 18px 40px rgba(225, 29, 72, .28);
 
-  /* Không dùng transition: all để tránh bị “đổi màu” bất ngờ */
   transition:
-    transform .2s cubic-bezier(.34,1.56,.64,1),
-    box-shadow .2s ease;
+          transform .2s cubic-bezier(.34,1.56,.64,1),
+          box-shadow .2s ease;
 }
 
-/* Hover: nẩy lên + giữ nguyên nền (chặn base.css đổi nền) */
 .auth-page .btn-auth:hover {
   transform: translateY(-3px);
-  box-shadow: 0 26px 52px rgba(255,95,162,.55);
+  box-shadow: 0 26px 52px rgba(225, 29, 72, .34);
 
-  background: linear-gradient(135deg, #ff5fa2, #ff86c3);
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
   color: #fff;
 }
 
-/* Active: lún nhẹ cho “đã tay” */
 .auth-page .btn-auth:active {
   transform: translateY(-1px) scale(0.98);
-  box-shadow: 0 14px 28px rgba(255,95,162,.40);
+  box-shadow: 0 14px 28px rgba(225, 29, 72, .22);
 }
 
-/* Focus (bàn phím) */
 .auth-page .btn-auth:focus {
   outline: none;
 }
+
 .auth-page .btn-auth:focus-visible {
-  outline: 3px solid rgba(255,95,162,.28);
+  outline: 3px solid rgba(225, 29, 72, .22);
   outline-offset: 2px;
 }
 
@@ -178,15 +208,15 @@
   font-weight: 700;
 
   color: #fff;
-  background: linear-gradient(135deg,#ff5fa2,#ff86c3);
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
 
-  box-shadow: 0 6px 18px rgba(255,95,162,.45);
+  box-shadow: 0 6px 18px rgba(225, 29, 72, .20);
   transition: transform .2s ease, box-shadow .2s ease;
 }
 
 .btn-register:hover {
   transform: translateY(-1px);
-  box-shadow: 0 10px 26px rgba(255,95,162,.55);
+  box-shadow: 0 10px 26px rgba(225, 29, 72, .26);
 }
 
 /* =========================================================
@@ -195,12 +225,12 @@
 .auth-footer {
   margin-top: 24px;
   font-size: 14px;
-  color: #666;
+  color: var(--text-muted);
   text-align: center;
 }
 
 .auth-footer a {
-  color: #ff5fa2;
+  color: var(--primary);
   font-weight: 800;
   text-decoration: none;
 }
@@ -213,15 +243,16 @@
    ERROR BOX
 ========================================================= */
 .auth-error-box {
-  background: #ffe6ee;
+  background: var(--primary-soft);
   border-radius: 18px;
   padding: 14px 16px;
   margin-bottom: 22px;
+  border: 1px solid #fecdd3;
 }
 
 .auth-error {
   font-size: 13px;
-  color: #c62828;
+  color: var(--primary-hover);
   font-weight: 600;
   line-height: 1.4;
 }
@@ -275,16 +306,16 @@
   justify-content: flex-start;
   width: 100%;
   padding: 12px 24px;
-  border: 1px solid #d9dadc !important;
+  border: 1px solid var(--border-color) !important;
   border-radius: 500px !important;
   background-color: #ffffff !important;
-  color: #121212 !important;
+  color: var(--text-main) !important;
   font-size: 15px !important;
   font-weight: 700 !important;
   text-decoration: none;
   box-sizing: border-box;
   cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease !important;
+  transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;
 }
 
 .social-btn img {
@@ -297,26 +328,27 @@
 .social-btn span {
   flex: 1;
   text-align: center;
-  margin-right: 20px; /* Bù trừ tỉ lệ khoảng trống để chữ nằm đúng trung tâm */
+  margin-right: 20px;
 }
 
-/* Hiệu ứng mượt mà khi tương tác chuột giống login */
 .social-btn:hover {
-  background-color: #f7f8f9 !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+  background-color: #fff1f5 !important;
+  border-color: var(--primary) !important;
+  box-shadow: 0 4px 12px rgba(225, 29, 72, 0.10) !important;
   transform: translateY(-1px) !important;
+  color: var(--primary) !important;
 }
 
 .social-btn:active {
   transform: translateY(1px) !important;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04) !important;
+  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.04) !important;
 }
 
 .auth-separator {
   display: flex;
   align-items: center;
   margin: 36px 0;
-  color: #777;
+  color: var(--text-muted);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 1px;
@@ -327,7 +359,7 @@
   content: "";
   flex: 1;
   height: 1px;
-  background: #e5e5e5;
+  background: #e2e8f0;
 }
 
 .auth-separator::before {
@@ -344,21 +376,21 @@
 .error-msg {
   display: none;
   margin-top: 6px;
-  color: #e53935;
+  color: var(--primary-hover);
   font-size: 13px;
   font-weight: 500;
   text-align: left;
 }
 
 .input-error {
-  border: 1.5px solid #e53935 !important;
-  background: #fff5f5 !important;
-  box-shadow: 0 0 0 4px rgba(229, 57, 53, 0.1) !important;
+  border: 1.5px solid var(--primary-hover) !important;
+  background: #fff5f7 !important;
+  box-shadow: 0 0 0 4px rgba(190, 18, 60, 0.10) !important;
 }
 
 .input-success {
-  border: 1.5px solid #43a047 !important;
-  background: #f1fff3 !important;
+  border: 1.5px solid var(--success) !important;
+  background: var(--success-soft) !important;
 }
 
 /* Ẩn hoàn toàn icon mắt mặc định của Microsoft Edge và Chrome */
@@ -378,21 +410,24 @@ input::-ms-clear {
   width: 350px;
   height: 40px;
   margin: 0 auto;
-  border: 1px solid #dadce0;
+  border: 1px solid #dbe3ee;
   border-radius: 20px;
   background-color: #ffffff;
-  color: #3c4043;
+  color: #111827;
   font-family: 'Roboto', arial, sans-serif;
   font-size: 13.20px;
   font-weight: 500;
   text-decoration: none;
   box-sizing: border-box;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .btn-facebook-custom:hover {
-  background-color: #f8f9fa;
+  background-color: #f8fafc;
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
 }
 
 .btn-facebook-custom img {
@@ -424,19 +459,19 @@ input[type="radio"]:focus {
 .gender-option label {
   display: block;
   padding: 10px 25px;
-  border: 2px solid #eee;
+  border: 2px solid #dbe3ee;
   border-radius: 50px;
   cursor: pointer;
   transition: all 0.3s ease;
   font-weight: 600;
-  color: #555;
+  color: var(--text-muted);
   background: #fff;
 }
 
 /* 5. Style khi đã được TICK chọn (Ôm trọn bằng màu hồng) */
 .gender-option input[type="radio"]:checked + label {
-  border-color: #ff5fa2;
-  background-color: #fff1f7;
-  color: #ff5fa2;
-  box-shadow: 0 4px 10px rgba(255, 95, 162, 0.2); 
+  border-color: var(--primary);
+  background-color: var(--primary-soft);
+  color: var(--primary);
+  box-shadow: 0 4px 10px rgba(225, 29, 72, 0.14);
 }
