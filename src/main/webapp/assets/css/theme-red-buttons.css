@@ -1,0 +1,473 @@
+/* =========================================================
+   MYCOSMETIC - RED BUTTON THEME
+   Muc dich: dong bo tat ca nut thao tac sang mau do giong Dang nhap/Dang ky
+   Ap dung cho ca trang user va admin. Dat file nay sau base.css va page css.
+========================================================= */
+
+:root,
+.admin-body {
+    --brand-red: #e11d48;
+    --brand-red-dark: #be123c;
+    --brand-red-soft: #fff1f5;
+    --brand-red-border: rgba(225, 29, 72, 0.32);
+    --brand-red-shadow: rgba(225, 29, 72, 0.28);
+
+    /* Dong bo cac bien mau cu cua website */
+    --pink-main: #e11d48;
+    --pink-dark: #be123c;
+    --pink-soft: #fff1f5;
+    --primary: #e11d48;
+    --primary-hover: #be123c;
+    --primary-soft: #fff1f5;
+    --mc-primary: #e11d48;
+    --mc-primary-dark: #be123c;
+    --admin-brand: #e11d48;
+    --admin-brand-dark: #be123c;
+}
+
+/* =========================================================
+   USER SITE BUTTONS
+========================================================= */
+a[class*="btn"],
+button[class*="btn"],
+input[type="submit"],
+input[type="button"],
+input[type="reset"],
+.btn-login,
+.btn-register,
+.btn-auth,
+.auth-submit,
+.auth-submit-btn,
+.contact-submit,
+.e-invoice-submit,
+.mc-btn,
+.success-btn,
+.order-action-btn,
+.return-btn,
+.coupon-confirm-btn,
+.coupon-select-btn,
+.voucher-save-btn,
+.voucher-detail-btn,
+.voucher-condition-btn,
+.notification-page__mark-btn,
+.notification-empty-state__btn,
+.notification-pagination__btn,
+.search-history-clear-btn,
+.search-history-delete-btn,
+.address-map-btn,
+.toggle-btn,
+.pg-btn {
+    border-color: var(--brand-red) !important;
+    background: linear-gradient(135deg, var(--brand-red), var(--brand-red-dark)) !important;
+    color: #ffffff !important;
+    box-shadow: 0 12px 28px var(--brand-red-shadow) !important;
+    text-decoration: none !important;
+}
+
+/* Nut dang nhap/dang ky tren header */
+.btn-login,
+.btn-register,
+.auth-buttons .btn-login,
+.auth-buttons .btn-register {
+    background: linear-gradient(135deg, var(--brand-red), var(--brand-red-dark)) !important;
+    color: #ffffff !important;
+    border: 1px solid var(--brand-red) !important;
+    box-shadow: 0 10px 24px rgba(225, 29, 72, 0.25) !important;
+}
+
+/* Hover chung */
+a[class*="btn"]:hover,
+button[class*="btn"]:hover,
+input[type="submit"]:hover,
+input[type="button"]:hover,
+input[type="reset"]:hover,
+.btn-login:hover,
+.btn-register:hover,
+.btn-auth:hover,
+.auth-submit:hover,
+.auth-submit-btn:hover,
+.contact-submit:hover,
+.e-invoice-submit:hover,
+.mc-btn:hover,
+.success-btn:hover,
+.order-action-btn:hover,
+.return-btn:hover,
+.coupon-confirm-btn:hover,
+.coupon-select-btn:hover,
+.voucher-save-btn:hover,
+.voucher-detail-btn:hover,
+.voucher-condition-btn:hover,
+.notification-page__mark-btn:hover,
+.notification-empty-state__btn:hover,
+.notification-pagination__btn:hover,
+.search-history-clear-btn:hover,
+.search-history-delete-btn:hover,
+.address-map-btn:hover,
+.toggle-btn:hover,
+.pg-btn:hover {
+    background: linear-gradient(135deg, #f43f5e, var(--brand-red-dark)) !important;
+    border-color: var(--brand-red-dark) !important;
+    color: #ffffff !important;
+    box-shadow: 0 16px 34px rgba(225, 29, 72, 0.34) !important;
+    transform: translateY(-2px);
+}
+
+/* Cac nut outline/secondary van dong bo do, nhung nen nhe hon de phan cap hanh dong */
+.btn-outline,
+.btn-outline-pill,
+.btn-empty-secondary,
+.success-btn-secondary,
+.mc-btn-secondary,
+.modal-btn-secondary,
+.order-back-btn,
+.btn-back-to-shop,
+.btn-continue-shopping,
+.btn-policy-back,
+.admin-btn--secondary,
+.admin-btn--ghost {
+    background: #ffffff !important;
+    color: var(--brand-red) !important;
+    border: 1.5px solid var(--brand-red-border) !important;
+    box-shadow: 0 8px 20px rgba(225, 29, 72, 0.12) !important;
+}
+
+.btn-outline:hover,
+.btn-outline-pill:hover,
+.btn-empty-secondary:hover,
+.success-btn-secondary:hover,
+.mc-btn-secondary:hover,
+.modal-btn-secondary:hover,
+.order-back-btn:hover,
+.btn-back-to-shop:hover,
+.btn-continue-shopping:hover,
+.btn-policy-back:hover,
+.admin-btn--secondary:hover,
+.admin-btn--ghost:hover {
+    background: var(--brand-red-soft) !important;
+    color: var(--brand-red-dark) !important;
+    border-color: var(--brand-red) !important;
+    box-shadow: 0 12px 26px rgba(225, 29, 72, 0.18) !important;
+}
+
+/* =========================================================
+   ADMIN BUTTONS
+========================================================= */
+.admin-btn,
+.admin-btn--primary,
+.admin-btn--ok,
+.admin-btn--danger,
+.admin-category-action-btn,
+.admin-promo-action-btn,
+.admin-flashsale-action-btn,
+.admin-order-action-btn,
+.admin-user-action-btn,
+.admin-review-action-btn,
+.admin-promo-create-btn,
+.admin-promo-filter-btn,
+.admin-order-filter-btn,
+.admin-user-filter-btn,
+.admin-review-filter-btn,
+.admin-notification-publish-btn,
+.admin-notification-url-btn,
+.admin-notification__mark-btn,
+.admin-topbar__logout-btn,
+.flashsale-side-btn,
+.user-detail-action-btn {
+    border-color: var(--brand-red) !important;
+    background: linear-gradient(135deg, var(--brand-red), var(--brand-red-dark)) !important;
+    color: #ffffff !important;
+    box-shadow: 0 12px 28px rgba(225, 29, 72, 0.24) !important;
+}
+
+.admin-btn:hover,
+.admin-btn--primary:hover,
+.admin-btn--ok:hover,
+.admin-btn--danger:hover,
+.admin-category-action-btn:hover,
+.admin-promo-action-btn:hover,
+.admin-flashsale-action-btn:hover,
+.admin-order-action-btn:hover,
+.admin-user-action-btn:hover,
+.admin-review-action-btn:hover,
+.admin-promo-create-btn:hover,
+.admin-promo-filter-btn:hover,
+.admin-order-filter-btn:hover,
+.admin-user-filter-btn:hover,
+.admin-review-filter-btn:hover,
+.admin-notification-publish-btn:hover,
+.admin-notification-url-btn:hover,
+.admin-notification__mark-btn:hover,
+.admin-topbar__logout-btn:hover,
+.flashsale-side-btn:hover,
+.user-detail-action-btn:hover {
+    background: linear-gradient(135deg, #f43f5e, var(--brand-red-dark)) !important;
+    border-color: var(--brand-red-dark) !important;
+    color: #ffffff !important;
+    box-shadow: 0 16px 34px rgba(225, 29, 72, 0.32) !important;
+}
+
+/* =========================================================
+   KHONG DOI CAC NUT DANG ICON/INPUT NHO DE TRANH LAYOUT BI LECH
+========================================================= */
+.notification-bell,
+.user-btn,
+.cart-icon,
+.toggle-password,
+.pd-qty-btn,
+.qty-btn,
+.checkout-qty-btn,
+.js-checkout-qty-btn,
+.wishlist-btn {
+    background: inherit !important;
+    color: inherit !important;
+    border-color: inherit !important;
+    box-shadow: none !important;
+}
+
+/* Nut bi vo hieu hoa */
+button:disabled,
+a.is-disabled,
+.admin-btn.is-disabled,
+.admin-user-action-btn--disabled,
+.qty-btn--disabled {
+    opacity: 0.55 !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+
+/* =========================================================
+   NGOAI LE THEO YEU CAU: khong ep do cac nut/phien ban sau
+   - Facebook login
+   - An/hien mat khau
+   - Link dang ky tai khoan trong form login
+   - Ten nguoi dung tren header
+   - Dau cong/tru gio hang
+   - Tiep tuc mua hang
+   - Xem san pham: nen trang, chu den
+========================================================= */
+
+/* 1) Dang nhap bang Facebook: giu nen trang, chu den */
+a.btn-facebook-custom,
+a#btn-facebook.btn-facebook-custom,
+.auth-card a.btn-facebook-custom,
+.social-login-stack a.btn-facebook-custom {
+    background: #ffffff !important;
+    background-image: none !important;
+    color: #111827 !important;
+    border: 1px solid #dbe3ee !important;
+    box-shadow: none !important;
+    text-decoration: none !important;
+}
+
+a.btn-facebook-custom:hover,
+a#btn-facebook.btn-facebook-custom:hover,
+.auth-card a.btn-facebook-custom:hover,
+.social-login-stack a.btn-facebook-custom:hover {
+    background: #f8fafc !important;
+    background-image: none !important;
+    color: #111827 !important;
+    border-color: #dbe3ee !important;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06) !important;
+}
+
+/* 2) Nut an/hien mat khau: khong nen do */
+.form-group .toggle-btn,
+.auth-card .toggle-btn,
+span.toggle-btn,
+button.toggle-btn,
+.toggle-password,
+.password-toggle,
+.show-password-btn {
+    width: auto !important;
+    height: auto !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    background-image: none !important;
+    color: #6b7280 !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+.form-group .toggle-btn:hover,
+.auth-card .toggle-btn:hover,
+span.toggle-btn:hover,
+button.toggle-btn:hover,
+.toggle-password:hover,
+.password-toggle:hover,
+.show-password-btn:hover {
+    background: transparent !important;
+    background-image: none !important;
+    color: #111827 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+/* 3) Link dang ky tai khoan trong form login/register: bo nen/bong do */
+.auth-footer a.btn-outline-pill,
+.auth-card a.btn-outline-pill,
+.auth-page a.btn-outline-pill {
+    min-height: auto !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    background-image: none !important;
+    color: #111827 !important;
+    box-shadow: none !important;
+    text-decoration: none !important;
+}
+
+.auth-footer a.btn-outline-pill:hover,
+.auth-card a.btn-outline-pill:hover,
+.auth-page a.btn-outline-pill:hover {
+    background: transparent !important;
+    background-image: none !important;
+    color: #111827 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    transform: none !important;
+    text-decoration: underline !important;
+}
+
+/* 4) Ten nguoi dung tren header: khong do nen */
+.header-actions .user-dropdown button.user-btn,
+.user-dropdown button.user-btn,
+button.user-btn,
+.user-btn,
+.user-btn .user-name,
+.user-btn .user-icon {
+    min-height: auto !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    background-image: none !important;
+    color: #333333 !important;
+    box-shadow: none !important;
+    text-transform: none !important;
+}
+
+.header-actions .user-dropdown button.user-btn:hover,
+.user-dropdown button.user-btn:hover,
+button.user-btn:hover,
+.user-btn:hover {
+    background: transparent !important;
+    background-image: none !important;
+    color: #111827 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+/* 5) Dau cong/tru so luong gio hang: tra ve mau trung tinh */
+.cart-section .quantity-box a.qty-btn,
+.cart-section .quantity-box .qty-btn,
+.quantity-box a.qty-btn,
+.quantity-box .qty-btn,
+a.qty-btn,
+span.qty-btn {
+    border: 0 !important;
+    background: #f9fafb !important;
+    background-image: none !important;
+    color: #111827 !important;
+    box-shadow: none !important;
+    text-decoration: none !important;
+    transform: none !important;
+}
+
+.cart-section .quantity-box a.qty-btn:hover,
+.cart-section .quantity-box .qty-btn:hover,
+.quantity-box a.qty-btn:hover,
+.quantity-box .qty-btn:hover,
+a.qty-btn:hover,
+span.qty-btn:hover {
+    background: #f3f4f6 !important;
+    background-image: none !important;
+    color: #111827 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+.cart-section .quantity-box .qty-btn--disabled,
+.quantity-box .qty-btn--disabled,
+span.qty-btn.qty-btn--disabled {
+    background: #f3f4f6 !important;
+    color: #9ca3af !important;
+    opacity: 1 !important;
+    cursor: not-allowed !important;
+}
+
+/* 6) Tiep tuc mua hang: bo nen do, chu den */
+.cart-section a.btn-back-to-shop,
+.summary-actions a.btn-back-to-shop,
+a.btn-back-to-shop,
+a.btn-continue-shopping,
+a.continue-shopping-link,
+.continue-shopping-link {
+    min-height: auto !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    background-image: none !important;
+    color: #111827 !important;
+    box-shadow: none !important;
+    text-transform: none !important;
+    text-decoration: none !important;
+}
+
+.cart-section a.btn-back-to-shop:hover,
+.summary-actions a.btn-back-to-shop:hover,
+a.btn-back-to-shop:hover,
+a.btn-continue-shopping:hover,
+a.continue-shopping-link:hover,
+.continue-shopping-link:hover {
+    background: transparent !important;
+    background-image: none !important;
+    color: #111827 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    transform: none !important;
+    text-decoration: underline !important;
+}
+
+/* 7) Cac nut Xem san pham: nen trang, chu den */
+a.skin-card-view-btn,
+.skin-product-actions a.skin-card-view-btn,
+a.skin-featured-brand-view-btn,
+.skin-featured-brand-actions a.skin-featured-brand-view-btn,
+a.collection-card__view-btn,
+.collection-card__actions a.collection-card__view-btn,
+a.pd-mini-link,
+a.btn-empty-primary {
+    background: #ffffff !important;
+    background-image: none !important;
+    color: #111827 !important;
+    border: 1px solid #e5e7eb !important;
+    box-shadow: none !important;
+    text-decoration: none !important;
+}
+
+a.skin-card-view-btn:hover,
+.skin-product-actions a.skin-card-view-btn:hover,
+a.skin-featured-brand-view-btn:hover,
+.skin-featured-brand-actions a.skin-featured-brand-view-btn:hover,
+a.collection-card__view-btn:hover,
+.collection-card__actions a.collection-card__view-btn:hover,
+a.pd-mini-link:hover,
+a.btn-empty-primary:hover {
+    background: #f9fafb !important;
+    background-image: none !important;
+    color: #111827 !important;
+    border-color: #d1d5db !important;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06) !important;
+    transform: translateY(-1px) !important;
+}
