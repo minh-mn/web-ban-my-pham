@@ -2,6 +2,7 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 
 <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/base.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/theme-red-buttons.css?v=20260613_2">
 
 <nav class="category-nav-bar">
   <div class="container">
@@ -49,7 +50,7 @@
         </ul>
       </li>
 
-       <c:if test="${isFlashSaleActive}">
+      <c:if test="${isFlashSaleActive}">
         <li>
           <a href="${pageContext.request.contextPath}/flash-sale" class="menu-link-item hot-menu">
             FLASH SALE

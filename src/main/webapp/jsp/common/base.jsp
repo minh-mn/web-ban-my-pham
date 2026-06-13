@@ -77,6 +77,11 @@
 		</c:choose>
 	</c:if>
 
+
+	<!-- RED BUTTON THEME: load sau page CSS de dong bo mau nut -->
+	<link rel="stylesheet"
+	      href="${pageContext.request.contextPath}/assets/css/theme-red-buttons.css?v=20260613_2">
+
 	<script>
 		window.APP_CTX = "${pageContext.request.contextPath}";
 	</script>
