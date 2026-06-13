@@ -200,7 +200,8 @@
             <button type="button"
                     id="useCurrentLocationBtn"
                     class="btn-use-location">
-              📍 Dùng vị trí hiện tại
+              <span class="btn-use-location__icon">📍</span>
+              <span class="btn-use-location__text">Dùng vị trí hiện tại</span>
             </button>
 
             <div class="field-hint" id="addressHint">
