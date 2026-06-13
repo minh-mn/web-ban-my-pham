@@ -27,7 +27,7 @@
 
 	<!-- RED BUTTON THEME: load sau page CSS de dong bo mau nut admin -->
 	<link rel="stylesheet"
-	      href="${pageContext.request.contextPath}/assets/css/theme-red-buttons.css?v=20260613_2">
+	      href="${pageContext.request.contextPath}/assets/css/theme-red-buttons.css?v=20260613_4">
 </head>
 
 <body class="admin-body">
