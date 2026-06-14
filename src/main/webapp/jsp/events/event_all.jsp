@@ -9,25 +9,31 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 
-<section class="section store-events" style="padding: 40px 0;">
-    <div class="container">
-        <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 2px solid #f5f5f5; padding-bottom: 15px;">
-            <h2 class="section-title" style="margin: 0; font-size: 24px; color: #333;">TIN TỨC & SỰ KIỆN</h2>
+<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/events-style.css">
 
-            <form action="${pageContext.request.contextPath}/blog" method="get" style="display: flex; gap: 8px;">
-                <input type="text" name="search" value="<c:out value='${searchQuery}'/>"
-                       placeholder="Tìm kiếm bài viết, sự kiện..."
-                       style="padding: 8px 16px; border: 1px solid #ddd; border-radius: 20px; outline: none; width: 260px; font-size: 14px;">
-                <button type="submit" style="padding: 8px 20px; background: #ff5fa2; color: #fff; border: none; border-radius: 20px; cursor: pointer; font-size: 14px; font-weight: 500;">Tìm kiếm</button>
+<section class="store-events-section">
+    <div class="events-container">
+
+        <div class="events-header">
+            <h2 class="events-title">TIN TỨC & SỰ KIỆN</h2>
+
+            <form action="${pageContext.request.contextPath}/blog" method="get" class="events-search-form">
+                <input type="text"
+                       name="search"
+                       value="<c:out value='${searchQuery}'/>"
+                       class="events-search-input"
+                       placeholder="Tìm kiếm bài viết, sự kiện...">
+                <button type="submit" class="events-search-btn">Tìm kiếm</button>
             </form>
         </div>
 
-        <div class="event-grid">
+        <div class="events-grid">
             <c:choose>
                 <c:when test="${not empty events}">
                     <c:forEach var="event" items="${events}">
-                        <div class="event-card">
-                            <div class="event-img">
+                        <div class="event-custom-card">
+
+                            <div class="event-card-img-wrapper">
                                 <c:choose>
                                     <c:when test="${not empty event.imageUrl}">
                                         <img src="${pageContext.request.contextPath}${event.imageUrl}" alt="${event.title}">
@@ -37,27 +43,30 @@
                                     </c:otherwise>
                                 </c:choose>
 
-                                <div class="event-date">
+                                <div class="event-card-date-badge">
                                     <span class="day"><fmt:formatDate value="${event.eventDate}" pattern="dd"/></span>
                                     <span class="month">Th<fmt:formatDate value="${event.eventDate}" pattern="MM"/></span>
                                 </div>
                             </div>
 
-                            <div class="event-content">
-                                <span class="event-tag">${event.tag}</span>
-                                <h3>${event.title}</h3>
-                                <p>${event.summary}</p>
-                                <a href="${pageContext.request.contextPath}/blog/detail?id=${event.id}" class="btn-event">Xem chi tiết</a>
+                            <div class="event-card-body">
+                                <span class="event-card-tag"><c:out value="${event.tag}"/></span>
+                                <h3><c:out value="${event.title}"/></h3>
+                                <p><c:out value="${event.summary}"/></p>
+                                <a href="${pageContext.request.contextPath}/blog/detail?id=${event.id}" class="event-card-btn-action">
+                                    Xem chi tiết
+                                </a>
                             </div>
+
                         </div>
                     </c:forEach>
                 </c:when>
 
                 <c:otherwise>
-                    <div style="text-align: center; width: 100%; padding: 60px 0; color: #888; font-style: italic;">
+                    <div class="event-empty-container">
                         <c:choose>
                             <c:when test="${not empty searchQuery}">
-                                Không tìm thấy sự kiện hoặc bài viết nào khớp với từ khóa "${searchQuery}".
+                                Không tìm thấy sự kiện hoặc bài viết nào khớp với từ khóa "<c:out value="${searchQuery}"/>".
                             </c:when>
                             <c:otherwise>
                                 Hiện tại hệ thống chưa cập nhật sự kiện nào mới.
@@ -67,5 +76,6 @@
                 </c:otherwise>
             </c:choose>
         </div>
+
     </div>
 </section>
