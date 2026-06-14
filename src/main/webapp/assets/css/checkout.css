@@ -5418,3 +5418,215 @@ body.address-map-open {
 	}
 }
 
+/* =========================================================
+   FINAL OVERRIDE - FREE SHIPPING + RADIO RED
+   ĐẶT CUỐI FILE CHECKOUT.CSS
+   Mục tiêu:
+   - Chữ "Miễn phí" màu đỏ, in đậm.
+   - Nút tròn giao hàng: viền đỏ, chấm đỏ.
+   - Nút tròn thanh toán COD/VNPAY: viền đỏ, chấm đỏ.
+   - Nút tròn hóa đơn VAT: viền đỏ, chấm đỏ.
+========================================================= */
+
+/* =========================
+   1) Chữ "Miễn phí" màu đỏ
+========================= */
+html body .checkout-page .delivery-fee,
+html body .checkout-page .delivery-option .delivery-fee,
+html body .checkout-page label.delivery-option span.delivery-fee,
+html body .checkout-page #summaryShippingFee,
+html body .checkout-page #summaryShippingFee[style] {
+	color: #e11d48 !important;
+	font-weight: 950 !important;
+}
+
+/* Nếu phương thức giao hàng bị khóa thì vẫn để xám */
+html body .checkout-page .delivery-option.is-disabled .delivery-fee {
+	color: #9ca3af !important;
+	font-weight: 850 !important;
+}
+
+/* =========================
+   2) Radio giao hàng màu đỏ
+========================= */
+html body .checkout-page .delivery-option input[type="radio"],
+html body .checkout-page .delivery-option input[type="radio"][name="shippingMethod"] {
+	appearance: none !important;
+	-webkit-appearance: none !important;
+	width: 18px !important;
+	height: 18px !important;
+	min-width: 18px !important;
+	min-height: 18px !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	border: 2px solid #e11d48 !important;
+	border-radius: 50% !important;
+	background: #ffffff !important;
+	background-image: none !important;
+	box-shadow: none !important;
+	outline: none !important;
+	display: inline-grid !important;
+	place-content: center !important;
+	flex-shrink: 0 !important;
+	cursor: pointer !important;
+	accent-color: #e11d48 !important;
+}
+
+html body .checkout-page .delivery-option input[type="radio"]::before,
+html body .checkout-page .delivery-option input[type="radio"][name="shippingMethod"]::before {
+	content: "" !important;
+	width: 8px !important;
+	height: 8px !important;
+	border-radius: 50% !important;
+	background: #e11d48 !important;
+	transform: scale(0) !important;
+	transition: transform 0.15s ease !important;
+}
+
+html body .checkout-page .delivery-option input[type="radio"]:checked::before,
+html body .checkout-page .delivery-option input[type="radio"][name="shippingMethod"]:checked::before {
+	transform: scale(1) !important;
+}
+
+html body .checkout-page .delivery-option:has(input[type="radio"]:checked),
+html body .checkout-page .delivery-option:has(input[type="radio"][name="shippingMethod"]:checked) {
+	border-color: #e11d48 !important;
+	background: #fff1f5 !important;
+	box-shadow: inset 4px 0 0 #e11d48 !important;
+}
+
+/* =========================
+   3) Radio phương thức thanh toán màu đỏ
+   input radio bị ẩn, vòng tròn thật là .payment-dot
+========================= */
+html body .checkout-page .payment-item .payment-dot,
+html body .checkout-page label.payment-item span.payment-dot {
+	width: 22px !important;
+	height: 22px !important;
+	min-width: 22px !important;
+	min-height: 22px !important;
+	border: 2px solid #e11d48 !important;
+	border-radius: 50% !important;
+	background: #ffffff !important;
+	background-image: none !important;
+	box-shadow: none !important;
+	display: inline-grid !important;
+	place-content: center !important;
+	position: relative !important;
+	flex-shrink: 0 !important;
+}
+
+html body .checkout-page .payment-item .payment-dot::before,
+html body .checkout-page label.payment-item span.payment-dot::before {
+	content: "" !important;
+	width: 10px !important;
+	height: 10px !important;
+	border-radius: 50% !important;
+	background: #e11d48 !important;
+	transform: scale(0) !important;
+	transition: transform 0.15s ease !important;
+}
+
+html body .checkout-page .payment-item input[type="radio"]:checked + .payment-dot,
+html body .checkout-page label.payment-item input[type="radio"]:checked + span.payment-dot,
+html body .checkout-page .payment-item input[type="radio"][name="paymentMethod"]:checked + .payment-dot,
+html body .checkout-page label.payment-item input[type="radio"][name="paymentMethod"]:checked + span.payment-dot {
+	border-color: #e11d48 !important;
+	background: #ffffff !important;
+	box-shadow: none !important;
+}
+
+html body .checkout-page .payment-item input[type="radio"]:checked + .payment-dot::before,
+html body .checkout-page label.payment-item input[type="radio"]:checked + span.payment-dot::before,
+html body .checkout-page .payment-item input[type="radio"][name="paymentMethod"]:checked + .payment-dot::before,
+html body .checkout-page label.payment-item input[type="radio"][name="paymentMethod"]:checked + span.payment-dot::before {
+	transform: scale(1) !important;
+}
+
+html body .checkout-page .payment-item:has(input[type="radio"]:checked),
+html body .checkout-page .payment-item:has(input[type="radio"][name="paymentMethod"]:checked) {
+	background: #fff1f5 !important;
+	box-shadow: inset 4px 0 0 #e11d48 !important;
+}
+
+/* =========================
+   4) Radio hóa đơn VAT màu đỏ
+========================= */
+html body .checkout-page .e-invoice-radio input[type="radio"],
+html body .e-invoice-modal .e-invoice-radio input[type="radio"],
+html body .checkout-page .e-invoice-radio input[type="radio"][name="modalInvoiceType"],
+html body .e-invoice-modal .e-invoice-radio input[type="radio"][name="modalInvoiceType"] {
+	appearance: none !important;
+	-webkit-appearance: none !important;
+	width: 18px !important;
+	height: 18px !important;
+	min-width: 18px !important;
+	min-height: 18px !important;
+	margin: 0 8px 0 0 !important;
+	padding: 0 !important;
+	border: 2px solid #e11d48 !important;
+	border-radius: 50% !important;
+	background: #ffffff !important;
+	background-image: none !important;
+	box-shadow: none !important;
+	outline: none !important;
+	display: inline-grid !important;
+	place-content: center !important;
+	cursor: pointer !important;
+	accent-color: #e11d48 !important;
+}
+
+html body .checkout-page .e-invoice-radio input[type="radio"]::before,
+html body .e-invoice-modal .e-invoice-radio input[type="radio"]::before,
+html body .checkout-page .e-invoice-radio input[type="radio"][name="modalInvoiceType"]::before,
+html body .e-invoice-modal .e-invoice-radio input[type="radio"][name="modalInvoiceType"]::before {
+	content: "" !important;
+	width: 8px !important;
+	height: 8px !important;
+	border-radius: 50% !important;
+	background: #e11d48 !important;
+	transform: scale(0) !important;
+	transition: transform 0.15s ease !important;
+}
+
+html body .checkout-page .e-invoice-radio input[type="radio"]:checked::before,
+html body .e-invoice-modal .e-invoice-radio input[type="radio"]:checked::before,
+html body .checkout-page .e-invoice-radio input[type="radio"][name="modalInvoiceType"]:checked::before,
+html body .e-invoice-modal .e-invoice-radio input[type="radio"][name="modalInvoiceType"]:checked::before {
+	transform: scale(1) !important;
+}
+
+/* =========================================================
+   FINAL OVERRIDE - FREE SHIPPING TEXT BLACK
+   ĐẶT CUỐI FILE CHECKOUT.CSS
+   Mục tiêu:
+   - Chữ "Miễn phí" màu đen đậm.
+   - Giữ nút tròn giao hàng/thanh toán màu đỏ.
+========================================================= */
+
+html body .checkout-page .delivery-fee,
+html body .checkout-page .delivery-option .delivery-fee,
+html body .checkout-page label.delivery-option span.delivery-fee,
+html body .checkout-page #summaryShippingFee,
+html body .checkout-page #summaryShippingFee[style] {
+	color: #111827 !important;
+	font-weight: 950 !important;
+}
+
+/* Nếu phương thức giao hàng bị khóa thì vẫn để xám */
+html body .checkout-page .delivery-option.is-disabled .delivery-fee {
+	color: #9ca3af !important;
+	font-weight: 850 !important;
+}
+
+/* =========================================================
+   FINAL JS-CLASS SUPPORT - FREE SHIPPING BLACK TEXT
+   Hỗ trợ checkout.jsp ép style bằng class + inline important.
+========================================================= */
+
+html body .checkout-page .free-shipping-black-text,
+html body .checkout-page .delivery-fee.free-shipping-black-text,
+html body .checkout-page #summaryShippingFee.free-shipping-black-text {
+	color: #111827 !important;
+	font-weight: 950 !important;
+}
