@@ -1407,8 +1407,9 @@
                                         <label for="addressInput">Địa chỉ giao hàng</label>
                                         <div class="account-address-row">
                                             <input type="text" id="addressInput" name="address" value="${sessionScope.user.address}" class="account-input" placeholder="Nhập địa chỉ hoặc bấm lấy vị trí" />
-                                            <button type="button" class="account-btn account-btn-secondary-soft account-location-btn" onclick="getLocation()">📍 Lấy vị trí</button>
+                                            <button type="button" id="getLocationBtn" class="account-btn account-btn-secondary-soft account-location-btn" onclick="getLocation()">📍 Lấy vị trí</button>
                                         </div>
+                                        <small id="locationStatus" class="account-location-status"></small>
                                     </div>
                                 </section>
                             </div>
@@ -1497,42 +1498,255 @@
                 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
                 <script>
-                    function getLocation() {
-                        const addressInput = document.getElementById('addressInput');
+                    function setLocationStatus(message, type) {
+                        const statusEl = document.getElementById("locationStatus");
+                        if (!statusEl) return;
+
+                        statusEl.textContent = message || "";
+                        statusEl.classList.remove("is-loading", "is-success", "is-error");
+
+                        if (type) {
+                            statusEl.classList.add("is-" + type);
+                        }
+                    }
+
+                    function setLocationLoading(isLoading, message) {
+                        const btn = document.getElementById("getLocationBtn");
+                        const addressInput = document.getElementById("addressInput");
+
+                        if (btn) {
+                            btn.disabled = isLoading;
+                            btn.classList.toggle("is-loading", isLoading);
+                            btn.innerHTML = isLoading ? "⏳ Đang lấy..." : "📍 Lấy vị trí";
+                        }
+
+                        if (message) {
+                            setLocationStatus(message, isLoading ? "loading" : "");
+                        }
+
+                        if (addressInput && isLoading) {
+                            addressInput.classList.add("is-loading-location");
+                        } else if (addressInput) {
+                            addressInput.classList.remove("is-loading-location");
+                        }
+                    }
+
+                    function getCurrentPositionPromise(options) {
+                        return new Promise(function (resolve, reject) {
+                            navigator.geolocation.getCurrentPosition(resolve, reject, options);
+                        });
+                    }
+
+                    async function fetchJsonWithTimeout(url, timeoutMs) {
+                        const controller = new AbortController();
+                        const timer = setTimeout(function () {
+                            controller.abort();
+                        }, timeoutMs || 6500);
+
+                        try {
+                            const response = await fetch(url, {
+                                signal: controller.signal,
+                                cache: "no-store",
+                                headers: {
+                                    "Accept": "application/json"
+                                }
+                            });
+
+                            if (!response.ok) {
+                                throw new Error("HTTP " + response.status);
+                            }
+
+                            return await response.json();
+                        } finally {
+                            clearTimeout(timer);
+                        }
+                    }
+
+                    function cleanAddressParts(parts) {
+                        const seen = new Set();
+                        return parts
+                            .map(function (part) { return (part || "").toString().trim(); })
+                            .filter(function (part) {
+                                if (!part || seen.has(part.toLowerCase())) return false;
+                                seen.add(part.toLowerCase());
+                                return true;
+                            })
+                            .join(", ");
+                    }
+
+                    function buildBigDataCloudAddress(data) {
+                        if (!data) return "";
+
+                        return cleanAddressParts([
+                            data.locality,
+                            data.city,
+                            data.principalSubdivision,
+                            data.postcode,
+                            data.countryName
+                        ]);
+                    }
+
+                    function buildNominatimAddress(data) {
+                        if (!data) return "";
+                        return data.display_name || cleanAddressParts([
+                            data.name,
+                            data.address && data.address.road,
+                            data.address && data.address.suburb,
+                            data.address && data.address.city,
+                            data.address && data.address.state,
+                            data.address && data.address.postcode,
+                            data.address && data.address.country
+                        ]);
+                    }
+
+                    async function reverseGeocodeAddress(lat, lon) {
+                        const encodedLat = encodeURIComponent(lat);
+                        const encodedLon = encodeURIComponent(lon);
+
+                        // Ưu tiên BigDataCloud vì thường phản hồi nhanh và ổn định hơn trên trình duyệt.
+                        try {
+                            const bigDataUrl = "https://api.bigdatacloud.net/data/reverse-geocode-client"
+                                + "?latitude=" + encodedLat
+                                + "&longitude=" + encodedLon
+                                + "&localityLanguage=vi";
+
+                            const bigData = await fetchJsonWithTimeout(bigDataUrl, 6500);
+                            const address = buildBigDataCloudAddress(bigData);
+
+                            if (address) {
+                                return address;
+                            }
+                        } catch (error) {
+                            console.warn("BigDataCloud reverse geocode failed:", error);
+                        }
+
+                        // Fallback sang OpenStreetMap Nominatim.
+                        try {
+                            const nominatimUrl = "https://nominatim.openstreetmap.org/reverse"
+                                + "?format=jsonv2"
+                                + "&lat=" + encodedLat
+                                + "&lon=" + encodedLon
+                                + "&accept-language=vi"
+                                + "&addressdetails=1"
+                                + "&zoom=18";
+
+                            const nominatim = await fetchJsonWithTimeout(nominatimUrl, 7000);
+                            const address = buildNominatimAddress(nominatim);
+
+                            if (address) {
+                                return address;
+                            }
+                        } catch (error) {
+                            console.warn("Nominatim reverse geocode failed:", error);
+                        }
+
+                        return "";
+                    }
+
+                    function getLocationErrorMessage(error) {
+                        if (!error) {
+                            return "Không thể lấy vị trí. Vui lòng nhập địa chỉ thủ công.";
+                        }
+
+                        if (error.code === 1) {
+                            return "Bạn chưa cấp quyền vị trí. Hãy bấm biểu tượng vị trí trên thanh địa chỉ trình duyệt và chọn Cho phép.";
+                        }
+
+                        if (error.code === 2) {
+                            return "Trình duyệt không xác định được vị trí hiện tại. Hãy thử bật Wi-Fi/GPS hoặc nhập địa chỉ thủ công.";
+                        }
+
+                        if (error.code === 3) {
+                            return "Lấy vị trí quá lâu. Hãy thử lại hoặc nhập địa chỉ thủ công.";
+                        }
+
+                        return "Không thể lấy vị trí. Vui lòng thử lại hoặc nhập địa chỉ thủ công.";
+                    }
+
+                    async function getLocation() {
+                        const addressInput = document.getElementById("addressInput");
 
                         if (!navigator.geolocation) {
+                            setLocationStatus("Trình duyệt không hỗ trợ lấy vị trí.", "error");
                             alert("Trình duyệt không hỗ trợ lấy vị trí.");
                             return;
                         }
 
-                        if (addressInput) {
-                            addressInput.value = "Đang lấy vị trí hiện tại...";
+                        const isLocalhost = ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname);
+                        const isHttps = window.location.protocol === "https:";
+
+                        if (!isHttps && !isLocalhost) {
+                            setLocationStatus("Trình duyệt chỉ cho phép lấy vị trí trên HTTPS hoặc localhost.", "error");
+                            alert("Trình duyệt chỉ cho phép lấy vị trí trên HTTPS hoặc localhost.");
+                            return;
                         }
 
-                        navigator.geolocation.getCurrentPosition(async (pos) => {
-                            try {
-                                const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&accept-language=vi&addressdetails=1`;
-                                const res = await fetch(url).then(r => r.json());
+                        const oldAddressValue = addressInput ? addressInput.value : "";
 
-                                if (addressInput) {
-                                    addressInput.value = res.display_name || `${pos.coords.latitude}, ${pos.coords.longitude}`;
-                                }
-                            } catch (error) {
-                                if (addressInput) {
-                                    addressInput.value = `${pos.coords.latitude}, ${pos.coords.longitude}`;
-                                }
-                                alert("Không lấy được địa chỉ chi tiết, hệ thống đã điền tọa độ tạm thời.");
-                            }
-                        }, () => {
+                        try {
+                            setLocationLoading(true, "Đang xin quyền vị trí từ trình duyệt...");
+
                             if (addressInput) {
-                                addressInput.value = "";
+                                addressInput.value = "Đang lấy vị trí hiện tại...";
                             }
-                            alert("Không thể lấy vị trí. Vui lòng cấp quyền vị trí hoặc nhập địa chỉ thủ công.");
-                        }, {
-                            enableHighAccuracy: false,
-                            timeout: 8000,
-                            maximumAge: 60000
-                        });
+
+                            let position;
+
+                            try {
+                                position = await getCurrentPositionPromise({
+                                    enableHighAccuracy: true,
+                                    timeout: 18000,
+                                    maximumAge: 0
+                                });
+                            } catch (firstError) {
+                                setLocationStatus("Đang thử lại bằng chế độ lấy vị trí nhanh hơn...", "loading");
+
+                                position = await getCurrentPositionPromise({
+                                    enableHighAccuracy: false,
+                                    timeout: 12000,
+                                    maximumAge: 300000
+                                });
+                            }
+
+                            const lat = Number(position.coords.latitude);
+                            const lon = Number(position.coords.longitude);
+                            const accuracy = Math.round(position.coords.accuracy || 0);
+
+                            if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+                                throw new Error("Invalid coordinates");
+                            }
+
+                            if (addressInput) {
+                                addressInput.value = "Đã lấy tọa độ, đang tìm địa chỉ...";
+                            }
+
+                            setLocationStatus("Đã lấy tọa độ, đang chuyển thành địa chỉ...", "loading");
+
+                            const address = await reverseGeocodeAddress(lat, lon);
+                            const coordinateText = lat.toFixed(6) + ", " + lon.toFixed(6);
+
+                            if (addressInput) {
+                                addressInput.value = address ? address : coordinateText;
+                            }
+
+                            if (address) {
+                                setLocationStatus("Đã lấy vị trí thành công" + (accuracy ? " · độ chính xác khoảng " + accuracy + "m" : "") + ".", "success");
+                            } else {
+                                setLocationStatus("Đã lấy được tọa độ, nhưng chưa lấy được địa chỉ chi tiết. Bạn có thể bổ sung số nhà/hẻm nếu cần.", "success");
+                            }
+                        } catch (error) {
+                            console.error("Get location failed:", error);
+
+                            if (addressInput) {
+                                addressInput.value = oldAddressValue || "";
+                            }
+
+                            const message = getLocationErrorMessage(error);
+                            setLocationStatus(message, "error");
+                            alert(message);
+                        } finally {
+                            setLocationLoading(false);
+                        }
                     }
 
                     function copyCouponCode(code) {
