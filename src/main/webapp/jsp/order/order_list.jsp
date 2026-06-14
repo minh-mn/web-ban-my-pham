@@ -28,7 +28,8 @@
                 <th class="text-center order-col-status">Trạng thái đơn</th>
                 <th class="text-center order-col-shipping">Vận chuyển</th>
                 <th class="order-col-tracking">Tracking</th>
-                <th class="text-center order-col-actions">Chi tiết</th>
+                <th class="text-center order-col-view">Xem đơn</th>
+                <th class="text-center order-col-actions">Thao tác</th>
               </tr>
               </thead>
 
@@ -188,44 +189,53 @@
                     </a>
                   </td>
 
-                  <td class="detail-cell">
-                    <div class="order-action-stack">
-                      <c:if test="${canRetryPayment}">
-                        <a href="${pageContext.request.contextPath}/vnpay/payment?orderId=${order.id}"
-                           class="btn-retry-payment">
-                          Thanh toán lại
-                        </a>
-                      </c:if>
+                  <td class="detail-cell detail-view-cell">
+                    <a href="${pageContext.request.contextPath}/orders/detail?id=${order.id}"
+                       class="btn-order-view">
+                      Xem chi tiết
+                    </a>
+                  </td>
 
-                      <c:if test="${canCancel}">
-                        <form method="post"
-                              action="${pageContext.request.contextPath}/orders/cancel"
-                              class="order-inline-form"
-                              onsubmit="return confirmCancelOrder(this);">
-                          <input type="hidden" name="csrf_token" value="${sessionScope.CSRF_TOKEN}" />
-                          <input type="hidden" name="orderId" value="${order.id}" />
-                          <input type="hidden" name="reason" value="" />
-                          <button type="submit" class="btn-cancel-order">Hủy đơn</button>
-                        </form>
-                      </c:if>
+                  <td class="action-cell">
+                    <div class="order-action-stack order-action-stack--ops">
+                      <c:choose>
+                        <c:when test="${canRetryPayment or canCancel or canReturn}">
+                          <c:if test="${canRetryPayment}">
+                            <a href="${pageContext.request.contextPath}/vnpay/payment?orderId=${order.id}"
+                               class="btn-retry-payment">
+                              Thanh toán lại
+                            </a>
+                          </c:if>
 
-                      <c:if test="${canReturn}">
-                        <form method="post"
-                              action="${pageContext.request.contextPath}/orders/return"
-                              class="order-inline-form"
-                              onsubmit="return confirmReturnOrder(this);">
-                          <input type="hidden" name="csrf_token" value="${sessionScope.CSRF_TOKEN}" />
-                          <input type="hidden" name="orderId" value="${order.id}" />
-                          <input type="hidden" name="refundMethod" value="MANUAL" />
-                          <input type="hidden" name="reason" value="" />
-                          <button type="submit" class="btn-return-order">Hoàn hàng</button>
-                        </form>
-                      </c:if>
+                          <c:if test="${canCancel}">
+                            <form method="post"
+                                  action="${pageContext.request.contextPath}/orders/cancel"
+                                  class="order-inline-form"
+                                  onsubmit="return confirmCancelOrder(this);">
+                              <input type="hidden" name="csrf_token" value="${sessionScope.CSRF_TOKEN}" />
+                              <input type="hidden" name="orderId" value="${order.id}" />
+                              <input type="hidden" name="reason" value="" />
+                              <button type="submit" class="btn-cancel-order">Hủy đơn</button>
+                            </form>
+                          </c:if>
 
-                      <a href="${pageContext.request.contextPath}/orders/detail?id=${order.id}"
-                         class="btn-detail">
-                        Xem chi tiết
-                      </a>
+                          <c:if test="${canReturn}">
+                            <form method="post"
+                                  action="${pageContext.request.contextPath}/orders/return"
+                                  class="order-inline-form"
+                                  onsubmit="return confirmReturnOrder(this);">
+                              <input type="hidden" name="csrf_token" value="${sessionScope.CSRF_TOKEN}" />
+                              <input type="hidden" name="orderId" value="${order.id}" />
+                              <input type="hidden" name="refundMethod" value="MANUAL" />
+                              <input type="hidden" name="reason" value="" />
+                              <button type="submit" class="btn-return-order">Hoàn hàng</button>
+                            </form>
+                          </c:if>
+                        </c:when>
+                        <c:otherwise>
+                          <span class="order-no-action">Không có thao tác</span>
+                        </c:otherwise>
+                      </c:choose>
                     </div>
                   </td>
                 </tr>
