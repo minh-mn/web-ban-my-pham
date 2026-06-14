@@ -6,13 +6,54 @@
   <div class="container order-page">
 
     <div class="order-orders">
-      <div class="order-section-head">
+      <div class="order-section-head order-section-head-filter">
         <div>
-          <h3 class="order-section-title">📄 Lịch sử đơn hàng</h3>
+          <h3 class="order-section-title">
+            <c:choose>
+              <c:when test="${not empty orderFilter and orderFilter ne 'all'}">
+                📄 <c:out value="${orderFilterLabel}" />
+              </c:when>
+              <c:otherwise>
+                📄 Lịch sử đơn hàng
+              </c:otherwise>
+            </c:choose>
+          </h3>
           <p class="order-section-subtitle">
-            Theo dõi trạng thái đơn hàng, vận chuyển và xem chi tiết tracking.
+            <c:out value="${orderFilterDescription}" />
           </p>
         </div>
+
+        <div class="order-filter-count">
+          <strong><c:out value="${empty orderFilteredCount ? 0 : orderFilteredCount}" /></strong>
+          <span>/ <c:out value="${empty orderTotalCount ? 0 : orderTotalCount}" /> đơn</span>
+        </div>
+      </div>
+
+      <div class="order-filter-tabs">
+        <a href="${pageContext.request.contextPath}/orders"
+           class="order-filter-tab ${empty orderFilter or orderFilter eq 'all' ? 'active' : ''}">
+          Tất cả
+        </a>
+        <a href="${pageContext.request.contextPath}/orders?filter=processing"
+           class="order-filter-tab ${orderFilter eq 'processing' ? 'active' : ''}">
+          Chờ xác nhận
+        </a>
+        <a href="${pageContext.request.contextPath}/orders?filter=confirmed"
+           class="order-filter-tab ${orderFilter eq 'confirmed' ? 'active' : ''}">
+          Chờ lấy hàng
+        </a>
+        <a href="${pageContext.request.contextPath}/orders?filter=shipping"
+           class="order-filter-tab ${orderFilter eq 'shipping' ? 'active' : ''}">
+          Đang giao
+        </a>
+        <a href="${pageContext.request.contextPath}/orders?filter=completed"
+           class="order-filter-tab ${orderFilter eq 'completed' ? 'active' : ''}">
+          Đánh giá / Hoàn hàng
+        </a>
+        <a href="${pageContext.request.contextPath}/orders?filter=cancelled"
+           class="order-filter-tab ${orderFilter eq 'cancelled' ? 'active' : ''}">
+          Đã hủy
+        </a>
       </div>
 
       <c:choose>
@@ -259,7 +300,23 @@
         </c:when>
 
         <c:otherwise>
-          <p class="empty-text">Bạn chưa có đơn hàng nào.</p>
+          <div class="order-empty-filter">
+            <p class="empty-text">
+              <c:choose>
+                <c:when test="${not empty orderFilter and orderFilter ne 'all'}">
+                  Chưa có đơn nào trong mục <strong><c:out value="${orderFilterLabel}" /></strong>.
+                </c:when>
+                <c:otherwise>
+                  Bạn chưa có đơn hàng nào.
+                </c:otherwise>
+              </c:choose>
+            </p>
+            <c:if test="${not empty orderFilter and orderFilter ne 'all'}">
+              <a href="${pageContext.request.contextPath}/orders" class="order-filter-back">
+                Xem tất cả đơn hàng
+              </a>
+            </c:if>
+          </div>
         </c:otherwise>
       </c:choose>
 
