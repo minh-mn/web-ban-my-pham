@@ -17,6 +17,9 @@ public class PolicyServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
+        request.setCharacterEncoding("UTF-8");
+        response.setCharacterEncoding("UTF-8");
+
         String pathInfo = request.getPathInfo();
         String path = pathInfo == null ? "" : pathInfo.trim().toLowerCase();
 
@@ -27,12 +30,14 @@ public class PolicyServlet extends HttpServlet {
                     "MyCosmetic | Chính sách hủy đơn",
                     "/jsp/policy/cancel_policy.jsp"
             );
+
             case "/return", "/hoan-hang" -> forward(
                     request,
                     response,
                     "MyCosmetic | Chính sách hoàn hàng",
                     "/jsp/policy/return_policy.jsp"
             );
+
             default -> response.sendRedirect(request.getContextPath() + "/policy/return");
         }
     }
@@ -41,9 +46,21 @@ public class PolicyServlet extends HttpServlet {
                          HttpServletResponse response,
                          String title,
                          String content) throws ServletException, IOException {
+
         request.setAttribute("pageTitle", title);
-        request.setAttribute("pageCss", "/order.css");
+
+        /*
+         * cancel_policy.jsp đã có style nhúng trực tiếp.
+         * return_policy.jsp vẫn có thể dùng CSS riêng nếu bạn đã thêm policy.css.
+         */
+        request.setAttribute("pageCss", "/policy.css");
+
+        /*
+         * base.jsp sẽ import nội dung này bằng:
+         * <c:import url="${pageContent}" />
+         */
         request.setAttribute("pageContent", content);
+
         request.getRequestDispatcher("/jsp/common/base.jsp").forward(request, response);
     }
 }
