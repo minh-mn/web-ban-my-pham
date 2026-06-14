@@ -706,12 +706,102 @@
                       <div class="mc-view-head">
                         <div>
                           <h2>Hạng thành viên</h2>
-                          <p>Hạng được tính từ các đơn đã thanh toán thành công.</p>
+                          <p>Theo dõi hạng hiện tại, mốc cần đạt và quyền lợi của từng hạng để bạn dễ nâng hạng hơn.</p>
                         </div>
                         <span class="mc-compact-rank ${rankCss}">
                           <c:out value="${empty rankLabel ? 'Thành viên' : rankLabel}" />
                           <c:if test="${rankDiscount > 0}"> -<c:out value="${rankDiscount}" />%</c:if>
                         </span>
+                      </div>
+
+                      <div class="mc-rank-info-strip">
+                        <div class="mc-rank-info-item">
+                          <strong>Hạng hiện tại</strong>
+                          <span><c:out value="${empty rankLabel ? 'Thành viên' : rankLabel}" /></span>
+                        </div>
+                        <div class="mc-rank-info-item">
+                          <strong>Ưu đãi đang áp dụng</strong>
+                          <span><c:out value="${empty rankDiscount ? 0 : rankDiscount}" />%</span>
+                        </div>
+                        <div class="mc-rank-info-item">
+                          <strong>Cách tính hạng</strong>
+                          <span>Chỉ tính các đơn đã thanh toán thành công và cộng dồn theo tổng chi tiêu.</span>
+                        </div>
+                      </div>
+
+                      <div class="mc-rank-hero-grid">
+                        <div class="mc-rank-hero-card is-current">
+                          <div class="mc-rank-hero-label">Hạng hiện tại của bạn</div>
+                          <div class="mc-rank-hero-title-row">
+                            <h3><c:out value="${empty rankLabel ? 'Thành viên' : rankLabel}" /></h3>
+                            <span class="mc-rank-discount-chip">Ưu đãi <c:out value="${empty rankDiscount ? 0 : rankDiscount}" />%</span>
+                          </div>
+                          <p>
+                            Bạn đã tích lũy <strong><fmt:formatNumber value="${empty rankTotalSpent ? 0 : rankTotalSpent}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫</strong>
+                            và có <strong><c:out value="${empty rankPaidOrderCount ? 0 : rankPaidOrderCount}" /></strong> đơn hợp lệ dùng để xét hạng.
+                          </p>
+                          <div class="mc-rank-hero-mini-grid">
+                            <div class="mc-rank-mini-item">
+                              <span>Tổng chi tiêu hiện tại</span>
+                              <strong><fmt:formatNumber value="${empty rankTotalSpent ? 0 : rankTotalSpent}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫</strong>
+                            </div>
+                            <div class="mc-rank-mini-item">
+                              <span>Số đơn hợp lệ</span>
+                              <strong><c:out value="${empty rankPaidOrderCount ? 0 : rankPaidOrderCount}" /></strong>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="mc-rank-hero-card is-next">
+                          <div class="mc-rank-hero-label">Mục tiêu tiếp theo</div>
+                          <c:choose>
+                            <c:when test="${maxRank}">
+                              <div class="mc-rank-hero-title-row">
+                                <h3>Bạn đã ở hạng cao nhất</h3>
+                                <span class="mc-rank-status-badge is-top">Top rank</span>
+                              </div>
+                              <p>Bạn đã đạt mức ưu đãi cao nhất của hệ thống. Hãy tiếp tục mua sắm để duy trì hạng và tận hưởng toàn bộ quyền lợi hiện có.</p>
+                              <div class="mc-rank-target-highlight is-top">
+                                <strong>Chúc mừng!</strong>
+                                <span>Hiện bạn đang ở hạng tối đa nên không còn mốc kế tiếp.</span>
+                              </div>
+                              <div class="mc-rank-hero-mini-grid">
+                                <div class="mc-rank-mini-item">
+                                  <span>Ưu đãi đang nhận</span>
+                                  <strong><c:out value="${empty rankDiscount ? 0 : rankDiscount}" />%</strong>
+                                </div>
+                                <div class="mc-rank-mini-item">
+                                  <span>Trạng thái</span>
+                                  <strong>Đã tối đa</strong>
+                                </div>
+                              </div>
+                            </c:when>
+                            <c:otherwise>
+                              <div class="mc-rank-hero-title-row">
+                                <h3>Lên hạng <c:out value="${empty nextRankLabel ? 'tiếp theo' : nextRankLabel}" /></h3>
+                                <span class="mc-rank-status-badge">Còn <fmt:formatNumber value="${empty amountToNextRank ? 0 : amountToNextRank}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫</span>
+                              </div>
+                              <p>
+                                Mốc cần đạt là <strong><fmt:formatNumber value="${empty nextRankMinSpent ? 0 : nextRankMinSpent}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫</strong>.
+                                Khi đạt mốc này, bạn sẽ được nâng lên hạng <strong><c:out value="${empty nextRankLabel ? 'tiếp theo' : nextRankLabel}" /></strong> với ưu đãi tốt hơn.
+                              </p>
+                              <div class="mc-rank-target-highlight">
+                                <strong>Bạn cần chi thêm <fmt:formatNumber value="${empty amountToNextRank ? 0 : amountToNextRank}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫</strong>
+                                <span>để chạm mốc <fmt:formatNumber value="${empty nextRankMinSpent ? 0 : nextRankMinSpent}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫ và lên hạng <c:out value="${empty nextRankLabel ? 'tiếp theo' : nextRankLabel}" />.</span>
+                              </div>
+                              <div class="mc-rank-hero-mini-grid">
+                                <div class="mc-rank-mini-item">
+                                  <span>Mốc tiếp theo</span>
+                                  <strong><fmt:formatNumber value="${empty nextRankMinSpent ? 0 : nextRankMinSpent}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫</strong>
+                                </div>
+                                <div class="mc-rank-mini-item">
+                                  <span>Cần thêm</span>
+                                  <strong><fmt:formatNumber value="${empty amountToNextRank ? 0 : amountToNextRank}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫</strong>
+                                </div>
+                              </div>
+                            </c:otherwise>
+                          </c:choose>
+                        </div>
                       </div>
 
                       <div class="mc-rank-summary">
@@ -729,45 +819,291 @@
                         </div>
                       </div>
 
-                      <c:choose>
-                        <c:when test="${maxRank}">
-                          <p class="mc-rank-note">Bạn đã đạt hạng cao nhất. Cảm ơn bạn đã đồng hành cùng MyCosmetic.</p>
-                          <div class="mc-rank-progress"><div class="mc-rank-progress-bar is-full"></div></div>
-                        </c:when>
-                        <c:otherwise>
-                          <p class="mc-rank-note">
-                            Còn <strong><fmt:formatNumber value="${empty amountToNextRank ? 0 : amountToNextRank}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫</strong>
-                            để lên hạng <strong><c:out value="${empty nextRankLabel ? 'tiếp theo' : nextRankLabel}" /></strong>.
-                          </p>
-                          <div class="mc-rank-progress"><div class="mc-rank-progress-bar" data-progress="${empty rankProgressPercent ? 0 : rankProgressPercent}"></div></div>
-                          <p class="mc-rank-note">Tiến độ: <strong><c:out value="${empty rankProgressPercent ? 0 : rankProgressPercent}" />%</strong></p>
-                        </c:otherwise>
-                      </c:choose>
+                      <div class="mc-rank-progress-panel">
+                        <div class="mc-rank-progress-head">
+                          <div>
+                            <h3>Tiến độ lên hạng</h3>
+                            <p>Thanh tiến độ này cho biết bạn đã đi được bao xa so với mốc hạng kế tiếp.</p>
+                          </div>
+                          <span class="mc-rank-progress-value">
+                            <c:choose>
+                              <c:when test="${maxRank}">100%</c:when>
+                              <c:otherwise><c:out value="${empty rankProgressPercent ? 0 : rankProgressPercent}" />%</c:otherwise>
+                            </c:choose>
+                          </span>
+                        </div>
+
+                        <div class="mc-rank-progress"><div class="mc-rank-progress-bar account-rank-progress__bar ${maxRank ? 'is-full' : ''}" data-progress="${empty rankProgressPercent ? 0 : rankProgressPercent}"></div></div>
+
+                        <div class="mc-rank-progress-meta">
+                          <div>
+                            <span>Hiện tại</span>
+                            <strong><fmt:formatNumber value="${empty rankTotalSpent ? 0 : rankTotalSpent}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫</strong>
+                          </div>
+                          <div>
+                            <span>Mốc tiếp theo</span>
+                            <strong>
+                              <c:choose>
+                                <c:when test="${maxRank}">Đã đạt hạng cao nhất</c:when>
+                                <c:otherwise><fmt:formatNumber value="${empty nextRankMinSpent ? 0 : nextRankMinSpent}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫</c:otherwise>
+                              </c:choose>
+                            </strong>
+                          </div>
+                          <div>
+                            <span>Cần thêm</span>
+                            <strong>
+                              <c:choose>
+                                <c:when test="${maxRank}">0 ₫</c:when>
+                                <c:otherwise><fmt:formatNumber value="${empty amountToNextRank ? 0 : amountToNextRank}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫</c:otherwise>
+                              </c:choose>
+                            </strong>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="mc-rank-rule-grid">
+                        <div class="mc-rank-rule-card">
+                          <strong>1. Đơn nào được tính?</strong>
+                          <span>Chỉ các đơn đã thanh toán thành công mới được cộng vào tổng chi tiêu xét hạng.</span>
+                        </div>
+                        <div class="mc-rank-rule-card">
+                          <strong>2. Khi nào lên hạng?</strong>
+                          <span>Khi tổng chi tiêu của bạn chạm đúng hoặc vượt mốc của hạng tiếp theo.</span>
+                        </div>
+                        <div class="mc-rank-rule-card">
+                          <strong>3. Lợi ích khi lên hạng</strong>
+                          <span>Bạn nhận mức ưu đãi cao hơn và được mở thêm voucher theo từng hạng.</span>
+                        </div>
+                      </div>
+
+                      <div class="mc-rank-tier-board">
+                        <div class="mc-section-title-row">
+                          <div>
+                            <h3>Các mốc hạng thành viên</h3>
+                            <p>Bảng dưới đây cho biết rõ từng hạng cần bao nhiêu chi tiêu và nhận được ưu đãi nào.</p>
+                          </div>
+                        </div>
+
+                        <div class="mc-rank-roadmap">
+                          <div class="mc-rank-roadmap-line"></div>
+                          <div class="mc-rank-roadmap-step ${currentRankCode == 'MEMBER' ? 'is-current' : 'is-complete'}">
+                            <span class="mc-rank-roadmap-dot"></span>
+                            <strong>Thành viên</strong>
+                            <small>0 ₫</small>
+                          </div>
+                          <div class="mc-rank-roadmap-step ${currentRankCode == 'SILVER' ? 'is-current' : (currentRankCode == 'GOLD' || currentRankCode == 'DIAMOND' || currentRankCode == 'VIP' ? 'is-complete' : '')}">
+                            <span class="mc-rank-roadmap-dot"></span>
+                            <strong>Bạc</strong>
+                            <small>1.000.000 ₫</small>
+                          </div>
+                          <div class="mc-rank-roadmap-step ${currentRankCode == 'GOLD' ? 'is-current' : (currentRankCode == 'DIAMOND' || currentRankCode == 'VIP' ? 'is-complete' : '')}">
+                            <span class="mc-rank-roadmap-dot"></span>
+                            <strong>Vàng</strong>
+                            <small>3.000.000 ₫</small>
+                          </div>
+                          <div class="mc-rank-roadmap-step ${currentRankCode == 'DIAMOND' ? 'is-current' : (currentRankCode == 'VIP' ? 'is-complete' : '')}">
+                            <span class="mc-rank-roadmap-dot"></span>
+                            <strong>Kim cương</strong>
+                            <small>7.000.000 ₫</small>
+                          </div>
+                          <div class="mc-rank-roadmap-step ${currentRankCode == 'VIP' ? 'is-current' : ''}">
+                            <span class="mc-rank-roadmap-dot"></span>
+                            <strong>VIP</strong>
+                            <small>15.000.000 ₫</small>
+                          </div>
+                        </div>
+
+                        <div class="mc-rank-compare-table-wrap">
+                          <table class="mc-rank-compare-table">
+                            <thead>
+                            <tr>
+                              <th>Hạng</th>
+                              <th>Mốc chi tiêu</th>
+                              <th>Ưu đãi</th>
+                              <th>Quyền lợi chính</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr class="${currentRankCode == 'MEMBER' ? 'is-current' : ''}">
+                              <td><strong>Thành viên</strong></td>
+                              <td>Từ 0 ₫</td>
+                              <td>0%</td>
+                              <td>Dùng voucher cơ bản, bắt đầu tích lũy chi tiêu.</td>
+                            </tr>
+                            <tr class="${currentRankCode == 'SILVER' ? 'is-current' : ''}">
+                              <td><strong>Bạc</strong></td>
+                              <td>Từ 1.000.000 ₫</td>
+                              <td>3%</td>
+                              <td>Mở thêm voucher hạng Bạc.</td>
+                            </tr>
+                            <tr class="${currentRankCode == 'GOLD' ? 'is-current' : ''}">
+                              <td><strong>Vàng</strong></td>
+                              <td>Từ 3.000.000 ₫</td>
+                              <td>5%</td>
+                              <td>Ưu đãi tốt hơn và thêm voucher hạng Vàng.</td>
+                            </tr>
+                            <tr class="${currentRankCode == 'DIAMOND' ? 'is-current' : ''}">
+                              <td><strong>Kim cương</strong></td>
+                              <td>Từ 7.000.000 ₫</td>
+                              <td>8%</td>
+                              <td>Voucher hạng cao và quyền lợi nổi bật hơn.</td>
+                            </tr>
+                            <tr class="${currentRankCode == 'VIP' ? 'is-current' : ''}">
+                              <td><strong>VIP</strong></td>
+                              <td>Từ 15.000.000 ₫</td>
+                              <td>10%</td>
+                              <td>Mở toàn bộ voucher theo hạng và ưu đãi cao nhất.</td>
+                            </tr>
+                            </tbody>
+                          </table>
+                        </div>
+
+                        <div class="mc-rank-tier-grid">
+                          <div class="mc-rank-tier-card ${currentRankCode == 'MEMBER' ? 'is-current' : 'is-complete'}">
+                            <div class="mc-rank-tier-top">
+                              <span class="mc-rank-tier-badge">Member</span>
+                              <span class="mc-rank-tier-state">${currentRankCode == 'MEMBER' ? 'Đang giữ' : 'Mặc định'}</span>
+                            </div>
+                            <h4>Thành viên</h4>
+                            <p class="mc-rank-tier-sub">Bắt đầu khi tạo tài khoản và tích lũy từ đơn mua đầu tiên.</p>
+                            <div class="mc-rank-tier-price">0 ₫</div>
+                            <ul class="mc-rank-tier-list">
+                              <li>Ưu đãi hạng: 0%</li>
+                              <li>Dùng được voucher cơ bản</li>
+                            </ul>
+                          </div>
+
+                          <div class="mc-rank-tier-card ${currentRankCode == 'SILVER' ? 'is-current' : (currentRankCode == 'GOLD' || currentRankCode == 'DIAMOND' || currentRankCode == 'VIP' ? 'is-complete' : '')}">
+                            <div class="mc-rank-tier-top">
+                              <span class="mc-rank-tier-badge">Silver</span>
+                              <span class="mc-rank-tier-state">Từ 1.000.000 ₫</span>
+                            </div>
+                            <h4>Bạc</h4>
+                            <p class="mc-rank-tier-sub">Mốc mở khóa đầu tiên cho khách hàng bắt đầu mua sắm thường xuyên.</p>
+                            <div class="mc-rank-tier-price">1.000.000 ₫</div>
+                            <ul class="mc-rank-tier-list">
+                              <li>Ưu đãi hạng: 3%</li>
+                              <li>Mở thêm voucher cho hạng Bạc</li>
+                            </ul>
+                          </div>
+
+                          <div class="mc-rank-tier-card ${currentRankCode == 'GOLD' ? 'is-current' : (currentRankCode == 'DIAMOND' || currentRankCode == 'VIP' ? 'is-complete' : '')}">
+                            <div class="mc-rank-tier-top">
+                              <span class="mc-rank-tier-badge">Gold</span>
+                              <span class="mc-rank-tier-state">Từ 3.000.000 ₫</span>
+                            </div>
+                            <h4>Vàng</h4>
+                            <p class="mc-rank-tier-sub">Ưu đãi tốt hơn cho khách hàng thân thiết và có tần suất mua ổn định.</p>
+                            <div class="mc-rank-tier-price">3.000.000 ₫</div>
+                            <ul class="mc-rank-tier-list">
+                              <li>Ưu đãi hạng: 5%</li>
+                              <li>Nhận thêm voucher hạng Vàng</li>
+                            </ul>
+                          </div>
+
+                          <div class="mc-rank-tier-card ${currentRankCode == 'DIAMOND' ? 'is-current' : (currentRankCode == 'VIP' ? 'is-complete' : '')}">
+                            <div class="mc-rank-tier-top">
+                              <span class="mc-rank-tier-badge">Diamond</span>
+                              <span class="mc-rank-tier-state">Từ 7.000.000 ₫</span>
+                            </div>
+                            <h4>Kim cương</h4>
+                            <p class="mc-rank-tier-sub">Dành cho khách hàng mua sắm thường xuyên và có giá trị đơn hàng cao.</p>
+                            <div class="mc-rank-tier-price">7.000.000 ₫</div>
+                            <ul class="mc-rank-tier-list">
+                              <li>Ưu đãi hạng: 8%</li>
+                              <li>Voucher hạng cao và quyền lợi tốt hơn</li>
+                            </ul>
+                          </div>
+
+                          <div class="mc-rank-tier-card is-vip ${currentRankCode == 'VIP' ? 'is-current' : ''}">
+                            <div class="mc-rank-tier-top">
+                              <span class="mc-rank-tier-badge">VIP</span>
+                              <span class="mc-rank-tier-state">Từ 15.000.000 ₫</span>
+                            </div>
+                            <h4>VIP</h4>
+                            <p class="mc-rank-tier-sub">Hạng cao nhất của MyCosmetic, dành cho khách hàng thân thiết nhất.</p>
+                            <div class="mc-rank-tier-price">15.000.000 ₫</div>
+                            <ul class="mc-rank-tier-list">
+                              <li>Ưu đãi hạng: 10%</li>
+                              <li>Mở toàn bộ voucher theo hạng</li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
                     </div>
+
 
                     <!-- Activity -->
                     <div class="mc-account-view" data-account-view="activity">
                       <div class="mc-view-head">
                         <div>
                           <h2>Hoạt động gần đây</h2>
-                          <p>Lịch sử tìm kiếm và chi tiêu của bạn.</p>
+                          <p>Theo dõi lịch sử tìm kiếm và xu hướng chi tiêu của bạn.</p>
                         </div>
                       </div>
 
-                      <div class="mc-activity-split">
-                        <div class="mc-mini-section">
+                      <div class="mc-activity-summary-grid">
+                        <div class="mc-activity-summary-card">
+                          <span>🔎</span>
+                          <div>
+                            <strong><c:out value="${empty searchHistoryCount ? 0 : searchHistoryCount}" /></strong>
+                            <p>Lượt tìm kiếm</p>
+                          </div>
+                        </div>
+
+                        <div class="mc-activity-summary-card">
+                          <span>💰</span>
+                          <div>
+                            <strong>
+                              <c:choose>
+                                <c:when test="${not empty total_spent_vnd}">
+                                  <fmt:formatNumber value="${total_spent_vnd}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫
+                                </c:when>
+                                <c:otherwise>0 ₫</c:otherwise>
+                              </c:choose>
+                            </strong>
+                            <p>Tổng chi tiêu</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="mc-activity-stack">
+                        <div class="mc-mini-section mc-search-section">
                           <div class="mc-mini-section-head">
-                            <h3>Lịch sử tìm kiếm</h3>
-                            <span><c:out value="${empty searchHistoryCount ? 0 : searchHistoryCount}" /> lượt tìm</span>
+                            <div>
+                              <h3>Lịch sử tìm kiếm</h3>
+                              <span>Các từ khóa bạn đã tìm gần đây.</span>
+                            </div>
+
+                            <c:if test="${not empty searchHistories}">
+                              <form method="post"
+                                    action="${pageContext.request.contextPath}/account/search-history/clear"
+                                    class="account-inline-form"
+                                    onsubmit="return confirm('Bạn có chắc muốn xóa toàn bộ lịch sử tìm kiếm không?');">
+                                <c:if test="${not empty csrfToken}">
+                                  <input type="hidden" name="csrfToken" value="${fn:escapeXml(csrfToken)}" />
+                                </c:if>
+                                <c:if test="${empty csrfToken and not empty sessionScope.csrfToken}">
+                                  <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.csrfToken)}" />
+                                </c:if>
+                                <button type="submit" class="mc-clear-history-btn">Xóa tất cả</button>
+                              </form>
+                            </c:if>
                           </div>
 
                           <c:choose>
                             <c:when test="${not empty searchHistories}">
-                              <div class="mc-search-list">
+                              <div class="mc-search-list mc-search-list-wide">
                                 <c:forEach var="history" items="${searchHistories}">
                                   <c:choose>
-                                    <c:when test="${not empty history.searchUrl}"><c:set var="historyHref" value="${pageContext.request.contextPath}${history.searchUrl}" /></c:when>
-                                    <c:otherwise><c:url var="historyHref" value="/search"><c:param name="q" value="${history.keyword}" /></c:url></c:otherwise>
+                                    <c:when test="${not empty history.searchUrl}">
+                                      <c:set var="historyHref" value="${pageContext.request.contextPath}${history.searchUrl}" />
+                                    </c:when>
+                                    <c:otherwise>
+                                      <c:url var="historyHref" value="/search">
+                                        <c:param name="q" value="${history.keyword}" />
+                                      </c:url>
+                                    </c:otherwise>
                                   </c:choose>
 
                                   <div class="mc-search-item">
@@ -775,13 +1111,24 @@
                                       <span>🔍</span>
                                       <div>
                                         <strong><c:out value="${history.keyword}" /></strong>
-                                        <small><c:out value="${empty history.resultCount ? 0 : history.resultCount}" /> kết quả • Đã tìm <c:out value="${empty history.searchCount ? 1 : history.searchCount}" /> lần • <c:out value="${history.displayLastSearchedAt}" /></small>
+                                        <small>
+                                          <c:out value="${empty history.resultCount ? 0 : history.resultCount}" /> kết quả
+                                          • Đã tìm <c:out value="${empty history.searchCount ? 1 : history.searchCount}" /> lần
+                                          • <c:out value="${history.displayLastSearchedAt}" />
+                                        </small>
                                       </div>
                                     </a>
 
-                                    <form method="post" action="${pageContext.request.contextPath}/account/search-history/delete" class="account-inline-form" onsubmit="return confirm('Xóa từ khóa tìm kiếm này?');">
-                                      <c:if test="${not empty csrfToken}"><input type="hidden" name="csrfToken" value="${fn:escapeXml(csrfToken)}" /></c:if>
-                                      <c:if test="${empty csrfToken and not empty sessionScope.csrfToken}"><input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.csrfToken)}" /></c:if>
+                                    <form method="post"
+                                          action="${pageContext.request.contextPath}/account/search-history/delete"
+                                          class="account-inline-form"
+                                          onsubmit="return confirm('Xóa từ khóa tìm kiếm này?');">
+                                      <c:if test="${not empty csrfToken}">
+                                        <input type="hidden" name="csrfToken" value="${fn:escapeXml(csrfToken)}" />
+                                      </c:if>
+                                      <c:if test="${empty csrfToken and not empty sessionScope.csrfToken}">
+                                        <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.csrfToken)}" />
+                                      </c:if>
                                       <input type="hidden" name="id" value="${history.id}" />
                                       <button type="submit" class="mc-search-delete-btn" title="Xóa lịch sử">×</button>
                                     </form>
@@ -799,18 +1146,26 @@
                           </c:choose>
                         </div>
 
-                        <div class="mc-mini-section">
+                        <div class="mc-mini-section mc-spending-section">
                           <div class="mc-mini-section-head">
-                            <h3>Chi tiêu theo thời gian</h3>
-                            <span>Spending</span>
+                            <div>
+                              <h3>Chi tiêu theo thời gian</h3>
+                              <span>Biểu đồ tổng tiền mua hàng theo từng mốc thời gian.</span>
+                            </div>
+                            <span class="mc-soft-count">Spending</span>
                           </div>
 
                           <c:choose>
                             <c:when test="${not empty chart_labels and not empty chart_values}">
-                              <div class="mc-chart-wrap"><canvas id="spendingChart" height="150"></canvas></div>
+                              <div class="mc-chart-wrap mc-chart-wrap-wide">
+                                <canvas id="spendingChart" height="120"></canvas>
+                              </div>
                             </c:when>
                             <c:otherwise>
-                              <div class="mc-empty-state"><span>📊</span><p>Chưa có dữ liệu chi tiêu.</p></div>
+                              <div class="mc-empty-state">
+                                <span>📊</span>
+                                <p>Chưa có dữ liệu chi tiêu.</p>
+                              </div>
                             </c:otherwise>
                           </c:choose>
                         </div>
@@ -976,7 +1331,13 @@
               const triggers = document.querySelectorAll("[data-account-target]");
 
               views.forEach(function (view) {
-                view.classList.toggle("is-active", view.dataset.accountView === target);
+                view.classList.remove("is-active");
+              });
+
+              views.forEach(function (view) {
+                if (view.dataset.accountView === target) {
+                  view.classList.add("is-active");
+                }
               });
 
               triggers.forEach(function (trigger) {
