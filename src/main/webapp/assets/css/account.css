@@ -2049,3 +2049,394 @@ html body .mc-order-shortcut-grid a small {
 html body .mc-order-shortcut-grid a strong {
     margin-top: 2px !important;
 }
+
+/* =========================================================
+   ACCOUNT PROFILE / SECURITY LOGIC REWORK
+   Làm rõ khác nhau giữa Hồ sơ cá nhân và Tài khoản & Bảo mật.
+========================================================= */
+
+html body .mc-profile-purpose-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+    margin-bottom: 18px !important;
+}
+
+html body .mc-purpose-card {
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+    padding: 15px !important;
+    border-radius: 20px !important;
+    border: 1px solid #eef2f7 !important;
+    background: #ffffff !important;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, .035) !important;
+}
+
+html body .mc-purpose-card > span {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 15px !important;
+    font-size: 20px !important;
+    flex: 0 0 auto !important;
+}
+
+html body .mc-purpose-card.is-profile > span {
+    background: #fff1f4 !important;
+}
+
+html body .mc-purpose-card.is-delivery > span {
+    background: #eff6ff !important;
+}
+
+html body .mc-purpose-card.is-contact > span {
+    background: #ecfdf5 !important;
+}
+
+html body .mc-purpose-card strong {
+    display: block !important;
+    color: #111827 !important;
+    font-size: 14px !important;
+    font-weight: 950 !important;
+    margin-bottom: 4px !important;
+}
+
+html body .mc-purpose-card small {
+    display: block !important;
+    color: #667085 !important;
+    font-size: 12.5px !important;
+    font-weight: 700 !important;
+    line-height: 1.5 !important;
+}
+
+html body .mc-profile-form-sections {
+    display: grid !important;
+    gap: 16px !important;
+}
+
+html body .mc-profile-form-section {
+    padding: 18px !important;
+    border-radius: 22px !important;
+    border: 1px solid #edf2f7 !important;
+    background: #ffffff !important;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, .025) !important;
+}
+
+html body .mc-form-section-head {
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+    margin-bottom: 14px !important;
+    padding-bottom: 14px !important;
+    border-bottom: 1px solid #eef2f7 !important;
+}
+
+html body .mc-form-section-head > span {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 13px !important;
+    background: #fff1f4 !important;
+    border: 1px solid #fecdd3 !important;
+    color: #be123c !important;
+    font-size: 12px !important;
+    font-weight: 950 !important;
+    flex: 0 0 auto !important;
+}
+
+html body .mc-form-section-head h3 {
+    margin: 0 0 4px !important;
+    color: #111827 !important;
+    font-size: 17px !important;
+    font-weight: 950 !important;
+}
+
+html body .mc-form-section-head p {
+    margin: 0 !important;
+    color: #667085 !important;
+    font-size: 12.8px !important;
+    font-weight: 700 !important;
+    line-height: 1.5 !important;
+}
+
+html body .mc-profile-personal-grid {
+    grid-template-columns: 1.2fr 1fr 1fr !important;
+}
+
+html body .account-profile-form-actions {
+    padding: 18px !important;
+    margin-top: 16px !important;
+    border-radius: 20px !important;
+    border: 1px solid #ffd8e1 !important;
+    background: #fff7f9 !important;
+}
+
+/* Security */
+html body .mc-security-layout {
+    display: grid !important;
+    gap: 16px !important;
+}
+
+html body .mc-security-overview {
+    display: flex !important;
+    align-items: center !important;
+    gap: 16px !important;
+    padding: 18px !important;
+    border-radius: 22px !important;
+    border: 1px solid #ffd8e1 !important;
+    background: linear-gradient(135deg, #fff7f9 0%, #ffffff 100%) !important;
+}
+
+html body .mc-security-icon {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 54px !important;
+    height: 54px !important;
+    border-radius: 20px !important;
+    background: #fff1f4 !important;
+    font-size: 25px !important;
+    flex: 0 0 auto !important;
+}
+
+html body .mc-security-overview h3 {
+    margin: 0 0 5px !important;
+    color: #111827 !important;
+    font-size: 20px !important;
+    font-weight: 950 !important;
+}
+
+html body .mc-security-overview p {
+    margin: 0 !important;
+    color: #667085 !important;
+    font-size: 13.5px !important;
+    font-weight: 700 !important;
+    line-height: 1.6 !important;
+}
+
+html body .mc-security-card-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+}
+
+html body .mc-security-card {
+    display: grid !important;
+    grid-template-columns: 42px minmax(0, 1fr) auto !important;
+    align-items: center !important;
+    gap: 13px !important;
+    padding: 16px !important;
+    border-radius: 20px !important;
+    border: 1px solid #eef2f7 !important;
+    background: #ffffff !important;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, .03) !important;
+}
+
+html body .mc-security-card-icon {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 16px !important;
+    background: #f8fafc !important;
+    font-size: 20px !important;
+}
+
+html body .mc-security-card strong {
+    display: block !important;
+    color: #111827 !important;
+    font-size: 14.5px !important;
+    font-weight: 950 !important;
+}
+
+html body .mc-security-card small {
+    display: block !important;
+    margin-top: 3px !important;
+    color: #be123c !important;
+    font-size: 12.5px !important;
+    font-weight: 850 !important;
+    word-break: break-word !important;
+}
+
+html body .mc-security-card p {
+    margin: 7px 0 0 !important;
+    color: #667085 !important;
+    font-size: 12.3px !important;
+    font-weight: 700 !important;
+    line-height: 1.5 !important;
+}
+
+html body .mc-security-action {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 34px !important;
+    padding: 0 13px !important;
+    border-radius: 999px !important;
+    border: 1px solid #fecdd3 !important;
+    background: #fff1f4 !important;
+    color: #be123c !important;
+    font-size: 12.5px !important;
+    font-weight: 900 !important;
+    cursor: pointer !important;
+    transition: .16s ease !important;
+}
+
+html body .mc-security-action:hover {
+    background: #ffe4ea !important;
+    border-color: #fda4af !important;
+    transform: translateY(-1px) !important;
+}
+
+html body .mc-security-list {
+    display: grid !important;
+    gap: 10px !important;
+}
+
+html body .mc-security-row {
+    width: 100% !important;
+    display: grid !important;
+    grid-template-columns: 42px minmax(0, 1fr) auto !important;
+    align-items: center !important;
+    gap: 13px !important;
+    padding: 15px 16px !important;
+    border-radius: 20px !important;
+    border: 1px solid #eef2f7 !important;
+    background: #ffffff !important;
+    color: inherit !important;
+    text-align: left !important;
+    text-decoration: none !important;
+    cursor: pointer !important;
+    transition: .16s ease !important;
+}
+
+html body .mc-security-row:hover {
+    border-color: #ffd8e1 !important;
+    background: #fff9fb !important;
+}
+
+html body .mc-security-row-icon {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 16px !important;
+    background: #fff1f4 !important;
+    font-size: 20px !important;
+}
+
+html body .mc-security-row strong {
+    display: block !important;
+    color: #111827 !important;
+    font-size: 14.5px !important;
+    font-weight: 950 !important;
+}
+
+html body .mc-security-row small {
+    display: block !important;
+    margin-top: 4px !important;
+    color: #667085 !important;
+    font-size: 12.8px !important;
+    font-weight: 700 !important;
+    line-height: 1.5 !important;
+}
+
+html body .mc-security-row em {
+    color: #be123c !important;
+    font-style: normal !important;
+    font-size: 12.8px !important;
+    font-weight: 900 !important;
+    white-space: nowrap !important;
+}
+
+html body .mc-security-row.is-danger {
+    border-color: #fecdd3 !important;
+    background: #fff7f9 !important;
+}
+
+html body .mc-security-row.is-muted {
+    cursor: default !important;
+    background: #fbfcff !important;
+}
+
+html body .mc-security-row.is-muted:hover {
+    border-color: #eef2f7 !important;
+    background: #fbfcff !important;
+}
+
+@media (max-width: 1100px) {
+    html body .mc-profile-purpose-grid,
+    html body .mc-security-card-grid,
+    html body .mc-profile-personal-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+@media (max-width: 768px) {
+    html body .mc-security-card,
+    html body .mc-security-row {
+        grid-template-columns: 42px minmax(0, 1fr) !important;
+    }
+
+    html body .mc-security-card .mc-security-action,
+    html body .mc-security-row em {
+        grid-column: 2 / -1 !important;
+        justify-self: start !important;
+        margin-top: 6px !important;
+    }
+
+    html body .mc-security-overview {
+        align-items: flex-start !important;
+    }
+}
+
+/* =========================================================
+   ACCOUNT PROFILE CLEAN SECTIONS
+   Bỏ phần giải thích dài ở Hồ sơ cá nhân, chỉ giữ mục 01/02/03.
+========================================================= */
+
+html body .mc-profile-purpose-grid {
+    display: none !important;
+}
+
+html body .mc-account-view[data-account-view="profile"] .mc-view-head {
+    margin-bottom: 16px !important;
+}
+
+html body .mc-account-view[data-account-view="profile"] .mc-view-head p {
+    display: none !important;
+}
+
+html body .mc-profile-form-section {
+    padding: 18px !important;
+}
+
+html body .mc-form-section-head {
+    align-items: center !important;
+    margin-bottom: 14px !important;
+    padding-bottom: 12px !important;
+}
+
+html body .mc-form-section-head p {
+    display: none !important;
+}
+
+html body .mc-form-section-head h3 {
+    margin: 0 !important;
+    font-size: 18px !important;
+}
+
+html body .account-profile-form-actions {
+    justify-content: flex-end !important;
+}
+
+html body .account-profile-note {
+    display: none !important;
+}
