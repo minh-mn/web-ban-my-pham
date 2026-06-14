@@ -1259,3 +1259,198 @@
         border-radius: 15px;
     }
 }
+/* =========================================================
+   ORDER DETAIL - WIDEN AFTER-SALE ACTION SECTION
+   Fix: kéo rộng bố cục, không bị mất chữ
+========================================================= */
+
+/* Kéo rộng toàn bộ vùng chi tiết đơn hàng */
+.order-detail-container {
+    max-width: 1360px !important;
+    width: min(1360px, calc(100% - 48px)) !important;
+    margin: 0 auto !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+/* Card chính thoáng hơn */
+.order-card {
+    padding: 26px 28px !important;
+    border-radius: 24px !important;
+}
+
+/* 3 khối: Hủy đơn / Hoàn hàng / Xác nhận nhận hàng */
+.order-action-grid {
+    display: grid !important;
+    grid-template-columns: minmax(300px, 1fr) minmax(380px, 1.15fr) minmax(300px, 1fr) !important;
+    gap: 18px !important;
+    align-items: stretch !important;
+}
+
+/* Nếu ô xác nhận cũ đang bị set full row thì bỏ full */
+.order-action-box.full {
+    grid-column: auto !important;
+}
+
+/* Từng ô rộng và thoáng hơn */
+.order-action-box {
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 245px !important;
+    padding: 22px 24px !important;
+    border-radius: 20px !important;
+    overflow: visible !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+/* Không cho chữ bị cắt */
+.order-action-box h3,
+.order-action-box p,
+.order-muted,
+.return-request-summary,
+.return-request-summary p {
+    max-width: 100% !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: unset !important;
+    word-break: normal !important;
+    overflow-wrap: anywhere !important;
+}
+
+/* Chữ mô tả dễ đọc hơn */
+.order-action-box p,
+.order-muted {
+    line-height: 1.65 !important;
+    font-size: 14px !important;
+}
+
+/* Form hoàn hàng rộng hơn */
+.order-action-box form {
+    width: 100% !important;
+    margin-top: 10px !important;
+}
+
+.order-action-box select,
+.order-action-box textarea,
+.order-action-box input[type="text"] {
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+.order-action-box select {
+    min-height: 48px !important;
+    padding: 0 14px !important;
+}
+
+.order-action-box textarea {
+    min-height: 96px !important;
+    line-height: 1.55 !important;
+}
+
+/* Nút không bị hẹp */
+.order-action-btn {
+    width: 100% !important;
+    min-height: 48px !important;
+    border-radius: 14px !important;
+}
+
+/* Khung xác nhận đã nhận hàng */
+.return-request-summary {
+    padding: 18px !important;
+    border-radius: 18px !important;
+}
+
+/* =========================================================
+   POLICY SUPPORT SECTION
+   Fix: 2 card chính sách rộng hơn, không mất chữ
+========================================================= */
+
+.policy-links,
+.order-policy-links,
+.order-support-policy,
+.order-policy-section,
+.after-sale-policy,
+.after-sale-policy-section {
+    width: 100% !important;
+}
+
+/* Nếu phần chính sách đang dùng grid 2 cột */
+.policy-support-grid,
+.order-policy-grid,
+.order-support-policy-grid,
+.after-sale-policy-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 18px !important;
+}
+
+/* Card chính sách */
+.policy-support-card,
+.order-policy-card,
+.order-support-policy-card,
+.after-sale-policy-card {
+    min-width: 0 !important;
+    padding: 22px 24px !important;
+    border-radius: 20px !important;
+    overflow: visible !important;
+}
+
+/* Không cắt chữ trong card chính sách */
+.policy-support-card *,
+.order-policy-card *,
+.order-support-policy-card *,
+.after-sale-policy-card * {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: unset !important;
+    overflow-wrap: anywhere !important;
+}
+
+/* Link chính sách nhìn rõ nhưng không quá chói */
+.policy-links a,
+.policy-support-card a,
+.order-policy-card a,
+.order-support-policy-card a,
+.after-sale-policy-card a {
+    color: #d94b79 !important;
+    font-weight: 900 !important;
+    text-decoration: none !important;
+}
+
+/* Responsive */
+@media (max-width: 1180px) {
+    .order-detail-container {
+        width: min(100% - 32px, 1180px) !important;
+    }
+
+    .order-action-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .order-action-box.full {
+        grid-column: 1 / -1 !important;
+    }
+
+    .policy-support-grid,
+    .order-policy-grid,
+    .order-support-policy-grid,
+    .after-sale-policy-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+@media (max-width: 640px) {
+    .order-detail-container {
+        width: min(100% - 20px, 100%) !important;
+    }
+
+    .order-card {
+        padding: 18px !important;
+        border-radius: 20px !important;
+    }
+
+    .order-action-box {
+        padding: 18px !important;
+    }
+}
