@@ -1,5 +1,6 @@
 package com.webshop.app.controller.AdminController;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -295,37 +296,37 @@ public class AdminBrandServlet extends HttpServlet {
 
         if (!ALLOWED_IMAGE_EXTENSIONS.contains(extension)) {
             throw new IllegalArgumentException(
-                    "Logo thương hiệu chỉ hỗ trợ JPG, JPEG, PNG, WEBP hoặc GIF."
+                    "Logo chỉ hỗ trợ JPG, JPEG, PNG, WEBP hoặc GIF."
             );
         }
 
         String contentType = part.getContentType();
         if (contentType != null && !contentType.toLowerCase(Locale.ROOT).startsWith("image/")) {
-            throw new IllegalArgumentException("File tải lên không phải là ảnh hợp lệ.");
+            throw new IllegalArgumentException("File không phải ảnh hợp lệ.");
         }
 
-        Files.createDirectories(UploadConfig.BRAND_DIR);
+        // ĐÚNG THƯ MỤC BẠN MUỐN
+        String uploadDir = getServletContext().getRealPath("")
+                + File.separator + "assets"
+                + File.separator + "images"
+                + File.separator + "brand";
 
-        // ✅ GIỮ NGUYÊN TÊN FILE
+        File dir = new File(uploadDir);
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+
+        // GIỮ NGUYÊN TÊN FILE
         String fileName = submittedFileName;
 
-        Path target = UploadConfig.resolveBrandFile(fileName)
-                .toAbsolutePath()
-                .normalize();
-
-        Path brandDir = UploadConfig.BRAND_DIR
-                .toAbsolutePath()
-                .normalize();
-
-        if (!target.startsWith(brandDir)) {
-            throw new IllegalArgumentException("Đường dẫn upload logo thương hiệu không hợp lệ.");
-        }
+        String fullPath = uploadDir + File.separator + fileName;
 
         try (InputStream inputStream = part.getInputStream()) {
-            Files.copy(inputStream, target, StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(inputStream, Paths.get(fullPath), StandardCopyOption.REPLACE_EXISTING);
         }
 
-        return UploadConfig.toBrandUrl(fileName);
+        // LƯU VÀO DB
+        return "/assets/images/brand/" + fileName;
     }
 
     private String getExtension(String fileName) {
