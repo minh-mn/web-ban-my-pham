@@ -2468,3 +2468,168 @@ body {
         letter-spacing: .12em;
     }
 }
+
+/* =========================================================
+   HOME - VOUCHER SECTION WIDE FIX
+   Fix: kéo rộng khu vực Săn mã nhanh, tăng khoảng cách để card không đụng nhau
+   Đặt cuối file home.css để override các style cũ.
+========================================================= */
+
+/* Chỉ kéo rộng riêng khu vực voucher, không ảnh hưởng toàn bộ trang */
+.skin-voucher-strip .skin-container {
+    width: min(1480px, calc(100% - 72px)) !important;
+    max-width: 1480px !important;
+}
+
+/* Khung voucher rộng và thoáng hơn */
+.skin-voucher-shell {
+    padding: 34px 48px 38px !important;
+    border-radius: 36px !important;
+    overflow: visible !important;
+}
+
+/* Tăng khoảng cách giữa 2 cột voucher để các vòng tròn không chạm nhau */
+.skin-voucher-row--sync {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(520px, 1fr)) !important;
+    column-gap: 46px !important;
+    row-gap: 22px !important;
+    align-items: stretch !important;
+}
+
+/* Card voucher rộng hơn, không bị bó chữ */
+.skin-voucher-card--sync {
+    grid-template-columns: 118px 1px minmax(0, 1fr) !important;
+    min-height: 178px !important;
+    border-radius: 26px !important;
+    overflow: visible !important;
+}
+
+/* Thu nhỏ nhẹ 2 vòng tròn khoét cạnh để không đụng nhau ở giữa */
+.skin-voucher-card--sync::before,
+.skin-voucher-card--sync::after {
+    width: 22px !important;
+    height: 22px !important;
+    z-index: 3 !important;
+}
+
+.skin-voucher-card--sync::before {
+    left: -11px !important;
+}
+
+.skin-voucher-card--sync::after {
+    right: -11px !important;
+}
+
+/* Vùng logo MC rộng hơn một chút */
+.skin-voucher-left {
+    padding: 18px 22px !important;
+}
+
+.skin-voucher-mark {
+    width: 66px !important;
+    height: 66px !important;
+    font-size: 24px !important;
+}
+
+/* Nội dung bên phải rộng hơn, nút Lưu không đè vào mã */
+.skin-voucher-content {
+    min-width: 0 !important;
+    padding: 20px 24px 18px 22px !important;
+}
+
+.skin-voucher-code-row {
+    gap: 18px !important;
+}
+
+.skin-voucher-code-row strong {
+    min-width: 0 !important;
+    max-width: calc(100% - 88px) !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: unset !important;
+    overflow-wrap: anywhere !important;
+}
+
+.skin-save-voucher {
+    min-width: 70px !important;
+    flex: 0 0 auto !important;
+}
+
+/* Tránh meta bị đụng hoặc bị ép dòng xấu */
+.skin-voucher-meta {
+    gap: 9px !important;
+    flex-wrap: wrap !important;
+    white-space: normal !important;
+}
+
+/* Màn hình vừa: giảm nhẹ khoảng cách nhưng vẫn giữ 2 cột */
+@media (max-width: 1350px) {
+    .skin-voucher-strip .skin-container {
+        width: min(1280px, calc(100% - 48px)) !important;
+        max-width: 1280px !important;
+    }
+
+    .skin-voucher-shell {
+        padding: 30px 34px 34px !important;
+    }
+
+    .skin-voucher-row--sync {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        column-gap: 38px !important;
+    }
+
+    .skin-voucher-card--sync {
+        grid-template-columns: 104px 1px minmax(0, 1fr) !important;
+    }
+}
+
+/* Tablet / màn hình nhỏ: chuyển 1 cột để không bị bó */
+@media (max-width: 980px) {
+    .skin-voucher-strip .skin-container {
+        width: min(100% - 28px, 100%) !important;
+        max-width: none !important;
+    }
+
+    .skin-voucher-shell {
+        padding: 24px 20px 26px !important;
+    }
+
+    .skin-voucher-row--sync {
+        grid-template-columns: 1fr !important;
+        column-gap: 0 !important;
+        row-gap: 18px !important;
+    }
+
+    .skin-voucher-card--sync {
+        grid-template-columns: 108px 1px minmax(0, 1fr) !important;
+        min-height: 168px !important;
+    }
+}
+
+@media (max-width: 640px) {
+    .skin-voucher-card--sync {
+        grid-template-columns: 1fr !important;
+    }
+
+    .skin-voucher-divider {
+        height: 1px !important;
+        background: repeating-linear-gradient(
+                to right,
+                transparent 0 8px,
+                #ebc1ce 8px 16px
+        ) !important;
+    }
+
+    .skin-voucher-code-row {
+        align-items: stretch !important;
+    }
+
+    .skin-voucher-code-row strong {
+        max-width: 100% !important;
+    }
+
+    .skin-save-voucher {
+        width: 100% !important;
+    }
+}
