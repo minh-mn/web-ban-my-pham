@@ -2,7 +2,7 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 
 <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/base.css">
-<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/theme-red-buttons.css?v=20260613_6">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/theme-red-buttons.css?v=20260613_8">
 
 <nav class="category-nav-bar">
   <div class="container">
