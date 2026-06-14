@@ -1193,7 +1193,7 @@
                                             <div class="mc-view-head">
                                                 <div>
                                                     <h2>Hồ sơ cá nhân</h2>
-                                                    <p>Cập nhật thông tin dùng cho đơn hàng và giao hàng.</p>
+
                                                 </div>
                                             </div>
 
@@ -1205,30 +1205,79 @@
                                             <div class="mc-view-head">
                                                 <div>
                                                     <h2>Tài khoản & Bảo mật</h2>
-                                                    <p>Quản lý thông tin đăng nhập và bảo vệ tài khoản.</p>
+                                                    <p>Phần này dùng để quản lý đăng nhập, mật khẩu và các thông tin xác thực tài khoản.</p>
                                                 </div>
                                             </div>
 
-                                            <div class="mc-setting-list">
-                                                <button type="button" class="mc-setting-row" data-account-target="profile">
-                                                    <div><strong>Hồ sơ cá nhân</strong><small>Họ tên, số điện thoại, email, địa chỉ</small></div>
-                                                    <span>›</span>
-                                                </button>
+                                            <div class="mc-security-layout">
+                                                <div class="mc-security-overview">
+                                                    <div class="mc-security-icon">🔐</div>
+                                                    <div>
+                                                        <h3>Bảo vệ tài khoản của bạn</h3>
+                                                        <p>Email, số điện thoại và mật khẩu là thông tin dùng để đăng nhập, nhận OTP và khôi phục tài khoản khi cần.</p>
+                                                    </div>
+                                                </div>
 
-                                                <button type="button" class="mc-setting-row" data-account-target="profile">
-                                                    <div><strong>Số điện thoại</strong><small><c:choose><c:when test="${not empty userPhone}"><c:out value="${userPhone}" /></c:when><c:otherwise>Chưa cập nhật</c:otherwise></c:choose></small></div>
-                                                    <span>›</span>
-                                                </button>
+                                                <div class="mc-security-card-grid">
+                                                    <div class="mc-security-card">
+                                                        <span class="mc-security-card-icon">📧</span>
+                                                        <div>
+                                                            <strong>Email đăng nhập</strong>
+                                                            <small>
+                                                                <c:choose>
+                                                                    <c:when test="${not empty userEmail}"><c:out value="${userEmail}" /></c:when>
+                                                                    <c:otherwise>Chưa cập nhật email</c:otherwise>
+                                                                </c:choose>
+                                                            </small>
+                                                            <p>Dùng để nhận OTP và thông báo quan trọng từ hệ thống.</p>
+                                                        </div>
+                                                        <button type="button" class="mc-security-action" data-account-target="profile">Cập nhật</button>
+                                                    </div>
 
-                                                <button type="button" class="mc-setting-row" data-account-target="profile">
-                                                    <div><strong>Email</strong><small><c:choose><c:when test="${not empty userEmail}"><c:out value="${userEmail}" /></c:when><c:otherwise>Chưa cập nhật</c:otherwise></c:choose></small></div>
-                                                    <span>›</span>
-                                                </button>
+                                                    <div class="mc-security-card">
+                                                        <span class="mc-security-card-icon">📱</span>
+                                                        <div>
+                                                            <strong>Số điện thoại xác thực</strong>
+                                                            <small>
+                                                                <c:choose>
+                                                                    <c:when test="${not empty userPhone}"><c:out value="${userPhone}" /></c:when>
+                                                                    <c:otherwise>Chưa cập nhật số điện thoại</c:otherwise>
+                                                                </c:choose>
+                                                            </small>
+                                                            <p>Dùng để liên hệ giao hàng và hỗ trợ xác minh tài khoản.</p>
+                                                        </div>
+                                                        <button type="button" class="mc-security-action" data-account-target="profile">Cập nhật</button>
+                                                    </div>
+                                                </div>
 
-                                                <a href="${pageContext.request.contextPath}/account/change-password" class="mc-setting-row">
-                                                    <div><strong>Đổi mật khẩu</strong><small>Nên thay đổi định kỳ để bảo vệ tài khoản</small></div>
-                                                    <span>›</span>
-                                                </a>
+                                                <div class="mc-security-list">
+                                                    <a href="${pageContext.request.contextPath}/account/change-password" class="mc-security-row is-danger">
+                                                        <span class="mc-security-row-icon">🔑</span>
+                                                        <div>
+                                                            <strong>Đổi mật khẩu</strong>
+                                                            <small>Nên thay đổi định kỳ để bảo vệ tài khoản, đặc biệt sau khi đăng nhập trên thiết bị lạ.</small>
+                                                        </div>
+                                                        <em>Đổi ngay ›</em>
+                                                    </a>
+
+                                                    <button type="button" class="mc-security-row" data-account-target="profile">
+                                                        <span class="mc-security-row-icon">✅</span>
+                                                        <div>
+                                                            <strong>Xác thực khi thay đổi thông tin</strong>
+                                                            <small>Hồ sơ dùng cho đặt hàng và giao hàng. Riêng email khi thay đổi sẽ cần xác thực OTP trước khi lưu.</small>
+                                                        </div>
+                                                        <em>Xem hồ sơ ›</em>
+                                                    </button>
+
+                                                    <div class="mc-security-row is-muted">
+                                                        <span class="mc-security-row-icon">🛡️</span>
+                                                        <div>
+                                                            <strong>Lưu ý bảo mật</strong>
+                                                            <small>Không chia sẻ mật khẩu, mã OTP hoặc tài khoản cho người khác.</small>
+                                                        </div>
+                                                        <em>An toàn</em>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
 
@@ -1289,49 +1338,83 @@
                                 <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.csrfToken)}" />
                             </c:if>
 
-                            <div class="account-form-grid account-form-grid-profile">
-                                <div class="form-group">
-                                    <label for="nameInput">Họ tên <span>*</span></label>
-                                    <input class="account-input" id="nameInput" name="fullName" value="${sessionScope.user.fullName}" required />
-                                    <small id="name-error" class="account-field-error"></small>
-                                </div>
+                            <div class="mc-profile-form-sections">
+                                <section class="mc-profile-form-section">
+                                    <div class="mc-form-section-head">
+                                        <span>01</span>
+                                        <div>
+                                            <h3>Thông tin cá nhân</h3>
 
-                                <div class="form-group">
-                                    <label for="emailInput">Email <span>*</span></label>
-                                    <input class="account-input" id="emailInput" name="email" value="${sessionScope.user.email}" required />
-                                    <small id="email-error" class="account-field-error"></small>
-                                </div>
-
-                                <div class="form-group">
-                                    <label for="phoneInput">Số điện thoại <span>*</span></label>
-                                    <input class="account-input" id="phoneInput" name="phone" value="${sessionScope.user.phone}" required />
-                                    <small id="phone-error" class="account-field-error"></small>
-                                </div>
-
-                                <div class="form-group">
-                                    <label for="birthDateInput">Ngày sinh</label>
-                                    <input class="account-input" id="birthDateInput" type="date" name="birthDate" value="${sessionScope.user.birthDate}" />
-                                </div>
-
-                                <div class="form-group">
-                                    <label for="genderInput">Giới tính</label>
-                                    <select class="account-input" id="genderInput" name="gender">
-                                        <option value="Male" ${sessionScope.user.gender == 'Male' ? 'selected' : ''}>Nam</option>
-                                        <option value="Female" ${sessionScope.user.gender == 'Female' ? 'selected' : ''}>Nữ</option>
-                                    </select>
-                                </div>
-
-                                <div class="form-group account-address-group">
-                                    <label for="addressInput">Địa chỉ giao hàng</label>
-                                    <div class="account-address-row">
-                                        <input type="text" id="addressInput" name="address" value="${sessionScope.user.address}" class="account-input" placeholder="Nhập địa chỉ hoặc bấm lấy vị trí" />
-                                        <button type="button" class="account-btn account-btn-secondary-soft account-location-btn" onclick="getLocation()">📍 Lấy vị trí</button>
+                                        </div>
                                     </div>
-                                </div>
+
+                                    <div class="account-form-grid account-form-grid-profile mc-profile-personal-grid">
+                                        <div class="form-group">
+                                            <label for="nameInput">Họ tên <span>*</span></label>
+                                            <input class="account-input" id="nameInput" name="fullName" value="${sessionScope.user.fullName}" required />
+                                            <small id="name-error" class="account-field-error"></small>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="birthDateInput">Ngày sinh</label>
+                                            <input class="account-input" id="birthDateInput" type="date" name="birthDate" value="${sessionScope.user.birthDate}" />
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="genderInput">Giới tính</label>
+                                            <select class="account-input" id="genderInput" name="gender">
+                                                <option value="Male" ${sessionScope.user.gender == 'Male' ? 'selected' : ''}>Nam</option>
+                                                <option value="Female" ${sessionScope.user.gender == 'Female' ? 'selected' : ''}>Nữ</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </section>
+
+                                <section class="mc-profile-form-section">
+                                    <div class="mc-form-section-head">
+                                        <span>02</span>
+                                        <div>
+                                            <h3>Thông tin liên hệ</h3>
+
+                                        </div>
+                                    </div>
+
+                                    <div class="account-form-grid account-form-grid-profile">
+                                        <div class="form-group">
+                                            <label for="emailInput">Email <span>*</span></label>
+                                            <input class="account-input" id="emailInput" name="email" value="${sessionScope.user.email}" required />
+                                            <small id="email-error" class="account-field-error"></small>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="phoneInput">Số điện thoại <span>*</span></label>
+                                            <input class="account-input" id="phoneInput" name="phone" value="${sessionScope.user.phone}" required />
+                                            <small id="phone-error" class="account-field-error"></small>
+                                        </div>
+                                    </div>
+                                </section>
+
+                                <section class="mc-profile-form-section">
+                                    <div class="mc-form-section-head">
+                                        <span>03</span>
+                                        <div>
+                                            <h3>Địa chỉ giao hàng</h3>
+
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group account-address-group">
+                                        <label for="addressInput">Địa chỉ giao hàng</label>
+                                        <div class="account-address-row">
+                                            <input type="text" id="addressInput" name="address" value="${sessionScope.user.address}" class="account-input" placeholder="Nhập địa chỉ hoặc bấm lấy vị trí" />
+                                            <button type="button" class="account-btn account-btn-secondary-soft account-location-btn" onclick="getLocation()">📍 Lấy vị trí</button>
+                                        </div>
+                                    </div>
+                                </section>
                             </div>
 
                             <div class="account-profile-form-actions">
-                                <span class="account-profile-note">Khi đổi email, hệ thống sẽ gửi OTP để xác thực trước khi lưu.</span>
+
                                 <button type="submit" class="btn-save account-save-profile-btn" id="saveProfileBtn">Lưu thay đổi</button>
                             </div>
                         </form>
