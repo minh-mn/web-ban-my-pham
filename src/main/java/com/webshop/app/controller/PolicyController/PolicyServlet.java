@@ -1,13 +1,17 @@
 package com.webshop.app.controller.PolicyController;
 
-import java.io.IOException;
-
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+import java.io.IOException;
+
+/**
+ * PolicyServlet
+ * Xử lý toàn bộ trang chính sách của MyCosmetic.
+ */
 @WebServlet("/policy/*")
 public class PolicyServlet extends HttpServlet {
 
@@ -20,47 +24,53 @@ public class PolicyServlet extends HttpServlet {
         request.setCharacterEncoding("UTF-8");
         response.setCharacterEncoding("UTF-8");
 
-        String pathInfo = request.getPathInfo();
-        String path = pathInfo == null ? "" : pathInfo.trim().toLowerCase();
+        String path = request.getPathInfo();
+
+        if (path == null || path.isBlank() || "/".equals(path)) {
+            response.sendRedirect(request.getContextPath() + "/policy/cancel");
+            return;
+        }
+
+        if (path.length() > 1 && path.endsWith("/")) {
+            path = path.substring(0, path.length() - 1);
+        }
+
+        String view;
 
         switch (path) {
-            case "/cancel", "/huy-don" -> forward(
-                    request,
-                    response,
-                    "MyCosmetic | Chính sách hủy đơn",
-                    "/jsp/policy/cancel_policy.jsp"
-            );
+            case "/cancel":
+                view = "/jsp/policy/cancel-policy.jsp";
+                break;
 
-            case "/return", "/hoan-hang" -> forward(
-                    request,
-                    response,
-                    "MyCosmetic | Chính sách hoàn hàng",
-                    "/jsp/policy/return_policy.jsp"
-            );
+            case "/return":
+                view = "/jsp/policy/return-policy.jsp";
+                break;
 
-            default -> response.sendRedirect(request.getContextPath() + "/policy/return");
+            case "/privacy":
+                view = "/jsp/policy/privacy-policy.jsp";
+                break;
+
+            case "/payment":
+                view = "/jsp/policy/payment-policy.jsp";
+                break;
+
+            case "/terms":
+                view = "/jsp/policy/terms-policy.jsp";
+                break;
+
+            case "/shopping-guide":
+                view = "/jsp/policy/shopping-guide.jsp";
+                break;
+
+            case "/vnpay-guide":
+                view = "/jsp/policy/vnpay-guide.jsp";
+                break;
+
+            default:
+                response.sendError(HttpServletResponse.SC_NOT_FOUND);
+                return;
         }
-    }
 
-    private void forward(HttpServletRequest request,
-                         HttpServletResponse response,
-                         String title,
-                         String content) throws ServletException, IOException {
-
-        request.setAttribute("pageTitle", title);
-
-        /*
-         * cancel_policy.jsp đã có style nhúng trực tiếp.
-         * return_policy.jsp vẫn có thể dùng CSS riêng nếu bạn đã thêm policy.css.
-         */
-        request.setAttribute("pageCss", "/policy.css");
-
-        /*
-         * base.jsp sẽ import nội dung này bằng:
-         * <c:import url="${pageContent}" />
-         */
-        request.setAttribute("pageContent", content);
-
-        request.getRequestDispatcher("/jsp/common/base.jsp").forward(request, response);
+        request.getRequestDispatcher(view).forward(request, response);
     }
 }
