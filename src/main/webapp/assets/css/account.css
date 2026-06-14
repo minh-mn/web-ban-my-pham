@@ -2440,3 +2440,45 @@ html body .account-profile-form-actions {
 html body .account-profile-note {
     display: none !important;
 }
+
+/* =========================================================
+   ACCOUNT PROFILE LOCATION FIX
+   Cải thiện nút lấy vị trí và thông báo trạng thái.
+========================================================= */
+
+html body .account-location-status {
+    display: block !important;
+    min-height: 18px !important;
+    margin-top: 8px !important;
+    padding-left: 2px !important;
+    color: #667085 !important;
+    font-size: 12.5px !important;
+    font-weight: 750 !important;
+    line-height: 1.45 !important;
+}
+
+html body .account-location-status.is-loading {
+    color: #b45309 !important;
+}
+
+html body .account-location-status.is-success {
+    color: #047857 !important;
+}
+
+html body .account-location-status.is-error {
+    color: #be123c !important;
+}
+
+html body .account-location-btn:disabled,
+html body .account-location-btn.is-loading {
+    opacity: .78 !important;
+    cursor: wait !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+html body .account-input.is-loading-location {
+    background: #fff7ed !important;
+    border-color: #fed7aa !important;
+    color: #92400e !important;
+}
