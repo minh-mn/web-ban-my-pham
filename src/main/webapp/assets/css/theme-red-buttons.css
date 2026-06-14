@@ -1455,3 +1455,609 @@ a.btn-empty-primary:hover {
     box-shadow: 0 12px 22px rgba(143, 0, 31, .18) !important;
     font-family: inherit !important;
 }
+
+/* =========================================================
+   ADDRESS MAP MODAL OVERRIDES V7
+   - Dung dia chi goi y: do
+   - Xac nhan vi tri: do
+   - Huy: nen trang, chu den dam
+   - Luu y: mau do, in dam
+========================================================= */
+
+.checkout-page .address-map-btn,
+.address-map-modal .address-map-btn {
+    min-width: 126px !important;
+    height: 44px !important;
+    padding: 0 18px !important;
+    border-radius: 14px !important;
+    font-size: 15px !important;
+    font-weight: 800 !important;
+    transition: all 0.2s ease !important;
+}
+
+/* Nut Huy: nen trang, chu den dam */
+.checkout-page .address-map-footer .address-map-btn:not(.primary),
+.address-map-modal .address-map-footer .address-map-btn:not(.primary) {
+    background: #ffffff !important;
+    background-image: none !important;
+    color: #111827 !important;
+    border: 1.5px solid #e5e7eb !important;
+    box-shadow: none !important;
+}
+
+.checkout-page .address-map-footer .address-map-btn:not(.primary):hover:not(:disabled),
+.address-map-modal .address-map-footer .address-map-btn:not(.primary):hover:not(:disabled) {
+    background: #f8fafc !important;
+    background-image: none !important;
+    color: #111827 !important;
+    border-color: #d1d5db !important;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06) !important;
+}
+
+/* Nut Dung dia chi goi y: mau do */
+.checkout-page .address-map-btn.suggestion,
+.address-map-modal .address-map-btn.suggestion {
+    background: linear-gradient(180deg, #f43f5e 0%, #e11d48 100%) !important;
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 10px 22px rgba(225, 29, 72, 0.22) !important;
+}
+
+.checkout-page .address-map-btn.suggestion:hover:not(:disabled),
+.address-map-modal .address-map-btn.suggestion:hover:not(:disabled) {
+    background: linear-gradient(180deg, #e11d48 0%, #be123c 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 14px 28px rgba(225, 29, 72, 0.28) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* Nut Xac nhan vi tri: mau do */
+.checkout-page .address-map-btn.primary,
+.address-map-modal .address-map-btn.primary {
+    background: linear-gradient(180deg, #f43f5e 0%, #e11d48 100%) !important;
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 10px 22px rgba(225, 29, 72, 0.22) !important;
+}
+
+.checkout-page .address-map-btn.primary:hover:not(:disabled),
+.address-map-modal .address-map-btn.primary:hover:not(:disabled) {
+    background: linear-gradient(180deg, #e11d48 0%, #be123c 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 14px 28px rgba(225, 29, 72, 0.28) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* Trang thai disabled cua hai nut do */
+.checkout-page .address-map-btn.suggestion:disabled,
+.address-map-modal .address-map-btn.suggestion:disabled,
+.checkout-page .address-map-btn.primary:disabled,
+.address-map-modal .address-map-btn.primary:disabled {
+    background: #f2a9bb !important;
+    background-image: none !important;
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: none !important;
+    opacity: 1 !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+}
+
+/* Chu Luu y: mau do, in dam */
+.checkout-page .address-map-note strong,
+.address-map-modal .address-map-note strong {
+    color: #e11d48 !important;
+    font-weight: 900 !important;
+}
+
+/* =========================================================
+   CHECKOUT UI OVERRIDES V8
+   - Nut X: den dam, bo vong tron
+   - Shipping/payment/e-invoice radios: vien do, cham do
+   - Chu "Mien phi": den dam
+   - So voucher: do
+========================================================= */
+
+/* 1) Nut X trong popup coupon va popup hoa don: den dam, khong vong tron */
+.checkout-page .coupon-modal-close,
+.coupon-modal .coupon-modal-close,
+.checkout-page .e-invoice-close,
+.e-invoice-modal .e-invoice-close {
+    width: auto !important;
+    height: auto !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: #111827 !important;
+}
+
+.checkout-page .coupon-modal-close::before,
+.checkout-page .coupon-modal-close::after,
+.coupon-modal .coupon-modal-close::before,
+.coupon-modal .coupon-modal-close::after {
+    background: #111827 !important;
+    width: 18px !important;
+    height: 2.5px !important;
+}
+
+.checkout-page .coupon-modal-close:hover,
+.coupon-modal .coupon-modal-close:hover,
+.checkout-page .e-invoice-close:hover,
+.e-invoice-modal .e-invoice-close:hover {
+    background: transparent !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+.checkout-page .e-invoice-close-icon,
+.e-invoice-modal .e-invoice-close-icon {
+    color: #111827 !important;
+    font-size: 34px !important;
+    line-height: 1 !important;
+    font-weight: 900 !important;
+}
+
+/* 2) Chu Mien phi: den dam */
+.checkout-page .shipping-option-fee,
+.checkout-page .shipping-fee-label,
+.checkout-page .shipping-option .fee,
+.checkout-page .shipping-option .free-label {
+    color: #111827 !important;
+    font-weight: 900 !important;
+}
+
+/* 3) Radio giao hang / thanh toan / hoa don: vien do, cham do */
+.checkout-page input[type="radio"],
+.e-invoice-modal input[type="radio"] {
+    accent-color: #e11d48 !important;
+}
+
+/* Shipping radio */
+.checkout-page .shipping-option input[type="radio"] {
+    width: 18px !important;
+    height: 18px !important;
+    border: 2px solid #e11d48 !important;
+    box-shadow: none !important;
+}
+
+.checkout-page .shipping-option input[type="radio"]:checked {
+    background-color: #ffffff !important;
+    border-color: #e11d48 !important;
+}
+
+/* Payment radio */
+.checkout-page .payment-option input[type="radio"] {
+    width: 18px !important;
+    height: 18px !important;
+    border: 2px solid #e11d48 !important;
+    box-shadow: none !important;
+}
+
+.checkout-page .payment-option input[type="radio"]:checked {
+    background-color: #ffffff !important;
+    border-color: #e11d48 !important;
+}
+
+/* Invoice type radio */
+.checkout-page .e-invoice-radio input[type="radio"],
+.e-invoice-modal .e-invoice-radio input[type="radio"] {
+    width: 18px !important;
+    height: 18px !important;
+    border: 2px solid #e11d48 !important;
+    box-shadow: none !important;
+}
+
+.checkout-page .e-invoice-radio input[type="radio"]:checked,
+.e-invoice-modal .e-invoice-radio input[type="radio"]:checked {
+    background-color: #ffffff !important;
+    border-color: #e11d48 !important;
+}
+
+/* Tao cham do o giua khi checked trong shipping / payment / invoice */
+.checkout-page .shipping-option input[type="radio"]:checked,
+.checkout-page .payment-option input[type="radio"]:checked,
+.checkout-page .e-invoice-radio input[type="radio"]:checked,
+.e-invoice-modal .e-invoice-radio input[type="radio"]:checked {
+    background-image: radial-gradient(circle, #e11d48 0 42%, transparent 44%) !important;
+    background-color: #ffffff !important;
+}
+
+/* 4) So voucher da chon: do */
+.checkout-page .coupon-selected-count strong,
+.checkout-page .coupon-selected-count b,
+.coupon-modal .coupon-selected-count strong,
+.coupon-modal .coupon-selected-count b {
+    color: #e11d48 !important;
+    font-weight: 900 !important;
+}
+
+/* 5) Popup hoa don VAT sua tuong tu */
+.checkout-page .e-invoice-radio,
+.e-invoice-modal .e-invoice-radio {
+    color: #111827 !important;
+    font-weight: 700 !important;
+}
+
+.checkout-page .e-invoice-save-row input[type="checkbox"],
+.e-invoice-modal .e-invoice-save-row input[type="checkbox"] {
+    accent-color: #e11d48 !important;
+}
+
+/* =========================================================
+   CHECKOUT UI OVERRIDES V9 - FIX RADIO + MIEN PHI
+   - Chu "Mien phi": den dam
+   - Radio giao hang: vien do, cham do
+   - Radio thanh toan: vien do, cham do
+   - Radio hoa don VAT: vien do, cham do
+========================================================= */
+
+/* 1) Chu "Mien phi" o phuong thuc giao hang va tom tat don hang */
+.checkout-page .delivery-fee,
+.checkout-page .delivery-option .delivery-fee,
+.checkout-page label.delivery-option .delivery-fee,
+.checkout-page #summaryShippingFee {
+    color: #111827 !important;
+    font-weight: 900 !important;
+}
+
+/* Giu note freeship mau xanh, chi dam hon */
+.checkout-page .freeship-note {
+    font-weight: 900 !important;
+}
+
+/* 2) Radio phuong thuc giao hang: ep style hoan toan */
+.checkout-page .delivery-option input[type="radio"] {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    width: 18px !important;
+    height: 18px !important;
+    min-width: 18px !important;
+    min-height: 18px !important;
+    margin: 0 !important;
+    border: 2px solid #e11d48 !important;
+    border-radius: 50% !important;
+    background: #ffffff !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    display: inline-block !important;
+    position: relative !important;
+    flex-shrink: 0 !important;
+    cursor: pointer !important;
+}
+
+.checkout-page .delivery-option input[type="radio"]::before {
+    content: "" !important;
+    position: absolute !important;
+    inset: 3px !important;
+    border-radius: 50% !important;
+    background: transparent !important;
+    transform: scale(0) !important;
+    transition: transform 0.15s ease !important;
+}
+
+.checkout-page .delivery-option input[type="radio"]:checked::before {
+    background: #e11d48 !important;
+    transform: scale(1) !important;
+}
+
+.checkout-page .delivery-option input[type="radio"]:checked {
+    border-color: #e11d48 !important;
+    background: #ffffff !important;
+}
+
+/* 3) Radio phuong thuc thanh toan: input dang hidden, style bang .payment-dot */
+.checkout-page .payment-item .payment-dot {
+    width: 22px !important;
+    height: 22px !important;
+    min-width: 22px !important;
+    min-height: 22px !important;
+    border: 2px solid #e11d48 !important;
+    border-radius: 50% !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    position: relative !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+}
+
+.checkout-page .payment-item .payment-dot::before {
+    content: "" !important;
+    width: 10px !important;
+    height: 10px !important;
+    border-radius: 50% !important;
+    background: transparent !important;
+    transform: scale(0) !important;
+    transition: transform 0.15s ease !important;
+}
+
+.checkout-page .payment-item input[type="radio"]:checked + .payment-dot {
+    border-color: #e11d48 !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+}
+
+.checkout-page .payment-item input[type="radio"]:checked + .payment-dot::before {
+    background: #e11d48 !important;
+    transform: scale(1) !important;
+}
+
+/* 4) Radio popup xuat hoa don VAT */
+.checkout-page .e-invoice-radio input[type="radio"],
+.e-invoice-modal .e-invoice-radio input[type="radio"] {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    width: 18px !important;
+    height: 18px !important;
+    min-width: 18px !important;
+    min-height: 18px !important;
+    margin: 0 8px 0 0 !important;
+    border: 2px solid #e11d48 !important;
+    border-radius: 50% !important;
+    background: #ffffff !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    display: inline-block !important;
+    position: relative !important;
+    cursor: pointer !important;
+}
+
+.checkout-page .e-invoice-radio input[type="radio"]::before,
+.e-invoice-modal .e-invoice-radio input[type="radio"]::before {
+    content: "" !important;
+    position: absolute !important;
+    inset: 3px !important;
+    border-radius: 50% !important;
+    background: transparent !important;
+    transform: scale(0) !important;
+    transition: transform 0.15s ease !important;
+}
+
+.checkout-page .e-invoice-radio input[type="radio"]:checked::before,
+.e-invoice-modal .e-invoice-radio input[type="radio"]:checked::before {
+    background: #e11d48 !important;
+    transform: scale(1) !important;
+}
+
+/* 5) Dam bao cac item dang chon van dong bo vien do */
+.checkout-page .delivery-option:has(input:checked),
+.checkout-page .payment-item:has(input:checked) {
+    border-color: #e11d48 !important;
+    background: #fff1f5 !important;
+    box-shadow: inset 4px 0 0 #e11d48 !important;
+}
+
+/* =========================================================
+   CHECKOUT UI OVERRIDES V10 - LOAD ORDER SAFE FIX
+   - Ep chu "Mien phi" den dam bang selector that
+   - Ep radio giao hang va thanh toan bang selector that
+   - Dung duoc khi checkout.css co nhieu block trung lap
+========================================================= */
+
+/* 1) Chu "Mien phi" trong the delivery-fee va tom tat don hang */
+body .checkout-page .delivery-fee,
+body .checkout-page .delivery-option .delivery-fee,
+body .checkout-page label.delivery-option span.delivery-fee,
+body .checkout-page #summaryShippingFee {
+    color: #111827 !important;
+    font-weight: 950 !important;
+}
+
+/* Neu JS gan inline mau vao delivery-fee thi van ep den */
+body .delivery-fee[style],
+body #summaryShippingFee[style] {
+    color: #111827 !important;
+    font-weight: 950 !important;
+}
+
+/* 2) Radio giao hang: vien do, cham do */
+body .checkout-page .delivery-option input[type="radio"][name="shippingMethod"] {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    display: inline-grid !important;
+    place-content: center !important;
+    width: 18px !important;
+    height: 18px !important;
+    min-width: 18px !important;
+    min-height: 18px !important;
+    margin: 0 !important;
+    border: 2px solid #e11d48 !important;
+    border-radius: 50% !important;
+    background: #ffffff !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    accent-color: #e11d48 !important;
+    flex-shrink: 0 !important;
+    cursor: pointer !important;
+}
+
+body .checkout-page .delivery-option input[type="radio"][name="shippingMethod"]::before {
+    content: "" !important;
+    width: 8px !important;
+    height: 8px !important;
+    border-radius: 50% !important;
+    background: #e11d48 !important;
+    transform: scale(0) !important;
+    transition: transform 0.15s ease !important;
+}
+
+body .checkout-page .delivery-option input[type="radio"][name="shippingMethod"]:checked::before {
+    transform: scale(1) !important;
+}
+
+body .checkout-page .delivery-option:has(input[type="radio"][name="shippingMethod"]:checked) {
+    border-color: #e11d48 !important;
+    background: #fff1f5 !important;
+    box-shadow: inset 4px 0 0 #e11d48 !important;
+}
+
+/* 3) Radio phuong thuc thanh toan: payment-dot la span rieng */
+body .checkout-page .payment-item .payment-dot,
+body .checkout-page label.payment-item span.payment-dot {
+    width: 22px !important;
+    height: 22px !important;
+    min-width: 22px !important;
+    min-height: 22px !important;
+    border: 2px solid #e11d48 !important;
+    border-radius: 50% !important;
+    background: #ffffff !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    display: inline-grid !important;
+    place-content: center !important;
+    position: relative !important;
+    flex-shrink: 0 !important;
+}
+
+body .checkout-page .payment-item .payment-dot::before,
+body .checkout-page label.payment-item span.payment-dot::before {
+    content: "" !important;
+    width: 10px !important;
+    height: 10px !important;
+    border-radius: 50% !important;
+    background: #e11d48 !important;
+    transform: scale(0) !important;
+    transition: transform 0.15s ease !important;
+}
+
+body .checkout-page .payment-item input[type="radio"][name="paymentMethod"]:checked + .payment-dot,
+body .checkout-page label.payment-item input[type="radio"][name="paymentMethod"]:checked + span.payment-dot {
+    border-color: #e11d48 !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+}
+
+body .checkout-page .payment-item input[type="radio"][name="paymentMethod"]:checked + .payment-dot::before,
+body .checkout-page label.payment-item input[type="radio"][name="paymentMethod"]:checked + span.payment-dot::before {
+    transform: scale(1) !important;
+}
+
+body .checkout-page .payment-item:has(input[type="radio"][name="paymentMethod"]:checked) {
+    background: #fff1f5 !important;
+    box-shadow: inset 4px 0 0 #e11d48 !important;
+}
+
+/* 4) Radio trong popup xuat hoa don VAT */
+body .e-invoice-modal .e-invoice-radio input[type="radio"][name="modalInvoiceType"],
+body .checkout-page .e-invoice-radio input[type="radio"][name="modalInvoiceType"] {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    display: inline-grid !important;
+    place-content: center !important;
+    width: 18px !important;
+    height: 18px !important;
+    min-width: 18px !important;
+    min-height: 18px !important;
+    margin: 0 8px 0 0 !important;
+    border: 2px solid #e11d48 !important;
+    border-radius: 50% !important;
+    background: #ffffff !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    accent-color: #e11d48 !important;
+    cursor: pointer !important;
+}
+
+body .e-invoice-modal .e-invoice-radio input[type="radio"][name="modalInvoiceType"]::before,
+body .checkout-page .e-invoice-radio input[type="radio"][name="modalInvoiceType"]::before {
+    content: "" !important;
+    width: 8px !important;
+    height: 8px !important;
+    border-radius: 50% !important;
+    background: #e11d48 !important;
+    transform: scale(0) !important;
+    transition: transform 0.15s ease !important;
+}
+
+body .e-invoice-modal .e-invoice-radio input[type="radio"][name="modalInvoiceType"]:checked::before,
+body .checkout-page .e-invoice-radio input[type="radio"][name="modalInvoiceType"]:checked::before {
+    transform: scale(1) !important;
+}
+/* =========================================================
+   FINAL FIX - MIEN PHI BLACK + RADIO RED
+   Dat o CUOI theme-red-buttons.css vi file nay dang load sau checkout.css
+========================================================= */
+
+/* Chu "Mien phi" mau den dam */
+html body .checkout-page .delivery-fee,
+html body .checkout-page .delivery-option .delivery-fee,
+html body .checkout-page label.delivery-option span.delivery-fee,
+html body .checkout-page #summaryShippingFee,
+html body .checkout-page #summaryShippingFee[style] {
+    color: #111827 !important;
+    font-weight: 950 !important;
+}
+
+/* Radio giao hang: vien do, cham do */
+html body .checkout-page .delivery-option input[type="radio"],
+html body .checkout-page .delivery-option input[type="radio"][name="shippingMethod"] {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    width: 18px !important;
+    height: 18px !important;
+    min-width: 18px !important;
+    min-height: 18px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 2px solid #e11d48 !important;
+    border-radius: 50% !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    display: inline-grid !important;
+    place-content: center !important;
+    accent-color: #e11d48 !important;
+}
+
+html body .checkout-page .delivery-option input[type="radio"]::before,
+html body .checkout-page .delivery-option input[type="radio"][name="shippingMethod"]::before {
+    content: "" !important;
+    width: 8px !important;
+    height: 8px !important;
+    border-radius: 50% !important;
+    background: #e11d48 !important;
+    transform: scale(0) !important;
+}
+
+html body .checkout-page .delivery-option input[type="radio"]:checked::before,
+html body .checkout-page .delivery-option input[type="radio"][name="shippingMethod"]:checked::before {
+    transform: scale(1) !important;
+}
+
+/* Radio thanh toan: payment-dot la vong tron that */
+html body .checkout-page .payment-item .payment-dot,
+html body .checkout-page label.payment-item span.payment-dot {
+    width: 22px !important;
+    height: 22px !important;
+    min-width: 22px !important;
+    min-height: 22px !important;
+    border: 2px solid #e11d48 !important;
+    border-radius: 50% !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    display: inline-grid !important;
+    place-content: center !important;
+    position: relative !important;
+}
+
+html body .checkout-page .payment-item .payment-dot::before,
+html body .checkout-page label.payment-item span.payment-dot::before {
+    content: "" !important;
+    width: 10px !important;
+    height: 10px !important;
+    border-radius: 50% !important;
+    background: #e11d48 !important;
+    transform: scale(0) !important;
+}
+
+html body .checkout-page .payment-item input[type="radio"]:checked + .payment-dot::before,
+html body .checkout-page label.payment-item input[type="radio"]:checked + span.payment-dot::before {
+    transform: scale(1) !important;
+}
