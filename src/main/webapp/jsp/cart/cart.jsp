@@ -252,7 +252,10 @@
                                     </td>
 
                                     <td class="cart-remove">
-                                        <a href="${removeUrl}" class="remove-btn" title="Xóa sản phẩm">×</a>
+                                        <a href="${removeUrl}" class="remove-btn" title="Xóa sản phẩm" aria-label="Xóa sản phẩm">
+                                            <span class="remove-icon" aria-hidden="true">×</span>
+                                            <span class="sr-only">Xóa sản phẩm</span>
+                                        </a>
                                     </td>
                                 </tr>
                             </c:forEach>
