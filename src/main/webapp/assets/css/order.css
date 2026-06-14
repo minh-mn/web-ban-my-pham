@@ -2168,3 +2168,122 @@ html body .order-modal-btn-return:hover {
     width: 100% !important;
   }
 }
+
+/* =========================================================
+   ORDER FILTER TABS
+   Lọc đơn theo shortcut từ trang tài khoản.
+========================================================= */
+
+html body .order-section-head-filter {
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 18px !important;
+}
+
+html body .order-filter-count {
+  display: inline-flex !important;
+  align-items: baseline !important;
+  gap: 4px !important;
+  min-height: 38px !important;
+  padding: 7px 13px !important;
+  border-radius: 999px !important;
+  background: #fff1f4 !important;
+  border: 1px solid #fecdd3 !important;
+  color: #be123c !important;
+  font-weight: 900 !important;
+  white-space: nowrap !important;
+}
+
+html body .order-filter-count strong {
+  font-size: 17px !important;
+  font-weight: 950 !important;
+}
+
+html body .order-filter-count span {
+  font-size: 12.5px !important;
+  color: #be123c !important;
+}
+
+html body .order-filter-tabs {
+  display: flex !important;
+  align-items: center !important;
+  gap: 9px !important;
+  flex-wrap: wrap !important;
+  margin: 14px 0 16px !important;
+  padding: 10px !important;
+  border: 1px solid #eef2f7 !important;
+  border-radius: 20px !important;
+  background: #ffffff !important;
+}
+
+html body .order-filter-tab {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 36px !important;
+  padding: 0 14px !important;
+  border-radius: 999px !important;
+  border: 1px solid #e5e7eb !important;
+  background: #f8fafc !important;
+  color: #475467 !important;
+  font-size: 13px !important;
+  font-weight: 900 !important;
+  text-decoration: none !important;
+  transition: .16s ease !important;
+}
+
+html body .order-filter-tab:hover {
+  background: #fff7f9 !important;
+  border-color: #ffd8e1 !important;
+  color: #be123c !important;
+  transform: translateY(-1px) !important;
+}
+
+html body .order-filter-tab.active {
+  background: #fff1f4 !important;
+  border-color: #fecdd3 !important;
+  color: #be123c !important;
+  box-shadow: 0 8px 18px rgba(232, 93, 117, .08) !important;
+}
+
+html body .order-empty-filter {
+  display: grid !important;
+  place-items: center !important;
+  gap: 12px !important;
+  padding: 34px 14px !important;
+  text-align: center !important;
+}
+
+html body .order-filter-back {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 38px !important;
+  padding: 0 16px !important;
+  border-radius: 999px !important;
+  background: #fff1f4 !important;
+  border: 1px solid #fecdd3 !important;
+  color: #be123c !important;
+  font-size: 13px !important;
+  font-weight: 900 !important;
+  text-decoration: none !important;
+}
+
+html body .order-filter-back:hover {
+  background: #ffe4ea !important;
+}
+
+@media (max-width: 768px) {
+  html body .order-section-head-filter {
+    flex-direction: column !important;
+  }
+
+  html body .order-filter-tabs {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+  }
+
+  html body .order-filter-tab {
+    white-space: nowrap !important;
+  }
+}

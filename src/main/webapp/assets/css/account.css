@@ -2031,3 +2031,21 @@ html body .mc-rank-progress-panel {
         min-width: 760px;
     }
 }
+
+/* =========================================================
+   ACCOUNT ORDER SHORTCUT CLEAN TEXT
+   Bỏ dòng mô tả nhỏ dưới các ô Đơn mua, căn lại cho gọn.
+========================================================= */
+
+html body .mc-order-shortcut-grid a {
+    min-height: 96px !important;
+    gap: 8px !important;
+}
+
+html body .mc-order-shortcut-grid a small {
+    display: none !important;
+}
+
+html body .mc-order-shortcut-grid a strong {
+    margin-top: 2px !important;
+}
