@@ -3,12 +3,72 @@
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
-<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/checkout.css?v=20260604_map_picker_full_fix">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/checkout.css?v=20260614_5">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/theme-red-buttons.css?v=20260613_10">
-<link rel="stylesheet"
-      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-      integrity="sha256-p4NxAoJBhIINfQh3Hh1q8CgFyuzL4P8rNQ3Drx0Kz5E="
-      crossorigin="">
+
+
+
+
+<style id="addressMapCloseButtonFixV5">
+  html body .address-map-modal .address-map-close,
+  html body .checkout-page .address-map-close,
+  html body button.address-map-close {
+    position: absolute !important;
+    top: 22px !important;
+    right: 26px !important;
+    width: auto !important;
+    height: auto !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+    color: #111827 !important;
+    font-size: 32px !important;
+    line-height: 1 !important;
+    font-weight: 950 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    transform: none !important;
+  }
+
+  html body .address-map-modal .address-map-close:hover,
+  html body .checkout-page .address-map-close:hover,
+  html body button.address-map-close:hover,
+  html body .address-map-modal .address-map-close:focus,
+  html body .checkout-page .address-map-close:focus,
+  html body button.address-map-close:focus,
+  html body .address-map-modal .address-map-close:active,
+  html body .checkout-page .address-map-close:active,
+  html body button.address-map-close:active {
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    color: #000000 !important;
+    transform: none !important;
+  }
+
+  html body .address-map-modal .address-map-close::before,
+  html body .address-map-modal .address-map-close::after,
+  html body .checkout-page .address-map-close::before,
+  html body .checkout-page .address-map-close::after,
+  html body button.address-map-close::before,
+  html body button.address-map-close::after {
+    display: none !important;
+    content: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+</style>
 
 <c:set var="errors" value="${requestScope.errors}" />
 <c:set var="checkoutCart" value="${not empty selectedCart ? selectedCart : cart}" />
@@ -3121,7 +3181,12 @@
       <div class="address-map-layout">
         <div class="address-map-left">
           <div class="address-map-canvas">
-            <div id="addressMap" class="address-map-leaflet"></div>
+            <iframe id="addressMapFrame"
+                    class="address-map-frame"
+                    src="${pageContext.request.contextPath}/map/address-map-picker.html?v=20260614_5"
+                    title="Chọn vị trí giao hàng trên bản đồ"
+                    loading="eager"
+                    referrerpolicy="no-referrer-when-downgrade"></iframe>
           </div>
         </div>
 
@@ -3157,9 +3222,7 @@
   </div>
 </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-        crossorigin=""></script>
+
 
 <!-- ================= PROVINCE / WARD SELECTOR ================= -->
 <script>
@@ -3792,7 +3855,7 @@
     const detectedAddressHint = document.getElementById("detectedAddressHint");
 
     const modal = document.getElementById("addressMapModal");
-    const mapEl = document.getElementById("addressMap");
+    const mapEl = document.getElementById("addressMapFrame");
     const mapStatus = document.getElementById("addressMapStatus");
     const mapDetected = document.getElementById("addressMapDetected");
     const mapDetectedText = document.getElementById("addressMapDetectedText");
@@ -3815,6 +3878,10 @@
     let currentDetectedProvince = "";
 
     let reverseGeocodeRequestId = 0;
+    let mapFrameReady = false;
+    let mapFrameReadyWaiters = [];
+    let mapPositionDebounceTimer = null;
+    const reverseGeocodeCache = new Map();
 
     function normalizeText(value) {
       return String(value || "")
@@ -3956,25 +4023,117 @@
       }
     }
 
-    async function reverseGeocode(lat, lon) {
-      const url = "https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat="
-              + encodeURIComponent(lat)
-              + "&lon="
-              + encodeURIComponent(lon)
-              + "&accept-language=vi&addressdetails=1&zoom=18";
 
-      const response = await fetch(url, {
+    function reverseGeocodeCacheKey(lat, lon) {
+      /*
+       * Làm tròn 5 chữ số thập phân tương đương khoảng 1 mét.
+       * Khi kéo nhẹ quanh cùng vị trí sẽ không gọi API lặp lại.
+       */
+      return Number(lat).toFixed(5) + "," + Number(lon).toFixed(5);
+    }
+
+    function fetchJsonWithTimeout(url, timeoutMs) {
+      const controller = new AbortController();
+      const timer = window.setTimeout(function () {
+        controller.abort();
+      }, timeoutMs || 3500);
+
+      return fetch(url, {
         method: "GET",
+        signal: controller.signal,
         headers: {
           "Accept": "application/json"
         }
-      });
+      }).then(function (response) {
+        if (!response.ok) {
+          throw new Error("HTTP " + response.status);
+        }
 
-      if (!response.ok) {
-        throw new Error("Reverse geocoding failed: HTTP " + response.status);
+        return response.json();
+      }).finally(function () {
+        window.clearTimeout(timer);
+      });
+    }
+
+
+    async function reverseGeocode(lat, lon) {
+      const safeLat = Number(lat);
+      const safeLon = Number(lon);
+
+      if (!Number.isFinite(safeLat) || !Number.isFinite(safeLon)) {
+        throw new Error("Invalid reverse geocode coordinates");
       }
 
-      return response.json();
+      const cacheKey = reverseGeocodeCacheKey(safeLat, safeLon);
+
+      if (reverseGeocodeCache.has(cacheKey)) {
+        return reverseGeocodeCache.get(cacheKey);
+      }
+
+      /*
+       * Ưu tiên Nominatim trước vì lấy tên đường/hẻm gần ghim chính xác hơn.
+       * BigDataCloud phản hồi nhanh nhưng thường chỉ trả locality/phường, dễ lệch tên đường.
+       */
+      const nominatimUrl = "https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat="
+              + encodeURIComponent(safeLat)
+              + "&lon="
+              + encodeURIComponent(safeLon)
+              + "&accept-language=vi&addressdetails=1&zoom=18";
+
+      try {
+        const data = await fetchJsonWithTimeout(nominatimUrl, 5200);
+
+        if (data && (data.display_name || data.address)) {
+          reverseGeocodeCache.set(cacheKey, data);
+          return data;
+        }
+      } catch (error) {
+        console.warn("Nominatim reverse geocode failed, trying fallback", error);
+      }
+
+      const fallbackUrl = "https://api.bigdatacloud.net/data/reverse-geocode-client?latitude="
+              + encodeURIComponent(safeLat)
+              + "&longitude="
+              + encodeURIComponent(safeLon)
+              + "&localityLanguage=vi";
+
+      const fallback = await fetchJsonWithTimeout(fallbackUrl, 3200);
+
+      const locality = fallback.locality || fallback.city || fallback.principalSubdivision || "";
+      const city = fallback.city || fallback.locality || "";
+      const province = fallback.principalSubdivision || fallback.countryName || "";
+      const country = fallback.countryName || "Việt Nam";
+
+      const displayName = [
+        locality,
+        city && city !== locality ? city : "",
+        province && province !== city ? province : "",
+        country
+      ].filter(Boolean).join(", ");
+
+      if (!displayName && !province && !city && !locality) {
+        throw new Error("Reverse geocoding returned empty result");
+      }
+
+      const result = {
+        display_name: displayName,
+        address: {
+          road: "",
+          suburb: locality,
+          neighbourhood: locality,
+          city_district: fallback.locality || "",
+          city: city,
+          town: city,
+          state: province,
+          province: province,
+          country: country,
+          postcode: fallback.postcode || ""
+        },
+        raw_fallback: fallback
+      };
+
+      reverseGeocodeCache.set(cacheKey, result);
+      return result;
     }
 
     function extractAddressObject(data) {
@@ -4022,7 +4181,13 @@
     function buildStreetAddress(address, data) {
       const houseNumber = address.house_number || "";
       const road = addRoadPrefixIfNeeded(
-              address.road || address.pedestrian || address.footway || address.path || ""
+              address.road
+              || address.pedestrian
+              || address.footway
+              || address.path
+              || address.cycleway
+              || address.highway
+              || ""
       );
 
       const roadLine = compactParts([houseNumber, road]).join(" ").trim();
@@ -4033,9 +4198,7 @@
         address.neighbourhood,
         address.quarter,
         address.suburb,
-        address.residential,
-        address.city_district,
-        address.district
+        address.residential
       ])[0] || "";
 
       const detailedLine = compactParts([roadLine, areaLine]).join(", ").trim();
@@ -4047,6 +4210,9 @@
       const displayName = data && data.display_name ? String(data.display_name) : "";
 
       if (displayName) {
+        const provinceKeys = getProvinceCandidates(address).map(normalizeText);
+        const wardKeys = getWardCandidates(address).map(normalizeText);
+
         const parts = displayName
                 .split(",")
                 .map(function (part) { return part.trim(); })
@@ -4057,10 +4223,12 @@
                   return normalized !== "viet nam"
                           && normalized !== "vietnam"
                           && !/^\d{5,6}$/.test(normalized)
+                          && !normalized.includes("thanh pho")
                           && !normalized.includes("tinh ")
-                          && !normalized.includes("thanh pho ");
+                          && !provinceKeys.includes(normalized)
+                          && !wardKeys.includes(normalized);
                 })
-                .slice(0, 3);
+                .slice(0, 2);
 
         return compactParts(parts).join(", ");
       }
@@ -4093,6 +4261,114 @@
       ]);
     }
 
+
+    function resolveMapFrameReady() {
+      mapFrameReady = true;
+
+      mapFrameReadyWaiters.forEach(function (resolve) {
+        resolve();
+      });
+
+      mapFrameReadyWaiters = [];
+    }
+
+    function waitForMapFrameReady() {
+      if (mapFrameReady && mapEl && mapEl.contentWindow) {
+        return Promise.resolve();
+      }
+
+      return new Promise(function (resolve, reject) {
+        let finished = false;
+
+        const timer = window.setTimeout(function () {
+          if (finished) return;
+          finished = true;
+          reject(new Error("Map iframe loading timeout"));
+        }, 8000);
+
+        mapFrameReadyWaiters.push(function () {
+          if (finished) return;
+          finished = true;
+          window.clearTimeout(timer);
+          resolve();
+        });
+
+        try {
+          if (mapEl && mapEl.contentWindow) {
+            mapEl.contentWindow.postMessage({
+              type: "ADDRESS_MAP_PARENT_PING"
+            }, window.location.origin);
+          }
+        } catch (error) {
+          console.warn("Cannot ping map iframe", error);
+        }
+      });
+    }
+
+    function sendMapMessage(payload) {
+      if (!mapEl || !mapEl.contentWindow) {
+        return;
+      }
+
+      mapEl.contentWindow.postMessage(payload, window.location.origin);
+    }
+
+    window.addEventListener("message", function (event) {
+      if (event.origin !== window.location.origin) {
+        return;
+      }
+
+      const data = event.data || {};
+
+      if (data.type === "ADDRESS_MAP_PICKER_READY") {
+        resolveMapFrameReady();
+
+        if (currentLat != null && currentLon != null) {
+          sendMapMessage({
+            type: "ADDRESS_MAP_INIT",
+            lat: currentLat,
+            lon: currentLon,
+            zoom: 17
+          });
+        }
+
+        return;
+      }
+
+      if (data.type === "ADDRESS_MAP_PICKER_MOVE_START") {
+        if (confirmBtn) {
+          confirmBtn.disabled = true;
+        }
+
+        setMapStatus("Đang kéo bản đồ. Đặt ghim đỏ vào đúng vị trí giao hàng rồi thả tay...", "");
+        return;
+      }
+
+      if (data.type === "ADDRESS_MAP_PICKER_POSITION_CHANGED") {
+        const lat = Number(data.lat);
+        const lon = Number(data.lon);
+
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+          return;
+        }
+
+        currentLat = lat;
+        currentLon = lon;
+
+        window.clearTimeout(mapPositionDebounceTimer);
+        mapPositionDebounceTimer = window.setTimeout(function () {
+          updateSelectedPin(lat, lon);
+        }, 180);
+
+        return;
+      }
+
+      if (data.type === "ADDRESS_MAP_PICKER_ERROR") {
+        setMapStatus(data.message || "Không thể hiển thị bản đồ. Vui lòng thử lại.", "error");
+      }
+    });
+
+
     function getMapCanvas() {
       return mapEl.closest(".address-map-canvas") || mapEl.parentElement;
     }
@@ -4110,86 +4386,51 @@
         return false;
       }
 
-      /*
-       * Fix quan trọng:
-       * Khi modal vừa mở, Leaflet đôi khi đọc sai kích thước vì khung trước đó bị ẩn.
-       * Ép #addressMap theo kích thước thật của .address-map-canvas trước khi invalidateSize().
-       */
-      mapEl.style.width = Math.round(rect.width) + "px";
-      mapEl.style.height = Math.round(rect.height) + "px";
-      mapEl.style.minHeight = Math.round(rect.height) + "px";
-      mapEl.style.position = "absolute";
-      mapEl.style.left = "0";
-      mapEl.style.top = "0";
-      mapEl.style.right = "0";
-      mapEl.style.bottom = "0";
-      mapEl.style.display = "block";
+      mapEl.style.setProperty("position", "absolute", "important");
+      mapEl.style.setProperty("inset", "0", "important");
+      mapEl.style.setProperty("width", "100%", "important");
+      mapEl.style.setProperty("height", "100%", "important");
+      mapEl.style.setProperty("display", "block", "important");
+      mapEl.style.setProperty("border", "0", "important");
 
       return true;
     }
 
     async function waitForVisibleMapFrame() {
-      for (let i = 0; i < 14; i += 1) {
+      for (let i = 0; i < 18; i += 1) {
         forceMapElementSize();
 
-        const rect = mapEl.getBoundingClientRect();
+        const canvas = getMapCanvas();
+        const rect = canvas ? canvas.getBoundingClientRect() : mapEl.getBoundingClientRect();
 
-        if (rect.width > 120 && rect.height > 120) {
+        if (rect.width > 260 && rect.height > 260) {
           return true;
         }
 
-        await wait(i < 2 ? 60 : 100);
+        await wait(i < 3 ? 60 : 100);
       }
 
       return forceMapElementSize();
     }
 
     function refreshMapSize(lat, lon) {
-      if (!map) {
-        return;
-      }
-
       forceMapElementSize();
 
       const parsedLat = Number(lat);
       const parsedLon = Number(lon);
 
-      const targetLat = Number.isFinite(parsedLat)
-              ? parsedLat
-              : (currentLat != null ? Number(currentLat) : map.getCenter().lat);
+      sendMapMessage({
+        type: "ADDRESS_MAP_RESIZE"
+      });
 
-      const targetLon = Number.isFinite(parsedLon)
-              ? parsedLon
-              : (currentLon != null ? Number(currentLon) : map.getCenter().lng);
-
-      function doRefresh() {
-        if (!map) {
-          return;
-        }
-
-        forceMapElementSize();
-
-        map.invalidateSize(true);
-
-        if (Number.isFinite(targetLat) && Number.isFinite(targetLon)) {
-          map.setView([targetLat, targetLon], map.getZoom() || 17, {
-            animate: false,
-            pan: false
-          });
-
-          if (marker) {
-            marker.setLatLng([targetLat, targetLon]);
-          }
-
-          updateSelectedDot(targetLat, targetLon);
-        }
+      if (Number.isFinite(parsedLat) && Number.isFinite(parsedLon)) {
+        sendMapMessage({
+          type: "ADDRESS_MAP_SET_CENTER",
+          lat: parsedLat,
+          lon: parsedLon,
+          zoom: 17
+        });
       }
-
-      requestAnimationFrame(doRefresh);
-      setTimeout(doRefresh, 80);
-      setTimeout(doRefresh, 220);
-      setTimeout(doRefresh, 480);
-      setTimeout(doRefresh, 850);
     }
 
     async function openMapModal() {
@@ -4198,6 +4439,13 @@
       document.body.classList.add("address-map-open");
 
       await waitForVisibleMapFrame();
+
+      try {
+        await waitForMapFrameReady();
+      } catch (error) {
+        console.warn(error);
+        setMapStatus("Bản đồ tải hơi lâu. Vui lòng đợi vài giây hoặc bấm chọn lại vị trí.", "error");
+      }
 
       refreshMapSize(currentLat, currentLon);
     }
@@ -4220,24 +4468,8 @@
     }
 
     function updateSelectedDot(lat, lon) {
-      if (!map || !window.L) {
-        return;
-      }
-
-      if (!selectedDot) {
-        selectedDot = L.circleMarker([lat, lon], {
-          radius: 9,
-          color: "#ffffff",
-          weight: 4,
-          fillColor: "#dc2626",
-          fillOpacity: 1,
-          opacity: 1,
-          interactive: false,
-          className: "shipping-selected-dot"
-        }).addTo(map);
-      } else {
-        selectedDot.setLatLng([lat, lon]);
-      }
+      currentLat = Number(lat);
+      currentLon = Number(lon);
     }
 
     async function updateSelectedPin(lat, lon) {
@@ -4251,7 +4483,7 @@
         confirmBtn.disabled = true;
       }
 
-      setMapStatus("Đang xác định địa chỉ tại vị trí ghim...", "");
+      setMapStatus("Đang lấy địa chỉ chính xác tại vị trí đã chọn...", "");
 
       try {
         const geoData = await reverseGeocode(currentLat, currentLon);
@@ -4305,9 +4537,7 @@
         return;
       }
 
-      mapEl.innerHTML = "";
-      mapEl.className = "address-map-leaflet";
-      mapEl.removeAttribute("tabindex");
+      mapEl.className = "address-map-frame";
       mapEl.removeAttribute("style");
 
       forceMapElementSize();
@@ -4315,28 +4545,18 @@
 
     function destroyMap() {
       reverseGeocodeRequestId += 1;
-
-      if (map) {
-        try {
-          map.off();
-          map.remove();
-        } catch (error) {
-          console.warn("Cannot remove old map instance", error);
-        }
-      }
-
       map = null;
       marker = null;
       selectedDot = null;
 
+      sendMapMessage({
+        type: "ADDRESS_MAP_RESET"
+      });
+
       resetMapContainerClasses();
     }
 
-    function ensureMap(lat, lon) {
-      if (!window.L || !mapEl) {
-        throw new Error("Leaflet library is not available");
-      }
-
+    async function ensureMap(lat, lon) {
       const safeLat = Number(lat);
       const safeLon = Number(lon);
 
@@ -4345,96 +4565,31 @@
       }
 
       forceMapElementSize();
+      await waitForMapFrameReady();
 
-      if (!map) {
-        map = L.map(mapEl, {
-          zoomControl: true,
-          scrollWheelZoom: true,
-          trackResize: true,
-          fadeAnimation: false,
-          zoomAnimation: false,
-          markerZoomAnimation: false,
-          preferCanvas: true
-        }).setView([safeLat, safeLon], 17);
+      currentLat = safeLat;
+      currentLon = safeLon;
 
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          maxZoom: 19,
-          tileSize: 256,
-          zoomOffset: 0,
-          updateWhenIdle: false,
-          updateWhenZooming: false,
-          keepBuffer: 6,
-          crossOrigin: true,
-          attribution: "&copy; OpenStreetMap contributors"
-        }).addTo(map);
-
-        const redPinIcon = L.divIcon({
-          className: "custom-red-map-marker",
-          html: '<div class="custom-red-map-pin"><span class="pin-pulse"></span></div>',
-          iconSize: [44, 54],
-          iconAnchor: [22, 53],
-          popupAnchor: [0, -48]
-        });
-
-        marker = L.marker([safeLat, safeLon], {
-          icon: redPinIcon,
-          draggable: true,
-          autoPan: true,
-          riseOnHover: true,
-          riseOffset: 700
-        }).addTo(map);
-
-        updateSelectedDot(safeLat, safeLon);
-
-        marker.on("dragstart", function () {
-          if (confirmBtn) {
-            confirmBtn.disabled = true;
-          }
-        });
-
-        marker.on("dragend", function () {
-          const pos = marker.getLatLng();
-          refreshMapSize(pos.lat, pos.lng);
-          updateSelectedPin(pos.lat, pos.lng);
-        });
-
-        map.on("click", function (event) {
-          marker.setLatLng(event.latlng);
-          refreshMapSize(event.latlng.lat, event.latlng.lng);
-          updateSelectedPin(event.latlng.lat, event.latlng.lng);
-        });
-
-        map.whenReady(function () {
-          refreshMapSize(safeLat, safeLon);
-        });
-      } else {
-        map.setView([safeLat, safeLon], 17, {
-          animate: false,
-          pan: false
-        });
-
-        if (marker) {
-          marker.setLatLng([safeLat, safeLon]);
-        }
-
-        updateSelectedDot(safeLat, safeLon);
-      }
+      sendMapMessage({
+        type: "ADDRESS_MAP_INIT",
+        lat: safeLat,
+        lon: safeLon,
+        zoom: 17
+      });
 
       refreshMapSize(safeLat, safeLon);
     }
 
     async function buildFreshMap(lat, lon) {
-      destroyMap();
-
       await waitForVisibleMapFrame();
 
-      ensureMap(lat, lon);
+      await ensureMap(lat, lon);
       refreshMapSize(lat, lon);
 
-      await wait(120);
+      await wait(160);
       refreshMapSize(lat, lon);
 
-      await wait(320);
+      await wait(420);
       refreshMapSize(lat, lon);
     }
 
@@ -4573,8 +4728,8 @@
         return;
       }
 
-      if (!window.L) {
-        setAddressError("Không tải được thư viện bản đồ Leaflet. Vui lòng kiểm tra kết nối mạng và tải lại trang.");
+      if (!mapEl || !mapEl.contentWindow) {
+        setAddressError("Không mở được khung bản đồ. Vui lòng tải lại trang và thử lại.");
         return;
       }
 
@@ -4634,9 +4789,9 @@
                 useCurrentLocationBtn.disabled = false;
               },
               {
-                enableHighAccuracy: true,
-                timeout: 15000,
-                maximumAge: 0
+                enableHighAccuracy: false,
+                timeout: 8000,
+                maximumAge: 60000
               }
       );
     });
