@@ -286,6 +286,7 @@ public class AdminBrandServlet extends HttpServlet {
     }
 
     private String saveBrandLogo(Part part) throws IOException {
+
         String submittedFileName = Paths.get(part.getSubmittedFileName())
                 .getFileName()
                 .toString();
@@ -305,12 +306,8 @@ public class AdminBrandServlet extends HttpServlet {
 
         Files.createDirectories(UploadConfig.BRAND_DIR);
 
-        String fileName = "brand_"
-                + System.currentTimeMillis()
-                + "_"
-                + UUID.randomUUID().toString().replace("-", "").substring(0, 12)
-                + "."
-                + extension;
+        // ✅ GIỮ NGUYÊN TÊN FILE
+        String fileName = submittedFileName;
 
         Path target = UploadConfig.resolveBrandFile(fileName)
                 .toAbsolutePath()
