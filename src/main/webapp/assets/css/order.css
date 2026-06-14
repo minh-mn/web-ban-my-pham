@@ -1498,3 +1498,210 @@
 .order-col-actions {
   width: 150px;
 }
+
+/* =========================================================
+   USER ORDER HISTORY SOFT ACTION LAYOUT
+   Bố cục logic:
+   - Xem đơn: chỉ để xem chi tiết, không làm thay đổi đơn hàng.
+   - Thao tác: thanh toán lại / hủy đơn / hoàn hàng, là các hành động thay đổi đơn.
+   Phong cách:
+   - Màu nhạt, viền rõ, chữ đậm vừa.
+   - Hover mới đậm nhẹ để người dùng biết nút đang được chọn.
+========================================================= */
+
+html body .order-page .order-table {
+  min-width: 1260px !important;
+}
+
+html body .order-page .action-cell,
+html body .order-page .detail-cell,
+html body .order-page .detail-view-cell {
+  text-align: center !important;
+  vertical-align: middle !important;
+}
+
+html body .order-page .order-col-id {
+  width: 84px !important;
+}
+
+html body .order-page .order-col-date {
+  width: 138px !important;
+}
+
+html body .order-page .order-col-total {
+  width: 150px !important;
+}
+
+html body .order-page .order-col-status {
+  width: 170px !important;
+}
+
+html body .order-page .order-col-shipping {
+  width: 190px !important;
+}
+
+html body .order-page .order-col-tracking {
+  width: 250px !important;
+}
+
+html body .order-page .order-col-view {
+  width: 150px !important;
+}
+
+html body .order-page .order-col-actions {
+  width: 172px !important;
+}
+
+html body .order-page .order-action-stack {
+  display: inline-flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  width: 138px !important;
+  max-width: 138px !important;
+}
+
+html body .order-page .order-action-stack--ops {
+  min-height: 38px !important;
+}
+
+html body .order-page .order-inline-form {
+  display: block !important;
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+html body .order-page .btn-order-view,
+html body .order-page .btn-detail,
+html body .order-page .btn-retry-payment,
+html body .order-page .btn-cancel-order,
+html body .order-page .btn-return-order {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 138px !important;
+  min-width: 138px !important;
+  max-width: 138px !important;
+  min-height: 38px !important;
+  padding: 0 14px !important;
+  border-radius: 999px !important;
+  text-decoration: none !important;
+  font-size: 12.8px !important;
+  font-weight: 850 !important;
+  line-height: 1 !important;
+  cursor: pointer !important;
+  transition: transform .16s ease, box-shadow .16s ease, background .16s ease, color .16s ease, border-color .16s ease !important;
+  white-space: nowrap !important;
+  box-shadow: none !important;
+}
+
+/* Xem chi tiết: xanh dương nhạt, hành động xem thông tin */
+html body .order-page .detail-view-cell .btn-order-view,
+html body .order-page a.btn-order-view,
+html body .order-page .detail-view-cell .btn-detail,
+html body .order-page a.btn-detail {
+  background: #eff6ff !important;
+  color: #2563eb !important;
+  border: 1px solid #bfdbfe !important;
+}
+
+html body .order-page .detail-view-cell .btn-order-view:hover,
+html body .order-page a.btn-order-view:hover,
+html body .order-page .detail-view-cell .btn-detail:hover,
+html body .order-page a.btn-detail:hover {
+  background: #dbeafe !important;
+  color: #1d4ed8 !important;
+  border-color: #93c5fd !important;
+  box-shadow: 0 8px 16px rgba(37, 99, 235, .10) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Thanh toán lại: xanh lá nhạt, hành động tích cực */
+html body .order-page .order-action-stack .btn-retry-payment,
+html body .order-page a.btn-retry-payment {
+  background: #ecfdf5 !important;
+  color: #047857 !important;
+  border: 1px solid #a7f3d0 !important;
+}
+
+html body .order-page .order-action-stack .btn-retry-payment:hover,
+html body .order-page a.btn-retry-payment:hover {
+  background: #d1fae5 !important;
+  color: #065f46 !important;
+  border-color: #6ee7b7 !important;
+  box-shadow: 0 8px 16px rgba(5, 150, 105, .10) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Hủy đơn: đỏ hồng nhạt, cảnh báo nhưng không quá gắt */
+html body .order-page .order-action-stack .btn-cancel-order,
+html body .order-page button.btn-cancel-order {
+  background: #fff1f2 !important;
+  color: #be123c !important;
+  border: 1px solid #fecdd3 !important;
+}
+
+html body .order-page .order-action-stack .btn-cancel-order:hover,
+html body .order-page button.btn-cancel-order:hover {
+  background: #ffe4e6 !important;
+  color: #9f1239 !important;
+  border-color: #fda4af !important;
+  box-shadow: 0 8px 16px rgba(190, 18, 60, .10) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Hoàn hàng: cam nhạt, phù hợp thao tác sau giao hàng */
+html body .order-page .order-action-stack .btn-return-order,
+html body .order-page .order-action-stack form .btn-return-order,
+html body .order-page button.btn-return-order {
+  background: #fff7ed !important;
+  color: #c2410c !important;
+  border: 1px solid #fed7aa !important;
+}
+
+html body .order-page .order-action-stack .btn-return-order:hover,
+html body .order-page .order-action-stack form .btn-return-order:hover,
+html body .order-page button.btn-return-order:hover {
+  background: #ffedd5 !important;
+  color: #9a3412 !important;
+  border-color: #fdba74 !important;
+  box-shadow: 0 8px 16px rgba(194, 65, 12, .10) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Không có thao tác: nhãn trung tính */
+html body .order-page .order-no-action {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 138px !important;
+  min-height: 34px !important;
+  padding: 0 12px !important;
+  border-radius: 999px !important;
+  border: 1px solid #e5e7eb !important;
+  background: #f8fafc !important;
+  color: #64748b !important;
+  font-size: 12.2px !important;
+  font-weight: 800 !important;
+}
+
+html body .order-page .btn-order-view:active,
+html body .order-page .btn-detail:active,
+html body .order-page .btn-return-order:active,
+html body .order-page .btn-retry-payment:active,
+html body .order-page .btn-cancel-order:active {
+  transform: translateY(0) scale(.98) !important;
+  box-shadow: none !important;
+}
+
+/* Căn lại khoảng cách để hàng có nhiều nút không bị bí */
+html body .order-page .order-table td {
+  vertical-align: middle !important;
+}
+
+@media (max-width: 992px) {
+  html body .order-page .order-table {
+    min-width: 1200px !important;
+  }
+}
