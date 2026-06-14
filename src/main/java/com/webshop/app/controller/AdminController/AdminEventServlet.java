@@ -19,7 +19,7 @@ import java.util.List;
         maxRequestSize = 1024 * 1024 * 50     // 50MB
 )
 public class AdminEventServlet extends HttpServlet {
-    private EventDAO eventDAO = new EventDAO();
+    private final EventDAO eventDAO = new EventDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -37,9 +37,13 @@ public class AdminEventServlet extends HttpServlet {
                 try {
                     int id = Integer.parseInt(request.getParameter("id"));
                     Event event = eventDAO.getEventById(id);
-                    request.setAttribute("event", event);
-                    request.setAttribute("mode", "edit");
-                    request.getRequestDispatcher("/jsp/admin/event/event_form.jsp").forward(request, response);
+                    if (event != null) {
+                        request.setAttribute("event", event);
+                        request.setAttribute("mode", "edit");
+                        request.getRequestDispatcher("/jsp/admin/event/event_form.jsp").forward(request, response);
+                    } else {
+                        response.sendRedirect(request.getContextPath() + "/admin/events?error=NotFound");
+                    }
                 } catch (Exception e) {
                     response.sendRedirect(request.getContextPath() + "/admin/events?error=InvalidID");
                 }
@@ -74,42 +78,59 @@ public class AdminEventServlet extends HttpServlet {
                 response.sendRedirect(request.getContextPath() + "/admin/events");
             } catch (Exception e) {
                 e.printStackTrace();
+                response.sendRedirect(request.getContextPath() + "/admin/events?error=DeleteFailed");
             }
             return;
         }
 
         // 2. Logic xử lý THÊM HOẶC CẬP NHẬT
-        try {
-            String title = request.getParameter("title");
-            String summary = request.getParameter("summary");
-            String tag = request.getParameter("tag");
-            String dateStr = request.getParameter("eventDate");
+        String title = null;
+        String summary = null;
+        String tag = null;
+        String dateStr = null;
 
-            // CHỐNG LỖI NGẦM: Bắt lỗi nếu form gửi lên trống trơn (do sai Multipart hoặc Filter chặn)
-            if (title == null || dateStr == null) {
-                throw new Exception("Không nhận được dữ liệu. Vui lòng kiểm tra lại cấu hình Form hoặc các trường bắt buộc!");
+        try {
+            title = request.getParameter("title");
+            summary = request.getParameter("summary");
+            tag = request.getParameter("tag");
+            dateStr = request.getParameter("eventDate");
+
+            // CHỐNG LỖI NGẦM: Kiểm tra dữ liệu bắt buộc từ Form gửi lên
+            if (title == null || dateStr == null || title.trim().isEmpty() || dateStr.trim().isEmpty()) {
+                throw new Exception("Vui lòng điền đầy đủ các thông tin bắt buộc (*)");
             }
 
             Date eventDate = new SimpleDateFormat("yyyy-MM-dd").parse(dateStr);
             String imageUrl = null;
 
-            // Xử lý đọc file ảnh
+            // Xử lý đọc file ảnh trực tiếp từ máy tính
             Part filePart = request.getPart("imageFile");
             if (filePart != null && filePart.getSize() > 0) {
-                String originalName = getFileName(filePart);
+                // Lấy tên file gốc bằng phương thức chuẩn của Jakarta Servlet
+                String originalName = filePart.getSubmittedFileName();
+                if (originalName == null || originalName.isEmpty()) {
+                    originalName = "event_image.jpg";
+                }
+
+                // Tạo tên file duy nhất tránh trùng lặp bằng dấu gạch dưới timestamp
                 String fileName = System.currentTimeMillis() + "_" + originalName;
 
+                // Xác định đường dẫn vật lý để lưu ảnh vật lý vào assets/images/events
                 String uploadPath = getServletContext().getRealPath("") + File.separator + "assets" + File.separator + "images" + File.separator + "events";
                 File uploadDir = new File(uploadPath);
-                if (!uploadDir.exists()) uploadDir.mkdirs();
+                if (!uploadDir.exists()) {
+                    uploadDir.mkdirs();
+                }
 
+                // Ghi file ảnh vào ổ đĩa của server
                 filePart.write(uploadPath + File.separator + fileName);
+
+                // Đường dẫn tương đối lưu vào Database
                 imageUrl = "/assets/images/events/" + fileName;
             }
 
             boolean isSuccess = false;
 
-            // Xử lý lưu DB
             if ("create".equals(action)) {
                 Event event = new Event(title, summary, tag, imageUrl, eventDate);
                 isSuccess = eventDAO.insertEvent(event);
@@ -117,9 +138,11 @@ public class AdminEventServlet extends HttpServlet {
                 int id = Integer.parseInt(request.getParameter("id"));
                 Event oldEvent = eventDAO.getEventById(id);
 
-                // Giữ lại ảnh cũ nếu không update ảnh mới
-                if (oldEvent != null && (imageUrl == null || imageUrl.isEmpty())) {
-                    imageUrl = oldEvent.getImageUrl();
+                // Giữ lại đường dẫn ảnh cũ nếu người dùng không upload ảnh mới thay thế
+                if (imageUrl == null || imageUrl.isEmpty()) {
+                    if (oldEvent != null) {
+                        imageUrl = oldEvent.getImageUrl();
+                    }
                 }
 
                 Event event = new Event(title, summary, tag, imageUrl, eventDate);
@@ -127,34 +150,41 @@ public class AdminEventServlet extends HttpServlet {
                 isSuccess = eventDAO.updateEvent(event);
             }
 
-            // KIỂM TRA KẾT QUẢ
             if (isSuccess) {
                 response.sendRedirect(request.getContextPath() + "/admin/events");
-                return; // Thành công thì về trang list
             } else {
-                // Thất bại ném văng ra lỗi để catch xử lý
-                throw new Exception("Lỗi Database: Lưu dữ liệu không thành công. Hãy kiểm tra lại kết nối MySQL!");
+                throw new Exception("Lỗi hệ thống: Không thể lưu dữ liệu vào cơ sở dữ liệu MySQL.");
             }
 
         } catch (Exception e) {
-            e.printStackTrace(); // In ra console cho lập trình viên
+            e.printStackTrace(); 
+                
+            Event fallbackEvent = new Event();
+            fallbackEvent.setTitle(title);
+            fallbackEvent.setSummary(summary);
+            fallbackEvent.setTag(tag);
+            try {
+                if (dateStr != null && !dateStr.trim().isEmpty()) {
+                    fallbackEvent.setEventDate(new SimpleDateFormat("yyyy-MM-dd").parse(dateStr));
+                }
+            } catch (Exception ignored) {}
 
-            // Trả lỗi về GIAO DIỆN FORM thay vì gọi doGet
-            request.setAttribute("error", "Chi tiết lỗi: " + e.getMessage());
+            if ("update".equals(action)) {
+                try {
+                    int id = Integer.parseInt(request.getParameter("id"));
+                    fallbackEvent.setId(id);
+                    Event old = eventDAO.getEventById(id);
+                    if (old != null && (fallbackEvent.getImageUrl() == null)) {
+                        fallbackEvent.setImageUrl(old.getImageUrl());
+                    }
+                } catch (Exception ignored) {}
+            }
+
+            // Gửi dữ liệu tạm và thông điệp lỗi quay lại trang giao diện form
+            request.setAttribute("event", fallbackEvent);
+            request.setAttribute("error", "Không thể lưu sự kiện. " + e.getMessage());
             request.setAttribute("mode", "create".equals(action) ? "create" : "edit");
-
-            // CHỈ ĐỊNH ĐÍCH DANH FILE FORM ĐỂ HIỂN THỊ LỖI
             request.getRequestDispatcher("/jsp/admin/event/event_form.jsp").forward(request, response);
         }
-    }
-
-    private String getFileName(Part part) {
-        String contentDisp = part.getHeader("content-disposition");
-        for (String token : contentDisp.split(";")) {
-            if (token.trim().startsWith("filename")) {
-                return token.substring(token.indexOf("=") + 2, token.length() - 1);
-            }
-        }
-        return "default.jpg";
     }
 }
