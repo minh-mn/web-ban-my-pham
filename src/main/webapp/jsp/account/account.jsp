@@ -2,6 +2,7 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
+<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/account.css?v=20260614_1" />
 
 <fmt:setLocale value="vi_VN"/>
 
@@ -425,295 +426,444 @@
               </div>
             </c:when>
 
+
+
+
             <%-- CHẾ ĐỘ 2: TRANG TỔNG QUAN TÀI KHOẢN (MẶC ĐỊNH) --%>
             <c:otherwise>
 
-              <div class="account-hero user-mode">
-                <div class="account-profile">
-                  <div class="account-avatar">
-                    <c:out value="${fn:toUpperCase(fn:substring(safeUsername, 0, 1))}" />
+              <!-- COMPACT ACCOUNT CENTER -->
+              <div class="mc-account-compact">
+
+                <!-- Header gọn -->
+                <section class="mc-compact-hero">
+                  <div class="mc-compact-user">
+                    <div class="mc-compact-avatar">
+                      <c:out value="${fn:toUpperCase(fn:substring(safeUsername, 0, 1))}" />
+                    </div>
+
+                    <div class="mc-compact-user-info">
+                      <div class="mc-compact-name-row">
+                        <h1><c:out value="${safeUsername}" /></h1>
+                        <c:if test="${not empty rankLabel}">
+                          <span class="mc-compact-rank ${rankCss}">
+                            <c:out value="${rankLabel}" />
+                            <c:if test="${rankDiscount > 0}"> -<c:out value="${rankDiscount}" />%</c:if>
+                          </span>
+                        </c:if>
+                      </div>
+
+                      <p>Quản lý đơn hàng, voucher, tài khoản và hồ sơ giao hàng.</p>
+
+                      <div class="mc-compact-contact">
+                        <span>📧 <c:choose><c:when test="${not empty userEmail}"><c:out value="${userEmail}" /></c:when><c:otherwise>Chưa cập nhật email</c:otherwise></c:choose></span>
+                        <span>📱 <c:choose><c:when test="${not empty userPhone}"><c:out value="${userPhone}" /></c:when><c:otherwise>Chưa cập nhật SĐT</c:otherwise></c:choose></span>
+                      </div>
+                    </div>
                   </div>
 
-                  <div>
-                    <h1 class="account-title">Tài khoản của tôi</h1>
-                    <p class="account-subtitle">
-                      Xin chào, <strong><c:out value="${safeUsername}" /></strong>. Theo dõi đơn hàng, chi tiêu và hạng khách hàng tại đây.
-                    </p>
+                  <div class="mc-compact-actions">
+                    <button type="button" class="mc-compact-btn is-primary" data-account-target="orders">Đơn mua</button>
+                    <button type="button" class="mc-compact-btn" data-account-target="profile">Sửa hồ sơ</button>
+                    <a href="${pageContext.request.contextPath}/account/change-password" class="mc-compact-btn">Đổi mật khẩu</a>
+                  </div>
+                </section>
 
-                    <div class="account-chip-row">
-                      <span class="account-chip user-chip">
-                        📧 <c:choose><c:when test="${not empty userEmail}"><c:out value="${userEmail}" /></c:when><c:otherwise>Chưa cập nhật email</c:otherwise></c:choose>
-                      </span>
-                      <span class="account-chip user-chip">
-                        📱 <c:choose><c:when test="${not empty userPhone}"><c:out value="${userPhone}" /></c:when><c:otherwise>Chưa cập nhật SĐT</c:otherwise></c:choose>
-                      </span>
-                      <c:if test="${not empty rankLabel}">
-                        <span class="account-chip user-chip ${rankCss}">
-                          🎖 <c:out value="${rankLabel}" />
-                          <c:if test="${rankDiscount > 0}">-<c:out value="${rankDiscount}" />%</c:if>
+                <!-- Layout menu + nội dung -->
+                <section class="mc-account-center">
+                  <aside class="mc-account-menu">
+                    <div class="mc-account-menu-group">
+                      <div class="mc-account-menu-label">Tổng quan</div>
+
+                      <button type="button" class="mc-account-menu-item is-active" data-account-target="overview">
+                        <span class="mc-menu-icon">🏠</span>
+                        <span>
+                          <strong>Tổng quan</strong>
+                          <small>Thông tin nhanh</small>
                         </span>
-                      </c:if>
+                        <em>›</em>
+                      </button>
                     </div>
-                  </div>
-                </div>
 
-                <div class="account-actions">
-                  <a href="${pageContext.request.contextPath}/orders" class="account-btn user-primary">📦 Xem đơn hàng</a>
-                  <a href="${pageContext.request.contextPath}/account/change-password" class="account-btn">🔒 Đổi mật khẩu</a>
-                </div>
-              </div>
+                    <div class="mc-account-menu-group">
+                      <div class="mc-account-menu-label">Mua hàng</div>
 
-              <!-- USER RANK DETAIL -->
-              <div class="account-card account-section-space">
-                <div class="account-card-body">
-                  <div class="account-card-head account-card-head-start">
-                    <div>
-                      <h2 class="account-card-title">🎖 Hạng khách hàng</h2>
-                      <p class="account-muted">Hạng được tính dựa trên tổng chi tiêu từ các đơn đã thanh toán thành công.</p>
+                      <button type="button" class="mc-account-menu-item" data-account-target="orders">
+                        <span class="mc-menu-icon">📦</span>
+                        <span>
+                          <strong>Đơn mua</strong>
+                          <small>Theo dõi đơn hàng</small>
+                        </span>
+                        <em>›</em>
+                      </button>
+
+                      <button type="button" class="mc-account-menu-item" data-account-target="vouchers">
+                        <span class="mc-menu-icon">🎟️</span>
+                        <span>
+                          <strong>Kho voucher</strong>
+                          <small><c:out value="${empty savedCoupons ? 0 : fn:length(savedCoupons)}" /> mã đã lưu</small>
+                        </span>
+                        <em>›</em>
+                      </button>
                     </div>
-                    <span class="account-chip user-chip ${rankCss}">
-                      <c:out value="${empty rankLabel ? 'Thành viên' : rankLabel}" />
-                      <c:if test="${rankDiscount > 0}">-<c:out value="${rankDiscount}" />%</c:if>
-                    </span>
-                  </div>
 
-                  <div class="account-grid account-grid-3">
-                    <div>
-                      <p class="account-kpi-label">Tổng chi tiêu xét hạng</p>
-                      <div class="account-kpi-value">
-                        <fmt:formatNumber value="${empty rankTotalSpent ? 0 : rankTotalSpent}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫
-                      </div>
-                      <div class="account-kpi-note">Không tính đơn đã hủy.</div>
+                    <div class="mc-account-menu-group">
+                      <div class="mc-account-menu-label">Tài khoản</div>
+
+                      <button type="button" class="mc-account-menu-item" data-account-target="profile">
+                        <span class="mc-menu-icon">👤</span>
+                        <span>
+                          <strong>Hồ sơ cá nhân</strong>
+                          <small>Sửa thông tin giao hàng</small>
+                        </span>
+                        <em>›</em>
+                      </button>
+
+                      <button type="button" class="mc-account-menu-item" data-account-target="security">
+                        <span class="mc-menu-icon">🔐</span>
+                        <span>
+                          <strong>Tài khoản & bảo mật</strong>
+                          <small>Email, SĐT, mật khẩu</small>
+                        </span>
+                        <em>›</em>
+                      </button>
                     </div>
-                    <div>
-                      <p class="account-kpi-label">Ưu đãi hiện tại</p>
-                      <div class="account-kpi-value"><c:out value="${empty rankDiscount ? 0 : rankDiscount}" />%</div>
-                      <div class="account-kpi-note">Tự động áp dụng khi thanh toán.</div>
+
+                    <div class="mc-account-menu-group">
+                      <div class="mc-account-menu-label">Thành viên & hoạt động</div>
+
+                      <button type="button" class="mc-account-menu-item" data-account-target="rank">
+                        <span class="mc-menu-icon">🎖</span>
+                        <span>
+                          <strong>Hạng thành viên</strong>
+                          <small>Ưu đãi <c:out value="${empty rankDiscount ? 0 : rankDiscount}" />%</small>
+                        </span>
+                        <em>›</em>
+                      </button>
+
+                      <button type="button" class="mc-account-menu-item" data-account-target="activity">
+                        <span class="mc-menu-icon">🔎</span>
+                        <span>
+                          <strong>Hoạt động</strong>
+                          <small>Tìm kiếm & chi tiêu</small>
+                        </span>
+                        <em>›</em>
+                      </button>
                     </div>
-                    <div>
-                      <p class="account-kpi-label">Số đơn đã thanh toán</p>
-                      <div class="account-kpi-value"><c:out value="${empty rankPaidOrderCount ? 0 : rankPaidOrderCount}" /></div>
-                      <div class="account-kpi-note">Chỉ tính đơn hợp lệ.</div>
-                    </div>
-                  </div>
+                  </aside>
 
-                  <div class="account-rank-next">
-                    <c:choose>
-                      <c:when test="${maxRank}">
-                        <p class="account-muted">Bạn đã đạt hạng cao nhất. Cảm ơn bạn đã đồng hành cùng MyCosmetic.</p>
-                        <div class="account-rank-progress"><div class="account-rank-progress__bar is-full"></div></div>
-                      </c:when>
-                      <c:otherwise>
-                        <p class="account-muted">
-                          Còn <strong><fmt:formatNumber value="${empty amountToNextRank ? 0 : amountToNextRank}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫</strong> để lên hạng <strong><c:out value="${empty nextRankLabel ? 'tiếp theo' : nextRankLabel}" /></strong>.
-                        </p>
-                        <div class="account-rank-progress"><div class="account-rank-progress__bar" data-progress="${empty rankProgressPercent ? 0 : rankProgressPercent}"></div></div>
-                        <p class="account-muted account-progress-note">Tiến độ: <strong><c:out value="${empty rankProgressPercent ? 0 : rankProgressPercent}" />%</strong></p>
-                      </c:otherwise>
-                    </c:choose>
-                  </div>
-                </div>
-              </div>
+                  <div class="mc-account-content">
 
-              <!-- VÍ VOUCHER (CHỈ HIỂN THỊ TỐI ĐA 3 MÃ CÓ NÚT XEM TẤT CẢ) -->
-              <div class="account-card account-section-space">
-                <div class="account-card-body">
-                  <div class="account-card-head account-card-head-start">
-                    <div>
-                      <h2 class="account-card-title" style="color: var(--pink-dark);">💼 Ví voucher của bạn</h2>
-                      <p class="account-muted">Danh sách các mã giảm giá bạn đã thu thập thành công từ trang chủ.</p>
-                    </div>
-                    <span class="account-chip user-chip" style="background-color: var(--pink-soft); color: var(--pink-main); font-weight: bold;">
-                      🎰 Đã lưu: ${fn:length(savedCoupons)} mã
-                    </span>
-                  </div>
-
-                  <c:choose>
-                    <c:when test="${not empty savedCoupons}">
-                      <div class="account-coupon-grid">
-                        <c:forEach var="savedCp" items="${savedCoupons}" end="2">
-                          <div class="account-coupon-card" style="border: 1px dashed var(--pink-main); background: var(--pink-soft);">
-                            <div class="account-coupon-top">
-                              <div class="account-coupon-code">
-                                <span>🎁</span>
-                                <span style="color: var(--pink-dark); font-weight: bold;"><c:out value="${savedCp.code}" /></span>
-                              </div>
-                              <button type="button" class="account-coupon-copy" style="background: var(--pink-main); color: #fff;" data-coupon-code="<c:out value='${savedCp.code}'/>" onclick="copyCouponCode(this.dataset.couponCode)">
-                                Copy
-                              </button>
-                            </div>
-
-                            <div class="account-coupon-discount" style="color: var(--text-main);">
-                              <c:choose>
-                                <c:when test="${savedCp.type eq 'FREESHIP'}">🚚 Freeship Vận Chuyển</c:when>
-                                <c:otherwise>Giảm liền ${savedCp.discountPercent}%</c:otherwise>
-                              </c:choose>
-                            </div>
-
-                            <div class="account-coupon-meta">
-                              <div><strong>Mô tả:</strong> <c:out value="${not empty savedCp.description ? savedCp.description : 'Áp dụng giảm trừ trực tiếp vào hóa đơn khi thanh toán.'}" /></div>
-                              <div>
-                                <strong>Điều kiện:</strong>
-                                <c:choose>
-                                  <c:when test="${savedCp.minOrderAmount > 0}">
-                                    Đơn hàng từ <fmt:formatNumber value="${savedCp.minOrderAmount}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫
-                                  </c:when>
-                                  <c:otherwise>Không giới hạn đơn hàng tối thiểu</c:otherwise>
-                                </c:choose>
-                              </div>
-                            </div>
-                            <div class="account-coupon-rank" style="border-top: 1px solid rgba(255, 95, 162, 0.2); background: rgba(255, 95, 162, 0.05);">
-                              ✔ Sẵn sàng sử dụng tại Checkout
-                            </div>
-                          </div>
-                        </c:forEach>
-                      </div>
-
-                      <!-- NÚT XEM TẤT CẢ KHI CÓ TRÊN 3 VOUCHER -->
-                      <c:if test="${fn:length(savedCoupons) > 3}">
-                        <div style="text-align: center; margin-top: 20px;">
-                          <a href="?view=vouchers" class="account-btn"
-                             style="display: inline-block; padding: 10px 30px; border-radius: 25px; font-weight: bold; text-decoration: none; transition: 0.3s;
-                                    background: var(--pink-main);
-                                    color: #ffffff;
-                                    border: 1px solid var(--pink-main);">
-                            Xem tất cả mã giảm giá (${fn:length(savedCoupons)}) ➔
-                          </a>
+                    <!-- Tổng quan -->
+                    <div class="mc-account-view is-active" data-account-view="overview">
+                      <div class="mc-view-head">
+                        <div>
+                          <h2>Tổng quan tài khoản</h2>
+                          <p>Những thông tin quan trọng nhất của tài khoản.</p>
                         </div>
-                      </c:if>
-                    </c:when>
+                      </div>
 
-                    <c:otherwise>
-                      <div style="text-align: center; padding: 30px 10px; color: var(--text-muted);">
-                        <p style="font-size: 14px;">Bạn chưa lưu mã giảm giá nào từ trang chủ.</p>
-                        <a href="${pageContext.request.contextPath}/" style="display: inline-block; margin-top: 12px; font-size: 13px; color: #fff; background: var(--pink-main); padding: 6px 16px; border-radius: 20px; font-weight: bold;">
-                          Bấm vào đây để đi tìm mã uư đãi 🏃‍♂️
+                      <div class="mc-compact-stat-grid">
+                        <div class="mc-compact-stat">
+                          <span>📦</span>
+                          <strong><c:out value="${empty total_orders ? 0 : total_orders}" /></strong>
+                          <small>Tổng đơn hàng</small>
+                        </div>
+
+                        <div class="mc-compact-stat">
+                          <span>💰</span>
+                          <strong>
+                            <c:choose>
+                              <c:when test="${not empty total_spent_vnd}">
+                                <fmt:formatNumber value="${total_spent_vnd}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫
+                              </c:when>
+                              <c:otherwise>0 ₫</c:otherwise>
+                            </c:choose>
+                          </strong>
+                          <small>Tổng chi tiêu</small>
+                        </div>
+
+                        <div class="mc-compact-stat">
+                          <span>🧾</span>
+                          <strong>
+                            <c:choose>
+                              <c:when test="${not empty latest_order}">#<c:out value="${latest_order.id}" /></c:when>
+                              <c:otherwise>--</c:otherwise>
+                            </c:choose>
+                          </strong>
+                          <small>Đơn gần nhất</small>
+                        </div>
+
+                        <div class="mc-compact-stat">
+                          <span>🎟️</span>
+                          <strong><c:out value="${empty savedCoupons ? 0 : fn:length(savedCoupons)}" /></strong>
+                          <small>Voucher đã lưu</small>
+                        </div>
+                      </div>
+
+                      <div class="mc-mini-section">
+                        <div class="mc-mini-section-head">
+                          <h3>Tiện ích của tôi</h3>
+                          <span>Chọn nhanh chức năng cần dùng</span>
+                        </div>
+
+                        <div class="mc-compact-utility-grid">
+                          <button type="button" data-account-target="orders"><span>📦</span><strong>Đơn mua</strong><small>Theo dõi đơn</small></button>
+                          <button type="button" data-account-target="vouchers"><span>🎟️</span><strong>Kho voucher</strong><small>Mã giảm giá</small></button>
+                          <button type="button" data-account-target="rank"><span>🎖</span><strong>Hạng thành viên</strong><small>Ưu đãi</small></button>
+                          <button type="button" data-account-target="activity"><span>🔎</span><strong>Hoạt động</strong><small>Lịch sử</small></button>
+                          <button type="button" data-account-target="profile"><span>📍</span><strong>Địa chỉ</strong><small>Hồ sơ</small></button>
+                          <button type="button" data-account-target="security"><span>🔐</span><strong>Bảo mật</strong><small>Tài khoản</small></button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Đơn mua -->
+                    <div class="mc-account-view" data-account-view="orders">
+                      <div class="mc-view-head">
+                        <div>
+                          <h2>Đơn mua</h2>
+                          <p>Theo dõi nhanh các trạng thái đơn hàng.</p>
+                        </div>
+                        <a href="${pageContext.request.contextPath}/orders" class="mc-view-link">Xem lịch sử mua hàng ›</a>
+                      </div>
+
+                      <div class="mc-order-shortcut-grid">
+                        <a href="${pageContext.request.contextPath}/orders"><span>🕘</span><strong>Chờ xác nhận</strong><small>Đơn mới tạo</small></a>
+                        <a href="${pageContext.request.contextPath}/orders"><span>📦</span><strong>Chờ lấy hàng</strong><small>Shop chuẩn bị</small></a>
+                        <a href="${pageContext.request.contextPath}/orders"><span>🚚</span><strong>Đang giao</strong><small>Xem tracking</small></a>
+                        <a href="${pageContext.request.contextPath}/orders"><span>⭐</span><strong>Đánh giá / Hoàn hàng</strong><small>Sau khi nhận</small></a>
+                      </div>
+                    </div>
+
+                    <!-- Voucher -->
+                    <div class="mc-account-view" data-account-view="vouchers">
+                      <div class="mc-view-head">
+                        <div>
+                          <h2>Kho voucher</h2>
+                          <p>Những mã giảm giá bạn đã lưu và có thể dùng khi checkout.</p>
+                        </div>
+                        <span class="mc-soft-count">Đã lưu: ${fn:length(savedCoupons)} mã</span>
+                      </div>
+
+                      <c:choose>
+                        <c:when test="${not empty savedCoupons}">
+                          <div class="mc-compact-voucher-grid">
+                            <c:forEach var="savedCp" items="${savedCoupons}" end="5">
+                              <div class="mc-compact-voucher-card">
+                                <div class="mc-voucher-top">
+                                  <span class="mc-voucher-code">🎁 <c:out value="${savedCp.code}" /></span>
+                                  <button type="button"
+                                          class="mc-copy-btn"
+                                          data-coupon-code="<c:out value='${savedCp.code}'/>"
+                                          onclick="copyCouponCode(this.dataset.couponCode)">
+                                    Copy
+                                  </button>
+                                </div>
+
+                                <h3>
+                                  <c:choose>
+                                    <c:when test="${savedCp.type eq 'FREESHIP'}">Freeship vận chuyển</c:when>
+                                    <c:otherwise>Giảm liền ${savedCp.discountPercent}%</c:otherwise>
+                                  </c:choose>
+                                </h3>
+
+                                <p><strong>Mô tả:</strong> <c:out value="${not empty savedCp.description ? savedCp.description : 'Áp dụng giảm trực tiếp vào hóa đơn khi thanh toán.'}" /></p>
+                                <p>
+                                  <strong>Điều kiện:</strong>
+                                  <c:choose>
+                                    <c:when test="${savedCp.minOrderAmount > 0}">
+                                      Đơn hàng từ <fmt:formatNumber value="${savedCp.minOrderAmount}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫
+                                    </c:when>
+                                    <c:otherwise>Không giới hạn đơn hàng tối thiểu</c:otherwise>
+                                  </c:choose>
+                                </p>
+
+                                <span class="mc-voucher-ready">Sẵn sàng dùng tại Checkout</span>
+                              </div>
+                            </c:forEach>
+                          </div>
+
+                          <c:if test="${fn:length(savedCoupons) > 6}">
+                            <div class="mc-center-action">
+                              <a href="?view=vouchers" class="mc-compact-btn is-primary">Xem tất cả mã giảm giá (${fn:length(savedCoupons)}) ›</a>
+                            </div>
+                          </c:if>
+                        </c:when>
+
+                        <c:otherwise>
+                          <div class="mc-empty-state">
+                            <span>🎟️</span>
+                            <p>Bạn chưa lưu mã giảm giá nào.</p>
+                            <a href="${pageContext.request.contextPath}/" class="mc-compact-btn is-primary">Tìm ưu đãi</a>
+                          </div>
+                        </c:otherwise>
+                      </c:choose>
+                    </div>
+
+                    <!-- Rank -->
+                    <div class="mc-account-view" data-account-view="rank">
+                      <div class="mc-view-head">
+                        <div>
+                          <h2>Hạng thành viên</h2>
+                          <p>Hạng được tính từ các đơn đã thanh toán thành công.</p>
+                        </div>
+                        <span class="mc-compact-rank ${rankCss}">
+                          <c:out value="${empty rankLabel ? 'Thành viên' : rankLabel}" />
+                          <c:if test="${rankDiscount > 0}"> -<c:out value="${rankDiscount}" />%</c:if>
+                        </span>
+                      </div>
+
+                      <div class="mc-rank-summary">
+                        <div>
+                          <span>Tổng chi tiêu xét hạng</span>
+                          <strong><fmt:formatNumber value="${empty rankTotalSpent ? 0 : rankTotalSpent}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫</strong>
+                        </div>
+                        <div>
+                          <span>Ưu đãi hiện tại</span>
+                          <strong><c:out value="${empty rankDiscount ? 0 : rankDiscount}" />%</strong>
+                        </div>
+                        <div>
+                          <span>Đơn đã thanh toán</span>
+                          <strong><c:out value="${empty rankPaidOrderCount ? 0 : rankPaidOrderCount}" /></strong>
+                        </div>
+                      </div>
+
+                      <c:choose>
+                        <c:when test="${maxRank}">
+                          <p class="mc-rank-note">Bạn đã đạt hạng cao nhất. Cảm ơn bạn đã đồng hành cùng MyCosmetic.</p>
+                          <div class="mc-rank-progress"><div class="mc-rank-progress-bar is-full"></div></div>
+                        </c:when>
+                        <c:otherwise>
+                          <p class="mc-rank-note">
+                            Còn <strong><fmt:formatNumber value="${empty amountToNextRank ? 0 : amountToNextRank}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫</strong>
+                            để lên hạng <strong><c:out value="${empty nextRankLabel ? 'tiếp theo' : nextRankLabel}" /></strong>.
+                          </p>
+                          <div class="mc-rank-progress"><div class="mc-rank-progress-bar" data-progress="${empty rankProgressPercent ? 0 : rankProgressPercent}"></div></div>
+                          <p class="mc-rank-note">Tiến độ: <strong><c:out value="${empty rankProgressPercent ? 0 : rankProgressPercent}" />%</strong></p>
+                        </c:otherwise>
+                      </c:choose>
+                    </div>
+
+                    <!-- Activity -->
+                    <div class="mc-account-view" data-account-view="activity">
+                      <div class="mc-view-head">
+                        <div>
+                          <h2>Hoạt động gần đây</h2>
+                          <p>Lịch sử tìm kiếm và chi tiêu của bạn.</p>
+                        </div>
+                      </div>
+
+                      <div class="mc-activity-split">
+                        <div class="mc-mini-section">
+                          <div class="mc-mini-section-head">
+                            <h3>Lịch sử tìm kiếm</h3>
+                            <span><c:out value="${empty searchHistoryCount ? 0 : searchHistoryCount}" /> lượt tìm</span>
+                          </div>
+
+                          <c:choose>
+                            <c:when test="${not empty searchHistories}">
+                              <div class="mc-search-list">
+                                <c:forEach var="history" items="${searchHistories}">
+                                  <c:choose>
+                                    <c:when test="${not empty history.searchUrl}"><c:set var="historyHref" value="${pageContext.request.contextPath}${history.searchUrl}" /></c:when>
+                                    <c:otherwise><c:url var="historyHref" value="/search"><c:param name="q" value="${history.keyword}" /></c:url></c:otherwise>
+                                  </c:choose>
+
+                                  <div class="mc-search-item">
+                                    <a href="${fn:escapeXml(historyHref)}">
+                                      <span>🔍</span>
+                                      <div>
+                                        <strong><c:out value="${history.keyword}" /></strong>
+                                        <small><c:out value="${empty history.resultCount ? 0 : history.resultCount}" /> kết quả • Đã tìm <c:out value="${empty history.searchCount ? 1 : history.searchCount}" /> lần • <c:out value="${history.displayLastSearchedAt}" /></small>
+                                      </div>
+                                    </a>
+
+                                    <form method="post" action="${pageContext.request.contextPath}/account/search-history/delete" class="account-inline-form" onsubmit="return confirm('Xóa từ khóa tìm kiếm này?');">
+                                      <c:if test="${not empty csrfToken}"><input type="hidden" name="csrfToken" value="${fn:escapeXml(csrfToken)}" /></c:if>
+                                      <c:if test="${empty csrfToken and not empty sessionScope.csrfToken}"><input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.csrfToken)}" /></c:if>
+                                      <input type="hidden" name="id" value="${history.id}" />
+                                      <button type="submit" class="mc-search-delete-btn" title="Xóa lịch sử">×</button>
+                                    </form>
+                                  </div>
+                                </c:forEach>
+                              </div>
+                            </c:when>
+
+                            <c:otherwise>
+                              <div class="mc-empty-state">
+                                <span>🕘</span>
+                                <p>Bạn chưa có lịch sử tìm kiếm.</p>
+                              </div>
+                            </c:otherwise>
+                          </c:choose>
+                        </div>
+
+                        <div class="mc-mini-section">
+                          <div class="mc-mini-section-head">
+                            <h3>Chi tiêu theo thời gian</h3>
+                            <span>Spending</span>
+                          </div>
+
+                          <c:choose>
+                            <c:when test="${not empty chart_labels and not empty chart_values}">
+                              <div class="mc-chart-wrap"><canvas id="spendingChart" height="150"></canvas></div>
+                            </c:when>
+                            <c:otherwise>
+                              <div class="mc-empty-state"><span>📊</span><p>Chưa có dữ liệu chi tiêu.</p></div>
+                            </c:otherwise>
+                          </c:choose>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Profile -->
+                    <div class="mc-account-view" data-account-view="profile">
+                      <div class="mc-view-head">
+                        <div>
+                          <h2>Hồ sơ cá nhân</h2>
+                          <p>Cập nhật thông tin dùng cho đơn hàng và giao hàng.</p>
+                        </div>
+                      </div>
+
+                      <div class="mc-profile-embed" data-profile-form-holder></div>
+                    </div>
+
+                    <!-- Security -->
+                    <div class="mc-account-view" data-account-view="security">
+                      <div class="mc-view-head">
+                        <div>
+                          <h2>Tài khoản & Bảo mật</h2>
+                          <p>Quản lý thông tin đăng nhập và bảo vệ tài khoản.</p>
+                        </div>
+                      </div>
+
+                      <div class="mc-setting-list">
+                        <button type="button" class="mc-setting-row" data-account-target="profile">
+                          <div><strong>Hồ sơ cá nhân</strong><small>Họ tên, số điện thoại, email, địa chỉ</small></div>
+                          <span>›</span>
+                        </button>
+
+                        <button type="button" class="mc-setting-row" data-account-target="profile">
+                          <div><strong>Số điện thoại</strong><small><c:choose><c:when test="${not empty userPhone}"><c:out value="${userPhone}" /></c:when><c:otherwise>Chưa cập nhật</c:otherwise></c:choose></small></div>
+                          <span>›</span>
+                        </button>
+
+                        <button type="button" class="mc-setting-row" data-account-target="profile">
+                          <div><strong>Email</strong><small><c:choose><c:when test="${not empty userEmail}"><c:out value="${userEmail}" /></c:when><c:otherwise>Chưa cập nhật</c:otherwise></c:choose></small></div>
+                          <span>›</span>
+                        </button>
+
+                        <a href="${pageContext.request.contextPath}/account/change-password" class="mc-setting-row">
+                          <div><strong>Đổi mật khẩu</strong><small>Nên thay đổi định kỳ để bảo vệ tài khoản</small></div>
+                          <span>›</span>
                         </a>
                       </div>
-                    </c:otherwise>
-                  </c:choose>
-                </div>
-              </div>
-
-              <!-- USER KPI -->
-              <div class="account-grid account-grid-3 account-section-space">
-                <div class="account-card">
-                  <div class="account-card-body account-kpi">
-                    <div>
-                      <p class="account-kpi-label">Tổng đơn hàng</p>
-                      <div class="account-kpi-value"><c:out value="${empty total_orders ? 0 : total_orders}" /></div>
-                      <div class="account-kpi-note">Tất cả đơn bạn đã tạo.</div>
                     </div>
-                    <div class="account-kpi-icon user-kpi-icon">📦</div>
+
                   </div>
-                </div>
+                </section>
 
-                <div class="account-card">
-                  <div class="account-card-body account-kpi">
-                    <div>
-                      <p class="account-kpi-label">Tổng chi tiêu</p>
-                      <div class="account-kpi-value">
-                        <c:choose><c:when test="${not empty total_spent_vnd}"><fmt:formatNumber value="${total_spent_vnd}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫</c:when><c:otherwise>0 ₫</c:otherwise></c:choose>
-                      </div>
-                      <div class="account-kpi-note">Tổng tiền từ các đơn đã mua.</div>
-                    </div>
-                    <div class="account-kpi-icon user-kpi-icon">💰</div>
-                  </div>
-                </div>
-
-                <div class="account-card">
-                  <div class="account-card-body account-kpi">
-                    <div>
-                      <p class="account-kpi-label">Đơn gần nhất</p>
-                      <div class="account-kpi-value">
-                        <c:choose><c:when test="${not empty latest_order}">#<c:out value="${latest_order.id}" /></c:when><c:otherwise>--</c:otherwise></c:choose>
-                      </div>
-                      <div class="account-kpi-note">Đơn hàng mới nhất của bạn.</div>
-                    </div>
-                    <div class="account-kpi-icon user-kpi-icon">🕒</div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- USER SEARCH HISTORY -->
-              <div class="account-card account-section-space account-search-history-card">
-                <div class="account-card-body">
-                  <div class="account-card-head account-card-head-start">
-                    <div>
-                      <h2 class="account-card-title">🔎 Lịch sử tìm kiếm</h2>
-                      <p class="account-muted">Lưu lại các từ khóa bạn đã tìm để có thể xem lại nhanh sản phẩm quan tâm.</p>
-                    </div>
-
-                    <div class="account-search-history-actions">
-                      <span class="account-chip user-chip"><c:out value="${empty searchHistoryCount ? 0 : searchHistoryCount}" /> lượt tìm</span>
-                      <c:if test="${not empty searchHistories}">
-                        <form method="post" action="${pageContext.request.contextPath}/account/search-history/clear" class="account-inline-form" onsubmit="return confirm('Bạn có chắc muốn xóa toàn bộ lịch sử tìm kiếm không?');">
-                          <c:if test="${not empty csrfToken}"><input type="hidden" name="csrfToken" value="${fn:escapeXml(csrfToken)}" /></c:if>
-                          <c:if test="${empty csrfToken and not empty sessionScope.csrfToken}"><input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.csrfToken)}" /></c:if>
-                          <button type="submit" class="search-history-clear-btn">Xóa tất cả</button>
-                        </form>
-                      </c:if>
-                    </div>
-                  </div>
-
-                  <c:choose>
-                    <c:when test="${not empty searchHistories}">
-                      <div class="search-history-list">
-                        <c:forEach var="history" items="${searchHistories}">
-                          <c:choose>
-                            <c:when test="${not empty history.searchUrl}"><c:set var="historyHref" value="${pageContext.request.contextPath}${history.searchUrl}" /></c:when>
-                            <c:otherwise><c:url var="historyHref" value="/search"><c:param name="q" value="${history.keyword}" /></c:url></c:otherwise>
-                          </c:choose>
-                          <div class="search-history-item">
-                            <a class="search-history-main" href="${fn:escapeXml(historyHref)}" title="Tìm lại: ${fn:escapeXml(history.keyword)}">
-                              <span class="search-history-icon">🔍</span>
-                              <span class="search-history-content">
-                                <strong class="search-history-keyword"><c:out value="${history.keyword}" /></strong>
-                                <span class="search-history-meta">
-                                  <span><c:out value="${empty history.resultCount ? 0 : history.resultCount}" /> kết quả</span>
-                                  <span>•</span>
-                                  <span>Đã tìm <c:out value="${empty history.searchCount ? 1 : history.searchCount}" /> lần</span>
-                                  <span>•</span>
-                                  <span><c:out value="${history.displayLastSearchedAt}" /></span>
-                                </span>
-                              </span>
-                            </a>
-                            <form method="post" action="${pageContext.request.contextPath}/account/search-history/delete" class="account-inline-form" onsubmit="return confirm('Xóa từ khóa tìm kiếm này?');">
-                              <c:if test="${not empty csrfToken}"><input type="hidden" name="csrfToken" value="${fn:escapeXml(csrfToken)}" /></c:if>
-                              <c:if test="${empty csrfToken and not empty sessionScope.csrfToken}"><input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.csrfToken)}" /></c:if>
-                              <input type="hidden" name="id" value="${history.id}" />
-                              <button type="submit" class="search-history-delete-btn" title="Xóa lịch sử">×</button>
-                            </form>
-                          </div>
-                        </c:forEach>
-                      </div>
-                    </c:when>
-                    <c:otherwise>
-                      <div class="search-history-empty">
-                        <div class="search-history-empty-icon">🕘</div>
-                        <p class="account-empty">Bạn chưa có lịch sử tìm kiếm. Hãy tìm kiếm sản phẩm để hệ thống lưu lại tại đây.</p>
-                        <a href="${pageContext.request.contextPath}/products" class="account-btn user-primary">Khám phá sản phẩm</a>
-                      </div>
-                    </c:otherwise>
-                  </c:choose>
-                </div>
-              </div>
-
-              <!-- USER CHART -->
-              <div class="account-card account-section-space">
-                <div class="account-card-body">
-                  <div class="account-card-head account-card-head-center">
-                    <div>
-                      <h2 class="account-card-title">📊 Chi tiêu theo thời gian</h2>
-                      <p class="account-muted">Theo dõi xu hướng mua hàng của bạn.</p>
-                    </div>
-                    <span class="account-chip user-chip">Spending</span>
-                  </div>
-                  <c:choose>
-                    <c:when test="${not empty chart_labels and not empty chart_values}"><canvas id="spendingChart" height="90"></canvas></c:when>
-                    <c:otherwise><p class="account-empty">Chưa có dữ liệu chi tiêu.</p></c:otherwise>
-                  </c:choose>
-                </div>
               </div>
 
             </c:otherwise>
@@ -721,15 +871,17 @@
 
         </c:if>
 
+
         <!-- ========================================================= -->
-        <!-- CONTACT FORM: USER AND ADMIN BOTH CAN UPDATE -->
+        <!-- PROFILE SETTINGS: USER AND ADMIN BOTH CAN UPDATE -->
         <!-- ========================================================= -->
-        <div class="account-card account-section-space">
+        <div id="profile-settings" class="account-card account-section-space account-profile-settings-card mc-profile-source">
           <div class="account-card-body">
-            <div class="account-card-head account-card-head-center">
+            <div class="account-card-head account-profile-settings-head">
               <div>
-                <h2 class="account-card-title">📌 Cập nhật thông tin liên hệ</h2>
-                <p class="account-muted">Thông tin này dùng cho đơn hàng và liên hệ giao hàng.</p>
+                <span class="account-section-kicker">Profile Settings</span>
+                <h2 class="account-card-title">Hồ sơ cá nhân</h2>
+                <p class="account-muted">Quản lý họ tên, số điện thoại, email và địa chỉ nhận hàng.</p>
               </div>
 
               <c:choose>
@@ -758,7 +910,7 @@
               <p class="account-alert-error">Email đã được sử dụng.</p>
             </c:if>
 
-            <form id="updateProfileForm" method="post">
+            <form id="updateProfileForm" method="post" class="account-profile-form">
               <c:if test="${not empty csrfToken}">
                 <input type="hidden" name="csrfToken" value="${fn:escapeXml(csrfToken)}" />
               </c:if>
@@ -766,68 +918,160 @@
                 <input type="hidden" name="csrfToken" value="${fn:escapeXml(sessionScope.csrfToken)}" />
               </c:if>
 
-              <div class="account-form-grid">
+              <div class="account-form-grid account-form-grid-profile">
                 <div class="form-group">
-                  <label>Họ tên</label>
+                  <label for="nameInput">Họ tên <span>*</span></label>
                   <input class="account-input" id="nameInput" name="fullName" value="${sessionScope.user.fullName}" required />
-                  <small id="name-error" style="display:none; color: #e53935; font-size: 13px; margin-top: 5px; font-weight: 500;"></small>
+                  <small id="name-error" class="account-field-error"></small>
                 </div>
 
                 <div class="form-group">
-                  <label>Email</label>
+                  <label for="emailInput">Email <span>*</span></label>
                   <input class="account-input" id="emailInput" name="email" value="${sessionScope.user.email}" required />
-                  <small id="email-error" style="display:none; color: #e53935; font-size: 13px; margin-top: 5px; font-weight: 500;"></small>
+                  <small id="email-error" class="account-field-error"></small>
                 </div>
 
                 <div class="form-group">
-                  <label>Số điện thoại</label>
+                  <label for="phoneInput">Số điện thoại <span>*</span></label>
                   <input class="account-input" id="phoneInput" name="phone" value="${sessionScope.user.phone}" required />
-                  <small id="phone-error" style="display:none; color: #e53935; font-size: 13px; margin-top: 5px; font-weight: 500;"></small>
+                  <small id="phone-error" class="account-field-error"></small>
                 </div>
 
-                <div>
-                  <label>Ngày sinh</label>
-                  <input class="account-input" type="date" name="birthDate" value="${sessionScope.user.birthDate}" />
+                <div class="form-group">
+                  <label for="birthDateInput">Ngày sinh</label>
+                  <input class="account-input" id="birthDateInput" type="date" name="birthDate" value="${sessionScope.user.birthDate}" />
                 </div>
 
-                <div>
-                  <label>Giới tính</label>
-                  <select class="account-input" name="gender">
+                <div class="form-group">
+                  <label for="genderInput">Giới tính</label>
+                  <select class="account-input" id="genderInput" name="gender">
                     <option value="Male" ${sessionScope.user.gender == 'Male' ? 'selected' : ''}>Nam</option>
                     <option value="Female" ${sessionScope.user.gender == 'Female' ? 'selected' : ''}>Nữ</option>
                   </select>
                 </div>
-              </div> <div style="margin-top:15px">
-              <label>Địa chỉ</label>
-              <div style="display:flex; gap:10px">
-                <input type="text" name="address" value="${sessionScope.user.address}" class="account-input">
-                <button type="button" class="account-btn" onclick="getLocation()">Lấy vị trí</button>
-              </div>
-            </div>
 
-              <button type="submit" class="btn-save" id="saveProfileBtn" style="margin-top: 20px;">Lưu thay đổi</button>
+                <div class="form-group account-address-group">
+                  <label for="addressInput">Địa chỉ giao hàng</label>
+                  <div class="account-address-row">
+                    <input type="text" id="addressInput" name="address" value="${sessionScope.user.address}" class="account-input" placeholder="Nhập địa chỉ hoặc bấm lấy vị trí" />
+                    <button type="button" class="account-btn account-btn-secondary-soft account-location-btn" onclick="getLocation()">📍 Lấy vị trí</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="account-profile-form-actions">
+                <span class="account-profile-note">Khi đổi email, hệ thống sẽ gửi OTP để xác thực trước khi lưu.</span>
+                <button type="submit" class="btn-save account-save-profile-btn" id="saveProfileBtn">Lưu thay đổi</button>
+              </div>
             </form>
           </div>
         </div>
 
-        <div id="otpModal" class="modal-overlay">
-          <div class="modal-content">
-            <h3>Xác thực OTP</h3>
-            <p>Vui lòng nhập mã OTP đã gửi về email của bạn</p>
-            <input type="text" id="otp_input" placeholder="000000" maxlength="6">
-            <button onclick="xacThucOtp()" class="btn-save">Xác nhận</button>
-            <button onclick="dongPopupOtp()" style="background:none; border:none; color:#777; margin-top:10px; cursor:pointer;">Hủy bỏ</button>
-          </div>
-        </div>
+
+        <script>
+          (function () {
+            function setAccountView(viewName) {
+              const target = viewName || "overview";
+              const views = document.querySelectorAll("[data-account-view]");
+              const triggers = document.querySelectorAll("[data-account-target]");
+
+              views.forEach(function (view) {
+                view.classList.toggle("is-active", view.dataset.accountView === target);
+              });
+
+              triggers.forEach(function (trigger) {
+                trigger.classList.toggle("is-active", trigger.dataset.accountTarget === target);
+              });
+
+              const content = document.querySelector(".mc-account-content");
+              if (content) {
+                content.scrollTop = 0;
+              }
+
+              if (window.history && window.history.replaceState) {
+                window.history.replaceState(null, "", "#account-" + target);
+              }
+            }
+
+            function moveProfileFormIntoPanel() {
+              const source = document.querySelector(".mc-profile-source");
+              const holder = document.querySelector("[data-profile-form-holder]");
+
+              if (!source || !holder || holder.contains(source)) return;
+
+              holder.appendChild(source);
+              source.classList.remove("account-section-space");
+              source.style.display = "block";
+            }
+
+            document.addEventListener("click", function (event) {
+              const trigger = event.target.closest("[data-account-target]");
+              if (!trigger) return;
+
+              const target = trigger.dataset.accountTarget;
+              if (!target) return;
+
+              event.preventDefault();
+              moveProfileFormIntoPanel();
+              setAccountView(target);
+
+            });
+
+            document.addEventListener("DOMContentLoaded", function () {
+              moveProfileFormIntoPanel();
+
+              const hash = (window.location.hash || "").replace("#account-", "");
+              const allowed = ["overview", "orders", "vouchers", "rank", "activity", "profile", "security"];
+
+              if (allowed.indexOf(hash) >= 0) {
+                setAccountView(hash);
+              } else if (window.location.hash === "#profile-settings") {
+                setAccountView("profile");
+              } else {
+                setAccountView("overview");
+              }
+            });
+          })();
+        </script>
 
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
         <script>
           function getLocation() {
+            const addressInput = document.getElementById('addressInput');
+
+            if (!navigator.geolocation) {
+              alert("Trình duyệt không hỗ trợ lấy vị trí.");
+              return;
+            }
+
+            if (addressInput) {
+              addressInput.value = "Đang lấy vị trí hiện tại...";
+            }
+
             navigator.geolocation.getCurrentPosition(async (pos) => {
-              const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`;
-              const res = await fetch(url).then(r => r.json());
-              document.getElementById('addressInput').value = res.display_name;
+              try {
+                const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&accept-language=vi&addressdetails=1`;
+                const res = await fetch(url).then(r => r.json());
+
+                if (addressInput) {
+                  addressInput.value = res.display_name || `${pos.coords.latitude}, ${pos.coords.longitude}`;
+                }
+              } catch (error) {
+                if (addressInput) {
+                  addressInput.value = `${pos.coords.latitude}, ${pos.coords.longitude}`;
+                }
+                alert("Không lấy được địa chỉ chi tiết, hệ thống đã điền tọa độ tạm thời.");
+              }
+            }, () => {
+              if (addressInput) {
+                addressInput.value = "";
+              }
+              alert("Không thể lấy vị trí. Vui lòng cấp quyền vị trí hoặc nhập địa chỉ thủ công.");
+            }, {
+              enableHighAccuracy: false,
+              timeout: 8000,
+              maximumAge: 60000
             });
           }
 
@@ -999,20 +1243,20 @@
   // 1. CÁC HÀM TIỆN ÍCH KIỂM TRA TRỰC TIẾP
   // ==========================================
   function showError(input, errorElement, message) {
-    input.style.borderColor = "#e53935"; // Viền đỏ
+    input.style.borderColor = "#e11d48";
     input.classList.add("is-invalid"); // Đánh dấu lỗi để chặn form
     errorElement.innerText = message;
     errorElement.style.display = "block";
   }
 
   function showSuccess(input, errorElement) {
-    input.style.borderColor = "#43a047"; // Viền xanh lá
+    input.style.borderColor = "#10b981";
     input.classList.remove("is-invalid");
     errorElement.style.display = "none";
   }
 
   function resetState(input, errorElement) {
-    input.style.borderColor = "#ddd"; // Khôi phục viền gốc
+    input.style.borderColor = "#dbe3ef";
     input.classList.remove("is-invalid");
     errorElement.style.display = "none";
   }
@@ -1178,56 +1422,4 @@
   }
 </script>
 
-<style>
-  /* Nút Lưu thay đổi */
-  .btn-save {
-    background: #ff5fa2;
-    color: white;
-    padding: 12px 24px;
-    border: none;
-    border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.3s ease;
-    width: 100%;
-  }
 
-  .btn-save:hover {
-    background: #e04a8a;
-  }
-
-  /* Modal Overlay */
-  .modal-overlay {
-    display: none; /* Mặc định ẩn */
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: rgba(0,0,0,0.5);
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-  }
-
-  .modal-content {
-    background: #fff;
-    padding: 30px;
-    border-radius: 16px;
-    width: 90%;
-    max-width: 400px;
-    text-align: center;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-  }
-
-  .modal-content h3 { margin-bottom: 15px; color: #ff5fa2; }
-  .modal-content input {
-    width: 100%;
-    padding: 10px;
-    margin: 15px 0;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    text-align: center;
-    font-size: 18px;
-    letter-spacing: 5px;
-  }
-
-</style>
