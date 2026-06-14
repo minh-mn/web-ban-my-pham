@@ -5630,3 +5630,146 @@ html body .checkout-page #summaryShippingFee.free-shipping-black-text {
 	color: #111827 !important;
 	font-weight: 950 !important;
 }
+
+/* =========================================================
+   IFRAME MAP PICKER - ISOLATED MAP FIX
+   Bản đồ chạy trong iframe riêng để không bị CSS web chính ghi đè.
+========================================================= */
+
+html body .address-map-modal .address-map-canvas {
+	position: relative !important;
+	width: 100% !important;
+	height: 560px !important;
+	min-height: 560px !important;
+	max-height: 560px !important;
+	overflow: hidden !important;
+	border-radius: 18px !important;
+	border: 1.5px solid #dbe4ef !important;
+	background: #eef2f7 !important;
+	isolation: isolate !important;
+	box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.65) !important;
+}
+
+html body .address-map-modal .address-map-frame,
+html body .address-map-modal iframe#addressMapFrame {
+	position: absolute !important;
+	inset: 0 !important;
+	width: 100% !important;
+	height: 100% !important;
+	min-width: 100% !important;
+	min-height: 100% !important;
+	max-width: none !important;
+	max-height: none !important;
+	display: block !important;
+	border: 0 !important;
+	border-radius: 18px !important;
+	background: #eef2f7 !important;
+	z-index: 1 !important;
+	overflow: hidden !important;
+}
+
+@media (max-width: 900px) {
+	html body .address-map-modal .address-map-canvas,
+	html body .address-map-modal .address-map-frame,
+	html body .address-map-modal iframe#addressMapFrame {
+		height: 430px !important;
+		min-height: 430px !important;
+		max-height: 430px !important;
+	}
+}
+
+@media (max-width: 768px) {
+	html body .address-map-modal .address-map-canvas,
+	html body .address-map-modal .address-map-frame,
+	html body .address-map-modal iframe#addressMapFrame {
+		height: 360px !important;
+		min-height: 360px !important;
+		max-height: 360px !important;
+		border-radius: 16px !important;
+	}
+}
+
+/* =========================================================
+   IFRAME MAP PERFORMANCE FIX V3
+   Giảm giật khi kéo bản đồ và giữ iframe full khung.
+========================================================= */
+
+html body .address-map-modal .address-map-frame,
+html body .address-map-modal iframe#addressMapFrame {
+	will-change: transform !important;
+	transform: translateZ(0) !important;
+	backface-visibility: hidden !important;
+}
+
+/* =========================================================
+   IFRAME MAP ADDRESS ACCURACY FIX V4
+   Giữ bản đồ mượt, ưu tiên lấy địa chỉ đường chính xác hơn từ Nominatim.
+========================================================= */
+
+html body .address-map-modal .address-map-detected small {
+	line-height: 1.55 !important;
+}
+
+/* =========================================================
+   ADDRESS MAP CLOSE BUTTON FIX V5
+   Nút X popup bản đồ: màu đen, không vòng tròn bên ngoài.
+========================================================= */
+
+html body .address-map-modal .address-map-close,
+html body .checkout-page .address-map-close,
+html body button.address-map-close {
+	position: absolute !important;
+	top: 22px !important;
+	right: 26px !important;
+	width: auto !important;
+	height: auto !important;
+	min-width: 0 !important;
+	min-height: 0 !important;
+	padding: 0 !important;
+	margin: 0 !important;
+	border: 0 !important;
+	border-radius: 0 !important;
+	background: transparent !important;
+	background-color: transparent !important;
+	background-image: none !important;
+	box-shadow: none !important;
+	outline: none !important;
+	color: #111827 !important;
+	font-size: 32px !important;
+	line-height: 1 !important;
+	font-weight: 950 !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	cursor: pointer !important;
+	transform: none !important;
+}
+
+html body .address-map-modal .address-map-close:hover,
+html body .checkout-page .address-map-close:hover,
+html body button.address-map-close:hover,
+html body .address-map-modal .address-map-close:focus,
+html body .checkout-page .address-map-close:focus,
+html body button.address-map-close:focus,
+html body .address-map-modal .address-map-close:active,
+html body .checkout-page .address-map-close:active,
+html body button.address-map-close:active {
+	background: transparent !important;
+	background-color: transparent !important;
+	background-image: none !important;
+	box-shadow: none !important;
+	color: #000000 !important;
+	transform: none !important;
+}
+
+html body .address-map-modal .address-map-close::before,
+html body .address-map-modal .address-map-close::after,
+html body .checkout-page .address-map-close::before,
+html body .checkout-page .address-map-close::after,
+html body button.address-map-close::before,
+html body button.address-map-close::after {
+	display: none !important;
+	content: none !important;
+	background: transparent !important;
+	box-shadow: none !important;
+}
