@@ -1,0 +1,1145 @@
+
+/* =========================================================
+   MYCOSMETIC ACCOUNT - COMPACT TABBED LAYOUT
+   Dựa theo mẫu Shopee: trang gọn, bấm menu sẽ hiện từng phần riêng.
+   Màu nút nhạt, ít chói mắt, phù hợp MyCosmetic.
+========================================================= */
+
+:root {
+    --mc-primary: #e85d75;
+    --mc-primary-dark: #be123c;
+    --mc-primary-soft: #fff1f4;
+    --mc-primary-soft-2: #fff7f9;
+    --mc-border: #edf0f5;
+    --mc-border-pink: #ffd8e1;
+    --mc-text: #111827;
+    --mc-muted: #667085;
+    --mc-card: #ffffff;
+    --mc-bg: #f6f6f7;
+    --mc-blue-soft: #eff6ff;
+    --mc-green-soft: #ecfdf5;
+    --mc-orange-soft: #fff7ed;
+}
+
+html body .account-dashboard {
+    background: linear-gradient(180deg, #ffffff 0%, #f7f7f8 24%, #ffffff 100%) !important;
+    padding: 22px 0 46px !important;
+}
+
+html body .account-dashboard .order-page,
+html body .account-dashboard .container.order-page {
+    width: min(1280px, calc(100vw - 36px)) !important;
+    max-width: 1280px !important;
+    margin: 0 auto !important;
+}
+
+html body .mc-account-compact {
+    display: grid !important;
+    gap: 16px !important;
+}
+
+/* Header gọn */
+html body .mc-compact-hero {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 18px !important;
+    padding: 22px 24px !important;
+    border-radius: 26px !important;
+    border: 1px solid var(--mc-border-pink) !important;
+    background: linear-gradient(135deg, #fff7f9 0%, #ffe8ee 48%, #ffffff 100%) !important;
+    box-shadow: 0 16px 42px rgba(232, 93, 117, .09) !important;
+}
+
+html body .mc-compact-user {
+    display: flex !important;
+    align-items: center !important;
+    gap: 15px !important;
+    min-width: 0 !important;
+}
+
+html body .mc-compact-avatar {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 66px !important;
+    height: 66px !important;
+    border-radius: 22px !important;
+    background: linear-gradient(135deg, #f472b6, #fb7185) !important;
+    color: #ffffff !important;
+    font-size: 30px !important;
+    font-weight: 950 !important;
+    box-shadow: 0 14px 30px rgba(232, 93, 117, .22) !important;
+    flex: 0 0 auto !important;
+}
+
+html body .mc-compact-name-row {
+    display: flex !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    gap: 9px !important;
+}
+
+html body .mc-compact-name-row h1 {
+    margin: 0 !important;
+    color: var(--mc-text) !important;
+    font-size: 27px !important;
+    line-height: 1.18 !important;
+    font-weight: 950 !important;
+    letter-spacing: -.02em !important;
+}
+
+html body .mc-compact-user-info p {
+    margin: 6px 0 10px !important;
+    color: #475467 !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    line-height: 1.48 !important;
+}
+
+html body .mc-compact-contact {
+    display: flex !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    gap: 7px !important;
+}
+
+html body .mc-compact-contact span,
+html body .mc-compact-rank,
+html body .mc-soft-count {
+    display: inline-flex !important;
+    align-items: center !important;
+    min-height: 27px !important;
+    padding: 5px 10px !important;
+    border-radius: 999px !important;
+    border: 1px solid rgba(255, 216, 225, .95) !important;
+    background: rgba(255,255,255,.75) !important;
+    color: #be123c !important;
+    font-size: 12.2px !important;
+    font-weight: 900 !important;
+}
+
+html body .mc-compact-actions {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    flex-wrap: wrap !important;
+    gap: 9px !important;
+}
+
+html body .mc-compact-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 38px !important;
+    padding: 0 15px !important;
+    border-radius: 999px !important;
+    border: 1px solid #fecdd3 !important;
+    background: #ffffff !important;
+    color: #be123c !important;
+    font-size: 13px !important;
+    font-weight: 900 !important;
+    text-decoration: none !important;
+    cursor: pointer !important;
+    transition: .16s ease !important;
+    white-space: nowrap !important;
+    box-shadow: 0 8px 18px rgba(232, 93, 117, .06) !important;
+}
+
+html body .mc-compact-btn:hover,
+html body .mc-compact-btn.is-active {
+    background: #fff1f4 !important;
+    border-color: #fda4af !important;
+    color: #9f1239 !important;
+    transform: translateY(-1px) !important;
+}
+
+html body .mc-compact-btn.is-primary {
+    background: #fff1f4 !important;
+    color: #be123c !important;
+    border-color: #fecdd3 !important;
+}
+
+/* Center layout */
+html body .mc-account-center {
+    display: grid !important;
+    grid-template-columns: 310px minmax(0, 1fr) !important;
+    gap: 16px !important;
+    align-items: start !important;
+    scroll-margin-top: 120px !important;
+}
+
+html body .mc-account-menu {
+    position: sticky !important;
+    top: 112px !important;
+    display: grid !important;
+    gap: 8px !important;
+    padding: 12px !important;
+    border-radius: 24px !important;
+    border: 1px solid var(--mc-border) !important;
+    background: #ffffff !important;
+    box-shadow: 0 14px 38px rgba(15, 23, 42, .045) !important;
+}
+
+html body .mc-account-menu-item {
+    width: 100% !important;
+    display: grid !important;
+    grid-template-columns: 42px minmax(0, 1fr) 18px !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding: 11px 12px !important;
+    border: 1px solid transparent !important;
+    border-radius: 18px !important;
+    background: transparent !important;
+    text-align: left !important;
+    cursor: pointer !important;
+    transition: .16s ease !important;
+}
+
+html body .mc-account-menu-item:hover,
+html body .mc-account-menu-item.is-active {
+    background: #fff7f9 !important;
+    border-color: #ffd8e1 !important;
+}
+
+html body .mc-menu-icon {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 15px !important;
+    background: #fff1f4 !important;
+    font-size: 19px !important;
+}
+
+html body .mc-account-menu-item strong {
+    display: block !important;
+    color: var(--mc-text) !important;
+    font-size: 14px !important;
+    font-weight: 900 !important;
+    line-height: 1.25 !important;
+}
+
+html body .mc-account-menu-item small {
+    display: block !important;
+    margin-top: 3px !important;
+    color: var(--mc-muted) !important;
+    font-size: 12.2px !important;
+    font-weight: 700 !important;
+    line-height: 1.3 !important;
+}
+
+html body .mc-account-menu-item em {
+    color: #c4c8cf !important;
+    font-style: normal !important;
+    font-size: 22px !important;
+    line-height: 1 !important;
+}
+
+html body .mc-account-content {
+    min-width: 0 !important;
+    border-radius: 24px !important;
+    border: 1px solid var(--mc-border) !important;
+    background: #ffffff !important;
+    box-shadow: 0 14px 38px rgba(15, 23, 42, .045) !important;
+    overflow: hidden !important;
+}
+
+html body .mc-account-view {
+    display: none !important;
+    padding: 24px !important;
+    min-height: 520px !important;
+}
+
+html body .mc-account-view.is-active {
+    display: block !important;
+}
+
+html body .mc-view-head {
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: space-between !important;
+    gap: 16px !important;
+    margin-bottom: 18px !important;
+    padding-bottom: 16px !important;
+    border-bottom: 1px solid #eef2f7 !important;
+}
+
+html body .mc-view-head h2 {
+    margin: 0 !important;
+    color: var(--mc-text) !important;
+    font-size: 24px !important;
+    font-weight: 950 !important;
+    letter-spacing: -.01em !important;
+}
+
+html body .mc-view-head p {
+    margin: 5px 0 0 !important;
+    color: var(--mc-muted) !important;
+    font-size: 13.8px !important;
+    font-weight: 700 !important;
+    line-height: 1.5 !important;
+}
+
+html body .mc-view-link {
+    color: #be123c !important;
+    font-size: 13.5px !important;
+    font-weight: 900 !important;
+    text-decoration: none !important;
+    white-space: nowrap !important;
+}
+
+/* Overview */
+html body .mc-compact-stat-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+}
+
+html body .mc-compact-stat {
+    padding: 16px !important;
+    border: 1px solid #eef2f7 !important;
+    border-radius: 20px !important;
+    background: #fbfcff !important;
+}
+
+html body .mc-compact-stat span {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 15px !important;
+    background: #f1f5f9 !important;
+    font-size: 20px !important;
+    margin-bottom: 12px !important;
+}
+
+html body .mc-compact-stat strong {
+    display: block !important;
+    color: var(--mc-text) !important;
+    font-size: 22px !important;
+    line-height: 1.12 !important;
+    font-weight: 950 !important;
+    word-break: break-word !important;
+}
+
+html body .mc-compact-stat small {
+    display: block !important;
+    margin-top: 6px !important;
+    color: var(--mc-muted) !important;
+    font-size: 12.6px !important;
+    font-weight: 750 !important;
+}
+
+/* Mini sections */
+html body .mc-mini-section {
+    margin-top: 18px !important;
+    padding: 18px !important;
+    border: 1px solid #eef2f7 !important;
+    border-radius: 22px !important;
+    background: #ffffff !important;
+}
+
+html body .mc-mini-section-head {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+    margin-bottom: 14px !important;
+}
+
+html body .mc-mini-section-head h3 {
+    margin: 0 !important;
+    color: var(--mc-text) !important;
+    font-size: 18px !important;
+    font-weight: 950 !important;
+}
+
+html body .mc-mini-section-head span {
+    color: var(--mc-muted) !important;
+    font-size: 12.8px !important;
+    font-weight: 750 !important;
+}
+
+html body .mc-compact-utility-grid {
+    display: grid !important;
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+}
+
+html body .mc-compact-utility-grid button,
+html body .mc-order-shortcut-grid a {
+    display: grid !important;
+    place-items: center !important;
+    gap: 6px !important;
+    min-height: 106px !important;
+    padding: 14px 10px !important;
+    border: 1px solid #eef2f7 !important;
+    border-radius: 18px !important;
+    background: #ffffff !important;
+    text-align: center !important;
+    text-decoration: none !important;
+    cursor: pointer !important;
+    transition: .16s ease !important;
+}
+
+html body .mc-compact-utility-grid button:hover,
+html body .mc-order-shortcut-grid a:hover {
+    border-color: #ffd8e1 !important;
+    background: #fff9fb !important;
+    transform: translateY(-1px) !important;
+}
+
+html body .mc-compact-utility-grid span,
+html body .mc-order-shortcut-grid span {
+    font-size: 24px !important;
+}
+
+html body .mc-compact-utility-grid strong,
+html body .mc-order-shortcut-grid strong {
+    color: var(--mc-text) !important;
+    font-size: 13.4px !important;
+    font-weight: 900 !important;
+}
+
+html body .mc-compact-utility-grid small,
+html body .mc-order-shortcut-grid small {
+    color: var(--mc-primary) !important;
+    font-size: 12px !important;
+    font-weight: 800 !important;
+}
+
+html body .mc-order-shortcut-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+}
+
+/* Voucher */
+html body .mc-compact-voucher-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+}
+
+html body .mc-compact-voucher-card {
+    padding: 17px !important;
+    border-radius: 22px !important;
+    border: 1px solid #ffd8e1 !important;
+    background: #fff7f9 !important;
+}
+
+html body .mc-voucher-top {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+}
+
+html body .mc-voucher-code {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    padding: 7px 11px !important;
+    border-radius: 999px !important;
+    background: #fff1f4 !important;
+    color: #be123c !important;
+    font-size: 13px !important;
+    font-weight: 950 !important;
+}
+
+html body .mc-copy-btn,
+html body .mc-search-delete-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 32px !important;
+    padding: 0 13px !important;
+    border-radius: 999px !important;
+    border: 1px solid #fecdd3 !important;
+    background: #ffffff !important;
+    color: #be123c !important;
+    font-size: 12.5px !important;
+    font-weight: 900 !important;
+    cursor: pointer !important;
+    transition: .16s ease !important;
+}
+
+html body .mc-copy-btn:hover,
+html body .mc-search-delete-btn:hover {
+    background: #fff1f4 !important;
+}
+
+html body .mc-compact-voucher-card h3 {
+    margin: 16px 0 9px !important;
+    color: var(--mc-text) !important;
+    font-size: 20px !important;
+    font-weight: 950 !important;
+}
+
+html body .mc-compact-voucher-card p {
+    margin: 4px 0 !important;
+    color: var(--mc-muted) !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    line-height: 1.5 !important;
+}
+
+html body .mc-voucher-ready {
+    display: inline-flex !important;
+    margin-top: 12px !important;
+    padding: 7px 11px !important;
+    border-radius: 999px !important;
+    background: #fff1f4 !important;
+    color: #be123c !important;
+    font-size: 12px !important;
+    font-weight: 900 !important;
+}
+
+html body .mc-center-action {
+    display: flex !important;
+    justify-content: center !important;
+    margin-top: 18px !important;
+}
+
+/* Rank */
+html body .mc-rank-summary {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+    margin-bottom: 16px !important;
+}
+
+html body .mc-rank-summary div {
+    padding: 14px !important;
+    border: 1px solid #eef2f7 !important;
+    border-radius: 18px !important;
+    background: #fbfcff !important;
+}
+
+html body .mc-rank-summary span {
+    display: block !important;
+    color: var(--mc-muted) !important;
+    font-size: 12.2px !important;
+    font-weight: 850 !important;
+    margin-bottom: 5px !important;
+}
+
+html body .mc-rank-summary strong {
+    display: block !important;
+    color: var(--mc-text) !important;
+    font-size: 18px !important;
+    font-weight: 950 !important;
+}
+
+html body .mc-rank-note {
+    margin: 10px 0 !important;
+    color: var(--mc-muted) !important;
+    font-size: 13.5px !important;
+    font-weight: 750 !important;
+    line-height: 1.5 !important;
+}
+
+html body .mc-rank-progress {
+    height: 10px !important;
+    border-radius: 999px !important;
+    background: #e5e7eb !important;
+    overflow: hidden !important;
+}
+
+html body .mc-rank-progress-bar {
+    height: 100% !important;
+    border-radius: 999px !important;
+    background: linear-gradient(90deg, #60a5fa, #38bdf8) !important;
+}
+
+/* Activity */
+html body .mc-activity-split {
+    display: grid !important;
+    grid-template-columns: minmax(0, .95fr) minmax(0, 1.05fr) !important;
+    gap: 14px !important;
+}
+
+html body .mc-search-list {
+    display: grid !important;
+    gap: 10px !important;
+    max-height: 360px !important;
+    overflow-y: auto !important;
+    padding-right: 4px !important;
+}
+
+html body .mc-search-item {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+    padding: 13px !important;
+    border: 1px solid #ffd8e1 !important;
+    border-radius: 18px !important;
+    background: #fff9fb !important;
+}
+
+html body .mc-search-item a {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    min-width: 0 !important;
+    color: inherit !important;
+    text-decoration: none !important;
+}
+
+html body .mc-search-item a > span {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 14px !important;
+    background: #fff1f4 !important;
+    flex: 0 0 auto !important;
+}
+
+html body .mc-search-item strong {
+    display: block !important;
+    color: #be123c !important;
+    font-size: 13.8px !important;
+    font-weight: 900 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+html body .mc-search-item small {
+    display: block !important;
+    margin-top: 4px !important;
+    color: var(--mc-muted) !important;
+    font-size: 12.2px !important;
+    font-weight: 700 !important;
+}
+
+html body .mc-search-delete-btn {
+    width: 32px !important;
+    padding: 0 !important;
+}
+
+html body .mc-chart-wrap {
+    min-height: 320px !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+html body .mc-chart-wrap canvas {
+    width: 100% !important;
+}
+
+html body .mc-empty-state {
+    display: grid !important;
+    place-items: center !important;
+    gap: 10px !important;
+    padding: 34px 14px !important;
+    text-align: center !important;
+    color: var(--mc-muted) !important;
+    font-weight: 750 !important;
+}
+
+html body .mc-empty-state > span {
+    font-size: 34px !important;
+}
+
+/* Security setting list */
+html body .mc-setting-list {
+    border: 1px solid #eef2f7 !important;
+    border-radius: 20px !important;
+    overflow: hidden !important;
+    background: #ffffff !important;
+}
+
+html body .mc-setting-row {
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 16px !important;
+    padding: 16px 18px !important;
+    border: 0 !important;
+    border-bottom: 1px solid #eef2f7 !important;
+    background: #ffffff !important;
+    color: var(--mc-text) !important;
+    text-align: left !important;
+    text-decoration: none !important;
+    cursor: pointer !important;
+    transition: .16s ease !important;
+}
+
+html body .mc-setting-row:last-child {
+    border-bottom: 0 !important;
+}
+
+html body .mc-setting-row:hover {
+    background: #fff9fb !important;
+}
+
+html body .mc-setting-row strong {
+    display: block !important;
+    color: var(--mc-text) !important;
+    font-size: 15px !important;
+    font-weight: 900 !important;
+}
+
+html body .mc-setting-row small {
+    display: block !important;
+    margin-top: 4px !important;
+    color: var(--mc-muted) !important;
+    font-size: 12.8px !important;
+    font-weight: 700 !important;
+    line-height: 1.45 !important;
+}
+
+html body .mc-setting-row > span {
+    color: #c4c8cf !important;
+    font-size: 28px !important;
+    line-height: 1 !important;
+}
+
+/* Profile source moved into profile panel */
+html body .mc-profile-source {
+    margin: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+}
+
+html body .mc-profile-source > .account-card-body {
+    padding: 0 !important;
+}
+
+html body .mc-profile-source .account-profile-settings-head {
+    display: none !important;
+}
+
+html body .mc-profile-source .account-card-title,
+html body .mc-profile-source .account-section-kicker,
+html body .mc-profile-source .account-muted {
+    display: none !important;
+}
+
+html body .account-form-grid-profile {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 18px !important;
+}
+
+html body .account-profile-form label {
+    display: block !important;
+    margin-bottom: 8px !important;
+    color: #1f2937 !important;
+    font-size: 13.5px !important;
+    font-weight: 900 !important;
+}
+
+html body .account-profile-form label span {
+    color: #be123c !important;
+}
+
+html body .account-input {
+    width: 100% !important;
+    height: 46px !important;
+    padding: 0 14px !important;
+    border: 1px solid #dbe3ef !important;
+    border-radius: 15px !important;
+    background: #ffffff !important;
+    color: #111827 !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    outline: none !important;
+    transition: .16s ease !important;
+}
+
+html body .account-input:focus {
+    border-color: #fda4af !important;
+    box-shadow: 0 0 0 4px rgba(253, 164, 175, .16) !important;
+    background: #fffafa !important;
+}
+
+html body .account-field-error {
+    display: none;
+    margin-top: 6px !important;
+    color: #be123c !important;
+    font-size: 12.5px !important;
+    font-weight: 800 !important;
+}
+
+html body .account-address-group {
+    grid-column: 1 / -1 !important;
+}
+
+html body .account-address-row {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 132px !important;
+    gap: 12px !important;
+}
+
+html body .account-location-btn {
+    width: 100% !important;
+    padding: 0 12px !important;
+}
+
+html body .account-profile-form-actions {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 16px !important;
+    margin-top: 20px !important;
+    padding-top: 18px !important;
+    border-top: 1px solid #eef2f7 !important;
+}
+
+html body .account-profile-note {
+    color: var(--mc-muted) !important;
+    font-size: 13px !important;
+    line-height: 1.45 !important;
+    font-weight: 750 !important;
+}
+
+html body .btn-save.account-save-profile-btn,
+html body .btn-save {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 160px !important;
+    min-height: 42px !important;
+    padding: 0 22px !important;
+    border-radius: 999px !important;
+    border: 1px solid #fecdd3 !important;
+    background: #fff1f4 !important;
+    color: #be123c !important;
+    font-size: 13.5px !important;
+    font-weight: 900 !important;
+    box-shadow: 0 10px 22px rgba(232, 93, 117, .10) !important;
+    cursor: pointer !important;
+    transition: .16s ease !important;
+}
+
+html body .btn-save.account-save-profile-btn:hover,
+html body .btn-save:hover {
+    background: #ffe4ea !important;
+    color: #9f1239 !important;
+    transform: translateY(-1px) !important;
+}
+
+html body .account-alert-success,
+html body .account-alert-error {
+    padding: 12px 14px !important;
+    border-radius: 16px !important;
+    font-size: 13px !important;
+    font-weight: 850 !important;
+    margin: 0 0 14px !important;
+}
+
+html body .account-alert-success {
+    background: #ecfdf5 !important;
+    color: #047857 !important;
+    border: 1px solid #a7f3d0 !important;
+}
+
+html body .account-alert-error {
+    background: #fff1f2 !important;
+    color: #be123c !important;
+    border: 1px solid #fecdd3 !important;
+}
+
+/* OTP modal */
+html body .modal-overlay {
+    display: none;
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 100000 !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 24px !important;
+    background: rgba(15, 23, 42, .48) !important;
+    backdrop-filter: blur(6px) !important;
+}
+
+html body .modal-content {
+    width: min(420px, calc(100vw - 32px)) !important;
+    padding: 28px !important;
+    border-radius: 24px !important;
+    background: #ffffff !important;
+    text-align: center !important;
+    box-shadow: 0 28px 80px rgba(15, 23, 42, .22) !important;
+}
+
+html body .modal-content h3 {
+    margin: 0 0 10px !important;
+    color: #be123c !important;
+    font-size: 22px !important;
+    font-weight: 950 !important;
+}
+
+html body .modal-content p {
+    color: var(--mc-muted) !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    line-height: 1.5 !important;
+}
+
+html body .modal-content input {
+    width: 100% !important;
+    height: 48px !important;
+    margin: 16px 0 !important;
+    border: 1px solid #dbe3ef !important;
+    border-radius: 16px !important;
+    text-align: center !important;
+    font-size: 20px !important;
+    font-weight: 900 !important;
+    letter-spacing: 6px !important;
+    outline: none !important;
+}
+
+html body .modal-content input:focus {
+    border-color: #fda4af !important;
+    box-shadow: 0 0 0 4px rgba(253, 164, 175, .16) !important;
+}
+
+/* Responsive */
+@media (max-width: 1100px) {
+    html body .mc-account-center {
+        grid-template-columns: 1fr !important;
+    }
+
+    html body .mc-account-menu {
+        position: static !important;
+        display: flex !important;
+        overflow-x: auto !important;
+        padding: 10px !important;
+        scrollbar-width: thin !important;
+    }
+
+    html body .mc-account-menu-item {
+        min-width: 230px !important;
+    }
+}
+
+@media (max-width: 900px) {
+    html body .mc-compact-hero {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+
+    html body .mc-compact-actions {
+        justify-content: flex-start !important;
+    }
+
+    html body .mc-compact-stat-grid,
+    html body .mc-order-shortcut-grid,
+    html body .mc-compact-voucher-grid,
+    html body .mc-rank-summary,
+    html body .mc-activity-split {
+        grid-template-columns: 1fr !important;
+    }
+
+    html body .mc-compact-utility-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    }
+}
+
+@media (max-width: 640px) {
+    html body .account-dashboard .order-page,
+    html body .account-dashboard .container.order-page {
+        width: calc(100vw - 18px) !important;
+    }
+
+    html body .mc-compact-user {
+        align-items: flex-start !important;
+    }
+
+    html body .mc-compact-avatar {
+        width: 58px !important;
+        height: 58px !important;
+        border-radius: 19px !important;
+        font-size: 26px !important;
+    }
+
+    html body .mc-compact-name-row h1 {
+        font-size: 23px !important;
+    }
+
+    html body .mc-compact-utility-grid,
+    html body .account-form-grid-profile {
+        grid-template-columns: 1fr !important;
+    }
+
+    html body .account-address-row {
+        grid-template-columns: 1fr !important;
+    }
+
+    html body .account-profile-form-actions {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+
+    html body .btn-save.account-save-profile-btn {
+        width: 100% !important;
+    }
+}
+
+/* =========================================================
+   ACCOUNT COMPACT TABS V2 - STABLE SIDEBAR
+   - Bỏ hiện tượng nhảy trang khi chọn mục menu.
+   - Chia menu trái theo nhóm logic.
+   - Giữ chiều cao khung nội dung ổn định để không giật layout.
+========================================================= */
+
+html body .mc-account-center {
+    align-items: start !important;
+    overflow-anchor: none !important;
+}
+
+html body .mc-account-menu {
+    gap: 12px !important;
+    padding: 14px !important;
+    overflow-anchor: none !important;
+}
+
+html body .mc-account-menu-group {
+    display: grid !important;
+    gap: 7px !important;
+}
+
+html body .mc-account-menu-label {
+    padding: 4px 8px 2px !important;
+    color: #98a2b3 !important;
+    font-size: 11px !important;
+    font-weight: 950 !important;
+    letter-spacing: .075em !important;
+    text-transform: uppercase !important;
+}
+
+html body .mc-account-menu-item {
+    grid-template-columns: 38px minmax(0, 1fr) 18px !important;
+    padding: 10px 11px !important;
+    border-radius: 16px !important;
+}
+
+html body .mc-account-menu-item.is-active {
+    background: #fff1f4 !important;
+    border-color: #fecdd3 !important;
+    box-shadow: inset 3px 0 0 #e85d75 !important;
+}
+
+html body .mc-account-menu-item.is-active .mc-menu-icon {
+    background: #ffffff !important;
+    border: 1px solid #fecdd3 !important;
+}
+
+html body .mc-menu-icon {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 14px !important;
+    font-size: 17px !important;
+}
+
+html body .mc-account-menu-item strong {
+    font-size: 13.7px !important;
+}
+
+html body .mc-account-menu-item small {
+    font-size: 12px !important;
+}
+
+html body .mc-account-content {
+    min-height: 650px !important;
+    overflow-anchor: none !important;
+}
+
+html body .mc-account-view {
+    min-height: 650px !important;
+    animation: mcAccountFadeIn .14s ease both !important;
+    overflow-anchor: none !important;
+}
+
+@keyframes mcAccountFadeIn {
+    from {
+        opacity: .72;
+        transform: translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Không dùng smooth scroll cho tab để tránh cảm giác nhảy */
+html body .mc-account-center,
+html body .mc-account-content,
+html body .mc-account-view {
+    scroll-behavior: auto !important;
+}
+
+/* Header actions nhẹ hơn, ít gây chú ý hơn menu chính */
+html body .mc-compact-actions .mc-compact-btn {
+    background: rgba(255,255,255,.78) !important;
+    box-shadow: none !important;
+}
+
+html body .mc-compact-actions .mc-compact-btn.is-primary,
+html body .mc-compact-actions .mc-compact-btn.is-active {
+    background: #fff1f4 !important;
+    color: #be123c !important;
+    border-color: #fecdd3 !important;
+}
+
+/* Bố cục nội dung trong tab gọn hơn */
+html body .mc-view-head {
+    margin-bottom: 16px !important;
+    padding-bottom: 14px !important;
+}
+
+html body .mc-compact-stat-grid {
+    gap: 10px !important;
+}
+
+html body .mc-mini-section {
+    padding: 16px !important;
+}
+
+@media (max-width: 1100px) {
+    html body .mc-account-menu {
+        display: flex !important;
+        gap: 10px !important;
+    }
+
+    html body .mc-account-menu-group {
+        display: flex !important;
+        gap: 8px !important;
+        flex: 0 0 auto !important;
+    }
+
+    html body .mc-account-menu-label {
+        display: none !important;
+    }
+
+    html body .mc-account-menu-item {
+        min-width: 220px !important;
+    }
+
+    html body .mc-account-content,
+    html body .mc-account-view {
+        min-height: 560px !important;
+    }
+}
+
+@media (max-width: 640px) {
+    html body .mc-account-menu-item {
+        min-width: 200px !important;
+    }
+
+    html body .mc-account-content,
+    html body .mc-account-view {
+        min-height: 520px !important;
+    }
+}
