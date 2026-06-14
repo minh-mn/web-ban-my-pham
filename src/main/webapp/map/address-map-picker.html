@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>Chọn vị trí giao hàng</title>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+
+    <style>
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #f8fafc;
+            font-family: Arial, sans-serif;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+        #map {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            min-width: 100%;
+            min-height: 100%;
+            background: #eef2f7;
+            cursor: grab;
+            z-index: 1;
+        }
+
+        #map:active {
+            cursor: grabbing;
+        }
+
+        .leaflet-container {
+            width: 100% !important;
+            height: 100% !important;
+            background: #eef2f7 !important;
+            font: 12px/1.5 Arial, sans-serif;
+        }
+
+        .leaflet-tile {
+            width: 256px !important;
+            height: 256px !important;
+            max-width: none !important;
+            max-height: none !important;
+            min-width: 0 !important;
+            min-height: 0 !important;
+            object-fit: initial !important;
+            image-rendering: auto !important;
+        }
+
+        .leaflet-container img:not(.leaflet-tile) {
+            max-width: none !important;
+            max-height: none !important;
+        }
+
+        .leaflet-control-zoom {
+            border: 0 !important;
+            border-radius: 12px !important;
+            overflow: hidden !important;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.16) !important;
+        }
+
+        .leaflet-control-zoom a {
+            width: 34px !important;
+            height: 34px !important;
+            line-height: 34px !important;
+            color: #111827 !important;
+            font-size: 18px !important;
+            font-weight: 900 !important;
+        }
+
+        .leaflet-control-attribution {
+            max-width: calc(100% - 20px);
+            white-space: normal;
+            font-size: 10px;
+            line-height: 1.25;
+            background: rgba(255,255,255,.85) !important;
+        }
+
+        .center-pulse {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: rgba(225, 29, 72, .24);
+            transform: translate(-50%, -50%);
+            z-index: 499;
+            pointer-events: none;
+            animation: pulse 1.6s infinite ease-out;
+        }
+
+        .center-pin {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 42px;
+            height: 56px;
+            transform: translate(-50%, -100%);
+            z-index: 500;
+            pointer-events: none;
+            filter: drop-shadow(0 14px 14px rgba(225, 29, 72, .32));
+        }
+
+        .center-pin::before {
+            content: "";
+            position: absolute;
+            left: 50%;
+            top: 0;
+            width: 36px;
+            height: 36px;
+            border-radius: 50% 50% 50% 0;
+            background: linear-gradient(135deg, #fb7185 0%, #e11d48 58%, #9f1239 100%);
+            border: 4px solid #ffffff;
+            transform: translateX(-50%) rotate(-45deg);
+            box-shadow: 0 8px 18px rgba(225, 29, 72, .35);
+        }
+
+        .center-pin::after {
+            content: "";
+            position: absolute;
+            left: 50%;
+            top: 12px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ffffff;
+            transform: translateX(-50%);
+        }
+
+        .loading {
+            position: absolute;
+            left: 50%;
+            bottom: 16px;
+            transform: translateX(-50%);
+            z-index: 600;
+            padding: 9px 13px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, .92);
+            color: #111827;
+            font-size: 12px;
+            font-weight: 800;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, .12);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity .18s ease;
+        }
+
+        .loading.show {
+            opacity: 1;
+        }
+
+        @keyframes pulse {
+            0% { transform: translate(-50%, -50%) scale(.8); opacity: .9; }
+            70% { transform: translate(-50%, -50%) scale(2.8); opacity: 0; }
+            100% { transform: translate(-50%, -50%) scale(2.8); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+<div id="map"></div>
+<div class="center-pulse" aria-hidden="true"></div>
+<div class="center-pin" aria-hidden="true"></div>
+<div id="loading" class="loading show">Đang tải bản đồ...</div>
+
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+    (function () {
+        const mapEl = document.getElementById("map");
+        const loadingEl = document.getElementById("loading");
+
+        if (!window.L) {
+            if (loadingEl) {
+                loadingEl.textContent = "Không tải được thư viện bản đồ. Vui lòng kiểm tra mạng hoặc tải lại trang.";
+                loadingEl.classList.add("show");
+            }
+
+            window.parent.postMessage({
+                type: "ADDRESS_MAP_PICKER_ERROR",
+                message: "Không tải được thư viện bản đồ Leaflet."
+            }, window.location.origin);
+
+            console.error("Leaflet library was not loaded");
+            return;
+        }
+
+        let map = null;
+        let baseLayer = null;
+        let fallbackLayer = null;
+        let initialized = false;
+        let notifyTimer = null;
+        let resizeTimer = null;
+        let refreshTimer = null;
+        let isUserMoving = false;
+        let lastLat = 10.8700;
+        let lastLon = 106.8030;
+
+        function parentOrigin() {
+            try {
+                return window.location.origin;
+            } catch (error) {
+                return "*";
+            }
+        }
+
+        function post(payload) {
+            window.parent.postMessage(payload, parentOrigin());
+        }
+
+        function setLoading(show, text) {
+            if (!loadingEl) return;
+
+            loadingEl.textContent = text || "Đang tải bản đồ...";
+            loadingEl.classList.toggle("show", !!show);
+        }
+
+        function invalidateMap() {
+            if (!map) return;
+
+            map.invalidateSize(false);
+        }
+
+        function forceRefreshSeries() {
+            /*
+             * Chỉ refresh khi mở modal/resize.
+             * Không redraw tile liên tục lúc kéo vì sẽ gây giật và chớp bản đồ.
+             */
+            if (isUserMoving) return;
+
+            window.clearTimeout(refreshTimer);
+
+            invalidateMap();
+
+            refreshTimer = window.setTimeout(function () {
+                invalidateMap();
+            }, 180);
+
+            setTimeout(function () {
+                if (!isUserMoving) invalidateMap();
+            }, 520);
+        }
+
+        function emitPositionChanged() {
+            if (!map) return;
+
+            const center = map.getCenter();
+            lastLat = center.lat;
+            lastLon = center.lng;
+
+            post({
+                type: "ADDRESS_MAP_PICKER_POSITION_CHANGED",
+                lat: lastLat,
+                lon: lastLon
+            });
+        }
+
+        function schedulePositionChanged(delay) {
+            window.clearTimeout(notifyTimer);
+            notifyTimer = window.setTimeout(emitPositionChanged, delay || 450);
+        }
+
+        function addTileLayers() {
+            /*
+             * Chỉ dùng 1 tile layer chính để tránh chồng 2 lớp tile gây nặng/giật.
+             * Nếu tile lỗi nhiều mới thêm OSM fallback.
+             */
+            let tileErrorCount = 0;
+
+            baseLayer = L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+                subdomains: "abcd",
+                maxZoom: 20,
+                minZoom: 3,
+                tileSize: 256,
+                zoomOffset: 0,
+                detectRetina: false,
+                updateWhenIdle: true,
+                updateWhenZooming: false,
+                keepBuffer: 6,
+                crossOrigin: true,
+                attribution: "&copy; OpenStreetMap contributors &copy; CARTO"
+            }).addTo(map);
+
+            let loadedOnce = false;
+
+            baseLayer.on("loading", function () {
+                if (!loadedOnce && !isUserMoving) {
+                    setLoading(true, "Đang tải bản đồ...");
+                }
+            });
+
+            baseLayer.on("load", function () {
+                loadedOnce = true;
+                setLoading(false);
+            });
+
+            baseLayer.on("tileerror", function () {
+                tileErrorCount += 1;
+
+                if (tileErrorCount >= 3 && !fallbackLayer) {
+                    fallbackLayer = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+                        maxZoom: 19,
+                        minZoom: 3,
+                        tileSize: 256,
+                        zoomOffset: 0,
+                        detectRetina: false,
+                        updateWhenIdle: true,
+                        updateWhenZooming: false,
+                        keepBuffer: 6,
+                        crossOrigin: true,
+                        attribution: "&copy; OpenStreetMap contributors"
+                    }).addTo(map);
+                }
+
+                post({
+                    type: "ADDRESS_MAP_PICKER_ERROR",
+                    message: "Một số ô bản đồ tải chậm, bạn vẫn có thể kéo bản đồ để chọn vị trí."
+                });
+            });
+        }
+
+        function initMap(lat, lon, zoom) {
+            lastLat = Number(lat);
+            lastLon = Number(lon);
+
+            if (!Number.isFinite(lastLat) || !Number.isFinite(lastLon)) {
+                lastLat = 10.8700;
+                lastLon = 106.8030;
+            }
+
+            const safeZoom = Number(zoom) || 17;
+
+            if (!map) {
+                map = L.map(mapEl, {
+                    zoomControl: true,
+                    dragging: true,
+                    scrollWheelZoom: true,
+                    touchZoom: true,
+                    doubleClickZoom: true,
+                    boxZoom: true,
+                    keyboard: true,
+                    inertia: true,
+                    inertiaDeceleration: 3200,
+                    worldCopyJump: true,
+                    trackResize: true,
+                    fadeAnimation: false,
+                    zoomAnimation: true,
+                    markerZoomAnimation: false,
+                    preferCanvas: false
+                }).setView([lastLat, lastLon], safeZoom);
+
+                addTileLayers();
+
+                map.on("movestart dragstart", function () {
+                    isUserMoving = true;
+                    setLoading(false);
+
+                    post({
+                        type: "ADDRESS_MAP_PICKER_MOVE_START"
+                    });
+                });
+
+                map.on("moveend zoomend", function () {
+                    isUserMoving = false;
+
+                    /*
+                     * Chỉ gửi tọa độ sau khi thả tay, không redraw tile liên tục.
+                     * Giảm delay để parent lấy địa chỉ nhanh hơn.
+                     */
+                    schedulePositionChanged(260);
+                });
+
+                map.on("click", function (event) {
+                    map.setView(event.latlng, map.getZoom(), {
+                        animate: false,
+                        pan: false
+                    });
+
+                    schedulePositionChanged(180);
+                });
+
+                map.whenReady(function () {
+                    initialized = true;
+                    forceRefreshSeries();
+                    schedulePositionChanged(300);
+                });
+            } else {
+                map.setView([lastLat, lastLon], safeZoom, {
+                    animate: false,
+                    pan: false
+                });
+
+                forceRefreshSeries();
+                schedulePositionChanged(300);
+            }
+        }
+
+        window.addEventListener("message", function (event) {
+            if (event.origin !== window.location.origin) {
+                return;
+            }
+
+            const data = event.data || {};
+
+            if (data.type === "ADDRESS_MAP_PARENT_PING") {
+                post({
+                    type: "ADDRESS_MAP_PICKER_READY"
+                });
+                return;
+            }
+
+            if (data.type === "ADDRESS_MAP_INIT") {
+                initMap(data.lat, data.lon, data.zoom || 17);
+                return;
+            }
+
+            if (data.type === "ADDRESS_MAP_SET_CENTER") {
+                if (!map) {
+                    initMap(data.lat, data.lon, data.zoom || 17);
+                    return;
+                }
+
+                const lat = Number(data.lat);
+                const lon = Number(data.lon);
+
+                if (Number.isFinite(lat) && Number.isFinite(lon)) {
+                    map.setView([lat, lon], data.zoom || map.getZoom() || 17, {
+                        animate: false,
+                        pan: false
+                    });
+
+                    forceRefreshSeries();
+                    schedulePositionChanged(300);
+                }
+
+                return;
+            }
+
+            if (data.type === "ADDRESS_MAP_RESIZE") {
+                forceRefreshSeries();
+                return;
+            }
+
+            if (data.type === "ADDRESS_MAP_RESET") {
+                if (map) {
+                    forceRefreshSeries();
+                }
+            }
+        });
+
+        window.addEventListener("resize", function () {
+            window.clearTimeout(resizeTimer);
+            resizeTimer = window.setTimeout(forceRefreshSeries, 120);
+        });
+
+        post({
+            type: "ADDRESS_MAP_PICKER_READY"
+        });
+    })();
+</script>
+</body>
+</html>
