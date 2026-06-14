@@ -112,8 +112,8 @@ public class AdminEventServlet extends HttpServlet {
                     originalName = "event_image.jpg";
                 }
 
-                // Tạo tên file duy nhất tránh trùng lặp bằng dấu gạch dưới timestamp
-                String fileName = System.currentTimeMillis() + "_" + originalName;
+                // KHÔNG rename nữa
+                String fileName = originalName;
 
                 // Xác định đường dẫn vật lý để lưu ảnh vật lý vào assets/images/events
                 String uploadPath = getServletContext().getRealPath("") + File.separator + "assets" + File.separator + "images" + File.separator + "events";
@@ -158,7 +158,8 @@ public class AdminEventServlet extends HttpServlet {
 
         } catch (Exception e) {
             e.printStackTrace(); 
-                
+
+            // GIỮ LẠI DỮ LIỆU ĐÃ NHẬP: Tạo đối tượng tạm để nạp lại vào form tránh mất thông tin của user
             Event fallbackEvent = new Event();
             fallbackEvent.setTitle(title);
             fallbackEvent.setSummary(summary);
@@ -169,6 +170,7 @@ public class AdminEventServlet extends HttpServlet {
                 }
             } catch (Exception ignored) {}
 
+            // Nếu đang ở chế độ sửa, lấy lại ID và ảnh cũ của sự kiện
             if ("update".equals(action)) {
                 try {
                     int id = Integer.parseInt(request.getParameter("id"));
