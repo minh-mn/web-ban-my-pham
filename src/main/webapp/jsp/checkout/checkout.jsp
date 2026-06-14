@@ -4,6 +4,7 @@
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
 <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/checkout.css?v=20260604_map_picker_full_fix">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/theme-red-buttons.css?v=20260613_10">
 <link rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
       integrity="sha256-p4NxAoJBhIINfQh3Hh1q8CgFyuzL4P8rNQ3Drx0Kz5E="
@@ -2938,6 +2939,21 @@
       return true;
     }
 
+
+    function forceFreeShippingTextStyle(el, isFree) {
+      if (!el) return;
+
+      if (isFree) {
+        el.classList.add("free-shipping-black-text");
+        el.style.setProperty("color", "#111827", "important");
+        el.style.setProperty("font-weight", "950", "important");
+      } else {
+        el.classList.remove("free-shipping-black-text");
+        el.style.removeProperty("color");
+        el.style.removeProperty("font-weight");
+      }
+    }
+
     function updateShippingMethodLabels() {
       const validLocation = hasValidLocation();
       const freeship = validLocation && isFreeShipEligible();
@@ -2967,6 +2983,7 @@
            * Freeship toàn quốc áp dụng cho các phương thức giao hàng được hỗ trợ.
            */
           feeEl.textContent = rule.label;
+          forceFreeShippingTextStyle(feeEl, false);
           if (descEl) descEl.textContent = rule.description;
           input.disabled = true;
           option.classList.add("is-disabled");
@@ -2974,6 +2991,7 @@
         }
 
         feeEl.textContent = freeship ? "Miễn phí" : rule.label;
+        forceFreeShippingTextStyle(feeEl, freeship);
         if (descEl) {
           descEl.textContent = freeship
                   ? "Đơn sau voucher đạt từ " + formatVnd(FREE_SHIP_THRESHOLD) + ", miễn phí vận chuyển toàn quốc"
@@ -3053,6 +3071,7 @@
 
       if (summaryShippingFee) {
         summaryShippingFee.textContent = freeship ? "Miễn phí" : formatVnd(fee);
+        forceFreeShippingTextStyle(summaryShippingFee, freeship);
       }
 
       if (shippingFeeInput) {
