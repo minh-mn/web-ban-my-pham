@@ -1158,12 +1158,55 @@ PRODUCT GROUPS
 <c:set var="homeSectionShowDiscount" value="${false}" scope="request"/>
 <jsp:include page="/jsp/product/home-product-section.jsp"/>
 
-<section class="skin-brand-story">
+<section class="skin-brand-story skin-story-editorial-section">
 	<div class="skin-container">
-		<div class="skin-story-box">
-			<span>MYCOSMETICSHOP</span>
-			<h2>Chăm sóc da rõ ràng hơn, mua sắm nhanh hơn</h2>
-			<p>Trang chủ được chia thành các nhóm sản phẩm rõ ràng: flash deal, bán chạy, giảm sâu, xem nhiều và sản phẩm mới. Khách hàng có thể tìm đúng nhóm sản phẩm cần mua chỉ trong vài giây.</p>
+		<div class="skin-story-editorial">
+			<div class="skin-story-editorial-brand">
+				<span>MYCOSMETIC</span>
+				<strong>BEAUTY<br>SHOPPING</strong>
+				<em>Curated for your glow</em>
+			</div>
+
+			<div class="skin-story-editorial-content">
+				<span class="skin-story-editorial-kicker">MYCOSMETICSHOP</span>
+				<h2>Mua mỹ phẩm dễ hơn, chọn sản phẩm chuẩn hơn</h2>
+				<p>
+					MyCosmetic sắp xếp trang chủ theo từng nhóm nhu cầu rõ ràng: ưu đãi nhanh,
+					danh mục nổi bật, sản phẩm khám phá, thương hiệu yêu thích và sản phẩm mới.
+					Khách hàng có thể xem nhanh, so sánh dễ và thêm vào giỏ hàng thuận tiện hơn.
+				</p>
+
+				<div class="skin-story-editorial-actions">
+					<a href="${ctx}/products?category=all">Khám phá sản phẩm</a>
+					<a href="${ctx}/vouchers" class="is-soft">Xem ưu đãi</a>
+				</div>
+			</div>
+
+			<div class="skin-story-editorial-points">
+				<div class="skin-story-editorial-point">
+					<b>01</b>
+					<div>
+						<strong>Tìm nhanh hơn</strong>
+						<span>Đi thẳng đến nhóm sản phẩm cần mua.</span>
+					</div>
+				</div>
+
+				<div class="skin-story-editorial-point">
+					<b>02</b>
+					<div>
+						<strong>Chọn tự tin hơn</strong>
+						<span>Sản phẩm, giá và ưu đãi được hiển thị rõ ràng.</span>
+					</div>
+				</div>
+
+				<div class="skin-story-editorial-point">
+					<b>03</b>
+					<div>
+						<strong>Mua tiện hơn</strong>
+						<span>Thêm giỏ nhanh, lưu voucher và xem chi tiết dễ dàng.</span>
+					</div>
+				</div>
+			</div>
 		</div>
 	</div>
 </section>
