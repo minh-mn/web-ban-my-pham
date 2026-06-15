@@ -831,3 +831,187 @@ section.notification-page .notification-list-card {
         padding-top: 180px !important;
     }
 }
+
+
+/* =========================================================
+   NOTIFICATION PAGE V20 - HERO TYPOGRAPHY SYNC
+   Đồng bộ phần đầu với style heading của các section khác
+========================================================= */
+
+section.notification-page .notification-page__hero {
+    gap: 24px !important;
+    padding: 22px 24px !important;
+    border: 1px solid rgba(225, 29, 72, 0.12) !important;
+    border-radius: 28px !important;
+    background: linear-gradient(180deg, #fffafb 0%, #ffffff 100%) !important;
+    box-shadow: 0 18px 38px rgba(15, 23, 42, 0.07) !important;
+}
+
+section.notification-page .notification-page__hero-content {
+    min-width: 0 !important;
+}
+
+section.notification-page .notification-page__eyebrow {
+    position: relative !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    min-height: auto !important;
+    padding: 0 0 0 18px !important;
+    margin: 0 0 10px 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    color: #e11d48 !important;
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.06em !important;
+    text-transform: uppercase !important;
+}
+
+section.notification-page .notification-page__eyebrow::before {
+    content: "" !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 50% !important;
+    width: 12px !important;
+    height: 2px !important;
+    border-radius: 999px !important;
+    background: #e11d48 !important;
+    transform: translateY(-50%) !important;
+}
+
+section.notification-page .notification-page__title {
+    margin: 0 !important;
+    color: #0f172a !important;
+    font-size: 24px !important;
+    line-height: 1.22 !important;
+    font-weight: 900 !important;
+    letter-spacing: -0.02em !important;
+}
+
+section.notification-page .notification-page__subtitle {
+    max-width: 660px !important;
+    margin: 10px 0 0 0 !important;
+    color: #64748b !important;
+    font-size: 14px !important;
+    line-height: 1.7 !important;
+    font-weight: 650 !important;
+}
+
+section.notification-page .notification-page__hero-actions {
+    gap: 10px !important;
+}
+
+section.notification-page .notification-page__stat-grid {
+    gap: 10px !important;
+}
+
+section.notification-page .notification-page__stat {
+    min-width: 106px !important;
+    padding: 12px 14px !important;
+    border-radius: 18px !important;
+    box-shadow: none !important;
+}
+
+section.notification-page .notification-page__stat strong {
+    font-size: 18px !important;
+    line-height: 1 !important;
+    font-weight: 900 !important;
+}
+
+section.notification-page .notification-page__stat span {
+    margin-top: 5px !important;
+    font-size: 11px !important;
+    line-height: 1.35 !important;
+    font-weight: 800 !important;
+}
+
+section.notification-page .notification-page__mark-btn {
+    min-height: 40px !important;
+    padding: 0 18px !important;
+    font-size: 12.5px !important;
+    font-weight: 900 !important;
+    box-shadow: 0 10px 22px rgba(225, 29, 72, 0.16) !important;
+}
+
+section.notification-page .notification-list-card {
+    border-radius: 28px !important;
+    box-shadow: 0 18px 38px rgba(15, 23, 42, 0.07) !important;
+}
+
+section.notification-page .notification-list-card__head {
+    padding: 18px 22px !important;
+    background: linear-gradient(180deg, #fffafb 0%, #ffffff 100%) !important;
+}
+
+section.notification-page .notification-list-card__head h2 {
+    color: #0f172a !important;
+    font-size: 18px !important;
+    line-height: 1.3 !important;
+    font-weight: 900 !important;
+    letter-spacing: -0.01em !important;
+}
+
+section.notification-page .notification-list-card__head p {
+    margin-top: 6px !important;
+    color: #64748b !important;
+    font-size: 13px !important;
+    line-height: 1.6 !important;
+    font-weight: 650 !important;
+}
+
+@media (max-width: 900px) {
+    section.notification-page .notification-page__hero {
+        padding: 20px 18px !important;
+    }
+
+    section.notification-page .notification-page__title {
+        font-size: 22px !important;
+    }
+
+    section.notification-page .notification-page__hero-actions {
+        justify-items: start !important;
+    }
+}
+
+@media (max-width: 640px) {
+    section.notification-page .notification-page__eyebrow {
+        font-size: 11px !important;
+    }
+
+    section.notification-page .notification-page__title {
+        font-size: 20px !important;
+    }
+
+    section.notification-page .notification-page__subtitle {
+        font-size: 13px !important;
+    }
+}
+
+
+/* =========================================================
+   NOTIFICATION PAGE GAP FIX V21
+   Bỏ padding-top cũ của trang thông báo để ăn theo offset chung trong base.css.
+========================================================= */
+
+html body main.site-main > section.notification-page,
+html body .site-main > section.notification-page,
+body.site-body main.site-main > section.notification-page,
+section.notification-page,
+.notification-page {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
+/* Giữ khoảng cách giữa hero và list, không tạo khoảng trắng với header */
+section.notification-page .notification-page__container {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
+section.notification-page .notification-page__hero {
+    margin-top: 0 !important;
+    margin-bottom: 20px !important;
+}

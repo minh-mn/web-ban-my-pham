@@ -5847,3 +5847,119 @@ html body .site-main:has(section.notification-page) {
   padding-top: 0 !important;
   margin-top: 0 !important;
 }
+
+
+/* =========================================================
+   GLOBAL HEADER GAP FIX V21
+   Mục tiêu: phần nội dung nằm sát ngay dưới header/nav trên toàn bộ trang.
+   Đặt ở CUỐI base.css để đè các block cũ bị lặp nhiều lần.
+========================================================= */
+
+:root {
+  /*
+     Header hiện là fixed trên desktop, nên site-main vẫn cần bù đúng chiều cao header.
+     Không cộng thêm 24px/28px nữa để tránh tạo khoảng trắng giữa header và nội dung.
+  */
+  --mc-sticky-header-height: 184px;
+}
+
+html body main.site-main,
+html body .site-main,
+body.site-body main.site-main,
+body.site-body .site-main,
+.site-main {
+  margin-top: 0 !important;
+  padding-top: var(--mc-sticky-header-height) !important;
+}
+
+/* Bỏ toàn bộ khoảng đệm đầu của phần tử đầu tiên trong main */
+html body main.site-main > section:first-child,
+html body main.site-main > div:first-child,
+html body .site-main > section:first-child,
+html body .site-main > div:first-child,
+body.site-body .site-main > section:first-child,
+body.site-body .site-main > div:first-child {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+/* Các wrapper page thường gặp: ép không tạo gap dưới header */
+html body main.site-main > .home-page,
+html body main.site-main > .product-page,
+html body main.site-main > .category-page,
+html body main.site-main > .brand-page,
+html body main.site-main > .blog-page,
+html body main.site-main > .cart-page,
+html body main.site-main > .checkout-page,
+html body main.site-main > .account-page,
+html body main.site-main > .notification-page,
+html body main.site-main > .search-page,
+html body main.site-main > .order-page,
+html body .site-main > .home-page,
+html body .site-main > .product-page,
+html body .site-main > .category-page,
+html body .site-main > .brand-page,
+html body .site-main > .blog-page,
+html body .site-main > .cart-page,
+html body .site-main > .checkout-page,
+html body .site-main > .account-page,
+html body .site-main > .notification-page,
+html body .site-main > .search-page,
+html body .site-main > .order-page {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+/* Bỏ khoảng đẩy đầu do các section đầu trang/hero hay tự set padding-top */
+html body .site-main > section:first-child .home-hero,
+html body .site-main > section:first-child .hero-section,
+html body .site-main > section:first-child .home-banner-section,
+html body .site-main > section:first-child .mc-category-hero-wrap,
+html body .site-main > section:first-child .mc-compact-hero,
+html body .site-main > section:first-child .notification-page__hero {
+  margin-top: 0 !important;
+}
+
+/* Nếu trang có phần nền riêng, chỉ giữ padding ngang/dưới, bỏ padding trên */
+html body .notification-page,
+html body .home-page,
+html body .product-page,
+html body .category-page,
+html body .brand-page,
+html body .blog-page,
+html body .cart-page,
+html body .checkout-page,
+html body .account-page,
+html body .search-page,
+html body .order-page {
+  margin-top: 0 !important;
+}
+
+/* Mobile/tablet: header chuyển compact/sticky, bù chiều cao thấp hơn */
+@media (max-width: 992px) {
+  :root {
+    --mc-sticky-header-height: 158px;
+  }
+
+  html body main.site-main,
+  html body .site-main,
+  body.site-body main.site-main,
+  body.site-body .site-main,
+  .site-main {
+    padding-top: var(--mc-sticky-header-height) !important;
+  }
+}
+
+@media (max-width: 640px) {
+  :root {
+    --mc-sticky-header-height: 142px;
+  }
+
+  html body main.site-main,
+  html body .site-main,
+  body.site-body main.site-main,
+  body.site-body .site-main,
+  .site-main {
+    padding-top: var(--mc-sticky-header-height) !important;
+  }
+}
