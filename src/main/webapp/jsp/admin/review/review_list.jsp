@@ -2,12 +2,14 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 
-<c:set var="pageTitle" value="ADMIN | Quản lí bình luận" scope="request"/>
+<c:set var="pageTitle" value="ADMIN | Quản lý bình luận" scope="request"/>
 <c:set var="activeMenu" value="reviews" scope="request"/>
 <c:set var="pageCss" value="/assets/css/admin/admin-list.css" scope="request"/>
 
 <jsp:include page="/jsp/admin/layout/header.jsp"/>
 <jsp:include page="/jsp/admin/layout/sidebar.jsp"/>
+
+<c:set var="ctx" value="${pageContext.request.contextPath}" />
 
 <c:set var="pendingCount" value="0" />
 <c:set var="approvedCount" value="0" />
@@ -36,9 +38,10 @@
 <main class="admin-main">
   <div class="admin-container admin-review-page">
 
-    <div class="admin-review-hero">
+    <section class="admin-review-hero">
       <div class="admin-review-hero__content">
-        <h1 class="admin-h1 admin-review-title">Quản lí bình luận</h1>
+        <span class="admin-review-eyebrow">KIỂM DUYỆT &amp; BÌNH LUẬN</span>
+        <h1 class="admin-review-title">Quản lý bình luận</h1>
         <p class="admin-subtext admin-review-subtitle">
           Kiểm duyệt bình luận sản phẩm, xem nội dung, mã sản phẩm, ID user, thời gian gửi,
           media đính kèm và thông tin chi tiết người bình luận.
@@ -46,11 +49,11 @@
       </div>
 
       <div class="admin-review-hero__actions">
-        <a class="admin-btn" href="${pageContext.request.contextPath}/admin/reviews">
+        <a class="admin-btn" href="${ctx}/admin/reviews">
           Làm mới
         </a>
       </div>
-    </div>
+    </section>
 
     <c:if test="${not empty successMessage}">
       <div class="admin-alert admin-alert--success">
@@ -66,30 +69,35 @@
 
     <section class="admin-review-stats" aria-label="Thống kê bình luận">
       <div class="admin-review-stat admin-review-stat--total">
+        <span class="admin-review-stat__icon">💬</span>
         <span class="admin-review-stat__label">Tổng bình luận</span>
         <strong class="admin-review-stat__value">${empty totalReviews ? 0 : totalReviews}</strong>
         <span class="admin-review-stat__note">Kết quả theo bộ lọc hiện tại</span>
       </div>
 
       <div class="admin-review-stat admin-review-stat--pending">
+        <span class="admin-review-stat__icon">⏳</span>
         <span class="admin-review-stat__label">Chờ duyệt</span>
         <strong class="admin-review-stat__value">${pendingCount}</strong>
         <span class="admin-review-stat__note">Cần admin xử lý</span>
       </div>
 
       <div class="admin-review-stat admin-review-stat--approved">
+        <span class="admin-review-stat__icon">✅</span>
         <span class="admin-review-stat__label">Đã duyệt</span>
         <strong class="admin-review-stat__value">${approvedCount}</strong>
         <span class="admin-review-stat__note">Có thể hiển thị với khách</span>
       </div>
 
       <div class="admin-review-stat admin-review-stat--rejected">
+        <span class="admin-review-stat__icon">🚫</span>
         <span class="admin-review-stat__label">Từ chối / Ẩn</span>
         <strong class="admin-review-stat__value">${rejectedCount + hiddenCount}</strong>
         <span class="admin-review-stat__note">Không hiển thị công khai</span>
       </div>
 
       <div class="admin-review-stat admin-review-stat--media">
+        <span class="admin-review-stat__icon">🖼️</span>
         <span class="admin-review-stat__label">Có media</span>
         <strong class="admin-review-stat__value">${mediaCount}</strong>
         <span class="admin-review-stat__note">Ảnh hoặc video đánh giá</span>
@@ -108,7 +116,7 @@
         </div>
 
         <form method="get"
-              action="${pageContext.request.contextPath}/admin/reviews"
+              action="${ctx}/admin/reviews"
               class="admin-review-filter-form">
 
           <input type="hidden" name="action" value="list"/>
@@ -178,7 +186,7 @@
             <button class="admin-btn admin-review-filter-btn" type="submit">
               Lọc bình luận
             </button>
-            <a class="admin-btn admin-review-filter-btn" href="${pageContext.request.contextPath}/admin/reviews">
+            <a class="admin-btn admin-review-filter-btn" href="${ctx}/admin/reviews">
               Xóa lọc
             </a>
           </div>
@@ -225,7 +233,7 @@
               <div>
                 <h3>Không tìm thấy bình luận phù hợp</h3>
                 <p>Hãy thử xóa bộ lọc hoặc tìm bằng từ khóa khác.</p>
-                <a class="admin-btn" href="${pageContext.request.contextPath}/admin/reviews">Xóa lọc</a>
+                <a class="admin-btn" href="${ctx}/admin/reviews">Xóa lọc</a>
               </div>
             </div>
           </c:when>
@@ -395,13 +403,13 @@
                     <td class="admin-review-action-cell">
                       <div class="admin-review-actions">
                         <a class="admin-btn admin-review-action-btn"
-                           href="${pageContext.request.contextPath}/admin/reviews?action=detail&id=${r.id}">
+                           href="${ctx}/admin/reviews?action=detail&id=${r.id}">
                           Xem
                         </a>
 
                         <c:if test="${not r.approved}">
                           <form method="post"
-                                action="${pageContext.request.contextPath}/admin/reviews"
+                                action="${ctx}/admin/reviews"
                                 class="admin-inline">
                             <%@ include file="/jsp/common/csrf.jspf" %>
                             <input type="hidden" name="action" value="approve"/>
@@ -414,7 +422,7 @@
 
                         <c:if test="${not r.rejected}">
                           <form method="post"
-                                action="${pageContext.request.contextPath}/admin/reviews"
+                                action="${ctx}/admin/reviews"
                                 class="admin-inline"
                                 onsubmit="return confirm('Từ chối bình luận này?');">
                             <%@ include file="/jsp/common/csrf.jspf" %>
@@ -429,7 +437,7 @@
                         <c:choose>
                           <c:when test="${r.hidden}">
                             <form method="post"
-                                  action="${pageContext.request.contextPath}/admin/reviews"
+                                  action="${ctx}/admin/reviews"
                                   class="admin-inline">
                               <%@ include file="/jsp/common/csrf.jspf" %>
                               <input type="hidden" name="action" value="unhide"/>
@@ -442,7 +450,7 @@
 
                           <c:otherwise>
                             <form method="post"
-                                  action="${pageContext.request.contextPath}/admin/reviews"
+                                  action="${ctx}/admin/reviews"
                                   class="admin-inline"
                                   onsubmit="return confirm('Ẩn bình luận này khỏi trang khách hàng?');">
                               <%@ include file="/jsp/common/csrf.jspf" %>
@@ -456,7 +464,7 @@
                         </c:choose>
 
                         <form method="post"
-                              action="${pageContext.request.contextPath}/admin/reviews"
+                              action="${ctx}/admin/reviews"
                               class="admin-inline"
                               onsubmit="return confirm('Xóa vĩnh viễn bình luận này?');">
                           <%@ include file="/jsp/common/csrf.jspf" %>
