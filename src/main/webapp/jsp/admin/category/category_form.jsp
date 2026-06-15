@@ -1,7 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 
-<c:set var="pageTitle" value="ADMIN | Form Danh mục" scope="request"/>
+<c:set var="pageTitle" value="${mode eq 'edit' ? 'ADMIN | Sửa danh mục' : 'ADMIN | Thêm danh mục'}" scope="request"/>
 <c:set var="activeMenu" value="categories" scope="request"/>
 <c:set var="pageCss" value="/assets/css/admin/admin-form.css" scope="request"/>
 
@@ -12,23 +12,22 @@
 <c:set var="isEdit" value="${mode eq 'edit'}" />
 
 <main class="admin-main">
-  <div class="admin-container">
+  <div class="admin-container admin-category-form-page">
 
-    <!-- ===================== TOP BAR ===================== -->
-    <div class="admin-topbar">
-      <div>
-        <h1 class="admin-h1">
+    <section class="admin-category-form-hero">
+      <div class="admin-category-form-hero__content">
+        <span class="admin-category-form-eyebrow">SẢN PHẨM &amp; DANH MỤC</span>
+        <h1 class="admin-category-form-title">
           <c:choose>
             <c:when test="${isEdit}">Sửa danh mục</c:when>
             <c:otherwise>Thêm danh mục</c:otherwise>
           </c:choose>
         </h1>
 
-        <p class="admin-subtext">
+        <p class="admin-category-form-subtitle">
           <c:choose>
             <c:when test="${isEdit}">
-              Cập nhật thông tin danh mục, trạng thái hiển thị, quan hệ danh mục cha/con
-              và các thẻ hiển thị trên trang sản phẩm.
+              Cập nhật thông tin danh mục, trạng thái hiển thị, quan hệ danh mục cha/con và các thẻ hiển thị trên trang sản phẩm.
             </c:when>
             <c:otherwise>
               Tạo danh mục mới để phân loại sản phẩm và thêm thẻ hiển thị trên trang sản phẩm.
@@ -37,47 +36,56 @@
         </p>
       </div>
 
-      <a class="admin-btn" href="${ctx}/admin/categories">
-        Quay lại
-      </a>
-    </div>
+      <div class="admin-category-form-hero__actions">
+        <a class="admin-btn" href="${ctx}/admin/categories">
+          ← Quay lại danh sách
+        </a>
+      </div>
+    </section>
 
-    <!-- ===================== FORM CARD ===================== -->
-    <div class="admin-card">
-      <div class="admin-card__body">
+    <c:if test="${not empty error}">
+      <div class="admin-alert admin-alert--danger">
+        <c:out value="${error}" />
+      </div>
+    </c:if>
 
-        <!-- ===================== ERROR MESSAGE ===================== -->
-        <c:if test="${not empty error}">
-          <div class="admin-alert admin-alert--danger">
-            <c:out value="${error}" />
-          </div>
-        </c:if>
+    <form method="post"
+          action="${ctx}/admin/categories"
+          class="admin-form admin-category-form">
 
-        <form method="post"
-              action="${ctx}/admin/categories"
-              class="admin-form category-form">
+      <%@ include file="/jsp/common/csrf.jspf" %>
 
-          <%@ include file="/jsp/common/csrf.jspf" %>
+      <input type="hidden"
+             name="action"
+             value="${isEdit ? 'update' : 'create'}">
 
-          <input type="hidden"
-                 name="action"
-                 value="${isEdit ? 'update' : 'create'}">
+      <c:if test="${isEdit}">
+        <input type="hidden" name="id" value="${category.id}">
+      </c:if>
 
-          <c:if test="${isEdit}">
-            <input type="hidden"
-                   name="id"
-                   value="${category.id}">
-          </c:if>
+      <div class="admin-category-form-layout">
 
-          <!-- ===================== BASIC INFO ===================== -->
-          <div class="admin-form-section">
-            <h2 class="admin-form-section__title">
-              Thông tin danh mục
-            </h2>
+        <section class="admin-card admin-category-form-card">
+          <div class="admin-card__body">
+            <div class="admin-category-form-section-head">
+              <div>
+                <h2 class="admin-category-form-section-title">Thông tin danh mục</h2>
+                <p class="admin-category-form-section-desc">
+                  Nhập tên, slug, trạng thái hiển thị và quan hệ cha/con của danh mục.
+                </p>
+              </div>
 
-            <div class="admin-grid-2">
+              <c:choose>
+                <c:when test="${isEdit}">
+                  <span class="admin-chip admin-chip--brand">Đang chỉnh sửa</span>
+                </c:when>
+                <c:otherwise>
+                  <span class="admin-chip admin-chip--success">Danh mục mới</span>
+                </c:otherwise>
+              </c:choose>
+            </div>
 
-              <!-- ===================== NAME ===================== -->
+            <div class="admin-category-form-grid">
               <div class="admin-field">
                 <label class="admin-label" for="categoryName">
                   Tên danh mục <span class="admin-required">*</span>
@@ -97,21 +105,15 @@
                 </div>
               </div>
 
-              <!-- ===================== STATUS ===================== -->
               <div class="admin-field">
-                <label class="admin-label" for="categoryActive">
-                  Trạng thái
-                </label>
+                <label class="admin-label" for="categoryActive">Trạng thái</label>
 
-                <select class="admin-select"
-                        id="categoryActive"
-                        name="active">
+                <select class="admin-select" id="categoryActive" name="active">
                   <option value="1" ${not isEdit || category.active ? 'selected' : ''}>
-                    ACTIVE - Đang hiển thị
+                    Đang hiển thị
                   </option>
-
                   <option value="0" ${isEdit && not category.active ? 'selected' : ''}>
-                    INACTIVE - Tạm ẩn
+                    Tạm ẩn
                   </option>
                 </select>
 
@@ -120,11 +122,8 @@
                 </div>
               </div>
 
-              <!-- ===================== SLUG ===================== -->
               <div class="admin-field">
-                <label class="admin-label" for="categorySlug">
-                  Slug danh mục
-                </label>
+                <label class="admin-label" for="categorySlug">Slug danh mục</label>
 
                 <input class="admin-input"
                        id="categorySlug"
@@ -141,25 +140,17 @@
                 </div>
               </div>
 
-              <!-- ===================== PARENT CATEGORY ===================== -->
               <div class="admin-field">
-                <label class="admin-label" for="categoryParent">
-                  Danh mục cha
-                </label>
+                <label class="admin-label" for="categoryParent">Danh mục cha</label>
 
-                <select class="admin-select"
-                        id="categoryParent"
-                        name="parentId">
-
-                  <option value="">
-                    -- Không có, đây là danh mục cha --
-                  </option>
+                <select class="admin-select" id="categoryParent" name="parentId">
+                  <option value="">Không có, đây là danh mục cha</option>
 
                   <c:forEach var="p" items="${parentCategories}">
                     <option value="${p.id}"
                       ${not empty category.parentId && category.parentId == p.id ? 'selected' : ''}>
                       <c:out value="${p.name}" />
-                      <c:if test="${not p.active}"> - INACTIVE</c:if>
+                      <c:if test="${not p.active}"> - Tạm ẩn</c:if>
                     </option>
                   </c:forEach>
                 </select>
@@ -168,102 +159,104 @@
                   Nếu chọn danh mục cha, danh mục hiện tại sẽ trở thành danh mục con.
                 </div>
               </div>
+            </div>
 
+            <div class="admin-category-form-note">
+              <span class="admin-category-form-note__icon">💡</span>
+              <div>
+                <strong>Gợi ý cấu trúc</strong>
+                <span>Nên dùng danh mục cha cho nhóm lớn như Chăm sóc da, Trang điểm; danh mục con dùng cho nhóm nhỏ như Sữa rửa mặt, Kem chống nắng.</span>
+              </div>
             </div>
           </div>
+        </section>
 
-          <!-- ===================== CATEGORY TAGS ===================== -->
-          <div class="admin-form-section category-tag-section">
-            <div class="category-tag-section__head">
+        <aside class="admin-card admin-category-info-card">
+          <div class="admin-card__body">
+            <div class="admin-category-form-section-head">
               <div>
-                <h2 class="admin-form-section__title">
-                  Thẻ hiển thị trong trang sản phẩm
-                </h2>
-
-                <div class="admin-help">
-                  Các thẻ này sẽ được hiển thị ở trang chi tiết sản phẩm thuộc danh mục này.
-                  Ví dụ: <strong>Da dầu</strong>, <strong>Dưỡng ẩm</strong>,
-                  <strong>Làm sáng da</strong>, <strong>SPF50+</strong>.
-                </div>
+                <h2 class="admin-category-form-section-title">Tóm tắt</h2>
+                <p class="admin-category-form-section-desc">
+                  Kiểm tra nhanh thông tin hiện tại của danh mục.
+                </p>
               </div>
-
-              <button type="button"
-                      class="admin-btn admin-btn--primary"
-                      id="btnAddCategoryTag">
-                + Thêm thẻ
-              </button>
             </div>
 
-            <div class="category-tag-table-wrap">
-              <table class="category-tag-table">
-                <thead>
-                <tr>
-                  <th>Tên thẻ</th>
-                  <th>Slug</th>
-                  <th>Thứ tự</th>
-                  <th>Trạng thái</th>
-                  <th>Thao tác</th>
-                </tr>
-                </thead>
+            <div class="admin-category-info-list">
+              <div class="admin-category-info-item">
+                <span>Loại thao tác</span>
+                <strong>
+                  <c:choose>
+                    <c:when test="${isEdit}">Cập nhật danh mục</c:when>
+                    <c:otherwise>Tạo danh mục mới</c:otherwise>
+                  </c:choose>
+                </strong>
+              </div>
 
-                <tbody id="categoryTagRows">
-                <c:choose>
-                  <c:when test="${not empty category.tags}">
-                    <c:forEach var="tag" items="${category.tags}" varStatus="st">
-                      <tr class="category-tag-row">
-                        <td>
-                          <input class="admin-input category-tag-name"
-                                 type="text"
-                                 name="tagNames"
-                                 value="${tag.name}"
-                                 maxlength="100"
-                                 placeholder="VD: Da dầu">
-                        </td>
+              <c:if test="${isEdit}">
+                <div class="admin-category-info-item">
+                  <span>ID danh mục</span>
+                  <strong>#<c:out value="${category.id}" /></strong>
+                </div>
 
-                        <td>
-                          <input class="admin-input category-tag-slug"
-                                 type="text"
-                                 name="tagSlugs"
-                                 value="${tag.slug}"
-                                 maxlength="120"
-                                 pattern="[a-z0-9]+(-[a-z0-9]+)*"
-                                 placeholder="VD: da-dau">
-                        </td>
+                <div class="admin-category-info-item">
+                  <span>Số sản phẩm</span>
+                  <strong><c:out value="${empty category.productCount ? 0 : category.productCount}" /></strong>
+                </div>
 
-                        <td>
-                          <input class="admin-input category-tag-order"
-                                 type="number"
-                                 name="tagOrders"
-                                 value="${tag.displayOrder > 0 ? tag.displayOrder : st.index + 1}"
-                                 min="1"
-                                 step="1">
-                        </td>
+                <div class="admin-category-info-item">
+                  <span>Số thẻ</span>
+                  <strong><c:out value="${empty category.tagCount ? 0 : category.tagCount}" /></strong>
+                </div>
+              </c:if>
 
-                        <td>
-                          <select class="admin-select category-tag-active"
-                                  name="tagActives">
-                            <option value="1" ${tag.active ? 'selected' : ''}>ACTIVE</option>
-                            <option value="0" ${not tag.active ? 'selected' : ''}>INACTIVE</option>
-                          </select>
-                        </td>
+              <div class="admin-category-info-item">
+                <span>Thẻ hiển thị</span>
+                <strong>Có thể thêm nhiều thẻ</strong>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
 
-                        <td>
-                          <button type="button"
-                                  class="admin-btn admin-btn--danger category-tag-remove">
-                            Xóa
-                          </button>
-                        </td>
-                      </tr>
-                    </c:forEach>
-                  </c:when>
+      <section class="admin-card admin-category-tag-card">
+        <div class="admin-card__body">
+          <div class="admin-category-form-section-head">
+            <div>
+              <h2 class="admin-category-form-section-title">Thẻ hiển thị trong trang sản phẩm</h2>
+              <p class="admin-category-form-section-desc">
+                Các thẻ này sẽ được hiển thị ở trang chi tiết sản phẩm thuộc danh mục này.
+                Ví dụ: <strong>Da dầu</strong>, <strong>Dưỡng ẩm</strong>, <strong>Làm sáng da</strong>, <strong>SPF50+</strong>.
+              </p>
+            </div>
 
-                  <c:otherwise>
+            <button type="button" class="admin-btn admin-btn--primary" id="btnAddCategoryTag">
+              + Thêm thẻ
+            </button>
+          </div>
+
+          <div class="category-tag-table-wrap admin-category-tag-table-wrap">
+            <table class="category-tag-table admin-category-tag-table">
+              <thead>
+              <tr>
+                <th>Tên thẻ</th>
+                <th>Slug</th>
+                <th>Thứ tự</th>
+                <th>Trạng thái</th>
+                <th>Thao tác</th>
+              </tr>
+              </thead>
+
+              <tbody id="categoryTagRows">
+              <c:choose>
+                <c:when test="${not empty category.tags}">
+                  <c:forEach var="tag" items="${category.tags}" varStatus="st">
                     <tr class="category-tag-row">
                       <td>
                         <input class="admin-input category-tag-name"
                                type="text"
                                name="tagNames"
-                               value=""
+                               value="${tag.name}"
                                maxlength="100"
                                placeholder="VD: Da dầu">
                       </td>
@@ -272,7 +265,7 @@
                         <input class="admin-input category-tag-slug"
                                type="text"
                                name="tagSlugs"
-                               value=""
+                               value="${tag.slug}"
                                maxlength="120"
                                pattern="[a-z0-9]+(-[a-z0-9]+)*"
                                placeholder="VD: da-dau">
@@ -282,83 +275,96 @@
                         <input class="admin-input category-tag-order"
                                type="number"
                                name="tagOrders"
-                               value="1"
+                               value="${tag.displayOrder > 0 ? tag.displayOrder : st.index + 1}"
                                min="1"
                                step="1">
                       </td>
 
                       <td>
-                        <select class="admin-select category-tag-active"
-                                name="tagActives">
-                          <option value="1" selected>ACTIVE</option>
-                          <option value="0">INACTIVE</option>
+                        <select class="admin-select category-tag-active" name="tagActives">
+                          <option value="1" ${tag.active ? 'selected' : ''}>Đang hiển thị</option>
+                          <option value="0" ${not tag.active ? 'selected' : ''}>Tạm ẩn</option>
                         </select>
                       </td>
 
                       <td>
-                        <button type="button"
-                                class="admin-btn admin-btn--danger category-tag-remove">
+                        <button type="button" class="admin-btn admin-btn--danger category-tag-remove">
                           Xóa
                         </button>
                       </td>
                     </tr>
-                  </c:otherwise>
-                </c:choose>
-                </tbody>
-              </table>
-            </div>
+                  </c:forEach>
+                </c:when>
 
-            <div class="admin-help category-tag-note">
-              Có thể để trống slug thẻ, hệ thống sẽ tự tạo slug từ tên thẻ khi lưu.
-              Dòng tag không có tên sẽ tự được bỏ qua.
-            </div>
-          </div>
+                <c:otherwise>
+                  <tr class="category-tag-row">
+                    <td>
+                      <input class="admin-input category-tag-name"
+                             type="text"
+                             name="tagNames"
+                             value=""
+                             maxlength="100"
+                             placeholder="VD: Da dầu">
+                    </td>
 
-          <!-- ===================== EDIT INFO ===================== -->
-          <c:if test="${isEdit}">
-            <div class="admin-info-box">
-              <div class="admin-info-box__title">
-                Thông tin hiện tại
-              </div>
+                    <td>
+                      <input class="admin-input category-tag-slug"
+                             type="text"
+                             name="tagSlugs"
+                             value=""
+                             maxlength="120"
+                             pattern="[a-z0-9]+(-[a-z0-9]+)*"
+                             placeholder="VD: da-dau">
+                    </td>
 
-              <div class="admin-info-box__text">
-                ID danh mục:
-                <strong>#${category.id}</strong>
+                    <td>
+                      <input class="admin-input category-tag-order"
+                             type="number"
+                             name="tagOrders"
+                             value="1"
+                             min="1"
+                             step="1">
+                    </td>
 
-                <c:if test="${not empty category.productCount}">
-                  · Số sản phẩm:
-                  <strong>${category.productCount}</strong>
-                </c:if>
+                    <td>
+                      <select class="admin-select category-tag-active" name="tagActives">
+                        <option value="1" selected>Đang hiển thị</option>
+                        <option value="0">Tạm ẩn</option>
+                      </select>
+                    </td>
 
-                · Số thẻ:
-                <strong>${category.tagCount}</strong>
-              </div>
-            </div>
-          </c:if>
-
-          <hr class="admin-divider"/>
-
-          <!-- ===================== ACTIONS ===================== -->
-          <div class="admin-actions">
-            <a class="admin-btn"
-               href="${ctx}/admin/categories">
-              Hủy
-            </a>
-
-            <button class="admin-btn admin-btn--primary"
-                    type="submit">
-              <c:choose>
-                <c:when test="${isEdit}">Cập nhật danh mục</c:when>
-                <c:otherwise>Thêm danh mục</c:otherwise>
+                    <td>
+                      <button type="button" class="admin-btn admin-btn--danger category-tag-remove">
+                        Xóa
+                      </button>
+                    </td>
+                  </tr>
+                </c:otherwise>
               </c:choose>
-            </button>
+              </tbody>
+            </table>
           </div>
 
-        </form>
+          <div class="admin-help category-tag-note">
+            Có thể để trống slug thẻ, hệ thống sẽ tự tạo slug từ tên thẻ khi lưu.
+            Dòng tag không có tên sẽ tự được bỏ qua.
+          </div>
+        </div>
+      </section>
 
+      <div class="admin-category-form-actions">
+        <a class="admin-btn" href="${ctx}/admin/categories">
+          Hủy
+        </a>
+
+        <button class="admin-btn admin-btn--primary" type="submit">
+          <c:choose>
+            <c:when test="${isEdit}">Cập nhật danh mục</c:when>
+            <c:otherwise>Thêm danh mục</c:otherwise>
+          </c:choose>
+        </button>
       </div>
-    </div>
-
+    </form>
   </div>
 </main>
 
@@ -431,8 +437,8 @@
 
               '<td>' +
               '<select class="admin-select category-tag-active" name="tagActives">' +
-              '<option value="1" selected>ACTIVE</option>' +
-              '<option value="0">INACTIVE</option>' +
+              '<option value="1" selected>Đang hiển thị</option>' +
+              '<option value="0">Tạm ẩn</option>' +
               '</select>' +
               '</td>' +
 
