@@ -22,22 +22,34 @@
 <jsp:include page="/jsp/admin/layout/sidebar.jsp"/>
 
 <main class="admin-main">
-    <div class="inventory-page">
+    <div class="admin-container inventory-page admin-inventory-page">
 
-        <div class="inventory-header">
-            <div class="inventory-title">
-                <h1 class="admin-h1">Quản lý tồn kho</h1>
-                <p class="admin-subtext">
-                    Theo dõi tồn kho, cảnh báo sắp hết hàng, thống kê xuất kho và lịch sử nhập hàng.
+        <section class="admin-inventory-hero">
+            <div class="admin-inventory-hero__content">
+                <span class="admin-inventory-eyebrow">SẢN PHẨM &amp; KHO HÀNG</span>
+                <h1 class="admin-inventory-title">Quản lý tồn kho</h1>
+                <p class="admin-inventory-subtitle">
+                    Theo dõi tồn kho sản phẩm, tồn kho biến thể/SKU, cảnh báo sắp hết hàng,
+                    thống kê xuất kho và lịch sử nhập hàng theo tháng/năm.
                 </p>
             </div>
 
-            <div class="inventory-badge">
-                Cảnh báo:
-                <fmt:formatNumber value="${summary.alertCount}" type="number"/>
-                sản phẩm
+            <div class="admin-inventory-hero__actions">
+                <a class="admin-btn" href="#productInventory">Kho sản phẩm</a>
+                <a class="admin-btn" href="#variantInventory">Kho SKU</a>
+                <a class="admin-btn admin-btn--primary" href="#inventoryImportHistory">Lịch sử nhập hàng</a>
             </div>
-        </div>
+        </section>
+
+        <section class="admin-inventory-alert-strip">
+            <span class="admin-inventory-alert-strip__icon">⚠️</span>
+            <div>
+                <strong>Cảnh báo tồn kho</strong>
+                <span>
+                    Có <fmt:formatNumber value="${summary.alertCount}" type="number"/> sản phẩm cần kiểm tra hoặc nhập thêm.
+                </span>
+            </div>
+        </section>
 
         <c:if test="${param.success == 'stock_added'}">
             <div class="admin-alert admin-alert--success">
@@ -63,8 +75,18 @@
             </div>
         </c:if>
 
-        <div class="inventory-summary-grid">
-            <div class="admin-card inventory-stat-card">
+        <section class="admin-inventory-group">
+            <div class="admin-inventory-group__head">
+                <div>
+                    <h2>Tổng quan tồn kho sản phẩm</h2>
+                    <p>Theo dõi tổng số sản phẩm, lượng tồn kho và cảnh báo cần xử lý.</p>
+                </div>
+                <span class="admin-chip admin-chip--brand">Product Stock</span>
+            </div>
+
+            <div class="inventory-summary-grid">
+            <div class="admin-card inventory-stat-card inventory-stat-card--product">
+                <span class="inventory-card-icon">🧴</span>
                 <div class="inventory-card-label">Tổng sản phẩm active</div>
                 <div class="inventory-card-value">
                     <fmt:formatNumber value="${summary.productCount}" type="number"/>
@@ -73,6 +95,7 @@
             </div>
 
             <div class="admin-card inventory-stat-card inventory-stat-card--success">
+                <span class="inventory-card-icon">📦</span>
                 <div class="inventory-card-label">Tổng tồn kho</div>
                 <div class="inventory-card-value">
                     <fmt:formatNumber value="${summary.totalStock}" type="number"/>
@@ -81,6 +104,7 @@
             </div>
 
             <div class="admin-card inventory-stat-card inventory-stat-card--warning">
+                <span class="inventory-card-icon">⚠️</span>
                 <div class="inventory-card-label">Sắp hết hàng</div>
                 <div class="inventory-card-value">
                     <fmt:formatNumber value="${summary.lowStockCount}" type="number"/>
@@ -89,16 +113,28 @@
             </div>
 
             <div class="admin-card inventory-stat-card inventory-stat-card--danger">
+                <span class="inventory-card-icon">⛔</span>
                 <div class="inventory-card-label">Hết hàng</div>
                 <div class="inventory-card-value">
                     <fmt:formatNumber value="${summary.outOfStockCount}" type="number"/>
                 </div>
                 <div class="inventory-card-note">Cần nhập hàng ngay</div>
             </div>
-        </div>
+            </div>
+        </section>
 
-        <div class="inventory-summary-grid inventory-variant-summary-grid">
-            <div class="admin-card inventory-stat-card">
+        <section class="admin-inventory-group">
+            <div class="admin-inventory-group__head">
+                <div>
+                    <h2>Tổng quan tồn kho biến thể / SKU</h2>
+                    <p>Quản lý tồn kho theo size, màu sắc và mức cảnh báo tối thiểu riêng cho từng SKU.</p>
+                </div>
+                <span class="admin-chip admin-chip--brand">Variant Stock</span>
+            </div>
+
+            <div class="inventory-summary-grid inventory-variant-summary-grid">
+            <div class="admin-card inventory-stat-card inventory-stat-card--variant">
+                <span class="inventory-card-icon">🏷️</span>
                 <div class="inventory-card-label">Tổng biến thể active</div>
                 <div class="inventory-card-value">
                     <fmt:formatNumber value="${variantSummary.variantCount}" type="number"/>
@@ -107,6 +143,7 @@
             </div>
 
             <div class="admin-card inventory-stat-card inventory-stat-card--success">
+                <span class="inventory-card-icon">📦</span>
                 <div class="inventory-card-label">Tổng tồn biến thể</div>
                 <div class="inventory-card-value">
                     <fmt:formatNumber value="${variantSummary.totalStock}" type="number"/>
@@ -115,6 +152,7 @@
             </div>
 
             <div class="admin-card inventory-stat-card inventory-stat-card--warning">
+                <span class="inventory-card-icon">⚠️</span>
                 <div class="inventory-card-label">Biến thể sắp hết</div>
                 <div class="inventory-card-value">
                     <fmt:formatNumber value="${variantSummary.lowStockCount}" type="number"/>
@@ -123,13 +161,15 @@
             </div>
 
             <div class="admin-card inventory-stat-card inventory-stat-card--danger">
+                <span class="inventory-card-icon">⛔</span>
                 <div class="inventory-card-label">Biến thể hết hàng</div>
                 <div class="inventory-card-value">
                     <fmt:formatNumber value="${variantSummary.outOfStockCount}" type="number"/>
                 </div>
                 <div class="inventory-card-note">Cần nhập hàng theo SKU</div>
             </div>
-        </div>
+            </div>
+        </section>
 
         <div class="inventory-section-grid">
             <section class="admin-card inventory-panel">
@@ -143,6 +183,7 @@
                 <div class="inventory-panel-body">
                     <div class="export-grid">
                         <div class="export-box">
+                            <span class="export-box__icon">📅</span>
                             <strong>
                                 <fmt:formatNumber value="${summary.exportedToday}" type="number"/>
                             </strong>
@@ -150,6 +191,7 @@
                         </div>
 
                         <div class="export-box">
+                            <span class="export-box__icon">🗓️</span>
                             <strong>
                                 <fmt:formatNumber value="${summary.exportedThisWeek}" type="number"/>
                             </strong>
@@ -157,6 +199,7 @@
                         </div>
 
                         <div class="export-box">
+                            <span class="export-box__icon">📈</span>
                             <strong>
                                 <fmt:formatNumber value="${summary.exportedThisMonth}" type="number"/>
                             </strong>
@@ -164,6 +207,7 @@
                         </div>
 
                         <div class="export-box">
+                            <span class="export-box__icon">📊</span>
                             <strong>
                                 <fmt:formatNumber value="${summary.exportedThisYear}" type="number"/>
                             </strong>
@@ -253,7 +297,7 @@
             </section>
         </div>
 
-        <section class="admin-card inventory-panel inventory-mt-20">
+        <section class="admin-card inventory-panel inventory-mt-20" id="inventoryExcel">
             <div class="inventory-panel-header">
                 <div>
                     <h2>Nhập hàng bằng Excel</h2>
@@ -327,7 +371,7 @@
             </div>
         </section>
 
-        <section class="admin-card inventory-panel inventory-mt-20">
+        <section class="admin-card inventory-panel inventory-mt-20" id="productInventory">
             <div class="inventory-panel-header">
                 <div>
                     <h2>Danh sách tồn kho sản phẩm</h2>
@@ -683,7 +727,7 @@
             </div>
         </section>
 
-        <section class="admin-card inventory-panel inventory-mt-20">
+        <section class="admin-card inventory-panel inventory-mt-20" id="inventoryImportHistory">
             <div class="inventory-panel-header">
                 <div>
                     <h2>Lịch sử nhập hàng</h2>
@@ -743,6 +787,7 @@
             <div class="inventory-panel-body">
                 <div class="inventory-import-summary-grid">
                     <div class="export-box inventory-import-stat">
+                        <span class="export-box__icon">📥</span>
                         <strong>
                             <fmt:formatNumber value="${importSummary.monthlyImportQuantity}" type="number"/>
                         </strong>
@@ -750,6 +795,7 @@
                     </div>
 
                     <div class="export-box inventory-import-stat">
+                        <span class="export-box__icon">🔁</span>
                         <strong>
                             <fmt:formatNumber value="${importSummary.monthlyImportCount}" type="number"/>
                         </strong>
@@ -757,6 +803,7 @@
                     </div>
 
                     <div class="export-box inventory-import-stat">
+                        <span class="export-box__icon">🧴</span>
                         <strong>
                             <fmt:formatNumber value="${importSummary.monthlyProductCount}" type="number"/>
                         </strong>
@@ -764,6 +811,7 @@
                     </div>
 
                     <div class="export-box inventory-import-stat">
+                        <span class="export-box__icon">📊</span>
                         <strong>
                             <fmt:formatNumber value="${importSummary.yearlyImportQuantity}" type="number"/>
                         </strong>
