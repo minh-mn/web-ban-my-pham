@@ -3521,3 +3521,1149 @@ textarea {
     min-width: 330px !important;
   }
 }
+
+/* =========================================================
+   FIX 20260615 - HEADER OVERLAP + USER ACCOUNT BUTTON
+   ========================================================= */
+
+/* Header đang fixed nên cần chừa đủ khoảng trống cho nội dung bên dưới. */
+.site-main {
+  padding-top: 232px !important;
+}
+
+@media (max-width: 1240px) {
+  .site-main {
+    padding-top: 224px !important;
+  }
+}
+
+@media (max-width: 980px) {
+  .site-main {
+    padding-top: 250px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .site-main {
+    padding-top: 270px !important;
+  }
+}
+
+.header-inner.container,
+.header-inner {
+  align-items: center !important;
+}
+
+.auth-links,
+.auth-buttons {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 12px !important;
+  white-space: nowrap !important;
+}
+
+.user-dropdown {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  z-index: 10030 !important;
+}
+
+.user-dropdown .user-btn {
+  height: 54px !important;
+  min-width: 138px !important;
+  max-width: 188px !important;
+  padding: 0 16px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  color: #fff !important;
+  background: linear-gradient(135deg, #ff5f94 0%, #d20b42 58%, #a7062f 100%) !important;
+  box-shadow: 0 14px 28px rgba(210, 11, 66, .18) !important;
+  font-size: 14px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  letter-spacing: -0.01em !important;
+  cursor: pointer !important;
+  transition: transform .2s ease, box-shadow .2s ease !important;
+}
+
+.user-dropdown .user-btn:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 18px 32px rgba(210, 11, 66, .24) !important;
+}
+
+.user-icon,
+.user-chevron,
+.user-menu-item__icon {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: currentColor !important;
+  flex: 0 0 auto !important;
+}
+
+.user-icon {
+  width: 18px !important;
+  height: 18px !important;
+}
+
+.user-chevron {
+  width: 16px !important;
+  height: 16px !important;
+  transition: transform .2s ease !important;
+}
+
+.user-dropdown.is-open .user-chevron {
+  transform: rotate(180deg) !important;
+}
+
+.user-icon svg,
+.user-chevron svg,
+.user-menu-item__icon svg {
+  width: 100% !important;
+  height: 100% !important;
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-width: 2.1 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+}
+
+.user-name {
+  max-width: 88px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  color: #fff !important;
+}
+
+.user-menu {
+  position: absolute !important;
+  top: calc(100% + 12px) !important;
+  right: 0 !important;
+  min-width: 220px !important;
+  padding: 10px !important;
+  border-radius: 18px !important;
+  border: 1px solid rgba(210, 11, 66, .10) !important;
+  background: #fff !important;
+  box-shadow: 0 22px 40px rgba(0, 0, 0, .12) !important;
+  display: none !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  z-index: 10050 !important;
+}
+
+.user-menu.show {
+  display: flex !important;
+}
+
+/* Tắt hành vi cũ: hover tự bung menu. Menu mới mở bằng click. */
+.user-dropdown:hover .user-menu {
+  display: none !important;
+}
+
+.user-dropdown.is-open:hover .user-menu {
+  display: flex !important;
+}
+
+.user-menu-item,
+.logout-btn {
+  width: 100% !important;
+  min-height: 46px !important;
+  padding: 0 14px !important;
+  border: 0 !important;
+  border-radius: 12px !important;
+  background: transparent !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 10px !important;
+  color: #3a3340 !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  text-decoration: none !important;
+  cursor: pointer !important;
+  transition: background .2s ease, color .2s ease !important;
+}
+
+.user-menu-item:hover,
+.logout-btn:hover {
+  color: #d20b42 !important;
+  background: #fff2f6 !important;
+}
+
+.user-menu-item__icon {
+  width: 18px !important;
+  height: 18px !important;
+}
+
+.menu-divider {
+  height: 1px !important;
+  margin: 6px 0 !important;
+  background: rgba(210, 11, 66, .10) !important;
+}
+
+.user-menu form {
+  margin: 0 !important;
+  width: 100% !important;
+}
+
+/* Căn lại icon giỏ hàng / thông báo cho đều với nút user. */
+.cart-icon,
+.notification-bell {
+  z-index: 10020 !important;
+}
+
+.notif-dropdown {
+  z-index: 10060 !important;
+}
+
+@media (max-width: 1240px) {
+  .user-dropdown .user-btn {
+    min-width: 124px !important;
+    max-width: 164px !important;
+    padding: 0 14px !important;
+  }
+
+  .user-name {
+    max-width: 72px !important;
+  }
+}
+
+@media (max-width: 980px) {
+  .auth-links {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  .user-dropdown .user-btn {
+    max-width: 220px !important;
+  }
+
+  .user-name {
+    max-width: 110px !important;
+  }
+}
+
+
+/* =========================================================
+   FINAL FIX 20260615: HEADER KHÔNG ĐÈ NỘI DUNG + USER MENU CLICK
+   Dán cuối file để override toàn bộ rule cũ.
+   ========================================================= */
+
+/* Dùng sticky thay vì fixed: header vẫn bám trên cùng khi lướt,
+   nhưng vẫn nằm trong flow nên không còn đè banner/nội dung. */
+.site-header {
+  position: sticky !important;
+  top: 0 !important;
+  left: auto !important;
+  right: auto !important;
+  inset: auto !important;
+  z-index: 9990 !important;
+  overflow: visible !important;
+}
+
+.site-header * {
+  pointer-events: auto;
+}
+
+/* Vì header không còn fixed nên bỏ khoảng padding-top lớn cũ. */
+.site-main,
+body.site-body .site-main,
+.home-page .site-main {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
+/* Tạo khoảng thở nhẹ giữa header và nội dung trang. */
+.site-main > section:first-child,
+.site-main > div:first-child,
+.home-hero,
+.hero-section,
+.home-banner-section {
+  margin-top: 0 !important;
+}
+
+/* Đảm bảo search dropdown không nằm đè lên các nút bên phải. */
+.search-wrapper,
+.search-history-wrapper {
+  position: relative !important;
+  z-index: 20 !important;
+}
+
+.header-search-history,
+.search-results {
+  z-index: 9020 !important;
+}
+
+/* Khu vực nút bên phải luôn nổi cao hơn dropdown search. */
+.auth-links,
+.auth-buttons,
+.user-dropdown,
+.cart-icon,
+.notification-bell {
+  position: relative !important;
+  z-index: 9050 !important;
+}
+
+/* Nút user gọn hơn, bấm rõ hơn, không bị che click. */
+.user-dropdown {
+  display: inline-flex !important;
+  align-items: center !important;
+  isolation: isolate !important;
+  pointer-events: auto !important;
+}
+
+.user-dropdown .user-btn {
+  position: relative !important;
+  z-index: 9060 !important;
+  height: 54px !important;
+  min-width: 128px !important;
+  max-width: 172px !important;
+  padding: 0 15px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  color: #fff !important;
+  background: linear-gradient(135deg, #ff5f94 0%, #d20b42 58%, #a7062f 100%) !important;
+  box-shadow: 0 14px 28px rgba(210, 11, 66, .18) !important;
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  user-select: none !important;
+}
+
+.user-dropdown .user-btn:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 18px 34px rgba(210, 11, 66, .25) !important;
+}
+
+.user-icon,
+.user-chevron {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: currentColor !important;
+  flex: 0 0 auto !important;
+}
+
+.user-icon {
+  width: 18px !important;
+  height: 18px !important;
+}
+
+.user-chevron {
+  width: 15px !important;
+  height: 15px !important;
+  transition: transform .2s ease !important;
+}
+
+.user-dropdown.is-open .user-chevron {
+  transform: rotate(180deg) !important;
+}
+
+.user-name {
+  max-width: 78px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  color: #fff !important;
+  font-size: 14px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+}
+
+/* Dropdown chuyển sang dạng visibility/opacity để tránh xung đột display:hover cũ. */
+.user-dropdown .user-menu {
+  position: absolute !important;
+  top: calc(100% + 12px) !important;
+  right: 0 !important;
+  min-width: 228px !important;
+  padding: 10px !important;
+  border-radius: 18px !important;
+  border: 1px solid rgba(210, 11, 66, .12) !important;
+  background: #fff !important;
+  box-shadow: 0 24px 46px rgba(31, 18, 23, .16) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  transform: translateY(8px) scale(.98) !important;
+  transform-origin: top right !important;
+  transition: opacity .18s ease, visibility .18s ease, transform .18s ease !important;
+  z-index: 9100 !important;
+}
+
+.user-dropdown.is-open .user-menu,
+.user-dropdown .user-menu.show {
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  transform: translateY(0) scale(1) !important;
+}
+
+/* Chặn rule cũ tự bung menu khi hover. */
+.user-dropdown:hover .user-menu:not(.show) {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+.user-dropdown.is-open:hover .user-menu,
+.user-dropdown:hover .user-menu.show {
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+
+.user-menu-item,
+.logout-btn {
+  width: 100% !important;
+  min-height: 46px !important;
+  padding: 0 14px !important;
+  border: 0 !important;
+  border-radius: 12px !important;
+  background: transparent !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 10px !important;
+  color: #3a3340 !important;
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  text-decoration: none !important;
+  cursor: pointer !important;
+  transition: background .2s ease, color .2s ease, transform .2s ease !important;
+}
+
+.user-menu-item:hover,
+.logout-btn:hover {
+  color: #d20b42 !important;
+  background: #fff2f6 !important;
+  transform: translateX(2px) !important;
+}
+
+.user-menu-item__icon {
+  width: 18px !important;
+  height: 18px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: currentColor !important;
+  flex: 0 0 18px !important;
+}
+
+.user-menu-item__icon svg,
+.user-icon svg,
+.user-chevron svg {
+  width: 100% !important;
+  height: 100% !important;
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-width: 2.1 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+}
+
+.user-menu form {
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+.menu-divider {
+  height: 1px !important;
+  margin: 6px 0 !important;
+  background: rgba(210, 11, 66, .10) !important;
+}
+
+/* Badge thông báo không được che vùng click của nút chuông. */
+.cart-badge,
+.notif-badge {
+  pointer-events: none !important;
+}
+
+@media (max-width: 1240px) {
+  .user-dropdown .user-btn {
+    min-width: 118px !important;
+    max-width: 156px !important;
+    padding-inline: 13px !important;
+  }
+
+  .user-name {
+    max-width: 64px !important;
+  }
+}
+
+@media (max-width: 980px) {
+  .site-header {
+    position: sticky !important;
+  }
+
+  .site-main,
+  body.site-body .site-main,
+  .home-page .site-main {
+    padding-top: 0 !important;
+  }
+
+  .auth-links {
+    width: auto !important;
+    justify-content: center !important;
+  }
+
+  .user-dropdown .user-btn {
+    max-width: 210px !important;
+  }
+
+  .user-name {
+    max-width: 104px !important;
+  }
+}
+
+
+/* =========================================================
+   FINAL FIX V2 - KHÔNG ĐỂ HEADER ĐÈ NỘI DUNG + USER CLICK ĐƯỢC
+   Dán cuối file để thắng toàn bộ CSS cũ phía trên.
+   ========================================================= */
+
+html,
+body {
+  overflow-x: hidden !important;
+}
+
+/* Tắt hoàn toàn fixed/sticky: header nằm trong flow bình thường nên không thể đè banner. */
+.site-header,
+body .site-header,
+html body .site-header {
+  position: relative !important;
+  inset: auto !important;
+  top: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  left: auto !important;
+  z-index: 1000 !important;
+  transform: none !important;
+}
+
+/* Vì header không fixed nữa nên không cần chừa khoảng trống giả. */
+.site-main,
+body.site-body .site-main,
+.home-page .site-main,
+html body main.site-main {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
+/* Bảo đảm section đầu không bị kéo âm lên trên. */
+.site-main > section:first-child,
+.site-main > div:first-child,
+.home-hero,
+.hero-section,
+.home-banner-section,
+.home-page .home-hero {
+  margin-top: 0 !important;
+  padding-top: 28px !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+/* Header layout giữ gọn, không phủ qua vùng hero. */
+.header-inner.container,
+.header-inner {
+  position: relative !important;
+  z-index: 5 !important;
+  overflow: visible !important;
+}
+
+.header-actions,
+.auth-links,
+.user-dropdown,
+.user-dropdown .user-btn,
+.cart-icon,
+.notification-bell {
+  position: relative !important;
+  z-index: 1200 !important;
+  pointer-events: auto !important;
+}
+
+/* Search dropdown không được che nút user/cart/bell. */
+.search-wrapper,
+.header-actions .search-wrapper {
+  position: relative !important;
+  z-index: 20 !important;
+}
+
+#search-results,
+.search-results,
+#searchHistoryDropdown,
+.header-search-history {
+  z-index: 50 !important;
+}
+
+#search-results:not(.show),
+.search-results:not(.show),
+#searchHistoryDropdown:not(.is-open),
+.header-search-history:not(.is-open) {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+#searchResults[style*="display: block"] ~ .auth-links,
+.header-actions .auth-links {
+  z-index: 1300 !important;
+}
+
+/* Nút user rõ, dễ bấm, không bị tên dài làm tràn. */
+.user-dropdown .user-btn,
+button#userMenuBtn.user-btn {
+  height: 54px !important;
+  min-width: 150px !important;
+  max-width: 190px !important;
+  padding: 0 16px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  color: #fff !important;
+  background: linear-gradient(135deg, #ff5f94 0%, #d20b42 58%, #a7062f 100%) !important;
+  box-shadow: 0 14px 28px rgba(210, 11, 66, .20) !important;
+  font-size: 14px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  cursor: pointer !important;
+  user-select: none !important;
+  pointer-events: auto !important;
+}
+
+.user-dropdown .user-btn:hover,
+button#userMenuBtn.user-btn:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 18px 34px rgba(210, 11, 66, .26) !important;
+}
+
+.user-dropdown .user-name {
+  max-width: 95px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  display: inline-block !important;
+}
+
+.user-dropdown .user-icon,
+.user-dropdown .user-chevron {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: currentColor !important;
+  flex: 0 0 auto !important;
+}
+
+.user-dropdown .user-icon {
+  width: 18px !important;
+  height: 18px !important;
+}
+
+.user-dropdown .user-chevron {
+  width: 15px !important;
+  height: 15px !important;
+  transition: transform .18s ease !important;
+}
+
+.user-dropdown.is-open .user-chevron {
+  transform: rotate(180deg) !important;
+}
+
+/* Dropdown user mở bằng class .show, không phụ thuộc hover. */
+.user-menu,
+#userMenu.user-menu {
+  position: absolute !important;
+  top: calc(100% + 12px) !important;
+  right: 0 !important;
+  min-width: 230px !important;
+  padding: 10px !important;
+  border-radius: 18px !important;
+  border: 1px solid rgba(210, 11, 66, .12) !important;
+  background: #fff !important;
+  box-shadow: 0 24px 46px rgba(32, 20, 27, .16) !important;
+  display: none !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  transform: translateY(-6px) scale(.98) !important;
+  transform-origin: top right !important;
+  z-index: 99999 !important;
+}
+
+.user-dropdown.is-open .user-menu,
+.user-menu.show,
+#userMenu.user-menu.show {
+  display: flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  transform: translateY(0) scale(1) !important;
+}
+
+/* Chặn rule cũ tự bung menu khi hover. */
+.user-dropdown:hover .user-menu:not(.show) {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+.user-menu-item,
+.logout-btn {
+  min-height: 46px !important;
+  width: 100% !important;
+  padding: 0 14px !important;
+  border: 0 !important;
+  border-radius: 12px !important;
+  background: transparent !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 10px !important;
+  color: #352d38 !important;
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  text-decoration: none !important;
+  cursor: pointer !important;
+}
+
+.user-menu-item:hover,
+.logout-btn:hover {
+  background: #fff2f6 !important;
+  color: #d20b42 !important;
+}
+
+.menu-divider {
+  height: 1px !important;
+  margin: 6px 0 !important;
+  background: rgba(210, 11, 66, .11) !important;
+}
+
+@media (max-width: 1240px) {
+  .user-dropdown .user-btn,
+  button#userMenuBtn.user-btn {
+    min-width: 126px !important;
+    max-width: 164px !important;
+    padding-inline: 13px !important;
+  }
+
+  .user-dropdown .user-name {
+    max-width: 70px !important;
+  }
+}
+
+@media (max-width: 980px) {
+  .site-header,
+  body .site-header,
+  html body .site-header {
+    position: relative !important;
+  }
+
+  .site-main,
+  body.site-body .site-main,
+  .home-page .site-main,
+  html body main.site-main {
+    padding-top: 0 !important;
+  }
+}
+
+
+/* =========================================================
+   FINAL FIX V3 - HEADER KHÔNG ĐÈ + USER MENU BẤM ĐƯỢC
+   Dùng <details>/<summary> để không phụ thuộc JavaScript cũ
+   ========================================================= */
+
+html body .site-header,
+body.site-body .site-header,
+.site-header {
+  position: relative !important;
+  inset: auto !important;
+  top: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  left: auto !important;
+  z-index: 100 !important;
+  transform: none !important;
+  overflow: visible !important;
+}
+
+html body .site-main,
+body.site-body .site-main,
+main.site-main,
+.site-main {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
+html body .site-main > section:first-child,
+html body .home-hero,
+html body .hero-section,
+html body .home-banner-section {
+  margin-top: 0 !important;
+  padding-top: 28px !important;
+}
+
+.header-inner,
+.header-inner.container,
+.header-actions,
+.auth-links {
+  overflow: visible !important;
+}
+
+.header-actions {
+  position: relative !important;
+  z-index: 30 !important;
+}
+
+.search-wrapper,
+.header-actions .search-wrapper,
+.search-history-wrapper {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+.auth-links,
+.user-dropdown,
+.cart-icon,
+.notification-bell {
+  position: relative !important;
+  z-index: 80 !important;
+  pointer-events: auto !important;
+}
+
+/* Ẩn dropdown tìm kiếm khi ô search không focus để không chặn click user. */
+.search-wrapper:not(:focus-within) #search-results,
+.search-wrapper:not(:focus-within) .search-results,
+.search-wrapper:not(:focus-within) #searchHistoryDropdown,
+.search-wrapper:not(:focus-within) .header-search-history {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* Details user menu */
+.user-dropdown,
+details.user-dropdown {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  z-index: 99999 !important;
+  pointer-events: auto !important;
+}
+
+.user-dropdown summary,
+.user-dropdown .user-btn,
+summary#userMenuBtn.user-btn {
+  list-style: none !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  height: 54px !important;
+  min-width: 138px !important;
+  max-width: 188px !important;
+  padding: 0 16px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  color: #fff !important;
+  background: linear-gradient(135deg, #ff5f94 0%, #d20b42 58%, #a7062f 100%) !important;
+  box-shadow: 0 14px 28px rgba(210, 11, 66, .20) !important;
+  font-size: 14px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  cursor: pointer !important;
+  user-select: none !important;
+  pointer-events: auto !important;
+  outline: none !important;
+}
+
+.user-dropdown summary::-webkit-details-marker,
+summary#userMenuBtn::-webkit-details-marker {
+  display: none !important;
+}
+
+.user-dropdown summary:hover,
+summary#userMenuBtn.user-btn:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 18px 34px rgba(210, 11, 66, .26) !important;
+}
+
+.user-dropdown .user-name {
+  max-width: 88px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  display: inline-block !important;
+}
+
+.user-dropdown .user-icon,
+.user-dropdown .user-chevron {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: currentColor !important;
+  flex: 0 0 auto !important;
+}
+
+.user-dropdown .user-icon {
+  width: 18px !important;
+  height: 18px !important;
+}
+
+.user-dropdown .user-chevron {
+  width: 15px !important;
+  height: 15px !important;
+  transition: transform .18s ease !important;
+}
+
+.user-dropdown[open] .user-chevron,
+.user-dropdown.is-open .user-chevron {
+  transform: rotate(180deg) !important;
+}
+
+.user-dropdown .user-menu,
+#userMenu.user-menu {
+  position: absolute !important;
+  top: calc(100% + 12px) !important;
+  right: 0 !important;
+  min-width: 230px !important;
+  padding: 10px !important;
+  border-radius: 18px !important;
+  border: 1px solid rgba(210, 11, 66, .12) !important;
+  background: #fff !important;
+  box-shadow: 0 24px 46px rgba(32, 20, 27, .16) !important;
+  display: none !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  transform: translateY(-6px) scale(.98) !important;
+  transform-origin: top right !important;
+  z-index: 999999 !important;
+}
+
+.user-dropdown[open] .user-menu,
+.user-dropdown.is-open .user-menu,
+.user-menu.show,
+#userMenu.user-menu.show {
+  display: flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  transform: translateY(0) scale(1) !important;
+}
+
+/* Rule cũ hover không được tự đóng menu khi details đang open. */
+.user-dropdown:hover .user-menu:not(.show) {
+  display: none !important;
+}
+
+.user-dropdown[open]:hover .user-menu,
+.user-dropdown[open] .user-menu:not(.show) {
+  display: flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+
+.user-menu-item,
+.logout-btn {
+  min-height: 46px !important;
+  width: 100% !important;
+  padding: 0 14px !important;
+  border: 0 !important;
+  border-radius: 12px !important;
+  background: transparent !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 10px !important;
+  color: #352d38 !important;
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  text-decoration: none !important;
+  cursor: pointer !important;
+}
+
+.user-menu-item:hover,
+.logout-btn:hover {
+  background: #fff2f6 !important;
+  color: #d20b42 !important;
+}
+
+.user-menu-item__icon {
+  width: 18px !important;
+  height: 18px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: currentColor !important;
+  flex: 0 0 18px !important;
+}
+
+.menu-divider {
+  height: 1px !important;
+  margin: 6px 0 !important;
+  background: rgba(210, 11, 66, .11) !important;
+}
+
+.user-menu form {
+  margin: 0 !important;
+}
+
+/* =========================================================
+   FINAL V4 - FIX CHẮC CHẮN: KHÔNG ĐÈ + USER MENU BẤM ĐƯỢC
+   Dán cuối file để thắng toàn bộ CSS cũ.
+   ========================================================= */
+
+html body .site-header,
+body.site-body .site-header,
+.site-header {
+  position: relative !important;
+  inset: auto !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: none !important;
+  z-index: 1000 !important;
+  overflow: visible !important;
+}
+
+html body main.site-main,
+html body .site-main,
+body.site-body .site-main,
+.site-main {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
+html body .home-hero,
+html body .hero-section,
+html body .home-banner-section,
+html body .site-main > section:first-child {
+  margin-top: 0 !important;
+  padding-top: 28px !important;
+}
+
+.header-inner,
+.header-inner.container,
+.header-actions,
+.auth-links,
+.user-dropdown {
+  overflow: visible !important;
+}
+
+.header-actions {
+  position: relative !important;
+  z-index: 9000 !important;
+}
+
+.search-wrapper,
+.search-history-wrapper,
+.header-actions .search-wrapper {
+  position: relative !important;
+  z-index: 10 !important;
+}
+
+#search-results,
+.search-results,
+#searchHistoryDropdown,
+.header-search-history {
+  z-index: 20 !important;
+}
+
+#search-results:not(.show),
+.search-results:not(.show),
+#searchHistoryDropdown:not(.is-open),
+.header-search-history:not(.is-open) {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+.auth-links,
+.user-dropdown,
+details.user-dropdown {
+  position: relative !important;
+  z-index: 2147483000 !important;
+  pointer-events: auto !important;
+}
+
+#userMenuBtn,
+.user-dropdown .user-btn,
+summary#userMenuBtn.user-btn {
+  position: relative !important;
+  z-index: 2147483001 !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  user-select: none !important;
+}
+
+.user-dropdown .user-menu,
+#userMenu.user-menu {
+  position: absolute !important;
+  top: calc(100% + 12px) !important;
+  right: 0 !important;
+  min-width: 230px !important;
+  padding: 10px !important;
+  border-radius: 18px !important;
+  border: 1px solid rgba(210, 11, 66, .12) !important;
+  background: #fff !important;
+  box-shadow: 0 24px 46px rgba(32, 20, 27, .16) !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  z-index: 2147483002 !important;
+}
+
+.user-dropdown:not(.is-open):not([open]) .user-menu:not(.show),
+#userMenu.user-menu:not(.show) {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+.user-dropdown.is-open .user-menu,
+.user-dropdown[open] .user-menu,
+.user-menu.show,
+#userMenu.user-menu.show {
+  display: flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  transform: translateY(0) scale(1) !important;
+}
+
+.user-dropdown:hover .user-menu:not(.show) {
+  display: none !important;
+}
+
+.user-dropdown.is-open:hover .user-menu,
+.user-dropdown[open]:hover .user-menu,
+.user-dropdown:hover .user-menu.show {
+  display: flex !important;
+}
