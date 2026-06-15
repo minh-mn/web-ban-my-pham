@@ -30,25 +30,20 @@
       <span class="admin-brand__mark">MC</span>
       <span class="admin-brand__text">
         <strong>MyCosmetic</strong>
-        <small>Bảng quản trị</small>
+        <small>Quản trị hệ thống</small>
       </span>
     </a>
 
     <nav class="admin-nav">
-
       <div class="admin-nav__section">Tổng quan</div>
 
-      <a class="${activeMenu == 'admin' ? 'is-active' : ''}"
-         href="${pageContext.request.contextPath}/admin">
+      <a class="${activeMenu == 'admin' ? 'is-active' : ''}" href="${pageContext.request.contextPath}/admin">
         <span>Trung tâm quản trị</span>
-        <span class="admin-nav__meta">/admin</span>
       </a>
 
       <c:if test="${canRevenue}">
-        <a class="${activeMenu == 'dashboard' ? 'is-active' : ''}"
-           href="${pageContext.request.contextPath}/admin/dashboard">
+        <a class="${activeMenu == 'dashboard' ? 'is-active' : ''}" href="${pageContext.request.contextPath}/admin/dashboard">
           <span>Tổng quan doanh thu</span>
-          <span class="admin-nav__meta">/admin/dashboard</span>
         </a>
       </c:if>
 
@@ -57,43 +52,23 @@
       </c:if>
 
       <c:if test="${canProducts}">
-        <a class="${activeMenu == 'products' ? 'is-active' : ''}"
-           href="${pageContext.request.contextPath}/admin/products">
-          <span>Sản phẩm</span>
-          <span class="admin-nav__meta">/admin/products</span>
-        </a>
+        <a class="${activeMenu == 'products' ? 'is-active' : ''}" href="${pageContext.request.contextPath}/admin/products"><span>Sản phẩm</span></a>
       </c:if>
 
       <c:if test="${canInventory}">
-        <a class="${activeMenu == 'inventory' ? 'is-active' : ''}"
-           href="${pageContext.request.contextPath}/admin/inventory">
-          <span>Quản lý tồn kho</span>
-          <span class="admin-nav__meta">/admin/inventory</span>
-        </a>
+        <a class="${activeMenu == 'inventory' ? 'is-active' : ''}" href="${pageContext.request.contextPath}/admin/inventory"><span>Quản lý tồn kho</span></a>
       </c:if>
 
       <c:if test="${canCategories}">
-        <a class="${activeMenu == 'categories' ? 'is-active' : ''}"
-           href="${pageContext.request.contextPath}/admin/categories">
-          <span>Danh mục</span>
-          <span class="admin-nav__meta">/admin/categories</span>
-        </a>
+        <a class="${activeMenu == 'categories' ? 'is-active' : ''}" href="${pageContext.request.contextPath}/admin/categories"><span>Danh mục</span></a>
       </c:if>
 
       <c:if test="${canBrands}">
-        <a class="${activeMenu == 'brands' ? 'is-active' : ''}"
-           href="${pageContext.request.contextPath}/admin/brands">
-          <span>Thương hiệu</span>
-          <span class="admin-nav__meta">/admin/brands</span>
-        </a>
+        <a class="${activeMenu == 'brands' ? 'is-active' : ''}" href="${pageContext.request.contextPath}/admin/brands"><span>Thương hiệu</span></a>
       </c:if>
 
       <c:if test="${canBanners}">
-        <a class="${activeMenu == 'banners' ? 'is-active' : ''}"
-           href="${pageContext.request.contextPath}/admin/banners">
-          <span>Banner</span>
-          <span class="admin-nav__meta">/admin/banners</span>
-        </a>
+        <a class="${activeMenu == 'banners' ? 'is-active' : ''}" href="${pageContext.request.contextPath}/admin/banners"><span>Banner</span></a>
       </c:if>
 
       <c:if test="${canOrders or canReturns}">
@@ -101,102 +76,51 @@
       </c:if>
 
       <c:if test="${canOrders}">
-        <a class="${activeMenu == 'orders' ? 'is-active' : ''}"
-           href="${pageContext.request.contextPath}/admin/orders">
-          <span>Đơn hàng</span>
-          <span class="admin-nav__meta">/admin/orders</span>
-        </a>
+        <a class="${activeMenu == 'orders' ? 'is-active' : ''}" href="${pageContext.request.contextPath}/admin/orders"><span>Đơn hàng</span></a>
       </c:if>
 
       <c:if test="${canReturns}">
-        <a class="${activeMenu == 'returns' ? 'is-active' : ''}"
-           href="${pageContext.request.contextPath}/admin/returns">
-          <span>Yêu cầu đổi trả</span>
-          <span class="admin-nav__meta">/admin/returns</span>
-        </a>
-
-        <a class="${activeMenu == 'cancelRequests' ? 'is-active' : ''}"
-           href="${pageContext.request.contextPath}/admin/cancel-requests">
-          <span>Yêu cầu hủy đơn</span>
-          <span class="admin-nav__meta">/admin/cancel-requests</span>
-        </a>
+        <a class="${activeMenu == 'returns' ? 'is-active' : ''}" href="${pageContext.request.contextPath}/admin/returns"><span>Yêu cầu đổi trả</span></a>
+        <a class="${activeMenu == 'cancelRequests' ? 'is-active' : ''}" href="${pageContext.request.contextPath}/admin/cancel-requests"><span>Yêu cầu hủy đơn</span></a>
       </c:if>
 
       <c:if test="${canPromotions or canFlashsale}">
         <div class="admin-nav__section">Khuyến mãi</div>
+      </c:if>
 
-        <c:if test="${canPromotions}">
-          <a class="${
-                activeMenu == 'promotions'
-                || activeMenu == 'coupons'
-                || activeMenu == 'promotionEvents'
-                || activeMenu == 'brandDiscounts'
-                || activeMenu == 'orderDiscounts'
-                ? 'is-active'
-                : ''
-              }"
-             href="${pageContext.request.contextPath}/admin/promotions">
-            <span>Khuyến mãi &amp; Mã giảm giá</span>
-            <span class="admin-nav__meta">/admin/promotions</span>
-          </a>
-        </c:if>
+      <c:if test="${canPromotions}">
+        <a class="${activeMenu == 'promotions' || activeMenu == 'coupons' || activeMenu == 'promotionEvents' || activeMenu == 'brandDiscounts' || activeMenu == 'orderDiscounts' ? 'is-active' : ''}" href="${pageContext.request.contextPath}/admin/promotions">
+          <span>Khuyến mãi &amp; mã giảm giá</span>
+        </a>
       </c:if>
 
       <c:if test="${canFlashsale}">
-        <a class="${activeMenu == 'flashSale' || activeMenu == 'flashsale' ? 'is-active' : ''}"
-           href="${pageContext.request.contextPath}/admin/flash-sale">
-          <span>Flash Sale</span>
-          <span class="admin-nav__meta">/admin/flash-sale</span>
-        </a>
+        <a class="${activeMenu == 'flashSale' || activeMenu == 'flashsale' ? 'is-active' : ''}" href="${pageContext.request.contextPath}/admin/flash-sale"><span>Flash Sale</span></a>
       </c:if>
 
       <c:if test="${canReviews or canSettings or canCms or canContact or canNotifications}">
         <div class="admin-nav__section">Nội dung &amp; CMS</div>
       </c:if>
+
       <c:if test="${canReviews}">
-        <a class="${activeMenu == 'reviews' ? 'is-active' : ''}"
-           href="${pageContext.request.contextPath}/admin/reviews">
-          <span>Quản lý bình luận</span>
-          <span class="admin-nav__meta">/admin/reviews</span>
-        </a>
+        <a class="${activeMenu == 'reviews' ? 'is-active' : ''}" href="${pageContext.request.contextPath}/admin/reviews"><span>Quản lý bình luận</span></a>
       </c:if>
 
       <c:if test="${canSettings}">
-        <a class="${activeMenu == 'settings' ? 'is-active' : ''}"
-           href="${pageContext.request.contextPath}/admin/settings">
-          <span>Cài đặt footer</span>
-          <span class="admin-nav__meta">/admin/settings</span>
-        </a>
+        <a class="${activeMenu == 'settings' ? 'is-active' : ''}" href="${pageContext.request.contextPath}/admin/settings"><span>Cài đặt footer</span></a>
       </c:if>
 
       <c:if test="${canCms}">
-        <a class="${activeMenu == 'pages' ? 'is-active' : ''}"
-           href="${pageContext.request.contextPath}/admin/pages">
-          <span>Trang nội dung</span>
-          <span class="admin-nav__meta">/admin/pages</span>
-        </a>
-
-        <a class="${activeMenu == 'events' || activeMenu == 'blogs' ? 'is-active' : ''}"
-           href="${pageContext.request.contextPath}/admin/events">
-          <span>Tin tức / Blog</span>
-          <span class="admin-nav__meta">/admin/events</span>
-        </a>
+        <a class="${activeMenu == 'pages' ? 'is-active' : ''}" href="${pageContext.request.contextPath}/admin/pages"><span>Trang nội dung</span></a>
+        <a class="${activeMenu == 'events' || activeMenu == 'blogs' ? 'is-active' : ''}" href="${pageContext.request.contextPath}/admin/events"><span>Tin tức / Blog</span></a>
       </c:if>
 
       <c:if test="${canContact}">
-        <a class="${activeMenu == 'contact' || activeMenu == 'contact-messages' ? 'is-active' : ''}"
-           href="${pageContext.request.contextPath}/admin/contact-messages">
-          <span>Tin nhắn liên hệ</span>
-          <span class="admin-nav__meta">/admin/contact-messages</span>
-        </a>
+        <a class="${activeMenu == 'contact' || activeMenu == 'contact-messages' ? 'is-active' : ''}" href="${pageContext.request.contextPath}/admin/contact-messages"><span>Tin nhắn liên hệ</span></a>
       </c:if>
 
       <c:if test="${canNotifications}">
-        <a class="${activeMenu == 'notifications' ? 'is-active' : ''}"
-           href="${pageContext.request.contextPath}/admin/notifications">
-          <span>Thông báo</span>
-          <span class="admin-nav__meta">/admin/notifications</span>
-        </a>
+        <a class="${activeMenu == 'notifications' ? 'is-active' : ''}" href="${pageContext.request.contextPath}/admin/notifications"><span>Thông báo</span></a>
       </c:if>
 
       <c:if test="${canUsers or canRoles or canRanks or canAuditLogs}">
@@ -204,43 +128,21 @@
       </c:if>
 
       <c:if test="${canUsers}">
-        <a class="${activeMenu == 'users' ? 'is-active' : ''}"
-           href="${pageContext.request.contextPath}/admin/users">
-          <span>Quản lý người dùng</span>
-          <span class="admin-nav__meta">/admin/users</span>
-        </a>
+        <a class="${activeMenu == 'users' ? 'is-active' : ''}" href="${pageContext.request.contextPath}/admin/users"><span>Quản lý người dùng</span></a>
       </c:if>
 
       <c:if test="${canRoles}">
-        <a class="${activeMenu == 'roles' ? 'is-active' : ''}"
-           href="${pageContext.request.contextPath}/admin/roles">
-          <span>Vai trò &amp; phân quyền</span>
-          <span class="admin-nav__meta">/admin/roles</span>
-        </a>
+        <a class="${activeMenu == 'roles' ? 'is-active' : ''}" href="${pageContext.request.contextPath}/admin/roles"><span>Vai trò &amp; phân quyền</span></a>
       </c:if>
 
       <c:if test="${canRanks}">
-        <a class="${activeMenu == 'ranks' ? 'is-active' : ''}"
-           href="${pageContext.request.contextPath}/admin/ranks">
-          <span>Hạng khách hàng</span>
-          <span class="admin-nav__meta">/admin/ranks</span>
-        </a>
+        <a class="${activeMenu == 'ranks' ? 'is-active' : ''}" href="${pageContext.request.contextPath}/admin/ranks"><span>Hạng khách hàng</span></a>
       </c:if>
 
       <c:if test="${canAuditLogs}">
-        <a class="${activeMenu == 'auditLogs' ? 'is-active' : ''}"
-           href="${pageContext.request.contextPath}/admin/audit-logs">
-          <span>Nhật ký hệ thống</span>
-          <span class="admin-nav__meta">/admin/audit-logs</span>
-        </a>
+        <a class="${activeMenu == 'auditLogs' ? 'is-active' : ''}" href="${pageContext.request.contextPath}/admin/audit-logs"><span>Nhật ký hệ thống</span></a>
       </c:if>
-
     </nav>
-
-    <div class="admin-sidebar__footer">
-      <hr class="admin-divider"/>
-      <a class="admin-btn" href="${pageContext.request.contextPath}/logout">← Đăng xuất</a>
-    </div>
 
   </div>
 </aside>
