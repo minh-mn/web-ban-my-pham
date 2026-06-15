@@ -1,10 +1,3 @@
-<%--
-  Created by IntelliJ IDEA.
-  User: ASUS
-  Date: 23/05/2026
-  Time: 7:02 CH
-  To change this template use File | Settings | File Templates.
---%>
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
@@ -16,201 +9,212 @@
 <jsp:include page="/jsp/admin/layout/header.jsp"/>
 <jsp:include page="/jsp/admin/layout/sidebar.jsp"/>
 
-<style>
-  /* @import phông chữ bắt buộc nằm trên cùng của thẻ style */
-  @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;600;700;800;900&display=swap');
+<c:set var="ctx" value="${pageContext.request.contextPath}" />
+<c:set var="pageTotal" value="${empty pages ? 0 : fn:length(pages)}" />
+<c:set var="pagePolicyCount" value="0" />
+<c:set var="pageAboutCount" value="0" />
+<c:set var="pageThumbnailCount" value="0" />
 
-  /* Đồng bộ phông chữ toàn cục */
-  .admin-main,
-  .custom-popup-overlay {
-    font-family: 'Be Vietnam Pro', sans-serif;
-  }
-
-  /* Lớp phủ mờ toàn màn hình của Popup */
-  .custom-popup-overlay {
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(17, 24, 39, 0.6);
-    backdrop-filter: blur(4px);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-    opacity: 0; pointer-events: none;
-    transition: all 0.3s ease;
-  }
-  .custom-popup-overlay.show {
-    opacity: 1; pointer-events: auto;
-  }
-
-  /* Hộp nội dung cấu trúc Popup */
-  .custom-popup-box {
-    background: #ffffff;
-    padding: 30px;
-    border-radius: 12px;
-    width: 90%;
-    max-width: 400px;
-    text-align: center;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    transform: scale(0.8);
-    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-  .custom-popup-overlay.show .custom-popup-box {
-    transform: scale(1);
-  }
-
-  /* Biểu tượng dấu hỏi cảnh báo */
-  .custom-popup-icon {
-    width: 60px; height: 60px;
-    background: #fef3c7; color: #d97706;
-    font-size: 32px; font-weight: bold;
-    display: flex; align-items: center; justify-content: center;
-    margin: 0 auto 15px; border-radius: 50%;
-  }
-
-  /* Biến đổi màu biểu tượng nếu là tác vụ nguy hiểm (như Xóa) */
-  .custom-popup-icon.danger-mode {
-    background: #fee2e2; color: #ef4444;
-  }
-
-  /* Tiêu đề thông báo */
-  .custom-popup-title {
-    font-size: 18px; color: #111827;
-    margin-bottom: 10px; font-weight: 700;
-  }
-
-  /* Chi tiết văn bản hỏi */
-  .custom-popup-msg {
-    font-size: 14px; color: #4b5563;
-    line-height: 1.6; margin-bottom: 25px;
-  }
-
-  /* Khung chứa các nút bấm */
-  .custom-popup-actions {
-    display: flex;
-    gap: 12px;
-    justify-content: center;
-  }
-
-  /* Định dạng các nút bấm trong Popup */
-  .custom-popup-btn {
-    flex: 1;
-    border: none;
-    padding: 12px 20px;
-    font-size: 14px;
-    font-weight: 600;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-  .custom-popup-btn--cancel {
-    background: #f3f4f6; color: #374151;
-  }
-  .custom-popup-btn--cancel:hover {
-    background: #e5e7eb;
-  }
-  .custom-popup-btn--confirm {
-    background: #3b82f6; color: white;
-  }
-  .custom-popup-btn--confirm:hover {
-    background: #2563eb;
-  }
-  .custom-popup-btn--confirm.danger-brand {
-    background: #ef4444;
-  }
-  .custom-popup-btn--confirm.danger-brand:hover {
-    background: #dc2626;
-  }
-</style>
+<c:forEach var="pageStat" items="${pages}">
+  <c:if test="${pageStat.type == 'policy'}">
+    <c:set var="pagePolicyCount" value="${pagePolicyCount + 1}" />
+  </c:if>
+  <c:if test="${pageStat.type == 'about'}">
+    <c:set var="pageAboutCount" value="${pageAboutCount + 1}" />
+  </c:if>
+  <c:if test="${not empty pageStat.thumbnail}">
+    <c:set var="pageThumbnailCount" value="${pageThumbnailCount + 1}" />
+  </c:if>
+</c:forEach>
 
 <main class="admin-main">
-  <div class="admin-container">
+  <div class="admin-container admin-page-list-page">
 
-    <div class="admin-topbar">
-      <div>
-        <h1 class="admin-h1">Pages CMS</h1>
-        <p class="admin-subtext">Quản lý nội dung website (policy, page, footer...)</p>
+    <section class="admin-page-list-hero">
+      <div class="admin-page-list-hero__content">
+        <span class="admin-page-list-eyebrow">NỘI DUNG &amp; WEBSITE</span>
+        <h1 class="admin-page-list-title">Pages CMS</h1>
+        <p class="admin-page-list-subtitle">
+          Quản lý nội dung website như chính sách, giới thiệu, footer page và các trang tĩnh hiển thị cho khách hàng.
+        </p>
       </div>
 
-      <a class="admin-btn admin-btn--primary"
-         href="${pageContext.request.contextPath}/admin/pages?action=new">
-        + Thêm page
-      </a>
-    </div>
+      <div class="admin-page-list-hero__actions">
+        <a class="admin-btn admin-btn--primary"
+           href="${ctx}/admin/pages?action=new">
+          + Thêm page
+        </a>
+      </div>
+    </section>
 
-    <div class="admin-card">
+    <section class="admin-page-summary">
+      <div class="admin-page-stat admin-page-stat--total">
+        <span class="admin-page-stat__icon">📄</span>
+        <span class="admin-page-stat__label">Tổng page</span>
+        <strong class="admin-page-stat__value">
+          <c:out value="${pageTotal}" />
+        </strong>
+        <span class="admin-page-stat__note">Tất cả nội dung CMS</span>
+      </div>
+
+      <div class="admin-page-stat admin-page-stat--policy">
+        <span class="admin-page-stat__icon">📌</span>
+        <span class="admin-page-stat__label">Chính sách</span>
+        <strong class="admin-page-stat__value">
+          <c:out value="${pagePolicyCount}" />
+        </strong>
+        <span class="admin-page-stat__note">Loại policy</span>
+      </div>
+
+      <div class="admin-page-stat admin-page-stat--about">
+        <span class="admin-page-stat__icon">🏷️</span>
+        <span class="admin-page-stat__label">Giới thiệu</span>
+        <strong class="admin-page-stat__value">
+          <c:out value="${pageAboutCount}" />
+        </strong>
+        <span class="admin-page-stat__note">Loại about</span>
+      </div>
+
+      <div class="admin-page-stat admin-page-stat--thumb">
+        <span class="admin-page-stat__icon">🖼️</span>
+        <span class="admin-page-stat__label">Có thumbnail</span>
+        <strong class="admin-page-stat__value">
+          <c:out value="${pageThumbnailCount}" />
+        </strong>
+        <span class="admin-page-stat__note">Page đã có ảnh đại diện</span>
+      </div>
+    </section>
+
+    <section class="admin-card admin-page-list-card">
       <div class="admin-card__body">
+        <div class="admin-page-section-head">
+          <div>
+            <h2 class="admin-page-section-title">Danh sách page</h2>
+            <p class="admin-page-section-desc">
+              Chỉnh sửa nội dung, thumbnail và loại page đang hiển thị trên website.
+            </p>
+          </div>
+
+          <span class="admin-chip admin-chip--brand">
+            <c:out value="${pageTotal}" /> page
+          </span>
+        </div>
 
         <c:choose>
           <c:when test="${empty pages}">
-            <div class="admin-empty">Chưa có page nào.</div>
+            <div class="admin-page-empty">
+              <div class="admin-page-empty__icon">📄</div>
+              <div>
+                <h3>Chưa có page nào</h3>
+                <p>Hãy tạo page đầu tiên để quản lý nội dung chính sách, giới thiệu hoặc footer.</p>
+                <a class="admin-btn admin-btn--primary"
+                   href="${ctx}/admin/pages?action=new">
+                  + Thêm page
+                </a>
+              </div>
+            </div>
           </c:when>
 
           <c:otherwise>
-            <table class="admin-table">
-              <thead>
-              <tr>
-                <th>ID</th>
-                <th>Hình ảnh</th>
-                <th>Tiêu đề</th>
-                <th>Slug</th>
-                <th>Loại</th>
-                <th>Hành động</th>
-              </tr>
-              </thead>
-              <tbody>
-              <c:forEach var="p" items="${pages}">
+            <div class="admin-page-table-wrap">
+              <table class="admin-table admin-page-table">
+                <thead>
                 <tr>
-                  <td>#${p.id}</td>
-
-                  <td>
-                    <img src="${p.thumbnail}"
-                         onerror="this.onerror=null; this.src='${pageContext.request.contextPath}/assets/images/pages/default-thumbnail.png';"
-                         alt="thumb"
-                         style="width: 60px; height: 45px; object-fit: cover; border-radius: 6px; border: 1px solid #e2e8f0;">
-                  </td>
-
-                  <td><b>${p.title}</b></td>
-                  <td><c:out value="${p.slug}"/></td>
-                  <td>
-                    <span class="admin-chip">${p.type}</span>
-                  </td>
-
-                  <td class="admin-actions">
-                      <%-- SỬA PAGE: Kích hoạt qua Popup custom --%>
-                    <button type="button"
-                            class="admin-btn"
-                            onclick="triggerEdit('${pageContext.request.contextPath}/admin/pages?action=edit&id=${p.id}', '${fn:escapeXml(p.title)}')">
-                      Sửa
-                    </button>
-
-                      <%-- XÓA PAGE: Loại bỏ onsubmit confirm() cũ --%>
-                    <form id="delete-form-${p.id}"
-                          action="${pageContext.request.contextPath}/admin/pages/delete"
-                          method="POST"
-                          style="display:inline;">
-
-                      <%@ include file="/jsp/common/csrf.jspf" %>
-
-                      <input type="hidden" name="id" value="${p.id}">
-
-                      <button class="admin-btn admin-btn--danger"
-                              type="button"
-                              style="cursor: pointer;"
-                              onclick="triggerDelete('delete-form-${p.id}', '${fn:escapeXml(p.title)}')">
-                        Xóa
-                      </button>
-                    </form>
-                  </td>
+                  <th class="admin-page-col-id">ID</th>
+                  <th class="admin-page-col-image">Hình ảnh</th>
+                  <th class="admin-page-col-title">Tiêu đề</th>
+                  <th class="admin-page-col-slug">Slug</th>
+                  <th class="admin-page-col-type">Loại</th>
+                  <th class="admin-page-col-actions">Thao tác</th>
                 </tr>
-              </c:forEach>
-              </tbody>
-            </table>
+                </thead>
+
+                <tbody>
+                <c:forEach var="p" items="${pages}">
+                  <tr class="${empty p.thumbnail ? 'admin-page-row--missing-thumb' : ''}">
+                    <td class="admin-page-id-cell">
+                      #<c:out value="${p.id}" />
+                    </td>
+
+                    <td>
+                      <c:choose>
+                        <c:when test="${not empty p.thumbnail}">
+                          <img src="${p.thumbnail}"
+                               data-default-src="${ctx}/assets/images/pages/default-thumbnail.png"
+                               onerror="this.onerror=null; this.src=this.getAttribute('data-default-src');"
+                               alt="Thumbnail page"
+                               class="admin-page-thumb">
+                        </c:when>
+                        <c:otherwise>
+                          <span class="admin-page-thumb admin-page-thumb--empty">No image</span>
+                        </c:otherwise>
+                      </c:choose>
+                    </td>
+
+                    <td>
+                      <div class="admin-page-title-cell">
+                        <strong><c:out value="${p.title}" /></strong>
+                        <span>Nội dung website</span>
+                      </div>
+                    </td>
+
+                    <td>
+                      <span class="admin-page-slug">
+                        <c:out value="${p.slug}" />
+                      </span>
+                    </td>
+
+                    <td>
+                      <c:choose>
+                        <c:when test="${p.type == 'policy'}">
+                          <span class="admin-chip admin-chip--brand">Policy</span>
+                        </c:when>
+                        <c:when test="${p.type == 'about'}">
+                          <span class="admin-chip admin-chip--success">About</span>
+                        </c:when>
+                        <c:otherwise>
+                          <span class="admin-chip">
+                            <c:out value="${p.type}" />
+                          </span>
+                        </c:otherwise>
+                      </c:choose>
+                    </td>
+
+                    <td class="admin-page-action-cell">
+                      <div class="admin-page-actions">
+                        <button type="button"
+                                class="admin-btn admin-page-action-btn js-page-edit"
+                                data-edit-url="${ctx}/admin/pages?action=edit&amp;id=${p.id}"
+                                data-page-title="${fn:escapeXml(p.title)}">
+                          Sửa
+                        </button>
+
+                        <form id="delete-form-${p.id}"
+                              action="${ctx}/admin/pages/delete"
+                              method="POST"
+                              class="admin-page-delete-form">
+                          <%@ include file="/jsp/common/csrf.jspf" %>
+
+                          <input type="hidden" name="id" value="${p.id}">
+
+                          <button class="admin-btn admin-btn--danger admin-page-action-btn js-page-delete"
+                                  type="button"
+                                  data-form-id="delete-form-${p.id}"
+                                  data-page-title="${fn:escapeXml(p.title)}">
+                            Xóa
+                          </button>
+                        </form>
+                      </div>
+                    </td>
+                  </tr>
+                </c:forEach>
+                </tbody>
+              </table>
+            </div>
           </c:otherwise>
         </c:choose>
-
       </div>
-    </div>
+    </section>
 
   </div>
 </main>
@@ -229,10 +233,8 @@
 </div>
 
 <script>
-  // Biến lưu trữ tạm thời hàm sẽ thực thi khi nhấn nút "Xác nhận"
   let pendingAction = null;
 
-  // 1. Hàm mở popup tổng quát
   function openConfirmPopup(title, message, isDanger, confirmCallback) {
     const popup = document.getElementById("confirmPopup");
     const icon = document.getElementById("popupIcon");
@@ -241,7 +243,6 @@
     document.getElementById("popupTitle").innerText = title;
     document.getElementById("popupMsg").innerText = message;
 
-    // Cấu hình giao diện dựa theo tính chất nguy hiểm (như Xóa)
     if (isDanger) {
       icon.innerText = "✕";
       icon.classList.add("danger-mode");
@@ -256,13 +257,11 @@
     popup.classList.add("show");
   }
 
-  // 2. Hàm đóng popup
   function closeConfirmPopup() {
     document.getElementById("confirmPopup").classList.remove("show");
     pendingAction = null;
   }
 
-  // 3. Sự kiện lắng nghe khi nhấn nút Xác nhận trong popup
   document.getElementById("popupConfirmBtn").addEventListener("click", function() {
     if (typeof pendingAction === "function") {
       pendingAction();
@@ -270,7 +269,6 @@
     closeConfirmPopup();
   });
 
-  // 4. Kích hoạt Popup khi nhấn nút XÓA
   function triggerDelete(formId, pageTitle) {
     const msg = "Bạn có chắc chắn muốn xóa trang '" + pageTitle + "' không? Hành động này không thể hoàn tác!";
 
@@ -279,7 +277,6 @@
     });
   }
 
-  // 5. Kích hoạt Popup khi nhấn nút SỬA
   function triggerEdit(editUrl, pageTitle) {
     const msg = "Bạn có muốn mở trang chỉnh sửa thông tin cho trang '" + pageTitle + "' không?";
 
@@ -287,6 +284,18 @@
       window.location.href = editUrl;
     });
   }
+
+  document.querySelectorAll(".js-page-edit").forEach(function(button) {
+    button.addEventListener("click", function() {
+      triggerEdit(button.dataset.editUrl, button.dataset.pageTitle || "");
+    });
+  });
+
+  document.querySelectorAll(".js-page-delete").forEach(function(button) {
+    button.addEventListener("click", function() {
+      triggerDelete(button.dataset.formId, button.dataset.pageTitle || "");
+    });
+  });
 </script>
 
 <jsp:include page="/jsp/admin/layout/footer.jsp"/>
