@@ -52,10 +52,6 @@
   width: fit-content !important;
 }
 
-/* =========================================================
-   ADMIN UI V2 - ADMIN CENTER HOME
-========================================================= */
-
 .admin-main .admin-grid{
   gap: 18px !important;
 }
@@ -72,8 +68,8 @@
   border-radius: 24px !important;
   border: 1px solid rgba(148, 163, 184, 0.22) !important;
   background:
-    radial-gradient(circle at 100% 0%, rgba(236, 72, 153, 0.13), transparent 34%),
-    linear-gradient(180deg, #ffffff 0%, #fbfcff 100%) !important;
+          radial-gradient(circle at 100% 0%, rgba(236, 72, 153, 0.13), transparent 34%),
+          linear-gradient(180deg, #ffffff 0%, #fbfcff 100%) !important;
   box-shadow: 0 12px 30px rgba(15, 23, 42, 0.055);
   transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
 }
@@ -86,7 +82,7 @@
   margin-bottom: 12px;
   border-radius: 17px;
   background:
-    linear-gradient(135deg, rgba(236, 72, 153, 0.16), rgba(139, 92, 246, 0.12));
+          linear-gradient(135deg, rgba(236, 72, 153, 0.16), rgba(139, 92, 246, 0.12));
   box-shadow: inset 0 0 0 1px rgba(236, 72, 153, 0.14);
 }
 
@@ -107,8 +103,8 @@
   transform: translateY(-4px) !important;
   border-color: rgba(236, 72, 153, 0.34) !important;
   background:
-    radial-gradient(circle at 100% 0%, rgba(236, 72, 153, 0.16), transparent 36%),
-    linear-gradient(180deg, #ffffff 0%, #fff7fb 100%) !important;
+          radial-gradient(circle at 100% 0%, rgba(236, 72, 153, 0.16), transparent 36%),
+          linear-gradient(180deg, #ffffff 0%, #fff7fb 100%) !important;
   box-shadow: 0 22px 50px rgba(15, 23, 42, 0.10) !important;
 }
 
@@ -180,10 +176,6 @@
     min-height: 148px;
   }
 }
-
-/* =========================================================
-   ADMIN CENTER UI V3 - Vietnamese actions + compact cards
-========================================================= */
 
 .admin-center-overview{
   overflow: hidden;
@@ -277,11 +269,6 @@
     min-height: auto;
   }
 }
-
-
-/* =========================================================
-   ADMIN CENTER UI V5 - Grouped modules + icons
-========================================================= */
 
 .admin-center-overview{
   overflow: visible;
@@ -405,4 +392,12 @@
 
 @media (max-width: 640px){
   .admin-grid--group{ grid-template-columns: 1fr !important; }
+}
+
+.admin-center-group__header{
+  margin-bottom: 16px;
+}
+
+.admin-center-group__title{
+  margin: 0;
 }
