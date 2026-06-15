@@ -1245,3 +1245,65 @@
   transform: translateY(-1px) !important;
 }
 
+
+
+/* =========================================================
+   CART UI TUNE V22
+   - Đổi "Biến thể" thành "Phân loại" (JSP)
+   - Đồng bộ màu checkbox, nút thanh toán, nút xóa
+========================================================= */
+
+.cart-check-all,
+.cart-item-checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: #d61a67 !important;
+  cursor: pointer;
+}
+
+.cart-check-all:focus-visible,
+.cart-item-checkbox:focus-visible {
+  outline: 3px solid rgba(214, 26, 103, 0.18);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.btn-checkout,
+.checkout-btn {
+  background: linear-gradient(135deg, #ff5fa2 0%, #e83e8c 52%, #c81045 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 12px 24px rgba(216, 39, 100, 0.22) !important;
+}
+
+.btn-checkout:hover,
+.checkout-btn:hover {
+  background: linear-gradient(135deg, #ff4f98 0%, #dc2f78 52%, #b70839 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 16px 28px rgba(216, 39, 100, 0.28) !important;
+}
+
+.btn-checkout:active,
+.checkout-btn:active {
+  transform: translateY(0) !important;
+  box-shadow: 0 9px 18px rgba(216, 39, 100, 0.22) !important;
+}
+
+.cart-remove .remove-btn,
+.cart-table .cart-remove .remove-btn {
+  border: 1px solid rgba(220, 38, 38, 0.14) !important;
+  background: linear-gradient(135deg, #ff6b6b 0%, #ef4444 48%, #dc2626 100%) !important;
+  box-shadow: 0 10px 20px rgba(220, 38, 38, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.28) !important;
+}
+
+.cart-remove .remove-btn:hover,
+.cart-table .cart-remove .remove-btn:hover {
+  background: linear-gradient(135deg, #ff5a5a 0%, #e53935 48%, #c81e1e 100%) !important;
+  border-color: rgba(220, 38, 38, 0.22) !important;
+  box-shadow: 0 13px 24px rgba(220, 38, 38, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.30) !important;
+}
+
+.cart-remove .remove-btn:focus-visible,
+.cart-table .cart-remove .remove-btn:focus-visible {
+  outline: 3px solid rgba(220, 38, 38, 0.18) !important;
+  outline-offset: 3px !important;
+}
