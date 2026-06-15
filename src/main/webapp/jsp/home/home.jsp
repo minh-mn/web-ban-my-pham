@@ -102,19 +102,23 @@ VOUCHER STRIP
 							<span></span>
 							Ưu đãi nổi bật hôm nay
 						</span>
-						<a href="${ctx}/vouchers">Xem tất cả mã</a>
+						<a href="${ctx}/vouchers">Xem tất cả voucher</a>
 					</div>
 				</div>
 
-				<div class="skin-voucher-row skin-voucher-row--sync">
-					<c:forEach var="voucher" items="${vouchers}" begin="0" end="3">
-						<article class="skin-voucher-card skin-voucher-card--sync">
+				<div class="skin-voucher-row skin-voucher-row--sync skin-voucher-row--full">
+					<c:forEach var="voucher" items="${vouchers}" begin="0" end="1">
+						<c:set var="savedNeedle" value=",${voucher.code}," />
+						<c:set var="isSaved" value="${not empty savedCodes and fn:contains(savedCodes, savedNeedle)}" />
+						<c:set var="isRankVoucher" value="${not empty voucher.type and voucher.type eq 'RANK'}" />
+						<c:set var="isReviewVoucher" value="${not empty voucher.type and voucher.type eq 'REVIEW_REWARD'}" />
+						<c:set var="scope" value="${voucher.applyScope}" />
+
+						<article class="skin-voucher-card skin-voucher-card--sync skin-voucher-card--full">
 							<div class="skin-voucher-left">
-								<div class="skin-voucher-mark">
-									<c:choose>
-										<c:when test="${voucher.type == 'FREESHIP'}">FS</c:when>
-										<c:otherwise>MC</c:otherwise>
-									</c:choose>
+								<div class="skin-voucher-mark skin-voucher-mark--beauty">
+									<span>MC</span>
+									<small>BEAUTY</small>
 								</div>
 							</div>
 
@@ -124,44 +128,132 @@ VOUCHER STRIP
 								<div class="skin-voucher-top">
 									<div class="skin-voucher-tags">
 										<span class="skin-voucher-tag skin-voucher-tag-hot">HOT</span>
-										<c:if test="${voucher.type == 'FREESHIP'}">
-											<span class="skin-voucher-tag skin-voucher-tag-soft">FREESHIP</span>
-										</c:if>
+										<c:choose>
+											<c:when test="${isRankVoucher}">
+												<span class="skin-voucher-tag skin-voucher-tag-soft">Hạng thành viên</span>
+											</c:when>
+											<c:when test="${isReviewVoucher}">
+												<span class="skin-voucher-tag skin-voucher-tag-soft">Quà đánh giá</span>
+											</c:when>
+											<c:when test="${voucher.type eq 'FREESHIP'}">
+												<span class="skin-voucher-tag skin-voucher-tag-soft">Freeship</span>
+											</c:when>
+											<c:otherwise>
+												<span class="skin-voucher-tag skin-voucher-tag-soft">Ưu đãi</span>
+											</c:otherwise>
+										</c:choose>
 									</div>
-								</div>
-
-								<div class="skin-voucher-code-row">
-									<strong>${voucher.code}</strong>
 
 									<button type="button"
-									        class="skin-save-voucher"
-									        onclick="saveVoucher(this)"
-									        data-code="${voucher.code}"
-									        data-loggedin="${not empty sessionScope.user}">
-										Lưu
+									        class="skin-voucher-link-btn"
+									        onclick="showVoucherDetailFromEl(this)"
+									        data-code="<c:out value='${voucher.code}'/>"
+									        data-desc="<c:out value='${not empty voucher.description ? voucher.description : "Không có mô tả"}'/>"
+									        data-min="${voucher.minOrderAmount}"
+									        data-end="${voucher.endDate}">
+										Điều kiện
 									</button>
 								</div>
 
-								<div class="skin-voucher-discount">
+								<div class="skin-voucher-code-row">
+									<strong><c:out value="${voucher.code}" /></strong>
+
 									<c:choose>
-										<c:when test="${voucher.type == 'FREESHIP'}">
-											Miễn phí vận chuyển
+										<c:when test="${isSaved}">
+											<button type="button"
+											        class="skin-save-voucher saved"
+											        data-code="<c:out value='${voucher.code}'/>"
+											        data-loggedin="${not empty sessionScope.user}"
+											        disabled>
+												Đã lưu
+											</button>
 										</c:when>
 										<c:otherwise>
-											Giảm <b>${voucher.discountPercent}%</b>
+											<button type="button"
+											        class="skin-save-voucher"
+											        onclick="saveVoucher(this)"
+											        data-code="<c:out value='${voucher.code}'/>"
+											        data-loggedin="${not empty sessionScope.user}">
+												Lưu mã
+											</button>
 										</c:otherwise>
 									</c:choose>
 								</div>
 
-								<div class="skin-voucher-meta">
-									<span>
-										Đơn từ
-										<b>
-											<fmt:formatNumber value="${voucher.minOrderAmount}" type="number" groupingUsed="true"/>đ
-										</b>
-									</span>
-									<span class="dot"></span>
-									<span>HSD ${voucher.endDate}</span>
+								<div class="skin-voucher-discount">
+									<c:choose>
+										<c:when test="${voucher.type eq 'FREESHIP'}">
+											Miễn phí vận chuyển
+										</c:when>
+										<c:when test="${voucher.percentDiscount}">
+											Giảm <b>${voucher.discountPercent}%</b>
+										</c:when>
+										<c:otherwise>
+											Giảm <b><fmt:formatNumber value="${voucher.discountValue}" type="number"/>đ</b>
+										</c:otherwise>
+									</c:choose>
+								</div>
+
+								<div class="skin-voucher-meta-list">
+									<div class="skin-voucher-meta-item">
+										<span class="dot"></span>
+										<span>
+											Đơn hàng từ
+											<b><fmt:formatNumber value="${voucher.minOrderAmount}" type="number" groupingUsed="true"/>đ</b>
+										</span>
+									</div>
+
+									<c:if test="${not empty voucher.maxDiscountAmount and voucher.maxDiscountAmount > 0}">
+										<div class="skin-voucher-meta-item">
+											<span class="dot"></span>
+											<span>
+												Giảm tối đa
+												<b><fmt:formatNumber value="${voucher.maxDiscountAmount}" type="number" groupingUsed="true"/>đ</b>
+											</span>
+										</div>
+									</c:if>
+
+									<div class="skin-voucher-meta-item">
+										<span class="dot"></span>
+										<span>
+											Áp dụng:
+											<b>
+												<c:choose>
+													<c:when test="${empty scope or scope eq 'ALL'}">Tất cả sản phẩm</c:when>
+													<c:when test="${scope eq 'BRAND'}">Theo thương hiệu</c:when>
+													<c:when test="${scope eq 'PRODUCTS'}">Sản phẩm chỉ định</c:when>
+													<c:otherwise><c:out value="${scope}" /></c:otherwise>
+												</c:choose>
+											</b>
+										</span>
+									</div>
+
+									<c:if test="${not empty voucher.minRankCode and voucher.minRankCode ne 'MEMBER'}">
+										<div class="skin-voucher-meta-item">
+											<span class="dot"></span>
+											<span>Hạng tối thiểu: <b><c:out value="${voucher.minRankCode}" /></b></span>
+										</div>
+									</c:if>
+								</div>
+
+								<c:if test="${not empty voucher.description}">
+									<p class="skin-voucher-desc"><c:out value="${voucher.description}" /></p>
+								</c:if>
+
+								<div class="skin-voucher-footer">
+									<div class="skin-voucher-expire">
+										HSD: <b><c:out value="${voucher.endDate}" /></b>
+									</div>
+
+									<button type="button"
+									        class="skin-voucher-link-btn"
+									        onclick="showVoucherDetailFromEl(this)"
+									        data-code="<c:out value='${voucher.code}'/>"
+									        data-desc="<c:out value='${not empty voucher.description ? voucher.description : "Không có mô tả"}'/>"
+									        data-min="${voucher.minOrderAmount}"
+									        data-end="${voucher.endDate}">
+										Xem chi tiết
+									</button>
 								</div>
 							</div>
 						</article>
