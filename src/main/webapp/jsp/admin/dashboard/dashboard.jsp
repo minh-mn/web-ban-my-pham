@@ -2,7 +2,7 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 
-<c:set var="pageTitle" value="ADMIN | Dashboard" scope="request"/>
+<c:set var="pageTitle" value="ADMIN | Tổng quan doanh thu" scope="request"/>
 <c:set var="activeMenu" value="dashboard" scope="request"/>
 <c:set var="pageCss" value="/assets/css/admin/admin-center.css" scope="request"/>
 
@@ -16,364 +16,317 @@
 <jsp:include page="/jsp/admin/layout/sidebar.jsp"/>
 
 <main class="admin-main">
-  <div class="admin-container">
+  <div class="admin-container admin-dashboard-page">
 
-    <div class="admin-topbar">
-      <div>
-        <h1 class="admin-h1">Dashboard</h1>
-        <p class="admin-subtext">Tổng quan nhanh hệ thống, doanh thu, đơn hàng và hiệu suất sản phẩm.</p>
+    <section class="admin-dashboard-hero">
+      <div class="admin-dashboard-hero__content">
+        <span class="admin-dashboard-eyebrow">TỔNG QUAN &amp; DOANH THU</span>
+        <h1 class="admin-dashboard-title">Dashboard quản trị</h1>
+        <p class="admin-dashboard-subtitle">
+          Theo dõi nhanh doanh thu, đơn hàng, hiệu suất sản phẩm và tình trạng tồn kho của hệ thống MyCosmetic.
+          Các chỉ số giúp admin phát hiện vấn đề và chuyển nhanh đến khu vực cần xử lý.
+        </p>
       </div>
-    </div>
 
-    <!-- KPI GRID -->
-    <div class="admin-grid" style="grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px;">
+      <div class="admin-dashboard-hero__actions">
+        <a class="admin-btn admin-btn--primary" href="${pageContext.request.contextPath}/admin/orders">
+          Xem đơn hàng
+        </a>
+        <a class="admin-btn" href="${pageContext.request.contextPath}/admin/inventory">
+          Quản lý tồn kho
+        </a>
+      </div>
+    </section>
 
-      <div class="admin-card">
-        <div class="admin-card__body admin-stack">
-          <div class="admin-muted" style="font-weight:800; font-size:12px;">Tổng đơn đã thanh toán</div>
-          <div class="admin-h1">
-            <c:out value="${orderCount}"/>
-          </div>
-          <div class="admin-subtext">Số đơn có trạng thái thanh toán PAID.</div>
+    <section class="admin-dashboard-kpi-grid">
+      <div class="admin-dashboard-kpi admin-dashboard-kpi--orders">
+        <span class="admin-dashboard-kpi__icon">🛒</span>
+        <span class="admin-dashboard-kpi__label">Tổng đơn đã thanh toán</span>
+        <strong class="admin-dashboard-kpi__value">
+          <c:out value="${orderCount}"/>
+        </strong>
+        <span class="admin-dashboard-kpi__note">Số đơn có trạng thái thanh toán PAID.</span>
+      </div>
+
+      <div class="admin-dashboard-kpi admin-dashboard-kpi--revenue">
+        <span class="admin-dashboard-kpi__icon">💰</span>
+        <span class="admin-dashboard-kpi__label">Tổng doanh thu</span>
+        <strong class="admin-dashboard-kpi__value admin-dashboard-kpi__value--money">
+          <fmt:formatNumber value="${totalRevenue}" type="number" groupingUsed="true"/> ₫
+        </strong>
+        <span class="admin-dashboard-kpi__note">Tổng doanh thu từ các đơn hợp lệ.</span>
+      </div>
+
+      <div class="admin-dashboard-kpi admin-dashboard-kpi--today">
+        <span class="admin-dashboard-kpi__icon">📅</span>
+        <span class="admin-dashboard-kpi__label">Doanh thu hôm nay</span>
+        <strong class="admin-dashboard-kpi__value admin-dashboard-kpi__value--money">
+          <fmt:formatNumber value="${todayRevenue}" type="number" groupingUsed="true"/> ₫
+        </strong>
+        <span class="admin-dashboard-kpi__note">
+          Số đơn hôm nay: <strong><c:out value="${todayOrderCount}"/></strong>
+        </span>
+      </div>
+
+      <div class="admin-dashboard-kpi admin-dashboard-kpi--aov">
+        <span class="admin-dashboard-kpi__icon">🧾</span>
+        <span class="admin-dashboard-kpi__label">Giá trị đơn trung bình</span>
+        <strong class="admin-dashboard-kpi__value admin-dashboard-kpi__value--money">
+          <fmt:formatNumber value="${averageOrderValue}" type="number" groupingUsed="true"/> ₫
+        </strong>
+        <span class="admin-dashboard-kpi__note">AOV của các đơn đã thanh toán.</span>
+      </div>
+
+      <div class="admin-dashboard-kpi admin-dashboard-kpi--users">
+        <span class="admin-dashboard-kpi__icon">👥</span>
+        <span class="admin-dashboard-kpi__label">Khách hàng</span>
+        <strong class="admin-dashboard-kpi__value">
+          <c:out value="${userCount}"/>
+        </strong>
+        <span class="admin-dashboard-kpi__note">Tổng tài khoản người dùng.</span>
+      </div>
+
+      <div class="admin-dashboard-kpi admin-dashboard-kpi--products">
+        <span class="admin-dashboard-kpi__icon">🧴</span>
+        <span class="admin-dashboard-kpi__label">Sản phẩm đang bán</span>
+        <strong class="admin-dashboard-kpi__value">
+          <c:out value="${productCount}"/>
+        </strong>
+        <span class="admin-dashboard-kpi__note">Sản phẩm có trạng thái đang hoạt động.</span>
+      </div>
+
+      <div class="admin-dashboard-kpi admin-dashboard-kpi--pending">
+        <span class="admin-dashboard-kpi__icon">⏳</span>
+        <span class="admin-dashboard-kpi__label">Đơn chờ xử lý</span>
+        <strong class="admin-dashboard-kpi__value">
+          <c:out value="${pendingOrderCount}"/>
+        </strong>
+        <span class="admin-dashboard-kpi__note">Bao gồm đơn đang xử lý và đã xác nhận.</span>
+      </div>
+
+      <div class="admin-dashboard-kpi admin-dashboard-kpi--growth">
+        <span class="admin-dashboard-kpi__icon">📈</span>
+        <span class="admin-dashboard-kpi__label">Tăng trưởng tháng</span>
+        <strong class="admin-dashboard-kpi__value">
+          <c:out value="${monthGrowthPercent}"/>%
+        </strong>
+        <span class="admin-dashboard-kpi__note">So với doanh thu tháng trước.</span>
+      </div>
+    </section>
+
+    <section class="admin-dashboard-section">
+      <div class="admin-dashboard-section__head">
+        <div>
+          <h2 class="admin-dashboard-section__title">Tổng quan doanh thu</h2>
+          <p class="admin-dashboard-section__desc">Theo dõi doanh thu hiện tại, tháng trước và 30 ngày gần nhất.</p>
         </div>
+        <span class="admin-chip admin-chip--brand">Doanh thu</span>
       </div>
 
-      <div class="admin-card">
-        <div class="admin-card__body admin-stack">
-          <div class="admin-muted" style="font-weight:800; font-size:12px;">Tổng doanh thu</div>
-          <div class="admin-h1">
-            <fmt:formatNumber value="${totalRevenue}" type="number" groupingUsed="true"/> ₫
-          </div>
-          <div class="admin-subtext">Tổng doanh thu từ các đơn hợp lệ.</div>
+      <div class="admin-dashboard-mini-grid admin-dashboard-mini-grid--3">
+        <div class="admin-dashboard-mini-card">
+          <span>Doanh thu tháng này</span>
+          <strong><fmt:formatNumber value="${thisMonthRevenue}" type="number" groupingUsed="true"/> ₫</strong>
+          <small>Tổng doanh thu trong tháng hiện tại.</small>
         </div>
-      </div>
 
-      <div class="admin-card">
-        <div class="admin-card__body admin-stack">
-          <div class="admin-muted" style="font-weight:800; font-size:12px;">Doanh thu hôm nay</div>
-          <div class="admin-h1">
-            <fmt:formatNumber value="${todayRevenue}" type="number" groupingUsed="true"/> ₫
-          </div>
-          <div class="admin-subtext">
-            Số đơn hôm nay: <strong><c:out value="${todayOrderCount}"/></strong>
-          </div>
+        <div class="admin-dashboard-mini-card">
+          <span>Doanh thu tháng trước</span>
+          <strong><fmt:formatNumber value="${prevMonthRevenue}" type="number" groupingUsed="true"/> ₫</strong>
+          <small>Dùng để so sánh tăng trưởng tháng.</small>
         </div>
-      </div>
 
-      <div class="admin-card">
-        <div class="admin-card__body admin-stack">
-          <div class="admin-muted" style="font-weight:800; font-size:12px;">Giá trị đơn trung bình</div>
-          <div class="admin-h1">
-            <fmt:formatNumber value="${averageOrderValue}" type="number" groupingUsed="true"/> ₫
-          </div>
-          <div class="admin-subtext">AOV của các đơn đã thanh toán.</div>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- SECOND KPI GRID -->
-    <div class="admin-grid" style="grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-top: 16px;">
-
-      <div class="admin-card">
-        <div class="admin-card__body admin-stack">
-          <div class="admin-muted" style="font-weight:800; font-size:12px;">Khách hàng</div>
-          <div class="admin-h1">
-            <c:out value="${userCount}"/>
-          </div>
-          <div class="admin-subtext">Tổng tài khoản người dùng.</div>
-        </div>
-      </div>
-
-      <div class="admin-card">
-        <div class="admin-card__body admin-stack">
-          <div class="admin-muted" style="font-weight:800; font-size:12px;">Sản phẩm đang bán</div>
-          <div class="admin-h1">
-            <c:out value="${productCount}"/>
-          </div>
-          <div class="admin-subtext">Sản phẩm có trạng thái đang hoạt động.</div>
-        </div>
-      </div>
-
-      <div class="admin-card">
-        <div class="admin-card__body admin-stack">
-          <div class="admin-muted" style="font-weight:800; font-size:12px;">Đơn chờ xử lý</div>
-          <div class="admin-h1">
-            <c:out value="${pendingOrderCount}"/>
-          </div>
-          <div class="admin-subtext">Bao gồm đơn đang xử lý và đã xác nhận.</div>
-        </div>
-      </div>
-
-      <div class="admin-card">
-        <div class="admin-card__body admin-stack">
-          <div class="admin-muted" style="font-weight:800; font-size:12px;">Tăng trưởng tháng</div>
-          <div class="admin-h1">
-            <c:out value="${monthGrowthPercent}"/>%
-          </div>
-          <div class="admin-subtext">
-            So với doanh thu tháng trước.
-          </div>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- REVENUE SUMMARY -->
-    <div class="admin-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 16px;">
-
-      <div class="admin-card">
-        <div class="admin-card__body admin-stack">
-          <div class="admin-muted" style="font-weight:800; font-size:12px;">Doanh thu tháng này</div>
-          <div class="admin-h1">
-            <fmt:formatNumber value="${thisMonthRevenue}" type="number" groupingUsed="true"/> ₫
-          </div>
-          <div class="admin-subtext">Tổng doanh thu trong tháng hiện tại.</div>
-        </div>
-      </div>
-
-      <div class="admin-card">
-        <div class="admin-card__body admin-stack">
-          <div class="admin-muted" style="font-weight:800; font-size:12px;">Doanh thu tháng trước</div>
-          <div class="admin-h1">
-            <fmt:formatNumber value="${prevMonthRevenue}" type="number" groupingUsed="true"/> ₫
-          </div>
-          <div class="admin-subtext">Dùng để so sánh tăng trưởng tháng.</div>
-        </div>
-      </div>
-
-      <div class="admin-card">
-        <div class="admin-card__body admin-stack">
-          <div class="admin-muted" style="font-weight:800; font-size:12px;">Doanh thu 30 ngày gần nhất</div>
-          <div class="admin-h1">
-            <fmt:formatNumber value="${last30DaysRevenue}" type="number" groupingUsed="true"/> ₫
-          </div>
-          <div class="admin-subtext">
+        <div class="admin-dashboard-mini-card">
+          <span>Doanh thu 30 ngày gần nhất</span>
+          <strong><fmt:formatNumber value="${last30DaysRevenue}" type="number" groupingUsed="true"/> ₫</strong>
+          <small>
             Chênh lệch:
-            <strong>
-              <fmt:formatNumber value="${rollingDiffVnd}" type="number" groupingUsed="true"/> ₫
-            </strong>
+            <b><fmt:formatNumber value="${rollingDiffVnd}" type="number" groupingUsed="true"/> ₫</b>
             /
-            <strong><c:out value="${rollingGrowthPercent}"/>%</strong>
-          </div>
+            <b><c:out value="${rollingGrowthPercent}"/>%</b>
+          </small>
+        </div>
+      </div>
+    </section>
+
+    <section class="admin-dashboard-section">
+      <div class="admin-dashboard-section__head">
+        <div>
+          <h2 class="admin-dashboard-section__title">Hiệu suất sản phẩm &amp; tồn kho</h2>
+          <p class="admin-dashboard-section__desc">Tóm tắt sản phẩm không bán, sắp hết hàng và các cảnh báo tồn kho.</p>
+        </div>
+        <a class="admin-btn" href="${pageContext.request.contextPath}/admin/inventory">
+          Mở quản lý tồn kho
+        </a>
+      </div>
+
+      <div class="admin-dashboard-mini-grid admin-dashboard-mini-grid--4">
+        <div class="admin-dashboard-mini-card admin-dashboard-mini-card--warning">
+          <span>Không bán tuần này</span>
+          <strong><c:out value="${unsoldThisWeekCount}"/></strong>
+          <small>Sản phẩm chưa phát sinh đơn trong tuần hiện tại.</small>
+        </div>
+
+        <div class="admin-dashboard-mini-card admin-dashboard-mini-card--warning">
+          <span>Không bán tháng này</span>
+          <strong><c:out value="${unsoldThisMonthCount}"/></strong>
+          <small>Sản phẩm chưa bán được trong tháng hiện tại.</small>
+        </div>
+
+        <div class="admin-dashboard-mini-card admin-dashboard-mini-card--danger">
+          <span>Sản phẩm hết hàng</span>
+          <strong><c:out value="${outOfStockCount}"/></strong>
+          <small>Sản phẩm đang active nhưng tồn kho bằng 0.</small>
+        </div>
+
+        <div class="admin-dashboard-mini-card admin-dashboard-mini-card--danger">
+          <span>Sản phẩm sắp hết</span>
+          <strong><c:out value="${lowStockCount}"/></strong>
+          <small>Tồn kho còn từ 1 đến 9 sản phẩm (&lt; 10).</small>
         </div>
       </div>
 
-    </div>
-
-    <!-- PRODUCT ANALYTICS KPI -->
-    <div class="admin-grid" style="grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-top: 16px;">
-
-      <div class="admin-card">
-        <div class="admin-card__body admin-stack">
-          <div class="admin-muted" style="font-weight:800; font-size:12px;">Không bán tuần này</div>
-          <div class="admin-h1">
-            <c:out value="${unsoldThisWeekCount}"/>
-          </div>
-          <div class="admin-subtext">Sản phẩm chưa phát sinh đơn trong tuần hiện tại.</div>
-        </div>
-      </div>
-
-      <div class="admin-card">
-        <div class="admin-card__body admin-stack">
-          <div class="admin-muted" style="font-weight:800; font-size:12px;">Không bán tháng này</div>
-          <div class="admin-h1">
-            <c:out value="${unsoldThisMonthCount}"/>
-          </div>
-          <div class="admin-subtext">Sản phẩm chưa bán được trong tháng hiện tại.</div>
-        </div>
-      </div>
-
-      <div class="admin-card">
-        <div class="admin-card__body admin-stack">
-          <div class="admin-muted" style="font-weight:800; font-size:12px;">Sản phẩm hết hàng</div>
-          <div class="admin-h1">
-            <c:out value="${outOfStockCount}"/>
-          </div>
-          <div class="admin-subtext">Sản phẩm đang active nhưng tồn kho bằng 0.</div>
-        </div>
-      </div>
-
-      <div class="admin-card">
-        <div class="admin-card__body admin-stack">
-          <div class="admin-muted" style="font-weight:800; font-size:12px;">Sản phẩm sắp hết</div>
-          <div class="admin-h1">
-            <c:out value="${lowStockCount}"/>
-          </div>
-          <div class="admin-subtext">Tồn kho còn từ 1 đến 9 sản phẩm (&lt; 10).</div>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- INVENTORY DASHBOARD SUMMARY -->
-    <div class="admin-card" style="margin-top:16px;">
-      <div class="admin-card__body">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:14px;">
+      <div class="admin-dashboard-inventory-card">
+        <div class="admin-dashboard-inventory-card__head">
           <div>
-            <h2 style="margin:0; font-size:18px;">Dashboard thống kê tồn kho</h2>
-            <p class="admin-subtext" style="margin:4px 0 0;">
-              Theo dõi nhanh tình trạng tồn kho và chuyển sang trang quản lý tồn kho để xem số lượng xuất theo ngày, tuần, tháng, năm.
-            </p>
+            <h3>Dashboard thống kê tồn kho</h3>
+            <p>Theo dõi nhanh tình trạng tồn kho và chuyển sang trang quản lý tồn kho khi cần nhập thêm hàng.</p>
           </div>
-
-          <a class="admin-btn"
-             href="${pageContext.request.contextPath}/admin/inventory"
-             style="white-space:nowrap; text-decoration:none;">
-            Mở quản lý tồn kho
-          </a>
+          <span class="admin-chip admin-chip--brand">Tồn kho</span>
         </div>
 
-        <div class="admin-grid" style="grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px;">
-          <div style="padding:14px; border:1px solid #eef0f4; border-radius:16px; background:#f9fafb;">
-            <div class="admin-muted" style="font-weight:800; font-size:12px;">Tổng sản phẩm active</div>
-            <div class="admin-h1" style="margin-top:6px;">
-              <c:out value="${productCount}"/>
-            </div>
-            <div class="admin-subtext">Sản phẩm đang kinh doanh.</div>
+        <div class="admin-dashboard-mini-grid admin-dashboard-mini-grid--4">
+          <div class="admin-dashboard-stock-box">
+            <span>Tổng sản phẩm active</span>
+            <strong><c:out value="${productCount}"/></strong>
+            <small>Sản phẩm đang kinh doanh.</small>
           </div>
 
-          <div style="padding:14px; border:1px solid #dcfce7; border-radius:16px; background:#f0fdf4;">
-            <div class="admin-muted" style="font-weight:800; font-size:12px;">Tồn kho ổn định</div>
-            <div class="admin-h1" style="margin-top:6px; color:#047857;">
-              <c:out value="${inventoryNormalCount}"/>
-            </div>
-            <div class="admin-subtext">Sản phẩm có tồn kho từ 10 trở lên.</div>
+          <div class="admin-dashboard-stock-box admin-dashboard-stock-box--ok">
+            <span>Tồn kho ổn định</span>
+            <strong><c:out value="${inventoryNormalCount}"/></strong>
+            <small>Sản phẩm có tồn kho từ 10 trở lên.</small>
           </div>
 
-          <div style="padding:14px; border:1px solid #fef3c7; border-radius:16px; background:#fffbeb;">
-            <div class="admin-muted" style="font-weight:800; font-size:12px;">Sắp hết hàng</div>
-            <div class="admin-h1" style="margin-top:6px; color:#b45309;">
-              <c:out value="${lowStockCount}"/>
-            </div>
-            <div class="admin-subtext">Tồn kho còn từ 1 đến 9 sản phẩm.</div>
+          <div class="admin-dashboard-stock-box admin-dashboard-stock-box--warning">
+            <span>Sắp hết hàng</span>
+            <strong><c:out value="${lowStockCount}"/></strong>
+            <small>Tồn kho còn từ 1 đến 9 sản phẩm.</small>
           </div>
 
-          <div style="padding:14px; border:1px solid #fee2e2; border-radius:16px; background:#fef2f2;">
-            <div class="admin-muted" style="font-weight:800; font-size:12px;">Cần xử lý</div>
-            <div class="admin-h1" style="margin-top:6px; color:#b91c1c;">
-              <c:out value="${inventoryAlertCount}"/>
-            </div>
-            <div class="admin-subtext">Tổng sản phẩm sắp hết và hết hàng.</div>
+          <div class="admin-dashboard-stock-box admin-dashboard-stock-box--danger">
+            <span>Cần xử lý</span>
+            <strong><c:out value="${inventoryAlertCount}"/></strong>
+            <small>Tổng sản phẩm sắp hết và hết hàng.</small>
           </div>
         </div>
 
-        <div class="admin-subtext" style="margin-top:12px;">
-          Gợi ý: vào trang <strong>Quản lý tồn kho</strong> để nhập thêm hàng, xem lịch sử nhập/xuất kho và thống kê số lượng xuất rõ ràng theo ngày, tuần, tháng, năm.
-        </div>
+        <p class="admin-dashboard-note">
+          Gợi ý: vào trang <strong>Quản lý tồn kho</strong> để nhập thêm hàng, xem lịch sử nhập/xuất kho và thống kê số lượng xuất theo ngày, tuần, tháng, năm.
+        </p>
       </div>
-    </div>
+    </section>
 
-
-    <!-- CHARTS -->
-    <div class="admin-grid" style="grid-template-columns: 2fr 1fr; gap: 16px; margin-top: 16px;">
-
-      <div class="admin-card">
+    <section class="admin-dashboard-chart-grid admin-dashboard-chart-grid--main">
+      <div class="admin-card admin-dashboard-chart-card">
         <div class="admin-card__body">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <div class="admin-dashboard-card-head">
             <div>
-              <h2 style="margin:0; font-size:18px;">Doanh thu 12 tháng gần nhất</h2>
-              <p class="admin-subtext" style="margin:4px 0 0;">Biểu đồ doanh thu theo từng tháng.</p>
+              <h2>Doanh thu 12 tháng gần nhất</h2>
+              <p>Biểu đồ doanh thu theo từng tháng.</p>
             </div>
-            <span class="admin-chip">Revenue</span>
+            <span class="admin-chip">Doanh thu</span>
           </div>
           <canvas id="last12MonthRevenueChart" height="110"></canvas>
         </div>
       </div>
 
-      <div class="admin-card">
+      <div class="admin-card admin-dashboard-chart-card">
         <div class="admin-card__body">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <div class="admin-dashboard-card-head">
             <div>
-              <h2 style="margin:0; font-size:18px;">Trạng thái đơn hàng</h2>
-              <p class="admin-subtext" style="margin:4px 0 0;">Tỷ lệ đơn theo trạng thái.</p>
+              <h2>Trạng thái đơn hàng</h2>
+              <p>Tỷ lệ đơn theo trạng thái.</p>
             </div>
-            <span class="admin-chip">Orders</span>
+            <span class="admin-chip">Đơn hàng</span>
           </div>
           <canvas id="orderStatusChart" height="180"></canvas>
         </div>
       </div>
+    </section>
 
-    </div>
-
-    <div class="admin-card" style="margin-top:16px;">
+    <section class="admin-card admin-dashboard-chart-card admin-dashboard-mt">
       <div class="admin-card__body">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <div class="admin-dashboard-card-head">
           <div>
-            <h2 style="margin:0; font-size:18px;">Doanh thu 7 ngày gần nhất</h2>
-            <p class="admin-subtext" style="margin:4px 0 0;">Theo dõi xu hướng doanh thu ngắn hạn.</p>
+            <h2>Doanh thu 7 ngày gần nhất</h2>
+            <p>Theo dõi xu hướng doanh thu ngắn hạn.</p>
           </div>
-          <span class="admin-chip">Last 7 days</span>
+          <span class="admin-chip">7 ngày</span>
         </div>
         <canvas id="last7DaysRevenueChart" height="85"></canvas>
       </div>
-    </div>
+    </section>
 
-    <!-- PRODUCT ANALYTICS CHARTS -->
-    <div class="admin-grid" style="grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px;">
-
-      <div class="admin-card">
+    <section class="admin-dashboard-chart-grid admin-dashboard-mt">
+      <div class="admin-card admin-dashboard-chart-card">
         <div class="admin-card__body">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <div class="admin-dashboard-card-head">
             <div>
-              <h2 style="margin:0; font-size:18px;">Hiệu suất sản phẩm tháng này</h2>
-              <p class="admin-subtext" style="margin:4px 0 0;">So sánh sản phẩm có bán và không bán trong tháng.</p>
+              <h2>Hiệu suất sản phẩm tháng này</h2>
+              <p>So sánh sản phẩm có bán và không bán trong tháng.</p>
             </div>
-            <span class="admin-chip">Product</span>
+            <span class="admin-chip">Sản phẩm</span>
           </div>
           <canvas id="productPerformanceChart" height="120"></canvas>
         </div>
       </div>
 
-      <div class="admin-card">
+      <div class="admin-card admin-dashboard-chart-card">
         <div class="admin-card__body">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <div class="admin-dashboard-card-head">
             <div>
-              <h2 style="margin:0; font-size:18px;">Tình trạng tồn kho</h2>
-              <p class="admin-subtext" style="margin:4px 0 0;">Phân nhóm hết hàng, sắp hết và còn hàng.</p>
+              <h2>Tình trạng tồn kho</h2>
+              <p>Phân nhóm hết hàng, sắp hết và còn hàng.</p>
             </div>
-            <span class="admin-chip">Stock</span>
+            <span class="admin-chip">Tồn kho</span>
           </div>
           <canvas id="stockStatusChart" height="120"></canvas>
         </div>
       </div>
+    </section>
 
-    </div>
-
-    <div class="admin-card" style="margin-top:16px;">
+    <section class="admin-card admin-dashboard-chart-card admin-dashboard-mt">
       <div class="admin-card__body">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <div class="admin-dashboard-card-head">
           <div>
-            <h2 style="margin:0; font-size:18px;">Số lượng bán theo danh mục trong 30 ngày</h2>
-            <p class="admin-subtext" style="margin:4px 0 0;">Giúp nhận biết nhóm sản phẩm đang bán tốt.</p>
+            <h2>Số lượng bán theo danh mục trong 30 ngày</h2>
+            <p>Giúp nhận biết nhóm sản phẩm đang bán tốt.</p>
           </div>
-          <span class="admin-chip">Category</span>
+          <span class="admin-chip">Danh mục</span>
         </div>
         <canvas id="categorySoldChart" height="90"></canvas>
       </div>
-    </div>
+    </section>
 
-    <!-- TABLES -->
-    <div class="admin-grid" style="grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px;">
-
-      <!-- TOP PRODUCTS -->
-      <div class="admin-card">
+    <section class="admin-dashboard-table-grid admin-dashboard-mt">
+      <div class="admin-card admin-dashboard-table-card">
         <div class="admin-card__body">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <div class="admin-dashboard-card-head">
             <div>
-              <h2 style="margin:0; font-size:18px;">Top sản phẩm bán chạy</h2>
-              <p class="admin-subtext" style="margin:4px 0 0;">Top 5 sản phẩm theo số lượng bán.</p>
+              <h2>Top sản phẩm bán chạy</h2>
+              <p>Top 5 sản phẩm theo số lượng bán.</p>
             </div>
             <span class="admin-chip">Top 5</span>
           </div>
 
-          <div class="admin-table-wrap">
-            <table class="admin-table">
+          <div class="admin-table-wrap admin-dashboard-table-wrap">
+            <table class="admin-table admin-dashboard-table">
               <thead>
               <tr>
                 <th>Sản phẩm</th>
-                <th style="text-align:right;">Đã bán</th>
-                <th style="text-align:right;">Doanh thu</th>
+                <th class="admin-dashboard-number-cell">Đã bán</th>
+                <th class="admin-dashboard-number-cell">Doanh thu</th>
               </tr>
               </thead>
               <tbody>
@@ -385,10 +338,10 @@
                         <strong><c:out value="${product[1]}"/></strong>
                         <div class="admin-subtext">ID: <c:out value="${product[0]}"/></div>
                       </td>
-                      <td style="text-align:right;">
+                      <td class="admin-dashboard-number-cell">
                         <c:out value="${product[2]}"/>
                       </td>
-                      <td style="text-align:right;">
+                      <td class="admin-dashboard-number-cell">
                         <fmt:formatNumber value="${product[3]}" type="number" groupingUsed="true"/> ₫
                       </td>
                     </tr>
@@ -406,24 +359,23 @@
         </div>
       </div>
 
-      <!-- RECENT ORDERS -->
-      <div class="admin-card">
+      <div class="admin-card admin-dashboard-table-card">
         <div class="admin-card__body">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <div class="admin-dashboard-card-head">
             <div>
-              <h2 style="margin:0; font-size:18px;">Đơn hàng gần đây</h2>
-              <p class="admin-subtext" style="margin:4px 0 0;">5 đơn hàng mới nhất trong hệ thống.</p>
+              <h2>Đơn hàng gần đây</h2>
+              <p>5 đơn hàng mới nhất trong hệ thống.</p>
             </div>
-            <span class="admin-chip">Recent</span>
+            <span class="admin-chip">Gần đây</span>
           </div>
 
-          <div class="admin-table-wrap">
-            <table class="admin-table">
+          <div class="admin-table-wrap admin-dashboard-table-wrap">
+            <table class="admin-table admin-dashboard-table">
               <thead>
               <tr>
                 <th>Mã đơn</th>
                 <th>Khách hàng</th>
-                <th style="text-align:right;">Tổng tiền</th>
+                <th class="admin-dashboard-number-cell">Tổng tiền</th>
                 <th>Trạng thái</th>
               </tr>
               </thead>
@@ -439,7 +391,7 @@
                           <fmt:formatDate value="${order[5]}" pattern="dd/MM/yyyy HH:mm"/>
                         </div>
                       </td>
-                      <td style="text-align:right;">
+                      <td class="admin-dashboard-number-cell">
                         <fmt:formatNumber value="${order[2]}" type="number" groupingUsed="true"/> ₫
                       </td>
                       <td>
@@ -461,31 +413,27 @@
           </div>
         </div>
       </div>
+    </section>
 
-    </div>
-
-    <!-- PRODUCT ANALYTICS TABLES -->
-    <div class="admin-grid" style="grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px;">
-
-      <!-- UNSOLD PRODUCTS THIS MONTH -->
-      <div class="admin-card">
+    <section class="admin-dashboard-table-grid admin-dashboard-mt">
+      <div class="admin-card admin-dashboard-table-card">
         <div class="admin-card__body">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <div class="admin-dashboard-card-head">
             <div>
-              <h2 style="margin:0; font-size:18px;">Sản phẩm không bán được tháng này</h2>
-              <p class="admin-subtext" style="margin:4px 0 0;">Top sản phẩm còn tồn nhưng không phát sinh bán trong tháng.</p>
+              <h2>Sản phẩm không bán được tháng này</h2>
+              <p>Top sản phẩm còn tồn nhưng không phát sinh bán trong tháng.</p>
             </div>
-            <span class="admin-chip">Unsold</span>
+            <span class="admin-chip">Không bán</span>
           </div>
 
-          <div class="admin-table-wrap">
-            <table class="admin-table">
+          <div class="admin-table-wrap admin-dashboard-table-wrap">
+            <table class="admin-table admin-dashboard-table">
               <thead>
               <tr>
                 <th>Sản phẩm</th>
                 <th>Danh mục</th>
-                <th style="text-align:right;">Tồn kho</th>
-                <th style="text-align:right;">Giá</th>
+                <th class="admin-dashboard-number-cell">Tồn kho</th>
+                <th class="admin-dashboard-number-cell">Giá</th>
               </tr>
               </thead>
 
@@ -499,8 +447,8 @@
                         <div class="admin-subtext">ID: <c:out value="${product[0]}"/></div>
                       </td>
                       <td><c:out value="${product[4]}"/></td>
-                      <td style="text-align:right;"><c:out value="${product[2]}"/></td>
-                      <td style="text-align:right;">
+                      <td class="admin-dashboard-number-cell"><c:out value="${product[2]}"/></td>
+                      <td class="admin-dashboard-number-cell">
                         <fmt:formatNumber value="${product[3]}" type="number" groupingUsed="true"/> ₫
                       </td>
                     </tr>
@@ -519,25 +467,24 @@
         </div>
       </div>
 
-      <!-- LOW STOCK PRODUCTS -->
-      <div class="admin-card">
+      <div class="admin-card admin-dashboard-table-card">
         <div class="admin-card__body">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <div class="admin-dashboard-card-head">
             <div>
-              <h2 style="margin:0; font-size:18px;">Sản phẩm cần nhập thêm</h2>
-              <p class="admin-subtext" style="margin:4px 0 0;">Sản phẩm hết hàng hoặc tồn kho thấp.</p>
+              <h2>Sản phẩm cần nhập thêm</h2>
+              <p>Sản phẩm hết hàng hoặc tồn kho thấp.</p>
             </div>
-            <span class="admin-chip">Inventory</span>
+            <span class="admin-chip">Tồn kho</span>
           </div>
 
-          <div class="admin-table-wrap">
-            <table class="admin-table">
+          <div class="admin-table-wrap admin-dashboard-table-wrap">
+            <table class="admin-table admin-dashboard-table">
               <thead>
               <tr>
                 <th>Sản phẩm</th>
                 <th>Danh mục</th>
-                <th style="text-align:right;">Tồn kho</th>
-                <th style="text-align:right;">Giá</th>
+                <th class="admin-dashboard-number-cell">Tồn kho</th>
+                <th class="admin-dashboard-number-cell">Giá</th>
               </tr>
               </thead>
 
@@ -551,7 +498,7 @@
                         <div class="admin-subtext">ID: <c:out value="${product[0]}"/></div>
                       </td>
                       <td><c:out value="${product[4]}"/></td>
-                      <td style="text-align:right;">
+                      <td class="admin-dashboard-number-cell">
                         <c:choose>
                           <c:when test="${product[2] == 0}">
                             <span class="admin-chip">Hết hàng</span>
@@ -561,7 +508,7 @@
                           </c:otherwise>
                         </c:choose>
                       </td>
-                      <td style="text-align:right;">
+                      <td class="admin-dashboard-number-cell">
                         <fmt:formatNumber value="${product[3]}" type="number" groupingUsed="true"/> ₫
                       </td>
                     </tr>
@@ -579,28 +526,26 @@
           </div>
         </div>
       </div>
+    </section>
 
-    </div>
-
-    <!-- SLOW MOVING PRODUCTS -->
-    <div class="admin-card" style="margin-top:16px;">
+    <section class="admin-card admin-dashboard-table-card admin-dashboard-mt">
       <div class="admin-card__body">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <div class="admin-dashboard-card-head">
           <div>
-            <h2 style="margin:0; font-size:18px;">Sản phẩm bán chậm trong 30 ngày</h2>
-            <p class="admin-subtext" style="margin:4px 0 0;">Sản phẩm bán từ 0 đến 2 sản phẩm trong 30 ngày gần nhất.</p>
+            <h2>Sản phẩm bán chậm trong 30 ngày</h2>
+            <p>Sản phẩm bán từ 0 đến 2 sản phẩm trong 30 ngày gần nhất.</p>
           </div>
-          <span class="admin-chip">Slow moving</span>
+          <span class="admin-chip">Bán chậm</span>
         </div>
 
-        <div class="admin-table-wrap">
-          <table class="admin-table">
+        <div class="admin-table-wrap admin-dashboard-table-wrap">
+          <table class="admin-table admin-dashboard-table">
             <thead>
             <tr>
               <th>Sản phẩm</th>
-              <th style="text-align:right;">Tồn kho</th>
-              <th style="text-align:right;">Đã bán</th>
-              <th style="text-align:right;">Doanh thu</th>
+              <th class="admin-dashboard-number-cell">Tồn kho</th>
+              <th class="admin-dashboard-number-cell">Đã bán</th>
+              <th class="admin-dashboard-number-cell">Doanh thu</th>
             </tr>
             </thead>
 
@@ -613,9 +558,9 @@
                       <strong><c:out value="${product[1]}"/></strong>
                       <div class="admin-subtext">ID: <c:out value="${product[0]}"/></div>
                     </td>
-                    <td style="text-align:right;"><c:out value="${product[2]}"/></td>
-                    <td style="text-align:right;"><c:out value="${product[3]}"/></td>
-                    <td style="text-align:right;">
+                    <td class="admin-dashboard-number-cell"><c:out value="${product[2]}"/></td>
+                    <td class="admin-dashboard-number-cell"><c:out value="${product[3]}"/></td>
+                    <td class="admin-dashboard-number-cell">
                       <fmt:formatNumber value="${product[4]}" type="number" groupingUsed="true"/> ₫
                     </td>
                   </tr>
@@ -632,7 +577,7 @@
           </table>
         </div>
       </div>
-    </div>
+    </section>
 
   </div>
 </main>
