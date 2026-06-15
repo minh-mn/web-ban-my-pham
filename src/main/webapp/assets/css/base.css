@@ -5023,3 +5023,77 @@ html body #searchHistoryDropdown .header-search-history__item {
   pointer-events: auto !important;
   cursor: pointer !important;
 }
+
+/* =========================================================
+   SEARCH HISTORY DROPDOWN - VIEW ALL COLOR FINAL
+   Chỉnh màu chữ "Xem tất cả" trong dropdown lịch sử tìm kiếm
+========================================================= */
+.header-search-history__head a,
+.header-search-history__head a[href*="search-history"],
+.search-history-dropdown a[href*="search-history"],
+.search-history-box a[href*="search-history"],
+.header-search-history a[href*="search-history"],
+.mc-search-history__all,
+.mc-search-history-more,
+.search-history-view-all,
+.header-search-history__view-all {
+  color: #d61a61 !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.01em !important;
+  text-decoration: none !important;
+}
+
+.header-search-history__head a:hover,
+.header-search-history__head a[href*="search-history"]:hover,
+.search-history-dropdown a[href*="search-history"]:hover,
+.search-history-box a[href*="search-history"]:hover,
+.header-search-history a[href*="search-history"]:hover,
+.mc-search-history__all:hover,
+.mc-search-history-more:hover,
+.search-history-view-all:hover,
+.header-search-history__view-all:hover {
+  color: #b80f4f !important;
+  text-decoration: underline !important;
+  text-underline-offset: 4px !important;
+}
+
+/* =========================================================
+   SEARCH HISTORY FINAL BLACK/COMPACT PATCH
+   - Màu "Xem tất cả" hợp tone web
+   - Bỏ khoảng trắng dư khi vào trang /search-history
+========================================================= */
+html body #searchHistoryDropdown .header-search-history__head a,
+html body .header-search-history__head a[href*="search-history"],
+html body .header-search-history a[href*="search-history"],
+html body .search-history-dropdown a[href*="search-history"],
+html body .search-history-box a[href*="search-history"],
+html body .mc-search-history__all,
+html body .mc-search-history-more,
+html body .search-history-view-all,
+html body .header-search-history__view-all {
+  color: #d61a61 !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.01em !important;
+  text-decoration: none !important;
+}
+
+html body #searchHistoryDropdown .header-search-history__head a:hover,
+html body .header-search-history__head a[href*="search-history"]:hover,
+html body .header-search-history a[href*="search-history"]:hover,
+html body .search-history-dropdown a[href*="search-history"]:hover,
+html body .search-history-box a[href*="search-history"]:hover,
+html body .mc-search-history__all:hover,
+html body .mc-search-history-more:hover,
+html body .search-history-view-all:hover,
+html body .header-search-history__view-all:hover {
+  color: #b80f4f !important;
+  text-decoration: underline !important;
+  text-underline-offset: 4px !important;
+}
+
+html body main.site-main:has(#searchHistoryPage),
+body.site-body main.site-main:has(#searchHistoryPage),
+main.site-main:has(#searchHistoryPage) {
+  padding-top: var(--mc-sticky-header-height, 184px) !important;
+  margin-top: 0 !important;
+}
