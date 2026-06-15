@@ -1,3 +1,72 @@
+
+<script>
+  (function () {
+    window.history.scrollRestoration = 'manual';
+
+    var PAGE_SCROLL_KEY = 'mc_product_filter_scroll_y';
+    var SIDE_SCROLL_KEY = 'mc_product_filter_sidebar_y';
+
+    function restoreProductFilterScroll() {
+      var savedPageTop = sessionStorage.getItem(PAGE_SCROLL_KEY);
+      var savedSideTop = sessionStorage.getItem(SIDE_SCROLL_KEY);
+
+      if (savedPageTop !== null) {
+        var top = parseInt(savedPageTop, 10);
+
+        if (!isNaN(top)) {
+          window.scrollTo(0, top);
+          setTimeout(function () { window.scrollTo(0, top); }, 30);
+          setTimeout(function () { window.scrollTo(0, top); }, 90);
+          setTimeout(function () { window.scrollTo(0, top); }, 180);
+          setTimeout(function () { window.scrollTo(0, top); }, 360);
+        }
+
+        sessionStorage.removeItem(PAGE_SCROLL_KEY);
+      }
+
+      if (savedSideTop !== null) {
+        var sidebarTop = parseInt(savedSideTop, 10);
+
+        setTimeout(function () {
+          var sidebar = document.querySelector('.collection-filter-sidebar');
+
+          if (sidebar && !isNaN(sidebarTop)) {
+            sidebar.scrollTop = sidebarTop;
+          }
+
+          sessionStorage.removeItem(SIDE_SCROLL_KEY);
+        }, 30);
+      }
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', restoreProductFilterScroll);
+    } else {
+      restoreProductFilterScroll();
+    }
+
+    window.addEventListener('pageshow', restoreProductFilterScroll);
+
+    document.addEventListener('submit', function (event) {
+      var form = event.target;
+
+      if (!form || !form.classList || !form.classList.contains('mc-filter-form')) {
+        return;
+      }
+
+      var sidebar = document.querySelector('.collection-filter-sidebar');
+
+      sessionStorage.setItem(PAGE_SCROLL_KEY, String(window.scrollY || window.pageYOffset || 0));
+
+      if (sidebar) {
+        sessionStorage.setItem(SIDE_SCROLL_KEY, String(sidebar.scrollTop || 0));
+      }
+
+      document.documentElement.classList.add('mc-filter-submitting');
+    }, true);
+  })();
+</script>
+
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
@@ -4449,6 +4518,90 @@
     font-weight: 950 !important;
   }
 
+
+
+  /* =========================================================
+     FINAL FIX - PREVENT FILTER CLICK JUMP
+     Bỏ nhảy màn hình khi bấm chọn bộ lọc
+  ========================================================= */
+
+  html {
+    scroll-behavior: auto !important;
+  }
+
+  html body .collection-filter-sidebar,
+  html body .filter-sidebar.collection-filter-sidebar,
+  html body form.mc-filter-form,
+  html body .mc-filter-block,
+  html body .mc-filter-list,
+  html body .mc-filter-option,
+  html body .mc-filter-option:hover,
+  html body .mc-filter-option:active,
+  html body .mc-filter-option:focus-within {
+    transform: none !important;
+    transition-property: color, background-color, border-color, box-shadow !important;
+  }
+
+  html body .mc-filter-option:hover {
+    background: transparent !important;
+  }
+
+  html body .mc-filter-option input[type="radio"],
+  html body .mc-filter-option input[type="checkbox"] {
+    scroll-margin: 0 !important;
+  }
+
+  html body .mc-filter-option,
+  html body .mc-filter-option * {
+    scroll-margin-top: 0 !important;
+  }
+
+  html body .collection-filter-sidebar {
+    overflow-anchor: none !important;
+  }
+
+  html body .collection-main,
+  html body  {
+    overflow-anchor: auto !important;
+  }
+
+
+
+  /* =========================================================
+     FINAL APPLY FILTER NO JUMP
+     Giảm giật khi nhấn nút Áp dụng lọc
+  ========================================================= */
+
+  html,
+  body {
+    scroll-behavior: auto !important;
+  }
+
+  html.mc-filter-submitting *,
+  html.mc-filter-submitting *::before,
+  html.mc-filter-submitting *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  html body .mc-filter-actions .mc-filter-apply,
+  html body .mc-filter-actions .mc-filter-apply:hover,
+  html body .mc-filter-actions .mc-filter-apply:active,
+  html body .mc-filter-actions .mc-filter-apply:focus {
+    transform: none !important;
+    transition: background-color .15s ease, color .15s ease, border-color .15s ease !important;
+  }
+
+  html body .collection-filter-sidebar,
+  html body .filter-sidebar.collection-filter-sidebar,
+  html body .collection-main,
+  html body #collectionResults,
+  html body .collection-toolbar,
+  html body .collection-filter-tags {
+    scroll-margin-top: 0 !important;
+    overflow-anchor: none !important;
+  }
+
 </style>
 
 <script>
@@ -4618,7 +4771,7 @@
     <div class="product-page collection-layout">
 
       <aside class="filter-sidebar collection-filter-sidebar">
-        <form id="filterForm" class="mc-filter-form" method="get" action="${ctx}/products#collectionResults">
+        <form id="filterForm" class="mc-filter-form" method="get" action="${ctx}/products">
           <c:if test="${not empty param.q}">
             <input type="hidden" name="q" value="${fn:escapeXml(param.q)}">
           </c:if>
@@ -4781,7 +4934,7 @@
               <i class="fa-solid fa-filter"></i>
               <span>Áp dụng lọc</span>
             </button>
-            <a class="mc-filter-reset" href="${resetFilterUrl}#collectionResults">
+            <a class="mc-filter-reset" href="${resetFilterUrl}">
               <i class="fa-solid fa-rotate-left"></i>
               <span>Đặt lại</span>
             </a>
@@ -4795,11 +4948,11 @@
           <div class="collection-toolbar__left">
             <span class="collection-toolbar__eyebrow">Sắp xếp</span>
             <nav class="collection-toolbar__sorts" aria-label="Sắp xếp sản phẩm">
-              <a href="${sortDefaultUrl}#collectionResults" class="collection-sort-tab ${empty param.sort ? 'active' : ''}">Phổ biến</a>
-              <a href="${sortNewestUrl}#collectionResults" class="collection-sort-tab ${param.sort == 'created_desc' ? 'active' : ''}">Mới nhất</a>
-              <a href="${sortBestSellingUrl}#collectionResults" class="collection-sort-tab ${param.sort == 'best_selling' ? 'active' : ''}">Bán chạy</a>
-              <a href="${sortPriceAscUrl}#collectionResults" class="collection-sort-tab ${param.sort == 'price_asc' ? 'active' : ''}">Giá thấp</a>
-              <a href="${sortPriceDescUrl}#collectionResults" class="collection-sort-tab ${param.sort == 'price_desc' ? 'active' : ''}">Giá cao</a>
+              <a href="${sortDefaultUrl}" class="collection-sort-tab ${empty param.sort ? 'active' : ''}">Phổ biến</a>
+              <a href="${sortNewestUrl}" class="collection-sort-tab ${param.sort == 'created_desc' ? 'active' : ''}">Mới nhất</a>
+              <a href="${sortBestSellingUrl}" class="collection-sort-tab ${param.sort == 'best_selling' ? 'active' : ''}">Bán chạy</a>
+              <a href="${sortPriceAscUrl}" class="collection-sort-tab ${param.sort == 'price_asc' ? 'active' : ''}">Giá thấp</a>
+              <a href="${sortPriceDescUrl}" class="collection-sort-tab ${param.sort == 'price_desc' ? 'active' : ''}">Giá cao</a>
             </nav>
           </div>
 
@@ -4825,7 +4978,7 @@
                      aria-label="Xóa bộ lọc này">×</a>
                 </span>
               </c:forEach>
-              <a class="product-filter-clear" href="${resetFilterUrl}#collectionResults">Xóa bộ lọc</a>
+              <a class="product-filter-clear" href="${resetFilterUrl}">Xóa bộ lọc</a>
             </c:when>
             <c:otherwise>
               <span class="product-filter-tag product-filter-tag--muted"><strong>Tất cả sản phẩm</strong></span>
@@ -4966,7 +5119,7 @@
               <div class="product-empty">
                 <div class="product-empty__title">Không tìm thấy sản phẩm phù hợp</div>
                 <div class="product-empty__text">Hãy thử chọn danh mục khác, bỏ bớt bộ lọc hoặc quay lại danh sách tất cả sản phẩm.</div>
-                <a class="btn-outline" href="${ctx}/products#collectionResults">Xem tất cả sản phẩm</a>
+                <a class="btn-outline" href="${ctx}/products">Xem tất cả sản phẩm</a>
               </div>
             </c:otherwise>
           </c:choose>
@@ -4996,7 +5149,7 @@
               </c:url>
 
               <c:choose>
-                <c:when test="${page != null && page > 1}"><a class="pg-btn" href="${prevPageUrl}#collectionResults">‹</a></c:when>
+                <c:when test="${page != null && page > 1}"><a class="pg-btn" href="${prevPageUrl}">‹</a></c:when>
                 <c:otherwise><span class="pg-btn disabled">‹</span></c:otherwise>
               </c:choose>
 
@@ -5013,13 +5166,13 @@
                       <c:if test="${not empty selectedBrandList}"><c:forEach var="bid" items="${selectedBrandList}"><c:param name="brand" value="${bid}" /></c:forEach></c:if>
                       <c:if test="${minRating != null}"><c:param name="rating" value="${minRating}" /></c:if>
                     </c:url>
-                    <a class="pg-num" href="${pageUrl}#collectionResults">${p}</a>
+                    <a class="pg-num" href="${pageUrl}">${p}</a>
                   </c:otherwise>
                 </c:choose>
               </c:forEach>
 
               <c:choose>
-                <c:when test="${page != null && page < totalPages}"><a class="pg-btn" href="${nextPageUrl}#collectionResults">›</a></c:when>
+                <c:when test="${page != null && page < totalPages}"><a class="pg-btn" href="${nextPageUrl}">›</a></c:when>
                 <c:otherwise><span class="pg-btn disabled">›</span></c:otherwise>
               </c:choose>
             </div>
@@ -5115,3 +5268,4 @@
     }
   })();
 </script>
+
