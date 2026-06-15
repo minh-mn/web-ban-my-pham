@@ -312,9 +312,9 @@ html{
 .admin-body{
   min-height: 100vh;
   background:
-    radial-gradient(circle at 8% 0%, rgba(236, 72, 153, 0.10), transparent 32%),
-    radial-gradient(circle at 96% 10%, rgba(139, 92, 246, 0.10), transparent 28%),
-    linear-gradient(180deg, #fbfcff 0%, #f7f8fc 48%, #f8fafc 100%);
+          radial-gradient(circle at 8% 0%, rgba(236, 72, 153, 0.10), transparent 32%),
+          radial-gradient(circle at 96% 10%, rgba(139, 92, 246, 0.10), transparent 28%),
+          linear-gradient(180deg, #fbfcff 0%, #f7f8fc 48%, #f8fafc 100%);
   color: var(--admin-text);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -346,7 +346,7 @@ html{
   border: 1px solid rgba(148, 163, 184, 0.24);
   border-radius: var(--admin-radius-xl);
   background:
-    linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,255,255,0.94));
+          linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,255,255,0.94));
   box-shadow: var(--admin-shadow-sm);
 }
 
@@ -379,12 +379,12 @@ html{
   font-weight: 900;
   letter-spacing: -0.005em;
   transition:
-    transform .16s ease,
-    box-shadow .16s ease,
-    border-color .16s ease,
-    background .16s ease,
-    color .16s ease,
-    filter .16s ease;
+          transform .16s ease,
+          box-shadow .16s ease,
+          border-color .16s ease,
+          background .16s ease,
+          color .16s ease,
+          filter .16s ease;
 }
 
 .admin-btn:hover{
