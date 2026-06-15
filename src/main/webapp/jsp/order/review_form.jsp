@@ -933,6 +933,16 @@
             border-radius: 20px;
         }
     }
+
+    /* REVIEW NO COIN UI V31
+       Ẩn toàn bộ phần thưởng trong giao diện đánh giá. */
+    .mc-guide-trigger,
+    .mc-point,
+    .mc-policy-modal,
+    #rewardPolicyModal {
+        display: none !important;
+    }
+
 </style>
 
 <main class="mc-review-page">
@@ -942,18 +952,6 @@
             <a class="mc-review-back" href="${ctx}/orders/detail?id=${orderIdValue}">‹</a>
             <h1 class="mc-review-title">Đánh giá sản phẩm</h1>
         </div>
-
-        <button type="button" class="mc-guide-trigger" id="openRewardPolicyBtn">
-            <span class="mc-guide-trigger-left">
-                <span class="mc-guide-coin">S</span>
-                <span class="mc-guide-trigger-text">
-                    Đánh giá chuẩn để nhận xu cho lần mua sau.
-                    <strong>Tối đa 600 xu!</strong>
-                </span>
-            </span>
-            <span class="mc-guide-trigger-arrow">›</span>
-        </button>
-
         <section class="mc-review-card">
             <div class="mc-card-body">
 
@@ -1038,7 +1036,6 @@
                                 <h3 class="mc-section-title">Thêm ảnh/video về sản phẩm</h3>
                                 <p class="mc-section-sub">Upload trực tiếp ảnh hoặc video minh họa.</p>
                             </div>
-                            <span class="mc-point">+200 xu</span>
                         </div>
 
                         <div class="mc-media-box">
@@ -1203,72 +1200,6 @@ Hãy chia sẻ nhận xét cho sản phẩm này nhé!">${param.comment}</textar
     </div>
 </main>
 
-<div class="mc-policy-modal" id="rewardPolicyModal" aria-hidden="true">
-    <div class="mc-policy-backdrop" id="rewardPolicyBackdrop"></div>
-
-    <div class="mc-policy-dialog" role="dialog" aria-modal="true" aria-labelledby="rewardPolicyTitle">
-        <div class="mc-policy-header">
-            <h3 id="rewardPolicyTitle">Quy định đánh giá</h3>
-        </div>
-
-        <div class="mc-policy-body">
-            <div class="mc-policy-card-block">
-                <div class="mc-policy-row">
-                    <div class="mc-policy-row-left">
-                        <span class="mc-policy-icon">📷</span>
-                        <div>
-                            <div class="mc-policy-row-title">Đăng ảnh hoặc video minh họa</div>
-                            <div class="mc-policy-row-desc">Viết đánh giá từ 50 ký tự trở lên</div>
-                        </div>
-                    </div>
-                    <div class="mc-policy-reward">200 xu</div>
-                </div>
-
-                <div class="mc-policy-row">
-                    <div class="mc-policy-row-left">
-                        <span class="mc-policy-icon">✅</span>
-                        <div>
-                            <div class="mc-policy-row-title">Đánh giá được quản trị viên duyệt</div>
-                            <div class="mc-policy-row-desc">Chỉ đánh giá hợp lệ mới được cộng xu</div>
-                        </div>
-                    </div>
-                    <div class="mc-policy-reward">200 xu</div>
-                </div>
-
-                <div class="mc-policy-row">
-                    <div class="mc-policy-row-left">
-                        <span class="mc-policy-icon">🎁</span>
-                        <div>
-                            <div class="mc-policy-row-title">Hoàn tất đánh giá đúng quy định</div>
-                            <div class="mc-policy-row-desc">Có thể nhận tối đa 600 xu cho mỗi sản phẩm</div>
-                        </div>
-                    </div>
-                    <div class="mc-policy-reward">Tối đa 600</div>
-                </div>
-            </div>
-
-            <div class="mc-policy-note-block">
-                <ul class="mc-policy-note-list">
-                    <li>Trong 1 đơn hàng có nhiều sản phẩm, bạn có thể nhận xu trên từng sản phẩm nếu đánh giá đủ điều kiện.</li>
-                    <li>Nội dung đánh giá phải liên quan đến sản phẩm, rõ ràng, lành mạnh và không vi phạm tiêu chuẩn cộng đồng.</li>
-                    <li>Ảnh/video phải đúng sản phẩm thực tế, rõ nội dung và không chứa nội dung không phù hợp.</li>
-                    <li>Đánh giá bị từ chối hoặc bị ẩn sẽ không được cộng xu.</li>
-                    <li>Xu chỉ được cộng sau khi đánh giá được duyệt hợp lệ.</li>
-                    <li>100 xu = 1.000đ, số xu dùng để giảm giá tối đa 20% giá trị đơn hàng.</li>
-                    <li>Xu có thời hạn sử dụng 90 ngày kể từ ngày được cộng và không quy đổi thành tiền mặt.</li>
-                    <li>Mỗi sản phẩm trong một đơn hàng chỉ được nhận thưởng xu đánh giá một lần.</li>
-                    <li>Quyết định duyệt đánh giá và cộng xu của hệ thống/quản trị viên là quyết định cuối cùng.</li>
-                </ul>
-            </div>
-        </div>
-
-        <div class="mc-policy-footer">
-            <button type="button" class="mc-policy-confirm" id="closeRewardPolicyBtn">
-                ĐỒNG Ý
-            </button>
-        </div>
-    </div>
-</div>
 
 <script>
     (function () {
@@ -1524,34 +1455,5 @@ Hãy chia sẻ nhận xét cho sản phẩm này nhé!">${param.comment}</textar
                 }
             });
         }
-
-        const openBtn = document.getElementById('openRewardPolicyBtn');
-        const closeBtn = document.getElementById('closeRewardPolicyBtn');
-        const modal = document.getElementById('rewardPolicyModal');
-        const backdrop = document.getElementById('rewardPolicyBackdrop');
-
-        function openModal() {
-            if (!modal) return;
-            modal.classList.add('show');
-            modal.setAttribute('aria-hidden', 'false');
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closeModal() {
-            if (!modal) return;
-            modal.classList.remove('show');
-            modal.setAttribute('aria-hidden', 'true');
-            document.body.style.overflow = '';
-        }
-
-        if (openBtn) openBtn.addEventListener('click', openModal);
-        if (closeBtn) closeBtn.addEventListener('click', closeModal);
-        if (backdrop) backdrop.addEventListener('click', closeModal);
-
-        document.addEventListener('keydown', function (event) {
-            if (event.key === 'Escape') {
-                closeModal();
-            }
-        });
     })();
 </script>
