@@ -486,3 +486,41 @@
         width: 100%;
     }
 }
+
+
+/* =========================================================
+   FORCE FIX NOTIFICATION PAGE GAP + HOVER STABILITY
+   Add this block at the VERY END of notification.css
+========================================================= */
+.notification-page {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
+.notification-page__container {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
+.notification-page__hero {
+    margin-top: 0 !important;
+}
+
+.notification-list__item,
+.notification-list__item:hover,
+.notification-list__item:active,
+.notification-page__mark-btn,
+.notification-page__mark-btn:hover,
+.notification-page__mark-btn:active,
+.notification-pagination__btn,
+.notification-pagination__btn:hover,
+.notification-pagination__btn:active,
+.notification-empty-state__btn,
+.notification-empty-state__btn:hover,
+.notification-empty-state__btn:active {
+    transform: none !important;
+}
+
+.notification-list__item:hover {
+    background: #fff8fb !important;
+}

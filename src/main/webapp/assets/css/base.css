@@ -5355,3 +5355,292 @@ html body .site-header button::-moz-focus-inner {
   border: 0 !important;
   padding: 0 !important;
 }
+
+
+/* =========================================================
+   FORCE FIX NOTIFICATION UI - WORKS WITH OLD + NEW JSP
+   Add this block at the VERY END of base.css
+========================================================= */
+
+/* Remove notification page top gap */
+html body:has(.notification-page) main.site-main,
+html body:has(.notification-page) .site-main {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+html body:has(.notification-page) .site-main > .notification-page,
+html body:has(.notification-page) main.site-main > .notification-page {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+/* Stop dropdown/bell hover jumping */
+.site-header .notification-bell,
+.site-header .notification-bell:hover,
+.site-header .notification-bell:focus,
+.site-header .notification-bell:focus-visible,
+.site-header .notification-bell:active,
+.site-header .notif-dropdown,
+.site-header .notif-dropdown.is-open,
+.site-header .notif-dropdown a,
+.site-header .notif-dropdown a:hover,
+.site-header .notification-item,
+.site-header .notification-item:hover,
+.site-header .notif-card,
+.site-header .notif-card:hover,
+.site-header .notif-dropdown__view-all,
+.site-header .notif-dropdown__view-all:hover {
+  transform: none !important;
+}
+
+.site-header .notif-dropdown.is-open {
+  animation: none !important;
+}
+
+/* Dropdown frame */
+.site-header .notif-dropdown {
+  right: 0 !important;
+  width: min(430px, calc(100vw - 24px)) !important;
+  overflow: hidden !important;
+  border-radius: 22px !important;
+  border: 1px solid rgba(225, 29, 72, 0.14) !important;
+  background: #ffffff !important;
+  box-shadow: 0 24px 54px rgba(15, 23, 42, 0.18) !important;
+  backdrop-filter: blur(10px);
+}
+
+.site-header .notif-dropdown::before {
+  right: 18px !important;
+  background: #fff7fa !important;
+  border-left: 1px solid rgba(225, 29, 72, 0.14) !important;
+  border-top: 1px solid rgba(225, 29, 72, 0.14) !important;
+}
+
+.site-header .notif-dropdown__header,
+.site-header .notif-dropdown__head {
+  position: relative !important;
+  z-index: 1 !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 14px !important;
+  padding: 16px 18px 13px !important;
+  border-bottom: 1px solid rgba(225, 29, 72, 0.10) !important;
+  background: linear-gradient(135deg, #fff7fa 0%, #ffffff 100%) !important;
+}
+
+.site-header .notif-dropdown__header strong,
+.site-header .notif-dropdown__head strong,
+.site-header .notif-dropdown__title-group strong {
+  color: #111827 !important;
+  font-size: 17px !important;
+  line-height: 1.25 !important;
+  font-weight: 950 !important;
+}
+
+.site-header .notif-dropdown__title-group span {
+  color: #6b7280 !important;
+  font-size: 12px !important;
+  line-height: 1.45 !important;
+  font-weight: 700 !important;
+}
+
+.site-header .notif-dropdown__body {
+  max-height: 410px !important;
+  overflow-y: auto !important;
+  padding: 10px !important;
+  background: #ffffff !important;
+}
+
+/* Old JSP item fallback */
+.site-header .notification-item {
+  display: grid !important;
+  grid-template-columns: 46px minmax(0, 1fr) 10px !important;
+  align-items: start !important;
+  gap: 12px !important;
+  padding: 12px !important;
+  margin: 0 0 8px 0 !important;
+  border: 1px solid rgba(15, 23, 42, 0.05) !important;
+  border-radius: 18px !important;
+  background: #ffffff !important;
+  color: inherit !important;
+  text-decoration: none !important;
+  transition: background 0.18s ease, border-color 0.18s ease !important;
+}
+
+.site-header .notification-item:hover {
+  background: #fff8fb !important;
+  border-color: rgba(225, 29, 72, 0.14) !important;
+}
+
+.site-header .notification-item.is-unread {
+  background: linear-gradient(90deg, rgba(255, 241, 245, 0.86) 0%, #ffffff 22%) !important;
+}
+
+/* Hide broken emoji ?? and show MC logo */
+.site-header .notification-item__icon {
+  width: 46px !important;
+  height: 46px !important;
+  margin: 0 !important;
+  flex: 0 0 46px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 16px !important;
+  background: linear-gradient(135deg, #ff5fa2, #db2777) !important;
+  color: #ffffff !important;
+  font-size: 0 !important;
+  line-height: 1 !important;
+  box-shadow: 0 10px 20px rgba(219, 39, 119, 0.18) !important;
+}
+
+.site-header .notification-item__icon::before {
+  content: "MC" !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #ffffff !important;
+  font-size: 14px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.05em !important;
+  line-height: 1 !important;
+}
+
+/* New JSP item styling */
+.site-header .notif-card {
+  display: grid !important;
+  grid-template-columns: 46px minmax(0, 1fr) auto !important;
+  align-items: start !important;
+  gap: 12px !important;
+  padding: 12px !important;
+  margin: 0 0 8px 0 !important;
+  border: 1px solid rgba(15, 23, 42, 0.05) !important;
+  border-radius: 18px !important;
+  background: #ffffff !important;
+  color: inherit !important;
+  text-decoration: none !important;
+  transition: background 0.18s ease, border-color 0.18s ease !important;
+}
+
+.site-header .notif-card:hover {
+  background: #fff8fb !important;
+  border-color: rgba(225, 29, 72, 0.14) !important;
+}
+
+.site-header .notif-card__icon {
+  width: 46px !important;
+  height: 46px !important;
+  border-radius: 16px !important;
+  background: linear-gradient(135deg, #ff5fa2, #db2777) !important;
+  color: #ffffff !important;
+  box-shadow: 0 10px 20px rgba(219, 39, 119, 0.18) !important;
+}
+
+.site-header .notif-card__brand-mark {
+  color: #ffffff !important;
+  font-size: 14px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.05em !important;
+}
+
+.site-header .notification-item__content,
+.site-header .notif-card__content {
+  min-width: 0 !important;
+  display: grid !important;
+  gap: 5px !important;
+}
+
+.site-header .notification-item__content strong,
+.site-header .notif-card__top strong {
+  display: block !important;
+  color: #111827 !important;
+  font-size: 14px !important;
+  line-height: 1.4 !important;
+  font-weight: 950 !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: unset !important;
+}
+
+.site-header .notification-item.is-read .notification-item__content strong,
+.site-header .notif-card.is-read .notif-card__top strong {
+  font-weight: 800 !important;
+}
+
+.site-header .notification-item__content small,
+.site-header .notif-card__message {
+  display: -webkit-box !important;
+  color: #6b7280 !important;
+  font-size: 12.5px !important;
+  line-height: 1.55 !important;
+  white-space: normal !important;
+  overflow: hidden !important;
+  text-overflow: unset !important;
+  -webkit-line-clamp: 3 !important;
+  -webkit-box-orient: vertical !important;
+}
+
+.site-header .notification-item__dot,
+.site-header .notif-card__dot {
+  width: 9px !important;
+  height: 9px !important;
+  margin-top: 10px !important;
+  margin-left: 0 !important;
+  border-radius: 999px !important;
+  background: #ff5fa2 !important;
+  box-shadow: 0 0 0 4px rgba(255, 95, 162, 0.12) !important;
+}
+
+.site-header .notif-dropdown__footer,
+.site-header .notif-dropdown__view-all {
+  padding: 0 !important;
+  margin: 0 10px 10px !important;
+  border-top: 0 !important;
+  text-align: center !important;
+  background: transparent !important;
+}
+
+.site-header .notif-dropdown__footer a,
+.site-header .notif-dropdown__view-all {
+  display: block !important;
+  padding: 12px 14px !important;
+  border-radius: 16px !important;
+  background: #fff7fa !important;
+  color: #db2777 !important;
+  text-decoration: none !important;
+  font-size: 13px !important;
+  font-weight: 900 !important;
+  transition: background 0.18s ease, color 0.18s ease !important;
+}
+
+.site-header .notif-dropdown__footer a:hover,
+.site-header .notif-dropdown__view-all:hover {
+  background: #fff0f6 !important;
+  color: #be123c !important;
+}
+
+.site-header .notification-empty,
+.site-header .notification-guest {
+  padding: 28px 18px !important;
+  border-radius: 18px !important;
+  background: #fffafc !important;
+  color: #6b7280 !important;
+  text-align: center !important;
+}
+
+.site-header .notification-empty p,
+.site-header .notification-guest p {
+  margin: 0 !important;
+  color: #6b7280 !important;
+  font-size: 12.5px !important;
+  line-height: 1.6 !important;
+  font-weight: 700 !important;
+}
+
+@media (max-width: 768px) {
+  .site-header .notif-dropdown {
+    right: -32px !important;
+    width: min(390px, calc(100vw - 18px)) !important;
+  }
+}
