@@ -4416,6 +4416,39 @@
     }
   }
 
+
+
+  /* =========================================================
+     FINAL SINGLE CHOICE FILTER + REMOVE CATEGORY HINT
+     Chỉ chọn 1 danh mục / 1 giá / 1 thương hiệu
+  ========================================================= */
+
+  html body .mc-filter-block--category-full .mc-filter-hint,
+  html body .mc-filter-block--overview .mc-filter-hint {
+    display: none !important;
+  }
+
+  html body .mc-filter-option input[type="radio"] {
+    position: absolute !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+
+  html body .mc-filter-option input[type="radio"] + .mc-filter-box {
+    border-radius: 4px !important;
+  }
+
+  html body .mc-filter-option input[type="radio"]:checked + .mc-filter-box {
+    border-color: #d4144f !important;
+    background: #d4144f !important;
+    box-shadow: inset 0 0 0 4px #fff !important;
+  }
+
+  html body .mc-filter-option input[type="radio"]:checked ~ .mc-filter-name {
+    color: #b01239 !important;
+    font-weight: 950 !important;
+  }
+
 </style>
 
 <script>
@@ -4608,14 +4641,14 @@
             <button type="button" class="mc-filter-title">
               <span>Danh mục sản phẩm</span>
             </button>
-            <p class="mc-filter-hint">Chọn nhanh danh mục muốn xem ở cột trái để lọc sản phẩm.</p>
+
 
             <c:choose>
               <c:when test="${not empty leftSidebarCategoryItems}">
                 <div class="mc-filter-list is-scroll mc-filter-list--category mc-filter-list--full-category">
                   <c:forEach var="item" items="${leftSidebarCategoryItems}">
                     <label class="mc-filter-option">
-                      <input type="checkbox" name="category" value="${item.id}" ${item.selected ? 'checked' : ''}>
+                      <input type="radio" name="category" value="${item.id}" ${item.selected ? 'checked' : ''}>
                       <span class="mc-filter-box"></span>
                       <span class="mc-filter-name"><c:out value="${item.name}" /></span>
                     </label>
@@ -4637,7 +4670,7 @@
                           </c:forEach>
 
                           <label class="mc-filter-option">
-                            <input type="checkbox" name="category" value="${child.id}" ${categoryChecked ? 'checked' : ''}>
+                            <input type="radio" name="category" value="${child.id}" ${categoryChecked ? 'checked' : ''}>
                             <span class="mc-filter-box"></span>
                             <span class="mc-filter-name"><c:out value="${child.name}" /></span>
                           </label>
@@ -4653,7 +4686,7 @@
                         </c:forEach>
 
                         <label class="mc-filter-option">
-                          <input type="checkbox" name="category" value="${parent.id}" ${categoryChecked ? 'checked' : ''}>
+                          <input type="radio" name="category" value="${parent.id}" ${categoryChecked ? 'checked' : ''}>
                           <span class="mc-filter-box"></span>
                           <span class="mc-filter-name"><c:out value="${parent.name}" /></span>
                         </label>
@@ -4698,19 +4731,19 @@
 
             <div class="mc-filter-list">
               <label class="mc-filter-option">
-                <input type="checkbox" name="priceRange" value="lt500" ${priceLt500Selected ? 'checked' : ''}>
+                <input type="radio" name="priceRange" value="lt500" ${priceLt500Selected ? 'checked' : ''}>
                 <span class="mc-filter-box"></span>
                 <span class="mc-filter-name">Dưới 500.000đ</span>
               </label>
 
               <label class="mc-filter-option">
-                <input type="checkbox" name="priceRange" value="500_1000" ${price5001000Selected ? 'checked' : ''}>
+                <input type="radio" name="priceRange" value="500_1000" ${price5001000Selected ? 'checked' : ''}>
                 <span class="mc-filter-box"></span>
                 <span class="mc-filter-name">500.000đ - 1.000.000đ</span>
               </label>
 
               <label class="mc-filter-option">
-                <input type="checkbox" name="priceRange" value="gt1000" ${priceGt1000Selected ? 'checked' : ''}>
+                <input type="radio" name="priceRange" value="gt1000" ${priceGt1000Selected ? 'checked' : ''}>
                 <span class="mc-filter-box"></span>
                 <span class="mc-filter-name">Trên 1.000.000đ</span>
               </label>
@@ -4734,7 +4767,7 @@
                   </c:forEach>
 
                   <label class="mc-filter-option">
-                    <input type="checkbox" name="brand" value="${brand.id}" ${brandChecked ? 'checked' : ''}>
+                    <input type="radio" name="brand" value="${brand.id}" ${brandChecked ? 'checked' : ''}>
                     <span class="mc-filter-box"></span>
                     <span class="mc-filter-name"><c:out value="${brand.name}" /></span>
                   </label>
