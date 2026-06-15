@@ -46,7 +46,7 @@
 
 	<!-- GLOBAL CSS -->
 	<link rel="stylesheet"
-	      href="${pageContext.request.contextPath}/assets/css/base.css?v=20260615_user_click_capture_v4">
+	      href="${pageContext.request.contextPath}/assets/css/base.css?v=20260615_fixed_header_v6">
 
 	<!-- PAGE CSS -->
 	<c:if test="${not empty pageCss}">
@@ -54,25 +54,25 @@
 			<%-- Trường hợp servlet truyền: /assets/css/home.css --%>
 			<c:when test="${fn:startsWith(pageCss, '/assets/')}">
 				<link rel="stylesheet"
-				      href="${pageContext.request.contextPath}${pageCss}?v=20260615_user_click_capture_v4">
+				      href="${pageContext.request.contextPath}${pageCss}?v=20260615_fixed_header_v6">
 			</c:when>
 
 			<%-- Trường hợp servlet truyền: assets/css/home.css --%>
 			<c:when test="${fn:startsWith(pageCss, 'assets/')}">
 				<link rel="stylesheet"
-				      href="${pageContext.request.contextPath}/${pageCss}?v=20260615_user_click_capture_v4">
+				      href="${pageContext.request.contextPath}/${pageCss}?v=20260615_fixed_header_v6">
 			</c:when>
 
 			<%-- Trường hợp servlet truyền: /home.css --%>
 			<c:when test="${fn:startsWith(pageCss, '/')}">
 				<link rel="stylesheet"
-				      href="${pageContext.request.contextPath}/assets/css${pageCss}?v=20260615_user_click_capture_v4">
+				      href="${pageContext.request.contextPath}/assets/css${pageCss}?v=20260615_fixed_header_v6">
 			</c:when>
 
 			<%-- Trường hợp servlet truyền: home.css hoặc admin/admin-list.css --%>
 			<c:otherwise>
 				<link rel="stylesheet"
-				      href="${pageContext.request.contextPath}/assets/css/${pageCss}?v=20260615_user_click_capture_v4">
+				      href="${pageContext.request.contextPath}/assets/css/${pageCss}?v=20260615_fixed_header_v6">
 			</c:otherwise>
 		</c:choose>
 	</c:if>
@@ -353,7 +353,7 @@
 <jsp:include page="/jsp/common/footer.jsp" />
 
 <!-- GLOBAL JS: chỉ load 1 lần -->
-<script defer src="${pageContext.request.contextPath}/assets/js/main.js?v=20260615_user_click_capture_v4"></script>
+<script defer src="${pageContext.request.contextPath}/assets/js/main.js?v=20260615_fixed_header_v6"></script>
 
 
 <script>
@@ -830,6 +830,77 @@
 				closeUserMenu();
 			}
 		});
+	})();
+</script>
+
+
+<script>
+	/* =========================================================
+       FINAL V5 - STICKY HEADER + CLOSE SEARCH OVERLAY ON SCROLL
+       ========================================================= */
+	(function () {
+		var ticking = false;
+
+		function closeSearchOverlaysV5() {
+			var searchResults = document.getElementById("search-results");
+			var searchHistory = document.getElementById("searchHistoryDropdown");
+
+			if (searchResults) {
+				searchResults.classList.remove("show", "is-open", "active");
+				searchResults.style.display = "none";
+				searchResults.style.opacity = "0";
+				searchResults.style.visibility = "hidden";
+				searchResults.style.pointerEvents = "none";
+			}
+
+			if (searchHistory) {
+				searchHistory.classList.remove("show", "is-open", "active");
+				searchHistory.style.display = "none";
+				searchHistory.style.opacity = "0";
+				searchHistory.style.visibility = "hidden";
+				searchHistory.style.pointerEvents = "none";
+			}
+		}
+
+		window.addEventListener("scroll", function () {
+			if (!ticking) {
+				window.requestAnimationFrame(function () {
+					closeSearchOverlaysV5();
+					ticking = false;
+				});
+				ticking = true;
+			}
+		}, { passive: true });
+	})();
+</script>
+
+
+<script>
+	/* Tự đo chiều cao header để nội dung không bị header fixed che mất. */
+	(function () {
+		function syncStickyHeaderHeight() {
+			var header = document.querySelector('.site-header');
+			if (!header) return;
+
+			var headerHeight = Math.ceil(header.getBoundingClientRect().height || 0);
+			if (headerHeight > 0) {
+				document.documentElement.style.setProperty('--mc-sticky-header-height', headerHeight + 'px');
+			}
+		}
+
+		document.addEventListener('DOMContentLoaded', syncStickyHeaderHeight);
+		window.addEventListener('load', syncStickyHeaderHeight);
+		window.addEventListener('resize', syncStickyHeaderHeight);
+
+		if (window.ResizeObserver) {
+			document.addEventListener('DOMContentLoaded', function () {
+				var header = document.querySelector('.site-header');
+				if (!header) return;
+
+				var observer = new ResizeObserver(syncStickyHeaderHeight);
+				observer.observe(header);
+			});
+		}
 	})();
 </script>
 
