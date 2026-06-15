@@ -22,25 +22,27 @@
 <jsp:include page="/jsp/admin/layout/header.jsp"/>
 <jsp:include page="/jsp/admin/layout/sidebar.jsp"/>
 
+<c:set var="ctx" value="${ctx}" />
+
 <main class="admin-main">
   <div class="admin-container user-edit-page user-edit-page--issue130">
 
     <div class="user-edit-hero">
       <div class="user-edit-hero__content">
-        <span class="user-edit-eyebrow">Issue 130 · Quản lí user</span>
+        <span class="user-edit-eyebrow">TÀI KHOẢN & PHÂN QUYỀN</span>
         <h1 class="admin-h1 user-edit-title">Sửa quyền tài khoản</h1>
         <p class="admin-subtext user-edit-subtitle">
-          Admin chỉ được quản lí role, trạng thái hoạt động và rank thủ công. Thông tin cá nhân của user
+          Admin chỉ được quản lý role, trạng thái hoạt động và rank thủ công. Thông tin cá nhân của user
           như họ tên, email, số điện thoại được hiển thị để đối chiếu và không được tự ý chỉnh sửa.
         </p>
       </div>
 
       <div class="user-edit-hero__actions">
-        <a class="admin-btn" href="${pageContext.request.contextPath}/admin/users">
+        <a class="admin-btn" href="${ctx}/admin/users">
           Quay lại danh sách
         </a>
 
-        <a class="admin-btn" href="${pageContext.request.contextPath}/admin/users?action=detail&id=${user.id}">
+        <a class="admin-btn" href="${ctx}/admin/users?action=detail&id=${user.id}">
           Xem chi tiết
         </a>
       </div>
@@ -137,7 +139,7 @@
         </section>
 
         <form method="post"
-              action="${pageContext.request.contextPath}/admin/users"
+              action="${ctx}/admin/users"
               class="admin-form user-permission-form">
 
           <%@ include file="/jsp/common/csrf.jspf" %>
@@ -268,7 +270,7 @@
             </div>
 
             <div class="user-form-actions">
-              <a class="admin-btn" href="${pageContext.request.contextPath}/admin/users">
+              <a class="admin-btn" href="${ctx}/admin/users">
                 Hủy
               </a>
 
@@ -313,7 +315,7 @@
           <c:choose>
             <c:when test="${canChangePassword}">
               <form method="post"
-                    action="${pageContext.request.contextPath}/admin/users"
+                    action="${ctx}/admin/users"
                     class="admin-form user-password-form">
 
                 <%@ include file="/jsp/common/csrf.jspf" %>
