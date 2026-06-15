@@ -93,7 +93,10 @@
 <header class="site-header">
 	<div class="container header-inner">
 
-		<a class="logo" href="${pageContext.request.contextPath}/">MyCosmetic</a>
+		<a class="logo logo-art" href="${pageContext.request.contextPath}/" aria-label="MyCosmetic trang chủ">
+			<span class="logo-art__mark">MyCosmetic</span>
+			<span class="logo-art__tagline">Be your own kind of beautiful</span>
+		</a>
 
 		<div class="header-actions">
 
@@ -102,12 +105,13 @@
 				      method="get"
 				      class="search-form"
 				      autocomplete="off">
-					<span class="search-icon">🔍</span>
+					<span class="search-icon">⌕</span>
 					<input id="search-input"
 					       name="q"
 					       placeholder="Tìm sản phẩm..."
 					       autocomplete="off"
 					       value="${fn:escapeXml(param.q)}">
+					<button class="search-submit-btn" type="submit" aria-label="Tìm kiếm">⌕</button>
 				</form>
 
 				<div id="search-results" class="search-results"></div>
