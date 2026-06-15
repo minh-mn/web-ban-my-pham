@@ -7,7 +7,7 @@
 
 <header class="admin-topbar admin-notification-topbar">
   <div class="admin-topbar__left">
-    <div class="admin-topbar__eyebrow">ADMIN CENTER</div>
+    <div class="admin-topbar__eyebrow">TRUNG TÂM QUẢN TRỊ</div>
 
     <h1 class="admin-topbar__title">
       <c:choose>
@@ -71,7 +71,7 @@
             <input type="hidden" name="action" value="markAllRead">
             <input type="hidden" name="csrf_token" value="${sessionScope.CSRF_TOKEN}">
             <button type="submit" class="admin-notification__mark-btn">
-              Đã đọc
+              Đánh dấu đã đọc
             </button>
           </form>
         </div>
