@@ -10,34 +10,36 @@
 <jsp:include page="/jsp/admin/layout/header.jsp"/>
 <jsp:include page="/jsp/admin/layout/sidebar.jsp"/>
 
+<c:set var="ctx" value="${pageContext.request.contextPath}" />
+
 <c:if test="${not empty review}">
   <c:if test="${not empty review.productImage}">
     <c:set var="productImageUrl" value="${review.productImage}" />
     <c:if test="${fn:startsWith(review.productImage, '/')}">
-      <c:set var="productImageUrl" value="${pageContext.request.contextPath}${review.productImage}" />
+      <c:set var="productImageUrl" value="${ctx}${review.productImage}" />
     </c:if>
     <c:if test="${not fn:startsWith(review.productImage, '/') and not fn:startsWith(review.productImage, 'http')}">
-      <c:set var="productImageUrl" value="${pageContext.request.contextPath}/${review.productImage}" />
+      <c:set var="productImageUrl" value="${ctx}/${review.productImage}" />
     </c:if>
   </c:if>
 
   <c:if test="${not empty review.imageUrl}">
     <c:set var="reviewImageUrl" value="${review.imageUrl}" />
     <c:if test="${fn:startsWith(review.imageUrl, '/')}">
-      <c:set var="reviewImageUrl" value="${pageContext.request.contextPath}${review.imageUrl}" />
+      <c:set var="reviewImageUrl" value="${ctx}${review.imageUrl}" />
     </c:if>
     <c:if test="${not fn:startsWith(review.imageUrl, '/') and not fn:startsWith(review.imageUrl, 'http')}">
-      <c:set var="reviewImageUrl" value="${pageContext.request.contextPath}/${review.imageUrl}" />
+      <c:set var="reviewImageUrl" value="${ctx}/${review.imageUrl}" />
     </c:if>
   </c:if>
 
   <c:if test="${not empty review.videoUrl}">
     <c:set var="reviewVideoUrl" value="${review.videoUrl}" />
     <c:if test="${fn:startsWith(review.videoUrl, '/')}">
-      <c:set var="reviewVideoUrl" value="${pageContext.request.contextPath}${review.videoUrl}" />
+      <c:set var="reviewVideoUrl" value="${ctx}${review.videoUrl}" />
     </c:if>
     <c:if test="${not fn:startsWith(review.videoUrl, '/') and not fn:startsWith(review.videoUrl, 'http')}">
-      <c:set var="reviewVideoUrl" value="${pageContext.request.contextPath}/${review.videoUrl}" />
+      <c:set var="reviewVideoUrl" value="${ctx}/${review.videoUrl}" />
     </c:if>
   </c:if>
 </c:if>
@@ -45,25 +47,27 @@
 <main class="admin-main">
   <div class="admin-container review-detail-page">
 
-    <div class="review-topbar">
-      <div class="review-title-block">
-        <h1 class="review-title">
+    <section class="admin-review-detail-hero">
+      <div class="admin-review-detail-hero__content">
+        <span class="admin-review-detail-eyebrow">KIỂM DUYỆT &amp; BÌNH LUẬN</span>
+        <h1 class="admin-review-detail-title">
           Chi tiết bình luận
           <c:if test="${not empty review}">
             #${review.id}
           </c:if>
         </h1>
-        <p class="review-subtitle">
-          Theo dõi nội dung bình luận, thông tin sản phẩm, người bình luận và trạng thái kiểm duyệt.
+        <p class="admin-review-detail-subtitle">
+          Theo dõi nội dung bình luận, thông tin sản phẩm, người bình luận, media đính kèm
+          và trạng thái kiểm duyệt trước khi hiển thị công khai.
         </p>
       </div>
 
-      <div class="review-top-actions">
-        <a class="admin-btn" href="${pageContext.request.contextPath}/admin/reviews">
-          Quay lại danh sách
+      <div class="admin-review-detail-hero__actions">
+        <a class="admin-btn" href="${ctx}/admin/reviews">
+          ← Quay lại danh sách
         </a>
       </div>
-    </div>
+    </section>
 
     <c:if test="${not empty successMessage}">
       <div class="admin-alert admin-alert--success">
@@ -79,8 +83,10 @@
 
     <c:choose>
       <c:when test="${empty review}">
-        <div class="review-empty-state">
-          Không tìm thấy bình luận.
+        <div class="review-empty-state admin-review-detail-empty">
+          <span>💬</span>
+          <strong>Không tìm thấy bình luận</strong>
+          <small>Bình luận có thể đã bị xóa hoặc ID không còn hợp lệ.</small>
         </div>
       </c:when>
 
@@ -88,7 +94,8 @@
 
         <section class="review-summary">
 
-          <div class="review-summary-card">
+          <div class="review-summary-card review-summary-card--status">
+            <span class="review-summary-card__icon">💬</span>
             <div class="review-summary-card__label">Bình luận</div>
             <div class="review-summary-card__value">
               #${review.id}
@@ -101,7 +108,8 @@
             </div>
           </div>
 
-          <div class="review-summary-card">
+          <div class="review-summary-card review-summary-card--rating">
+            <span class="review-summary-card__icon">⭐</span>
             <div class="review-summary-card__label">Đánh giá</div>
             <div class="review-summary-card__value">
               <span class="review-rating">
@@ -115,7 +123,8 @@
             </div>
           </div>
 
-          <div class="review-summary-card">
+          <div class="review-summary-card review-summary-card--product">
+            <span class="review-summary-card__icon">🧴</span>
             <div class="review-summary-card__label">Sản phẩm</div>
             <div class="review-summary-card__value">
               Mã SP: <c:out value="${review.productDisplayCode}" />
@@ -125,7 +134,8 @@
             </div>
           </div>
 
-          <div class="review-summary-card">
+          <div class="review-summary-card review-summary-card--user">
+            <span class="review-summary-card__icon">👤</span>
             <div class="review-summary-card__label">Người bình luận</div>
             <div class="review-summary-card__value">
               User ID: #${review.authorId}
@@ -499,7 +509,7 @@
                 <div class="review-spacer"></div>
 
                 <form method="post"
-                      action="${pageContext.request.contextPath}/admin/reviews"
+                      action="${ctx}/admin/reviews"
                       class="review-action-form">
 
                   <%@ include file="/jsp/common/csrf.jspf" %>
@@ -565,7 +575,7 @@
                     </button>
 
                     <a class="admin-btn"
-                       href="${pageContext.request.contextPath}/admin/reviews">
+                       href="${ctx}/admin/reviews">
                       Quay lại danh sách
                     </a>
                   </div>
