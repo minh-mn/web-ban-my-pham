@@ -524,3 +524,198 @@
 .notification-list__item:hover {
     background: #fff8fb !important;
 }
+
+
+/* =========================================================
+   NOTIFICATION PAGE V16 - RESTORE TOP HERO
+========================================================= */
+.notification-page {
+    padding-top: 16px !important;
+}
+
+.notification-page__container {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
+.notification-page__hero {
+    margin-top: 0 !important;
+    position: relative;
+    z-index: 1;
+}
+
+.notification-list__arrow {
+    min-width: 98px;
+    width: auto;
+    height: 36px;
+    padding: 0 14px;
+    border-radius: 999px;
+    background: #fff7fa;
+    color: #d61a67;
+    border: 1px solid rgba(225, 29, 72, 0.12);
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.notification-list__arrow::before {
+    content: "Xem chi tiết";
+}
+
+.notification-list__arrow {
+    font-size: 0;
+}
+
+.notification-list__item:hover .notification-list__arrow {
+    background: #fff0f6 !important;
+    color: #b31257 !important;
+}
+
+
+/* =========================================================
+   NOTIFICATION PAGE V17 - SHOW CTA TEXT CORRECTLY
+========================================================= */
+.notification-list__arrow,
+.notification-list__arrow::before {
+    content: none !important;
+}
+
+.notification-list__arrow {
+    min-width: 118px !important;
+    width: auto !important;
+    height: 38px !important;
+    padding: 0 16px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 999px !important;
+    background: #fff7fa !important;
+    color: #d61a67 !important;
+    border: 1px solid rgba(225, 29, 72, 0.12) !important;
+    font-size: 12px !important;
+    font-weight: 900 !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+}
+
+.notification-list__item:hover .notification-list__arrow {
+    background: #fff0f6 !important;
+    color: #b31257 !important;
+}
+
+
+/* =========================================================
+   NOTIFICATION PAGE V18 - FINAL LAYOUT FORCE
+   Add at the VERY END of notification.css
+========================================================= */
+
+/* Tách hẳn trang thông báo xuống dưới header để không bị che phần hero */
+html body .site-main > .notification-page,
+body.site-body .site-main > .notification-page,
+main.site-main > .notification-page,
+.notification-page {
+    position: relative !important;
+    display: block !important;
+    min-height: 70vh !important;
+    margin-top: 0 !important;
+    padding-top: 32px !important;
+    padding-bottom: 56px !important;
+    overflow: visible !important;
+}
+
+/* Ép hero hiện lại đầy đủ, không bị chui dưới header */
+.notification-page__hero {
+    position: relative !important;
+    z-index: 1 !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 22px !important;
+    align-items: center !important;
+    width: 100% !important;
+    min-height: 150px !important;
+    height: auto !important;
+    margin: 0 0 20px 0 !important;
+    padding: 24px 26px !important;
+    overflow: visible !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: none !important;
+}
+
+/* Ép chữ trong hero hiện, phòng trường hợp bị CSS cũ đè */
+.notification-page__hero-content,
+.notification-page__eyebrow,
+.notification-page__title,
+.notification-page__subtitle,
+.notification-page__hero-actions,
+.notification-page__stat-grid,
+.notification-page__stat,
+.notification-page__mark-form,
+.notification-page__mark-btn {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: none !important;
+}
+
+.notification-page__title {
+    display: block !important;
+    color: #111827 !important;
+}
+
+.notification-page__subtitle {
+    display: block !important;
+    color: #6b7280 !important;
+}
+
+/* Chừa đủ cột cho nút bên phải, không còn bị mất chữ */
+.notification-list__item {
+    grid-template-columns: 56px minmax(0, 1fr) 88px !important;
+    column-gap: 16px !important;
+    overflow: hidden !important;
+}
+
+.notification-list__content {
+    min-width: 0 !important;
+}
+
+.notification-list__arrow {
+    min-width: 78px !important;
+    width: 78px !important;
+    max-width: 78px !important;
+    height: 34px !important;
+    padding: 0 10px !important;
+    justify-self: end !important;
+    align-self: center !important;
+    margin: 0 !important;
+    font-size: 12px !important;
+    color: #d61a67 !important;
+    background: #fff7fa !important;
+    border: 1px solid rgba(225, 29, 72, 0.14) !important;
+    border-radius: 999px !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    transform: none !important;
+}
+
+.notification-list__arrow::before {
+    content: none !important;
+}
+
+.notification-list__item:hover .notification-list__arrow {
+    background: #fff0f6 !important;
+    color: #b31257 !important;
+    transform: none !important;
+}
+
+@media (max-width: 820px) {
+    .notification-page__hero {
+        grid-template-columns: 1fr !important;
+    }
+
+    .notification-list__item {
+        grid-template-columns: 48px minmax(0, 1fr) !important;
+    }
+
+    .notification-list__arrow {
+        display: none !important;
+    }
+}

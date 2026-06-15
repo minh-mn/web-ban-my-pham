@@ -5644,3 +5644,196 @@ html body:has(.notification-page) main.site-main > .notification-page {
     width: min(390px, calc(100vw - 18px)) !important;
   }
 }
+
+
+/* =========================================================
+   NOTIFICATION V16 - HOVER OPEN + COLOR TUNE
+========================================================= */
+.site-header .notification-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.site-header .notif-dropdown {
+  top: calc(100% + 10px) !important;
+  right: 0 !important;
+  width: min(420px, calc(100vw - 24px)) !important;
+}
+
+.site-header .notif-dropdown__head {
+  padding: 15px 16px 12px !important;
+}
+
+.site-header .notif-dropdown__counter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(225, 29, 72, 0.10);
+  color: #c2185b;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.site-header .notif-card__icon {
+  background: linear-gradient(135deg, #ff7ab8, #e11d48) !important;
+}
+
+.site-header .notif-card__brand-mark {
+  color: #fffafc !important;
+}
+
+.site-header .notif-card__type {
+  background: rgba(225, 29, 72, 0.08) !important;
+  color: #d61a67 !important;
+}
+
+.site-header .notif-dropdown__footer a,
+.site-header .notif-dropdown__view-all {
+  color: #d61a67 !important;
+}
+
+.site-header .notif-dropdown__footer a:hover,
+.site-header .notif-dropdown__view-all:hover {
+  color: #b31257 !important;
+}
+
+
+/* =========================================================
+   NOTIFICATION V17 - ALIGN LOGO / REMOVE DETAIL LINE
+========================================================= */
+.site-header .notif-dropdown__title-group {
+  display: grid !important;
+  gap: 4px !important;
+  min-width: 0 !important;
+}
+
+.site-header .notif-dropdown__title-group strong {
+  display: block !important;
+}
+
+.site-header .notif-dropdown__title-group span {
+  display: block !important;
+}
+
+.site-header .notif-card {
+  align-items: center !important;
+  overflow: visible !important;
+}
+
+.site-header .notif-card__icon {
+  align-self: center !important;
+  justify-self: center !important;
+  margin-left: 4px !important;
+}
+
+.site-header .notif-card__content {
+  align-self: center !important;
+}
+
+.site-header .notif-card__meta {
+  display: block !important;
+}
+
+.site-header .notif-card__time {
+  color: #7c8798 !important;
+  font-size: 12px !important;
+  font-weight: 750 !important;
+}
+
+.site-header .notif-card__type {
+  display: none !important;
+}
+
+
+/* =========================================================
+   NOTIFICATION DROPDOWN V18 - FINAL ALIGNMENT
+   Add at the VERY END of base.css
+========================================================= */
+
+.site-header .notification-container {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.site-header .notif-dropdown {
+  top: calc(100% + 10px) !important;
+  right: 0 !important;
+  width: min(420px, calc(100vw - 24px)) !important;
+  overflow: hidden !important;
+}
+
+/* Căn icon MC ngay hàng, không bị lệch trái/cắt chữ */
+.site-header .notif-card {
+  grid-template-columns: 50px minmax(0, 1fr) 10px !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 12px 14px !important;
+  overflow: hidden !important;
+}
+
+.site-header .notif-card__icon {
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
+  margin: 0 !important;
+  align-self: center !important;
+  justify-self: center !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 15px !important;
+  background: linear-gradient(135deg, #ff7ab8, #e11d48) !important;
+  box-shadow: 0 10px 20px rgba(219, 39, 119, 0.16) !important;
+}
+
+.site-header .notif-card__brand-mark {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  height: 100% !important;
+  color: #ffffff !important;
+  font-size: 13px !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+  letter-spacing: 0.02em !important;
+  text-align: center !important;
+}
+
+/* Dropdown: bỏ hoàn toàn dòng/nhãn xem chi tiết phía dưới từng item */
+.site-header .notif-card__type {
+  display: none !important;
+}
+
+.site-header .notif-card__meta {
+  display: block !important;
+  margin-top: 2px !important;
+}
+
+.site-header .notif-card__time {
+  display: block !important;
+  color: #7c8798 !important;
+  font-size: 12px !important;
+  line-height: 1.35 !important;
+  font-weight: 750 !important;
+}
+
+/* Không nhảy khi hover */
+.site-header .notif-card,
+.site-header .notif-card:hover,
+.site-header .notification-bell,
+.site-header .notification-bell:hover,
+.site-header .notif-dropdown__view-all,
+.site-header .notif-dropdown__view-all:hover {
+  transform: none !important;
+}
+
+.site-header .notif-dropdown.is-open {
+  animation: none !important;
+}
