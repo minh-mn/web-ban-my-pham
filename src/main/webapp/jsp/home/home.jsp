@@ -359,30 +359,94 @@ Layout theo mẫu: banner lớn bên trái, logo thương hiệu + sản phẩm 
 			}
 
 			.skin-featured-brand-banner-fallback {
+				position: relative;
 				min-height: 620px;
 				display: flex;
 				flex-direction: column;
 				align-items: center;
 				justify-content: center;
-				padding: 38px;
+				padding: 46px 34px;
+				overflow: hidden;
 				text-align: center;
 				color: #9b001c;
+				background:
+						radial-gradient(circle at 18% 14%, rgba(255,255,255,.92), rgba(255,255,255,0) 34%),
+						radial-gradient(circle at 86% 88%, rgba(255,210,226,.9), rgba(255,210,226,0) 32%),
+						linear-gradient(180deg, #fbecf2 0%, #f7dde7 100%);
+				border: 1px solid rgba(176, 18, 57, .10);
+			}
+
+			.skin-featured-brand-banner-fallback::before,
+			.skin-featured-brand-banner-fallback::after {
+				width: 250px;
+				height: 250px;
+				right: -92px;
+				bottom: -74px;
+				background: radial-gradient(circle, rgba(255,206,222,.95) 0%, rgba(255,206,222,0) 72%);
+			}
+
+			.skin-featured-brand-banner-fallback::before {
+				width: 220px;
+				height: 220px;
+				left: -86px;
+				top: -44px;
+				background: radial-gradient(circle, rgba(255,255,255,.98) 0%, rgba(255,255,255,0) 72%);
+			}
+
+			.skin-featured-brand-banner-fallback::after {
+				width: 240px;
+				height: 240px;
+				right: -92px;
+				bottom: -78px;
+				background: radial-gradient(circle, rgba(255,210,226,.85) 0%, rgba(255,210,226,0) 72%);
 			}
 
 			.skin-featured-brand-banner-fallback span {
+				position: relative;
+				z-index: 1;
+				display: inline-flex;
+				align-items: center;
+				justify-content: center;
+				padding: 7px 14px;
+				border-radius: 999px;
+				background: rgba(255,255,255,.76);
 				font-size: 13px;
 				font-weight: 950;
-				letter-spacing: .22em;
+				letter-spacing: .24em;
 				text-transform: uppercase;
+				box-shadow: 0 10px 26px rgba(176, 18, 57, .08);
 			}
 
 			.skin-featured-brand-banner-fallback strong {
+				position: relative;
+				z-index: 1;
 				display: block;
-				margin-top: 12px;
-				font-size: clamp(32px, 4vw, 58px);
+				margin-top: 22px;
+				font-size: clamp(38px, 5vw, 72px);
 				font-weight: 1000;
-				line-height: 1.05;
+				line-height: .92;
+				letter-spacing: .015em;
 				text-transform: uppercase;
+				text-shadow: 0 10px 22px rgba(176, 18, 57, .08);
+			}
+
+			.skin-featured-brand-banner-fallback em {
+				position: relative;
+				z-index: 1;
+				display: inline-flex;
+				align-items: center;
+				justify-content: center;
+				margin-top: 24px;
+				padding: 12px 22px;
+				border-radius: 999px;
+				background: rgba(255,255,255,.90);
+				color: #b01239;
+				font-size: 13px;
+				font-style: normal;
+				font-weight: 900;
+				letter-spacing: .06em;
+				text-transform: uppercase;
+				box-shadow: 0 14px 30px rgba(176, 18, 57, .12);
 			}
 
 			.skin-featured-brand-main {
@@ -431,9 +495,9 @@ Layout theo mẫu: banner lớn bên trái, logo thương hiệu + sản phẩm 
 				display: grid;
 				grid-template-columns: repeat(6, minmax(0, 1fr));
 				align-items: center;
-				min-height: 76px;
+				min-height: 64px;
 				overflow: hidden;
-				border: 3px solid #b01239;
+				border: 2px solid #b01239;
 				border-radius: 999px;
 				background: #fff7fa;
 				box-shadow: 0 12px 28px rgba(176, 18, 57, .10);
@@ -444,17 +508,17 @@ Layout theo mẫu: banner lớn bên trái, logo thương hiệu + sản phẩm 
 				-webkit-appearance: none;
 				min-width: 0;
 				width: 100%;
-				height: 76px;
+				height: 64px;
 				display: flex;
 				align-items: center;
 				justify-content: center;
-				padding: 12px 16px;
+				padding: 10px 14px;
 				border: 0;
 				border-right: 1px solid rgba(176, 18, 57, .12);
 				background: #fff;
 				color: #b01239;
 				font: inherit;
-				font-size: 18px;
+				font-size: 16px;
 				font-weight: 950;
 				letter-spacing: .04em;
 				text-align: center;
@@ -481,7 +545,7 @@ Layout theo mẫu: banner lớn bên trái, logo thương hiệu + sản phẩm 
 
 			.skin-featured-brand-logo img {
 				max-width: 100%;
-				max-height: 46px;
+				max-height: 34px;
 				object-fit: contain;
 				display: block;
 				filter: grayscale(1) contrast(1.1);
@@ -615,7 +679,7 @@ Layout theo mẫu: banner lớn bên trái, logo thương hiệu + sản phẩm 
 
 			.skin-featured-brand-price strong {
 				color: #a90027;
-				font-size: 18px;
+				font-size: 16px;
 				font-weight: 950;
 			}
 
@@ -789,7 +853,8 @@ Layout theo mẫu: banner lớn bên trái, logo thương hiệu + sản phẩm 
 					<c:otherwise>
 						<div class="skin-featured-brand-banner-fallback">
 							<span>MyCosmetic</span>
-							<strong>Beauty Brand Picks</strong>
+							<strong>Beauty<br>Brand<br>Picks</strong>
+							<em>Chọn lọc thương hiệu nổi bật</em>
 						</div>
 					</c:otherwise>
 				</c:choose>
