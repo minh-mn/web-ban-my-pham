@@ -1,0 +1,395 @@
+.brand-hero-section {
+    padding: 44px 0 26px;
+    background: linear-gradient(180deg, rgba(255, 243, 247, .95) 0%, rgba(255, 248, 250, .78) 100%);
+}
+
+.brand-hero-shell,
+.brand-directory-shell {
+    width: min(1200px, calc(100vw - 36px));
+    margin: 0 auto;
+}
+
+.brand-hero-shell {
+    text-align: center;
+}
+
+.brand-hero-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    padding: 0 16px;
+    margin-bottom: 14px;
+    border: 1px solid rgba(212, 20, 79, .14);
+    border-radius: 999px;
+    background: #ffffff;
+    color: #d4144f;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.brand-hero-title {
+    margin: 0 0 12px;
+    color: #1c2230;
+    font-size: clamp(32px, 3vw, 48px);
+    line-height: 1.08;
+    font-weight: 950;
+    letter-spacing: -.03em;
+}
+
+.brand-hero-description {
+    width: min(780px, 100%);
+    margin: 0 auto;
+    color: #657084;
+    font-size: 16px;
+    line-height: 1.8;
+}
+
+.brand-directory-section {
+    padding: 10px 0 62px;
+    background: transparent;
+}
+
+.brand-directory-toolbar {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 26px;
+    padding: 28px;
+    border: 1px solid rgba(15, 23, 42, .06);
+    border-radius: 28px;
+    background: linear-gradient(180deg, #ffffff 0%, #fff9fb 100%);
+    box-shadow: 0 18px 44px rgba(15, 23, 42, .05);
+}
+
+.brand-directory-heading h3 {
+    margin: 0 0 8px;
+    color: #182132;
+    font-size: clamp(22px, 2vw, 30px);
+    font-weight: 900;
+    letter-spacing: -.02em;
+}
+
+.brand-directory-heading p {
+    margin: 0;
+    color: #6c7488;
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+.brand-filter-wrap {
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.brand-filter-chips {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.brand-filter-chip {
+    min-height: 40px;
+    padding: 0 15px;
+    border: 1px solid rgba(15, 23, 42, .08);
+    border-radius: 999px;
+    background: #ffffff;
+    color: #465066;
+    font-size: 13px;
+    font-weight: 900;
+    cursor: pointer;
+    transition: .2s ease;
+}
+
+.brand-filter-chip:hover {
+    border-color: rgba(212, 20, 79, .22);
+    background: #fff3f7;
+    color: #d4144f;
+    transform: translateY(-1px);
+}
+
+.brand-filter-chip.is-active {
+    border-color: transparent;
+    background: linear-gradient(135deg, #ff5f97 0%, #d4144f 60%, #980028 100%);
+    color: #ffffff;
+    box-shadow: 0 12px 26px rgba(212, 20, 79, .16);
+}
+
+.brand-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 18px;
+}
+
+.brand-card {
+    display: flex;
+    flex-direction: column;
+    min-height: 252px;
+    padding: 18px;
+    border: 1px solid rgba(15, 23, 42, .07);
+    border-radius: 24px;
+    background: linear-gradient(180deg, #ffffff 0%, #fffafb 100%);
+    box-shadow: 0 12px 30px rgba(15, 23, 42, .045);
+    text-decoration: none;
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+
+.brand-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(212, 20, 79, .18);
+    box-shadow: 0 18px 36px rgba(212, 20, 79, .09);
+}
+
+.brand-card-media {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 120px;
+    margin-bottom: 16px;
+    border-radius: 18px;
+    background: #ffffff;
+    overflow: hidden;
+}
+
+.brand-card-media img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.brand-card-fallback {
+    width: 72px;
+    height: 72px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 22px;
+    background: linear-gradient(135deg, #ffe8f0 0%, #fff6f9 100%);
+    color: #d4144f;
+    font-size: 30px;
+    font-weight: 950;
+    border: 1px dashed rgba(212, 20, 79, .34);
+}
+
+.brand-card-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin-top: auto;
+    text-align: center;
+}
+
+.brand-card-letter {
+    min-height: 26px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: #fff1f5;
+    color: #d4144f;
+    font-size: 11px;
+    font-weight: 900;
+    line-height: 26px;
+}
+
+.brand-card-name {
+    margin: 0;
+    color: #162032;
+    font-size: 18px;
+    line-height: 1.35;
+    font-weight: 900;
+    letter-spacing: -.01em;
+}
+
+.brand-card-link {
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 15px;
+    border-radius: 999px;
+    background: #fff3f7;
+    color: #d4144f;
+    font-size: 12px;
+    font-weight: 900;
+    transition: .2s ease;
+}
+
+.brand-card:hover .brand-card-link {
+    background: linear-gradient(135deg, #ff5f97 0%, #d4144f 60%, #980028 100%);
+    color: #ffffff;
+}
+
+.brand-grid-empty {
+    display: grid;
+    place-items: center;
+    min-height: 140px;
+    margin-top: 18px;
+    padding: 18px;
+    border: 1px dashed rgba(15, 23, 42, .14);
+    border-radius: 22px;
+    background: #ffffff;
+    color: #697488;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.brand-grid-empty[hidden],
+.brand-card[hidden] {
+    display: none !important;
+}
+
+@media (max-width: 920px) {
+    .brand-directory-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .brand-filter-wrap,
+    .brand-filter-chips {
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 640px) {
+    .brand-hero-section {
+        padding: 34px 0 22px;
+    }
+
+    .brand-hero-title {
+        font-size: 30px;
+    }
+
+    .brand-hero-description {
+        font-size: 14px;
+    }
+
+    .brand-directory-toolbar {
+        padding: 20px;
+        border-radius: 22px;
+    }
+
+    .brand-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .brand-card {
+        min-height: 228px;
+        padding: 14px;
+        border-radius: 20px;
+    }
+
+    .brand-card-media {
+        height: 96px;
+    }
+
+    .brand-card-name {
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 420px) {
+    .brand-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+/* =========================================================
+   BRAND GRID UI FIX 2026-06-15
+   - Đảm bảo layout không bị hiển thị dạng HTML thô.
+   - Đồng bộ khoảng cách với header MyCosmetic.
+   - Tối ưu vùng hero, filter chips và card thương hiệu.
+========================================================= */
+
+.site-main:has(.brand-hero-section),
+main:has(.brand-hero-section) {
+    background:
+            radial-gradient(circle at 10% 0%, rgba(255, 95, 151, .10), transparent 28%),
+            linear-gradient(180deg, #fff9fb 0%, #f7f9fc 100%);
+}
+
+.brand-hero-section,
+.brand-directory-section,
+.brand-hero-section *,
+.brand-directory-section * {
+    box-sizing: border-box;
+}
+
+.brand-hero-section {
+    margin-top: 0;
+    padding: 46px 0 30px;
+    border-top: 1px solid rgba(212, 20, 79, .08);
+}
+
+.brand-hero-shell,
+.brand-directory-shell {
+    width: min(1240px, calc(100vw - 42px));
+}
+
+.brand-hero-title {
+    color: #111827;
+    text-shadow: 0 8px 24px rgba(212, 20, 79, .08);
+}
+
+.brand-directory-section {
+    padding-top: 18px;
+}
+
+.brand-directory-toolbar {
+    position: relative;
+    overflow: hidden;
+}
+
+.brand-directory-toolbar::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 5px;
+    background: linear-gradient(180deg, #ff5f97, #d4144f, #980028);
+}
+
+.brand-filter-chip {
+    font-family: inherit;
+}
+
+.brand-card {
+    color: inherit;
+}
+
+.brand-card:focus-visible,
+.brand-filter-chip:focus-visible {
+    outline: 3px solid rgba(212, 20, 79, .22);
+    outline-offset: 3px;
+}
+
+.brand-card-media {
+    border: 1px solid rgba(15, 23, 42, .06);
+}
+
+.brand-card-name {
+    font-family: inherit;
+}
+
+@media (min-width: 1180px) {
+    .brand-grid {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .brand-hero-shell,
+    .brand-directory-shell {
+        width: min(100vw - 28px, 1240px);
+    }
+
+    .brand-filter-chip {
+        min-height: 36px;
+        padding: 0 12px;
+    }
+}
