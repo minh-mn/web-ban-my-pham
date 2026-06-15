@@ -112,7 +112,7 @@ VOUCHER STRIP
 							<div class="skin-voucher-left">
 								<div class="skin-voucher-mark">
 									<c:choose>
-										<c:when test="${voucher.type == 'FREESHIP'}">🚚</c:when>
+										<c:when test="${voucher.type == 'FREESHIP'}">FS</c:when>
 										<c:otherwise>MC</c:otherwise>
 									</c:choose>
 								</div>
@@ -134,10 +134,10 @@ VOUCHER STRIP
 									<strong>${voucher.code}</strong>
 
 									<button type="button"
-											class="skin-save-voucher"
-											onclick="saveVoucher(this)"
-											data-code="${voucher.code}"
-											data-loggedin="${not empty sessionScope.user}">
+									        class="skin-save-voucher"
+									        onclick="saveVoucher(this)"
+									        data-code="${voucher.code}"
+									        data-loggedin="${not empty sessionScope.user}">
 										Lưu
 									</button>
 								</div>
@@ -710,11 +710,11 @@ Layout theo mẫu: banner lớn bên trái, logo thương hiệu + sản phẩm 
 				<div class="skin-featured-brand-logo-row" data-brand-tabs>
 					<c:forEach var="brand" items="${featuredBrandList}" begin="0" end="5" varStatus="brandStatus">
 						<button type="button"
-								class="skin-featured-brand-logo ${brandStatus.first ? 'is-active' : ''}"
-								data-brand-filter="${brand.id}"
-								data-brand-name="${brand.name}"
-								aria-pressed="${brandStatus.first ? 'true' : 'false'}"
-								title="${brand.name}">
+						        class="skin-featured-brand-logo ${brandStatus.first ? 'is-active' : ''}"
+						        data-brand-filter="${brand.id}"
+						        data-brand-name="${brand.name}"
+						        aria-pressed="${brandStatus.first ? 'true' : 'false'}"
+						        title="${brand.name}">
 							<c:choose>
 								<c:when test="${not empty brand.imageUrl}">
 									<c:choose>
@@ -749,8 +749,8 @@ Layout theo mẫu: banner lớn bên trái, logo thương hiệu + sản phẩm 
 						</c:choose>
 
 						<article class="skin-featured-brand-card"
-								 data-brand-product
-								 data-brand-id="${product.brandId}">
+						         data-brand-product
+						         data-brand-id="${product.brandId}">
 							<a class="skin-featured-brand-image" href="${brandProductUrl}">
 								<c:if test="${product.discountPercent > 0}">
 									<span class="skin-featured-brand-discount">-${product.discountPercent}%</span>
