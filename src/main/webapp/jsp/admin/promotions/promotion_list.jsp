@@ -8,98 +8,141 @@
 <jsp:include page="/jsp/admin/layout/header.jsp"/>
 <jsp:include page="/jsp/admin/layout/sidebar.jsp"/>
 
+<c:set var="ctx" value="${ctx}" />
+
 <main class="admin-main admin-promo-page">
     <div class="admin-container admin-promo-container">
 
-        <!-- TOPBAR -->
-        <div class="admin-topbar admin-promotion-topbar">
-            <div class="admin-promotion-heading">
-                <h1 class="admin-h1">Khuyến mãi &amp; Mã giảm giá</h1>
-                <p class="admin-subtext">
+        <section class="admin-promo-hero">
+            <div class="admin-promo-hero__content">
+                <span class="admin-promo-eyebrow">KHUYẾN MÃI &amp; TĂNG TRƯỞNG</span>
+                <h1 class="admin-promo-title">Khuyến mãi &amp; Mã giảm giá</h1>
+                <p class="admin-promo-subtitle">
                     Quản lý tập trung mã giảm giá, giảm giá thương hiệu, giảm theo giá trị đơn hàng
                     và chương trình khuyến mãi cửa hàng.
                 </p>
             </div>
 
-            <div class="admin-promotion-create">
+            <div class="admin-promo-hero__actions">
                 <a class="admin-btn admin-btn--primary admin-promo-create-btn"
-                   href="${pageContext.request.contextPath}/admin/promotions?action=new&type=COUPON">
+                   href="${ctx}/admin/promotions?action=new&type=COUPON">
                     + Tạo mã giảm giá
                 </a>
 
                 <a class="admin-btn admin-promo-create-btn"
-                   href="${pageContext.request.contextPath}/admin/promotions?action=new&type=BRAND">
+                   href="${ctx}/admin/promotions?action=new&type=BRAND">
                     + Giảm giá thương hiệu
                 </a>
 
                 <a class="admin-btn admin-promo-create-btn"
-                   href="${pageContext.request.contextPath}/admin/promotions?action=new&type=ORDER">
+                   href="${ctx}/admin/promotions?action=new&type=ORDER">
                     + Giảm theo đơn hàng
                 </a>
 
                 <a class="admin-btn admin-promo-create-btn"
-                   href="${pageContext.request.contextPath}/admin/promotions?action=new&type=EVENT">
+                   href="${ctx}/admin/promotions?action=new&type=EVENT">
+                    + Chương trình khuyến mãi
+                </a>
+            </div>
+        </section>
+
+<div class="admin-promotion-create">
+                <a class="admin-btn admin-btn--primary admin-promo-create-btn"
+                   href="${ctx}/admin/promotions?action=new&type=COUPON">
+                    + Tạo mã giảm giá
+                </a>
+
+                <a class="admin-btn admin-promo-create-btn"
+                   href="${ctx}/admin/promotions?action=new&type=BRAND">
+                    + Giảm giá thương hiệu
+                </a>
+
+                <a class="admin-btn admin-promo-create-btn"
+                   href="${ctx}/admin/promotions?action=new&type=ORDER">
+                    + Giảm theo đơn hàng
+                </a>
+
+                <a class="admin-btn admin-promo-create-btn"
+                   href="${ctx}/admin/promotions?action=new&type=EVENT">
                     + Chương trình khuyến mãi
                 </a>
             </div>
         </div>
 
         <!-- STATS -->
-        <div class="admin-promo-stats">
-            <div class="admin-promo-stat">
-                <div class="admin-promo-stat__label">Tổng chương trình</div>
-                <div class="admin-promo-stat__value">${stats.total}</div>
+        <section class="admin-promo-stats">
+            <div class="admin-promo-stat admin-promo-stat--total">
+                <span class="admin-promo-stat__icon">🎯</span>
+                <span class="admin-promo-stat__label">Tổng chương trình</span>
+                <strong class="admin-promo-stat__value">${stats.total}</strong>
+                <small class="admin-promo-stat__note">Tất cả khuyến mãi đã tạo</small>
             </div>
 
-            <div class="admin-promo-stat">
-                <div class="admin-promo-stat__label">Đang hoạt động</div>
-                <div class="admin-promo-stat__value">${stats.active}</div>
+            <div class="admin-promo-stat admin-promo-stat--active">
+                <span class="admin-promo-stat__icon">✅</span>
+                <span class="admin-promo-stat__label">Đang hoạt động</span>
+                <strong class="admin-promo-stat__value">${stats.active}</strong>
+                <small class="admin-promo-stat__note">Đang có hiệu lực</small>
             </div>
 
-            <div class="admin-promo-stat">
-                <div class="admin-promo-stat__label">Tạm tắt</div>
-                <div class="admin-promo-stat__value">${stats.inactive}</div>
+            <div class="admin-promo-stat admin-promo-stat--inactive">
+                <span class="admin-promo-stat__icon">⏸️</span>
+                <span class="admin-promo-stat__label">Tạm tắt</span>
+                <strong class="admin-promo-stat__value">${stats.inactive}</strong>
+                <small class="admin-promo-stat__note">Chưa áp dụng cho khách</small>
             </div>
 
-            <div class="admin-promo-stat">
-                <div class="admin-promo-stat__label">Sắp diễn ra</div>
-                <div class="admin-promo-stat__value">${stats.upcoming}</div>
+            <div class="admin-promo-stat admin-promo-stat--upcoming">
+                <span class="admin-promo-stat__icon">⏳</span>
+                <span class="admin-promo-stat__label">Sắp diễn ra</span>
+                <strong class="admin-promo-stat__value">${stats.upcoming}</strong>
+                <small class="admin-promo-stat__note">Chờ đến ngày bắt đầu</small>
             </div>
 
-            <div class="admin-promo-stat">
-                <div class="admin-promo-stat__label">Đã hết hạn</div>
-                <div class="admin-promo-stat__value">${stats.expired}</div>
+            <div class="admin-promo-stat admin-promo-stat--expired">
+                <span class="admin-promo-stat__icon">⌛</span>
+                <span class="admin-promo-stat__label">Đã hết hạn</span>
+                <strong class="admin-promo-stat__value">${stats.expired}</strong>
+                <small class="admin-promo-stat__note">Không còn hiệu lực</small>
             </div>
-        </div>
+        </section>
 
         <!-- MAIN CARD -->
         <div class="admin-card admin-promo-list-card">
             <div class="admin-card__body">
+                <div class="admin-promo-section-head">
+                    <div>
+                        <h2 class="admin-promo-section-title">Danh sách khuyến mãi</h2>
+                        <p class="admin-promo-section-desc">
+                            Lọc theo loại chương trình, trạng thái hoặc tìm kiếm theo mã, tên và điều kiện áp dụng.
+                        </p>
+                    </div>
+                </div>
 
                 <!-- TYPE TABS -->
                 <div class="admin-promo-tabs">
                     <a class="admin-promo-tab ${promotionType == 'ALL' ? 'is-active' : ''}"
-                       href="${pageContext.request.contextPath}/admin/promotions?type=ALL">
+                       href="${ctx}/admin/promotions?type=ALL">
                         Tất cả
                     </a>
 
                     <a class="admin-promo-tab ${promotionType == 'COUPON' ? 'is-active' : ''}"
-                       href="${pageContext.request.contextPath}/admin/promotions?type=COUPON">
+                       href="${ctx}/admin/promotions?type=COUPON">
                         Mã giảm giá
                     </a>
 
                     <a class="admin-promo-tab ${promotionType == 'BRAND' ? 'is-active' : ''}"
-                       href="${pageContext.request.contextPath}/admin/promotions?type=BRAND">
+                       href="${ctx}/admin/promotions?type=BRAND">
                         Giảm giá thương hiệu
                     </a>
 
                     <a class="admin-promo-tab ${promotionType == 'ORDER' ? 'is-active' : ''}"
-                       href="${pageContext.request.contextPath}/admin/promotions?type=ORDER">
+                       href="${ctx}/admin/promotions?type=ORDER">
                         Giảm theo đơn hàng
                     </a>
 
                     <a class="admin-promo-tab ${promotionType == 'EVENT' ? 'is-active' : ''}"
-                       href="${pageContext.request.contextPath}/admin/promotions?type=EVENT">
+                       href="${ctx}/admin/promotions?type=EVENT">
                         Chương trình khuyến mãi
                     </a>
                 </div>
@@ -107,7 +150,7 @@
                 <!-- FILTER -->
                 <div class="admin-toolbar admin-promo-toolbar">
                     <form method="get"
-                          action="${pageContext.request.contextPath}/admin/promotions"
+                          action="${ctx}/admin/promotions"
                           class="admin-toolbar__form admin-promo-filter-form">
 
                         <input type="hidden" name="action" value="list"/>
@@ -121,17 +164,17 @@
 
                         <select class="admin-select admin-promo-status-filter" name="status">
                             <option value="" ${empty status ? 'selected' : ''}>Tất cả trạng thái</option>
-                            <option value="active" ${status == 'active' ? 'selected' : ''}>ACTIVE</option>
-                            <option value="inactive" ${status == 'inactive' ? 'selected' : ''}>INACTIVE</option>
-                            <option value="upcoming" ${status == 'upcoming' ? 'selected' : ''}>UPCOMING</option>
-                            <option value="expired" ${status == 'expired' ? 'selected' : ''}>EXPIRED</option>
+                            <option value="active" ${status == 'active' ? 'selected' : ''}>Đang hoạt động</option>
+                            <option value="inactive" ${status == 'inactive' ? 'selected' : ''}>Tạm tắt</option>
+                            <option value="upcoming" ${status == 'upcoming' ? 'selected' : ''}>Sắp diễn ra</option>
+                            <option value="expired" ${status == 'expired' ? 'selected' : ''}>Đã hết hạn</option>
                         </select>
 
                         <button class="admin-btn admin-promo-filter-btn" type="submit">Lọc</button>
 
                         <c:if test="${not empty q || not empty status}">
                             <a class="admin-btn admin-promo-filter-btn"
-                               href="${pageContext.request.contextPath}/admin/promotions?type=${promotionType}">
+                               href="${ctx}/admin/promotions?type=${promotionType}">
                                 Xóa lọc
                             </a>
                         </c:if>
@@ -289,19 +332,19 @@
                                         <td class="admin-status-cell">
                                             <c:choose>
                                                 <c:when test="${row.statusLabel == 'ACTIVE'}">
-                                                    <span class="admin-pill admin-pill--ok">ACTIVE</span>
+                                                    <span class="admin-pill admin-pill--ok">Đang hoạt động</span>
                                                 </c:when>
 
                                                 <c:when test="${row.statusLabel == 'INACTIVE'}">
-                                                    <span class="admin-pill admin-pill--danger">INACTIVE</span>
+                                                    <span class="admin-pill admin-pill--danger">Tạm tắt</span>
                                                 </c:when>
 
                                                 <c:when test="${row.statusLabel == 'EXPIRED'}">
-                                                    <span class="admin-pill admin-pill--danger">EXPIRED</span>
+                                                    <span class="admin-pill admin-pill--danger">Đã hết hạn</span>
                                                 </c:when>
 
                                                 <c:when test="${row.statusLabel == 'UPCOMING'}">
-                                                    <span class="admin-pill admin-pill--warning">UPCOMING</span>
+                                                    <span class="admin-pill admin-pill--warning">Sắp diễn ra</span>
                                                 </c:when>
 
                                                 <c:otherwise>
@@ -316,12 +359,12 @@
                                         <td class="admin-promo-action-cell">
                                             <div class="admin-promo-actions">
                                                 <a class="admin-btn admin-promo-action-btn"
-                                                   href="${pageContext.request.contextPath}/admin/promotions?action=edit&type=${row.type}&id=${row.id}">
+                                                   href="${ctx}/admin/promotions?action=edit&type=${row.type}&id=${row.id}">
                                                     Sửa
                                                 </a>
 
                                                 <form method="post"
-                                                      action="${pageContext.request.contextPath}/admin/promotions"
+                                                      action="${ctx}/admin/promotions"
                                                       class="admin-inline">
 
                                                     <%@ include file="/jsp/common/csrf.jspf" %>
@@ -339,7 +382,7 @@
                                                 </form>
 
                                                 <form method="post"
-                                                      action="${pageContext.request.contextPath}/admin/promotions"
+                                                      action="${ctx}/admin/promotions"
                                                       class="admin-inline"
                                                       onsubmit="return confirm('Bạn có chắc muốn xóa hoặc vô hiệu hóa khuyến mãi này?');">
 
