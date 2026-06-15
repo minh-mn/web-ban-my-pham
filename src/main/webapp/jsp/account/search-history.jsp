@@ -12,56 +12,37 @@
 <section class="sh-page" id="searchHistoryPage">
   <div class="sh-container">
 
-    <nav class="sh-breadcrumb" aria-label="Điều hướng lịch sử tìm kiếm">
-      <a href="${ctx}/home">Trang chủ</a>
-      <span>/</span>
-      <span>Lịch sử tìm kiếm</span>
-    </nav>
-
-    <section class="sh-hero">
-      <div class="sh-hero__decor sh-hero__decor--one"></div>
-      <div class="sh-hero__decor sh-hero__decor--two"></div>
-
-      <div class="sh-hero__content">
-        <span class="sh-eyebrow">TÀI KHOẢN CỦA TÔI</span>
+    <section class="sh-header-compact">
+      <div class="sh-header-compact__left">
+        <span class="sh-section-tag">TÀI KHOẢN CỦA TÔI</span>
         <h1>Lịch sử tìm kiếm</h1>
         <p>
-          Xem lại toàn bộ từ khóa bạn đã tìm trên MyCosmeticShop, mở nhanh kết quả cũ
-          hoặc dọn dẹp những từ khóa không còn cần dùng.
+          Xem lại các từ khóa đã tìm, mở nhanh kết quả cũ hoặc xóa bớt những từ khóa không còn cần dùng.
         </p>
-
-        <div class="sh-hero__quick-actions">
-          <a class="sh-btn sh-btn--primary" href="${ctx}/products">
-            Tiếp tục mua sắm
-          </a>
-          <c:if test="${not empty histories}">
-            <a class="sh-btn sh-btn--soft" href="#shHistoryList">
-              Xem danh sách
-            </a>
-          </c:if>
-        </div>
       </div>
 
-      <c:if test="${not empty latestSearchHistory}">
-        <div class="sh-latest-card">
-          <span class="sh-latest-card__label">Tìm gần nhất</span>
-          <strong><c:out value="${latestSearchHistory.keyword}" /></strong>
-          <small>
-            <c:out value="${latestSearchHistory.resultCount}" /> kết quả ·
-            <c:out value="${latestSearchHistory.searchCount}" /> lượt tìm
-          </small>
-
+      <div class="sh-header-compact__right">
+        <c:if test="${not empty latestSearchHistory}">
           <c:url var="latestSearchUrl" value="/search">
             <c:param name="q" value="${latestSearchHistory.keyword}" />
           </c:url>
+
           <c:set var="latestItemUrl" value="${latestSearchUrl}" />
           <c:if test="${not empty latestSearchHistory.searchUrl && fn:startsWith(latestSearchHistory.searchUrl, '/')}">
             <c:set var="latestItemUrl" value="${ctx}${latestSearchHistory.searchUrl}" />
           </c:if>
 
-          <a href="${latestItemUrl}">Tìm lại ngay</a>
-        </div>
-      </c:if>
+          <div class="sh-last-search">
+            <span class="sh-last-search__label">Tìm gần nhất</span>
+            <strong><c:out value="${latestSearchHistory.keyword}" /></strong>
+            <small>
+              <c:out value="${latestSearchHistory.resultCount}" /> kết quả ·
+              <c:out value="${latestSearchHistory.searchCount}" /> lượt tìm
+            </small>
+            <a href="${latestItemUrl}" class="sh-last-search__link">Tìm lại</a>
+          </div>
+        </c:if>
+      </div>
     </section>
 
     <section class="sh-stats" aria-label="Thống kê lịch sử tìm kiếm">
@@ -111,7 +92,7 @@
     <section class="sh-panel" id="shHistoryList">
       <div class="sh-panel__head">
         <div>
-          <span class="sh-section-label">DANH SÁCH</span>
+          <span class="sh-section-tag">DANH SÁCH</span>
           <h2>Toàn bộ lịch sử tìm kiếm</h2>
           <p>Danh sách được sắp xếp theo lần tìm gần nhất. Bạn có thể lọc nhanh bằng ô tìm kiếm bên dưới.</p>
         </div>
@@ -125,22 +106,23 @@
         <c:when test="${not empty histories}">
           <div class="sh-toolbar">
             <label class="sh-filter" for="historyFilterInput">
-              <span>🔎</span>
+              <span class="sh-filter__icon">🔎</span>
               <input id="historyFilterInput"
                      type="search"
                      autocomplete="off"
                      placeholder="Tìm trong lịch sử...">
             </label>
 
-            <label class="sh-sort" for="historySortSelect">
-              <span>Sắp xếp</span>
+            <div class="sh-sort-box">
+              <span class="sh-sort-box__icon">↕</span>
+              <label for="historySortSelect" class="sh-sort-box__label">Sắp xếp</label>
               <select id="historySortSelect">
                 <option value="newest">Mới nhất</option>
                 <option value="most-search">Tìm nhiều nhất</option>
                 <option value="most-result">Nhiều kết quả nhất</option>
                 <option value="az">Từ khóa A → Z</option>
               </select>
-            </label>
+            </div>
 
             <div class="sh-toolbar__actions">
               <a class="sh-btn sh-btn--outline" href="${ctx}/products">Tiếp tục mua sắm</a>
@@ -177,9 +159,7 @@
 
                   <span class="sh-history-card__content">
                                         <strong><c:out value="${history.keyword}" /></strong>
-                                        <small>
-                                            Lần cuối: <c:out value="${history.displayLastSearchedAt}" />
-                                        </small>
+                                        <small>Lần cuối: <c:out value="${history.displayLastSearchedAt}" /></small>
                                     </span>
                 </a>
 
@@ -206,7 +186,7 @@
           <div class="sh-no-result" id="historyNoResult" hidden>
             <div class="sh-no-result__icon">🔎</div>
             <h3>Không tìm thấy từ khóa phù hợp</h3>
-            <p>Hãy thử nhập từ khóa ngắn hơn hoặc xóa bộ lọc hiện tại.</p>
+            <p>Hãy thử nhập từ khóa khác hoặc đổi cách sắp xếp.</p>
           </div>
         </c:when>
 
@@ -215,8 +195,7 @@
             <div class="sh-empty__icon">🔎</div>
             <h3>Chưa có lịch sử tìm kiếm</h3>
             <p>
-              Khi bạn tìm sản phẩm, các từ khóa sẽ được lưu tại đây để bạn xem lại
-              và mở nhanh kết quả ở những lần sau.
+              Khi bạn tìm sản phẩm, các từ khóa sẽ được lưu tại đây để bạn xem lại và mở nhanh ở những lần sau.
             </p>
             <a class="sh-btn sh-btn--primary" href="${ctx}/products">Khám phá sản phẩm</a>
           </div>
@@ -228,15 +207,12 @@
 
 <script>
   (function () {
-    const page = document.getElementById('searchHistoryPage');
     const list = document.getElementById('historyList');
     const filterInput = document.getElementById('historyFilterInput');
     const sortSelect = document.getElementById('historySortSelect');
     const noResult = document.getElementById('historyNoResult');
 
-    if (!page || !list) {
-      return;
-    }
+    if (!list) return;
 
     const normalizeText = function (value) {
       return (value || '')
@@ -260,9 +236,7 @@
         const matched = !keyword || cardKeyword.indexOf(keyword) !== -1;
 
         card.hidden = !matched;
-        if (matched) {
-          visibleCount += 1;
-        }
+        if (matched) visibleCount++;
       });
 
       if (noResult) {
