@@ -5600,3 +5600,33 @@ html body .mc-filter-list--brand {
 	}
 }
 
+/* =========================================================
+   FINAL SINGLE CHOICE FILTER + REMOVE CATEGORY HINT
+   Chỉ chọn 1 danh mục / 1 giá / 1 thương hiệu
+========================================================= */
+
+html body .mc-filter-block--category-full .mc-filter-hint,
+html body .mc-filter-block--overview .mc-filter-hint {
+	display: none !important;
+}
+
+html body .mc-filter-option input[type="radio"] {
+	position: absolute !important;
+	opacity: 0 !important;
+	pointer-events: none !important;
+}
+
+html body .mc-filter-option input[type="radio"] + .mc-filter-box {
+	border-radius: 4px !important;
+}
+
+html body .mc-filter-option input[type="radio"]:checked + .mc-filter-box {
+	border-color: #d4144f !important;
+	background: #d4144f !important;
+	box-shadow: inset 0 0 0 4px #fff !important;
+}
+
+html body .mc-filter-option input[type="radio"]:checked ~ .mc-filter-name {
+	color: #b01239 !important;
+	font-weight: 950 !important;
+}
