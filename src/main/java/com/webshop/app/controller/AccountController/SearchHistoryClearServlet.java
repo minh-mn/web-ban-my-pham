@@ -50,17 +50,31 @@ public class SearchHistoryClearServlet extends HttpServlet {
         User currentUser = getCurrentUser(session);
 
         if (currentUser == null || currentUser.getId() <= 0) {
-            resp.sendRedirect(req.getContextPath() + "/login?redirect=/account");
+            String target = req.getServletPath() != null && req.getServletPath().startsWith("/search-history")
+                    ? "/search-history"
+                    : "/account";
+            resp.sendRedirect(req.getContextPath() + "/login?redirect=" + target);
             return;
         }
 
         int deletedCount = searchHistoryDAO.clearByUserId(currentUser.getId());
 
         if (deletedCount > 0) {
-            resp.sendRedirect(req.getContextPath() + "/account?tab=search-history&clearSuccess=1");
+            resp.sendRedirect(accountActivityUrl(req, "clearSuccess=1"));
         } else {
-            resp.sendRedirect(req.getContextPath() + "/account?tab=search-history&clearEmpty=1");
+            resp.sendRedirect(accountActivityUrl(req, "clearEmpty=1"));
         }
+    }
+
+    private String accountActivityUrl(HttpServletRequest req, String query) {
+        String servletPath = req.getServletPath();
+
+        if ("/search-history/clear".equals(servletPath)
+                || "/search-history/delete".equals(servletPath)) {
+            return req.getContextPath() + "/search-history?" + query;
+        }
+
+        return req.getContextPath() + "/account?tab=activity&" + query + "#account-activity";
     }
 
     private User getCurrentUser(HttpSession session) {

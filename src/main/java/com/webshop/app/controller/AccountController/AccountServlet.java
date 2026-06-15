@@ -54,6 +54,14 @@ public class AccountServlet extends HttpServlet {
             return;
         }
 
+        String requestedTab = req.getParameter("tab");
+        if (requestedTab != null
+                && ("search-history".equalsIgnoreCase(requestedTab.trim())
+                || "history".equalsIgnoreCase(requestedTab.trim()))) {
+            resp.sendRedirect(req.getContextPath() + "/search-history");
+            return;
+        }
+
         /*
          * =========================
          * RELOAD USER
