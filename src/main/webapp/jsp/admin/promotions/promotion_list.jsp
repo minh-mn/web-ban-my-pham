@@ -8,7 +8,7 @@
 <jsp:include page="/jsp/admin/layout/header.jsp"/>
 <jsp:include page="/jsp/admin/layout/sidebar.jsp"/>
 
-<c:set var="ctx" value="${ctx}" />
+<c:set var="ctx" value="${pageContext.request.contextPath}" />
 
 <main class="admin-main admin-promo-page">
     <div class="admin-container admin-promo-container">
