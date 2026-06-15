@@ -7682,27 +7682,20 @@
 
 
 /* =========================================================
-   ADMIN REVIEW DETAIL UI V2
-   Scope: /jsp/admin/review/review_detail.jsp
+   ADMIN ROLE FORM UI V2
+   Scope: /jsp/admin/role/role_form.jsp
 ========================================================= */
 
-.admin-main > .admin-container.review-detail-page {
-  width: 100%;
-  max-width: none !important;
-  margin-left: 0 !important;
-  margin-right: 0 !important;
-}
-
-.review-detail-page {
+.admin-role-form-page {
   width: 100%;
 }
 
-.admin-review-detail-hero {
+.admin-role-form-hero {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 18px;
   align-items: start;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
   padding: 18px;
   border: 1px solid rgba(236, 72, 153, 0.20);
   border-radius: 24px;
@@ -7712,11 +7705,11 @@
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.055);
 }
 
-.admin-review-detail-hero__content {
+.admin-role-form-hero__content {
   min-width: 0;
 }
 
-.admin-review-detail-eyebrow {
+.admin-role-form-eyebrow {
   display: inline-flex;
   align-items: center;
   min-height: 26px;
@@ -7732,7 +7725,7 @@
   letter-spacing: .06em;
 }
 
-.admin-review-detail-title {
+.admin-role-form-title {
   margin: 0;
   color: var(--admin-text);
   font-size: 28px;
@@ -7741,7 +7734,7 @@
   letter-spacing: -0.045em;
 }
 
-.admin-review-detail-subtitle {
+.admin-role-form-subtitle {
   max-width: 920px;
   margin: 8px 0 0;
   color: var(--admin-muted);
@@ -7749,134 +7742,50 @@
   line-height: 1.58;
 }
 
-.admin-review-detail-hero__actions {
+.admin-role-form-hero__actions {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
   flex-wrap: wrap;
 }
 
-.review-summary {
+.admin-role-form {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: 18px;
 }
 
-.review-summary-card {
-  position: relative;
-  overflow: hidden;
-  padding: 16px;
-  border: 1px solid var(--admin-border);
-  border-radius: 20px;
-  background: #ffffff;
-  box-shadow: var(--admin-shadow-sm);
-}
-
-.review-summary-card::after {
-  content: "";
-  position: absolute;
-  right: -28px;
-  top: -28px;
-  width: 82px;
-  height: 82px;
-  border-radius: 999px;
-  background: rgba(236, 72, 153, 0.08);
-}
-
-.review-summary-card--rating::after {
-  background: rgba(245, 158, 11, 0.13);
-}
-
-.review-summary-card--product::after {
-  background: rgba(59, 130, 246, 0.10);
-}
-
-.review-summary-card--user::after {
-  background: rgba(16, 185, 129, 0.10);
-}
-
-.review-summary-card__icon {
-  width: 38px;
-  height: 38px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 12px;
-  border-radius: 14px;
-  background: rgba(236, 72, 153, 0.10);
-  font-size: 18px;
-  position: relative;
-  z-index: 1;
-}
-
-.review-summary-card__label {
-  display: block;
-  color: var(--admin-muted);
-  font-size: 12px;
-  line-height: 1.35;
-  font-weight: 850;
-  position: relative;
-  z-index: 1;
-}
-
-.review-summary-card__value {
-  display: grid;
-  justify-items: start;
-  gap: 7px;
-  margin-top: 7px;
-  color: var(--admin-text);
-  font-size: 18px;
-  line-height: 1.2;
-  font-weight: 1000;
-  letter-spacing: -0.025em;
-  position: relative;
-  z-index: 1;
-}
-
-.review-summary-card__hint {
-  display: block;
-  margin-top: 8px;
-  color: var(--admin-muted);
-  font-size: 12px;
-  line-height: 1.4;
-  position: relative;
-  z-index: 1;
-}
-
-.review-layout {
+.admin-role-form-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 390px;
   gap: 18px;
   align-items: start;
 }
 
-.review-main,
-.review-side {
-  display: grid;
-  gap: 16px;
-  min-width: 0;
-}
-
-.review-card {
+.admin-role-form-card,
+.admin-role-guide-card,
+.admin-role-permission-card {
   overflow: hidden;
-  border: 1px solid var(--admin-border);
   border-radius: 22px;
-  background: #ffffff;
-  box-shadow: var(--admin-shadow-sm);
 }
 
-.review-card__header {
+.admin-role-form-card .admin-card__body,
+.admin-role-guide-card .admin-card__body,
+.admin-role-permission-card .admin-card__body {
+  padding: 18px;
+}
+
+.admin-role-form-section-head {
   display: flex;
   justify-content: space-between;
   gap: 14px;
   align-items: flex-start;
   flex-wrap: wrap;
-  padding: 18px 18px 14px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
   border-bottom: 1px solid rgba(15, 23, 42, 0.07);
 }
 
-.review-card__title {
+.admin-role-form-section-title {
   margin: 0;
   color: var(--admin-text);
   font-size: 18px;
@@ -7885,317 +7794,340 @@
   letter-spacing: -0.025em;
 }
 
-.review-card__desc {
+.admin-role-form-section-desc {
   margin: 5px 0 0;
   color: var(--admin-muted);
   font-size: 13px;
   line-height: 1.5;
 }
 
-.review-card__body {
-  padding: 18px;
-}
-
-.review-comment-box {
-  min-height: 118px;
-  padding: 16px;
-  border: 1px solid rgba(236, 72, 153, 0.16);
-  border-radius: 18px;
-  background:
-    radial-gradient(circle at top left, rgba(236, 72, 153, 0.07), transparent 30%),
-    linear-gradient(180deg, #ffffff, #fbfcff);
-  color: var(--admin-text);
-  font-size: 14px;
-  line-height: 1.7;
-  font-weight: 650;
-  overflow-wrap: anywhere;
-}
-
-.review-rating {
-  display: inline-flex;
-  align-items: center;
-  gap: 1px;
-  color: #d1d5db;
-  font-size: 17px;
-  line-height: 1;
-  letter-spacing: -0.04em;
-}
-
-.review-rating .is-on {
-  color: #f59e0b;
-}
-
-.review-media-grid {
+.admin-role-form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
 }
 
-.review-media-box {
+.admin-role-form-grid .admin-field--full {
+  grid-column: 1 / -1;
+}
+
+.admin-role-preview {
   display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
   gap: 12px;
+  align-items: center;
   padding: 14px;
-  border: 1px solid var(--admin-border);
+  border: 1px solid rgba(236, 72, 153, 0.20);
   border-radius: 18px;
-  background: rgba(15, 23, 42, 0.018);
+  background:
+    radial-gradient(circle at top left, rgba(236, 72, 153, 0.10), transparent 35%),
+    #ffffff;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.045);
 }
 
-.review-media-box__title {
-  margin: 0;
-  color: var(--admin-text);
-  font-size: 14px;
-  font-weight: 950;
-}
-
-.review-media-preview {
-  min-height: 190px;
+.admin-role-preview__avatar {
+  width: 58px;
+  height: 58px;
   display: grid;
   place-items: center;
   overflow: hidden;
-  border: 1px dashed rgba(148, 163, 184, 0.34);
-  border-radius: 16px;
-  background: #ffffff;
-}
-
-.review-media-preview img,
-.review-media-preview video {
-  width: 100%;
-  max-height: 360px;
-  object-fit: contain;
-  border-radius: 14px;
-}
-
-.review-product-box {
-  display: grid;
-  grid-template-columns: 88px minmax(0, 1fr);
-  gap: 14px;
-  align-items: start;
-}
-
-.review-product-thumb,
-.review-product-thumb__empty {
-  width: 88px;
-  height: 88px;
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  border: 1px solid var(--admin-border);
-  border-radius: 18px;
-  background: #ffffff;
-  color: var(--admin-muted);
-  font-size: 12px;
-  font-weight: 900;
-  text-align: center;
-}
-
-.review-product-thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.review-product-name {
-  color: var(--admin-text);
-  font-size: 15px;
-  line-height: 1.35;
-  font-weight: 1000;
-  overflow-wrap: anywhere;
-}
-
-.review-author-card {
-  display: grid;
-  grid-template-columns: 54px minmax(0, 1fr);
-  gap: 12px;
-  align-items: start;
-}
-
-.review-avatar {
-  width: 54px;
-  height: 54px;
-  display: grid;
-  place-items: center;
   border-radius: 18px;
   background: linear-gradient(135deg, #ec4899, #8b5cf6);
   color: #ffffff;
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 1000;
-  box-shadow: 0 10px 22px rgba(236, 72, 153, 0.18);
+  letter-spacing: .03em;
 }
 
-.review-author-name {
+.admin-role-preview__body {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.admin-role-preview__body strong {
   color: var(--admin-text);
   font-size: 15px;
-  font-weight: 1000;
   line-height: 1.35;
+  font-weight: 1000;
   overflow-wrap: anywhere;
 }
 
-.review-author-meta,
-.review-info-grid,
-.review-mini-list,
-.review-timeline {
+.admin-role-preview__body span {
+  color: var(--admin-muted);
+  font-size: 12.5px;
+  line-height: 1.4;
+  font-weight: 800;
+}
+
+.admin-role-guide-list {
   display: grid;
   gap: 10px;
+  margin-top: 14px;
 }
 
-.review-info-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.review-info-grid--3 {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.review-info-item,
-.review-mini-row,
-.review-timeline-item {
+.admin-role-guide-list div {
+  display: grid;
+  gap: 5px;
   padding: 12px;
-  border: 1px solid rgba(148, 163, 184, 0.20);
+  border: 1px solid var(--admin-border);
   border-radius: 15px;
   background: rgba(15, 23, 42, 0.018);
 }
 
-.review-info-item--full {
-  grid-column: 1 / -1;
-}
-
-.review-info-label,
-.review-timeline-label {
-  display: block;
-  margin-bottom: 5px;
+.admin-role-guide-list span {
   color: var(--admin-muted);
   font-size: 12px;
   line-height: 1.35;
   font-weight: 850;
 }
 
-.review-info-value {
-  color: var(--admin-text);
-  font-size: 13px;
-  line-height: 1.5;
-  font-weight: 850;
+.admin-role-guide-list strong {
+  color: #be185d;
+  font-size: 12.5px;
+  line-height: 1.4;
+  font-weight: 950;
   overflow-wrap: anywhere;
 }
 
-.review-action-form {
+.admin-role-system-note {
   display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px solid rgba(245, 158, 11, 0.34);
+  border-radius: 16px;
+  background: rgba(245, 158, 11, 0.09);
+  color: #92400e;
+}
+
+.admin-role-system-note > span {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.admin-role-system-note strong {
+  display: block;
+  color: currentColor;
+  font-size: 13px;
+  line-height: 1.35;
+  font-weight: 950;
+}
+
+.admin-role-system-note small {
+  display: block;
+  margin-top: 4px;
+  color: currentColor;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.admin-role-permission-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
 }
 
-.review-action-grid {
+.admin-role-check-card {
+  position: relative;
   display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
   gap: 10px;
+  align-items: start;
+  min-height: 106px;
+  padding: 13px;
+  border: 1px solid var(--admin-border);
+  border-radius: 18px;
+  background: #ffffff;
+  cursor: pointer;
+  transition:
+    transform .14s ease,
+    border-color .14s ease,
+    box-shadow .14s ease,
+    background .14s ease;
 }
 
-.review-action-grid .admin-btn {
+.admin-role-check-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(236, 72, 153, 0.28);
+  background: #fffafb;
+  box-shadow: var(--admin-shadow-sm);
+}
+
+.admin-role-check-card input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.admin-role-check-card__box {
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  border: 1px solid var(--admin-border);
+  border-radius: 7px;
+  background: #ffffff;
+  box-shadow: inset 0 0 0 3px #ffffff;
+}
+
+.admin-role-check-card input:checked + .admin-role-check-card__box {
+  border-color: rgba(236, 72, 153, 0.60);
+  background: #be185d;
+}
+
+.admin-role-check-card input:checked + .admin-role-check-card__box::after {
+  content: "✓";
+  display: grid;
+  place-items: center;
   width: 100%;
-  justify-content: center;
+  height: 100%;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 1000;
+  line-height: 1;
 }
 
-.review-chip-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
+.admin-role-check-card:has(input:checked) {
+  border-color: rgba(236, 72, 153, 0.34);
+  background: rgba(236, 72, 153, 0.045);
 }
 
-.review-chip-row--compact {
-  justify-content: flex-end;
+.admin-role-check-card__content {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
 }
 
-.review-muted {
+.admin-role-check-card__content strong {
+  color: var(--admin-text);
+  font-size: 13px;
+  line-height: 1.35;
+  font-weight: 1000;
+  overflow-wrap: anywhere;
+}
+
+.admin-role-check-card__content small {
+  color: var(--admin-muted);
+  font-size: 12px;
+  line-height: 1.4;
+  font-weight: 750;
+  overflow-wrap: anywhere;
+}
+
+.admin-role-check-card__content em {
+  color: rgba(15, 23, 42, 0.68);
+  font-size: 12px;
+  line-height: 1.45;
+  font-style: normal;
+  overflow-wrap: anywhere;
+}
+
+.admin-role-form-empty {
+  min-height: 150px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 8px;
+  padding: 22px;
+  border: 1px dashed var(--admin-border);
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.018);
+  text-align: center;
+}
+
+.admin-role-form-empty span {
+  font-size: 30px;
+}
+
+.admin-role-form-empty strong {
+  color: var(--admin-text);
+  font-size: 15px;
+  font-weight: 950;
+}
+
+.admin-role-form-empty small {
+  max-width: 420px;
   color: var(--admin-muted);
   font-size: 12px;
   line-height: 1.45;
 }
 
-.review-spacer {
-  height: 14px;
+.admin-role-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--admin-border);
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: var(--admin-shadow-sm);
 }
 
-.admin-review-detail-empty {
-  min-height: 240px;
-  display: grid;
-  place-items: center;
-  align-content: center;
-  gap: 9px;
-  padding: 26px;
-  border: 1px dashed rgba(148, 163, 184, 0.32);
-  border-radius: 22px;
-  background:
-    radial-gradient(circle at top, rgba(236, 72, 153, 0.08), transparent 36%),
-    #ffffff;
-  text-align: center;
+.admin-chip--success {
+  border-color: rgba(16, 185, 129, 0.30);
+  background: rgba(16, 185, 129, 0.10);
+  color: #047857;
 }
 
-.admin-review-detail-empty span {
-  font-size: 34px;
+.admin-chip--danger {
+  border-color: rgba(220, 38, 38, 0.30);
+  background: rgba(220, 38, 38, 0.10);
+  color: #991b1b;
 }
 
-.admin-review-detail-empty strong {
-  color: var(--admin-text);
-  font-size: 16px;
-  font-weight: 1000;
-}
-
-.admin-review-detail-empty small {
-  color: var(--admin-muted);
-  font-size: 13px;
-  line-height: 1.5;
-}
-
-@media (max-width: 1180px) {
-  .admin-review-detail-hero,
-  .review-layout {
+@media (max-width: 1280px) {
+  .admin-role-form-layout {
     grid-template-columns: 1fr;
   }
 
-  .admin-review-detail-hero__actions {
-    justify-content: flex-start;
-  }
-
-  .review-summary {
+  .admin-role-permission-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
 
-  .review-side {
-    position: static;
+@media (max-width: 900px) {
+  .admin-role-form-grid,
+  .admin-role-permission-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-role-form-grid .admin-field--full {
+    grid-column: auto;
   }
 }
 
 @media (max-width: 760px) {
-  .admin-review-detail-hero {
+  .admin-role-form-hero {
+    grid-template-columns: 1fr;
     padding: 15px;
     border-radius: 18px;
   }
 
-  .review-summary,
-  .review-media-grid,
-  .review-info-grid,
-  .review-info-grid--3 {
-    grid-template-columns: 1fr;
-  }
-
-  .admin-review-detail-hero__actions {
+  .admin-role-form-hero__actions,
+  .admin-role-form-actions {
     width: 100%;
     align-items: stretch;
     flex-direction: column;
   }
 
-  .admin-review-detail-hero__actions .admin-btn {
+  .admin-role-form-hero__actions .admin-btn,
+  .admin-role-form-actions .admin-btn,
+  .admin-role-form-actions button {
     width: 100%;
     justify-content: center;
   }
 
-  .review-product-box,
-  .review-author-card {
+  .admin-role-preview,
+  .admin-role-system-note {
     grid-template-columns: 1fr;
-  }
-
-  .review-card__header {
-    padding: 15px;
-  }
-
-  .review-card__body {
-    padding: 15px;
+    text-align: center;
+    justify-items: center;
   }
 }
