@@ -305,28 +305,28 @@ public class AdminBrandServlet extends HttpServlet {
             throw new IllegalArgumentException("File không phải ảnh hợp lệ.");
         }
 
-        // ĐÚNG THƯ MỤC BẠN MUỐN
-        String uploadDir = getServletContext().getRealPath("")
-                + File.separator + "assets"
-                + File.separator + "images"
-                + File.separator + "brand";
+        // Làm sạch tên file để tránh lỗi kí tự lạ trên URL trình duyệt
+        String cleanName = submittedFileName.replaceAll("[^a-zA-Z0-9\\.\\-]", "_");
 
-        File dir = new File(uploadDir);
-        if (!dir.exists()) {
-            dir.mkdirs();
+        // Khuyến khích thêm timestamp để tránh trùng lặp ghi đè file khi upload cùng tên
+        String fileName = cleanName;
+
+        // Sử dụng UploadConfig để lấy đường dẫn vật lý đến thư mục MyCosmeticShopUploads/brand
+        Path uploadDir = UploadConfig.BRAND_DIR.toAbsolutePath().normalize();
+        if (!Files.exists(uploadDir)) {
+            Files.createDirectories(uploadDir);
         }
 
-        // GIỮ NGUYÊN TÊN FILE
-        String fileName = submittedFileName;
+        // Trỏ đường dẫn lưu file cụ thể
+        Path destination = UploadConfig.resolveBrandFile(fileName).toAbsolutePath().normalize();
 
-        String fullPath = uploadDir + File.separator + fileName;
-
+        // Tiến hành copy dữ liệu từ luồng upload vào thư mục đích
         try (InputStream inputStream = part.getInputStream()) {
-            Files.copy(inputStream, Paths.get(fullPath), StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(inputStream, destination, StandardCopyOption.REPLACE_EXISTING);
         }
 
-        // LƯU VÀO DB
-        return "/assets/images/brand/" + fileName;
+        // Trả về URL public chuẩn để lưu vào DB (ví dụ: /uploads/brand/1718123456_logo.png)
+        return UploadConfig.toBrandUrl(fileName);
     }
 
     private String getExtension(String fileName) {
