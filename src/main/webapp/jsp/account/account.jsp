@@ -2,7 +2,7 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
-<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/account.css?v=20260614_1" />
+<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/account.css?v=20260615_account_ui_1" />
 
 <fmt:setLocale value="vi_VN"/>
 
@@ -346,20 +346,20 @@
                                 <div class="account-card-body">
 
                                     <!-- NÚT QUAY LẠI TRANG TÀI KHOẢN -->
-                                    <div style="margin-bottom: 25px;">
-                                        <a href="?" class="account-btn" style="background: #6b7280; color: #fff; padding: 8px 18px; border-radius: 20px; text-decoration: none; font-weight: bold; display: inline-flex; align-items: center; gap: 8px; border: none; transition: 0.3s;">
+                                    <div class="mc-voucher-back-row">
+                                        <a href="?" class="account-btn mc-voucher-back-btn">
                                             ⬅ Quay lại trang tài khoản
                                         </a>
                                     </div>
 
                                     <div class="account-card-head account-card-head-start">
                                         <div>
-                                            <h2 class="account-card-title" style="color: var(--pink-dark); font-size: 22px;">💼 Ví voucher của bạn (Tất cả mã)</h2>
+                                            <h2 class="account-card-title mc-full-voucher-title">💼 Ví voucher của bạn (Tất cả mã)</h2>
                                             <p class="account-muted">
                                                 Danh sách đầy đủ các mã giảm giá bạn đã thu thập thành công.
                                             </p>
                                         </div>
-                                        <span class="account-chip user-chip" style="background-color: var(--pink-soft); color: var(--pink-main); font-weight: bold;">
+                                        <span class="account-chip user-chip mc-full-voucher-count">
                       🎰 Đã lưu: ${fn:length(savedCoupons)} mã
                     </span>
                                     </div>
@@ -369,18 +369,18 @@
                                             <!-- Hiển thị toàn bộ không giới hạn số lượng -->
                                             <div class="account-coupon-grid">
                                                 <c:forEach var="savedCp" items="${savedCoupons}">
-                                                    <div class="account-coupon-card" style="border: 1px dashed var(--pink-main); background: var(--pink-soft);">
+                                                    <div class="account-coupon-card mc-full-coupon-card">
                                                         <div class="account-coupon-top">
                                                             <div class="account-coupon-code">
                                                                 <span>🎁</span>
-                                                                <span style="color: var(--pink-dark); font-weight: bold;"><c:out value="${savedCp.code}" /></span>
+                                                                <span class="mc-full-coupon-code-text"><c:out value="${savedCp.code}" /></span>
                                                             </div>
-                                                            <button type="button" class="account-coupon-copy" style="background: var(--pink-main); color: #fff;" data-coupon-code="<c:out value='${savedCp.code}'/>" onclick="copyCouponCode(this.dataset.couponCode)">
+                                                            <button type="button" class="account-coupon-copy mc-full-coupon-copy" data-coupon-code="<c:out value='${savedCp.code}'/>" onclick="copyCouponCode(this.dataset.couponCode)">
                                                                 Copy
                                                             </button>
                                                         </div>
 
-                                                        <div class="account-coupon-discount" style="color: var(--text-main);">
+                                                        <div class="account-coupon-discount mc-full-coupon-discount">
                                                             <c:choose>
                                                                 <c:when test="${savedCp.type eq 'FREESHIP'}">🚚 Freeship Vận Chuyển</c:when>
                                                                 <c:otherwise>Giảm liền ${savedCp.discountPercent}%</c:otherwise>
@@ -402,13 +402,13 @@
                                                                 <strong>Hạn dùng:</strong>
                                                                 <c:choose>
                                                                     <c:when test="${not empty savedCp.endDate}">
-                                                                        <span style="color: #d97706; font-weight: 500;"><c:out value="${savedCp.endDate}" /></span>
+                                                                        <span class="mc-full-coupon-date"><c:out value="${savedCp.endDate}" /></span>
                                                                     </c:when>
                                                                     <c:otherwise>Không giới hạn thời gian</c:otherwise>
                                                                 </c:choose>
                                                             </div>
                                                         </div>
-                                                        <div class="account-coupon-rank" style="border-top: 1px solid rgba(255, 95, 162, 0.2); background: rgba(255, 95, 162, 0.05);">
+                                                        <div class="account-coupon-rank mc-full-coupon-ready">
                                                             ✔ Sẵn sàng sử dụng tại Checkout
                                                         </div>
                                                     </div>
@@ -416,8 +416,9 @@
                                             </div>
                                         </c:when>
                                         <c:otherwise>
-                                            <div style="text-align: center; padding: 30px 10px; color: var(--text-muted);">
-                                                <p style="font-size: 14px;">Bạn chưa lưu mã giảm giá nào.</p>
+                                            <div class="mc-voucher-empty">
+                                                <span>🎟️</span>
+                                                <p>Bạn chưa lưu mã giảm giá nào.</p>
                                             </div>
                                         </c:otherwise>
                                     </c:choose>
@@ -1193,7 +1194,7 @@
                                             <div class="mc-view-head">
                                                 <div>
                                                     <h2>Hồ sơ cá nhân</h2>
-
+                                                    <p>Cập nhật thông tin cá nhân, liên hệ và địa chỉ giao hàng để đặt hàng nhanh hơn.</p>
                                                 </div>
                                             </div>
 
@@ -1344,7 +1345,7 @@
                                         <span>01</span>
                                         <div>
                                             <h3>Thông tin cá nhân</h3>
-
+                                            <p>Họ tên, ngày sinh và giới tính dùng để cá nhân hóa trải nghiệm mua sắm.</p>
                                         </div>
                                     </div>
 
@@ -1375,7 +1376,7 @@
                                         <span>02</span>
                                         <div>
                                             <h3>Thông tin liên hệ</h3>
-
+                                            <p>Email và số điện thoại dùng để nhận OTP, thông báo đơn hàng và hỗ trợ giao hàng.</p>
                                         </div>
                                     </div>
 
@@ -1399,7 +1400,7 @@
                                         <span>03</span>
                                         <div>
                                             <h3>Địa chỉ giao hàng</h3>
-
+                                            <p>Nhập địa chỉ cụ thể hoặc dùng vị trí hiện tại để hỗ trợ giao hàng chính xác.</p>
                                         </div>
                                     </div>
 
@@ -1415,7 +1416,7 @@
                             </div>
 
                             <div class="account-profile-form-actions">
-
+                                <p class="account-profile-note">Sau khi đổi email, hệ thống sẽ gửi OTP để xác thực trước khi lưu.</p>
                                 <button type="submit" class="btn-save account-save-profile-btn" id="saveProfileBtn">Lưu thay đổi</button>
                             </div>
                         </form>
@@ -1924,7 +1925,7 @@
         <p>Hệ thống đã gửi một mã OTP gồm 6 chữ số đến Email của bạn.</p>
         <input type="text" id="otp_input" placeholder="******" maxlength="6">
         <button type="button" onclick="xacThucOtp()" class="btn-save">Xác nhận</button>
-        <button type="button" onclick="dongPopupOtp()" style="background:none; border:none; color:#777; margin-top:10px; cursor:pointer;">Hủy bỏ</button>
+        <button type="button" onclick="dongPopupOtp()" class="modal-cancel-btn">Hủy bỏ</button>
     </div>
 </div>
 
