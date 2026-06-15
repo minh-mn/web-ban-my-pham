@@ -7373,3 +7373,21 @@
     width: fit-content;
   }
 }
+
+
+/* =========================================================
+   ADMIN PROMOTION FORM UI V3 - Duplicate back action fix
+   Scope: /jsp/admin/promotions/promotion_form.jsp
+========================================================= */
+
+.admin-promo-form-page > .admin-promo-form-container > .admin-promotion-create {
+  display: none !important;
+}
+
+.admin-promo-form-page .admin-promo-form-hero {
+  margin-bottom: 16px;
+}
+
+.admin-promo-form-page .admin-promo-form-hero__actions {
+  align-self: center;
+}
