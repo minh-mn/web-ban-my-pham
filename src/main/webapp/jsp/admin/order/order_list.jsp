@@ -10,20 +10,46 @@
 <jsp:include page="/jsp/admin/layout/header.jsp"/>
 <jsp:include page="/jsp/admin/layout/sidebar.jsp"/>
 
+<c:set var="ctx" value="${pageContext.request.contextPath}" />
+<c:set var="orderPageTotal" value="${empty orders ? 0 : fn:length(orders)}" />
+<c:set var="orderPendingCount" value="0" />
+<c:set var="orderShippingCount" value="0" />
+<c:set var="orderCompletedCount" value="0" />
+<c:set var="orderCancelledCount" value="0" />
+
+<c:forEach var="orderStat" items="${orders}">
+  <c:set var="orderStatStatus" value="${fn:toLowerCase(orderStat.status)}" />
+  <c:choose>
+    <c:when test="${orderStatStatus eq 'processing' or orderStatStatus eq 'pending'}">
+      <c:set var="orderPendingCount" value="${orderPendingCount + 1}" />
+    </c:when>
+    <c:when test="${orderStatStatus eq 'shipping'}">
+      <c:set var="orderShippingCount" value="${orderShippingCount + 1}" />
+    </c:when>
+    <c:when test="${orderStatStatus eq 'completed'}">
+      <c:set var="orderCompletedCount" value="${orderCompletedCount + 1}" />
+    </c:when>
+    <c:when test="${orderStatStatus eq 'cancelled' or orderStatStatus eq 'canceled'}">
+      <c:set var="orderCancelledCount" value="${orderCancelledCount + 1}" />
+    </c:when>
+  </c:choose>
+</c:forEach>
+
+
 <main class="admin-main">
   <div class="admin-container admin-order-page">
 
     <div class="admin-order-hero">
       <div class="admin-order-hero__content">
-        <span class="admin-order-eyebrow">ORDER WORKFLOW</span>
-        <h1 class="admin-h1 admin-order-title">Quản lý đơn hàng</h1>
+        <span class="admin-order-eyebrow">BÁN HÀNG &amp; ĐƠN HÀNG</span>
+        <h1 class="admin-order-title">Quản lý đơn hàng</h1>
         <p class="admin-subtext admin-order-subtitle">
           Lọc nhanh, tìm kiếm, phân trang và xử lý nhiều đơn cùng lúc theo luồng:
           <strong>Chờ xác nhận → Đã xác nhận → Đang giao → Giao thành công</strong>.
         </p>
       </div>
       <div class="admin-order-hero__actions">
-        <a class="admin-btn" href="${pageContext.request.contextPath}/admin/orders">Làm mới</a>
+        <a class="admin-btn" href="${ctx}/admin/orders">Làm mới</a>
       </div>
     </div>
 
@@ -33,6 +59,54 @@
     <c:if test="${not empty admin_order_error}">
       <div class="admin-alert admin-alert--danger"><c:out value="${admin_order_error}"/></div>
     </c:if>
+
+
+    <section class="admin-order-summary">
+      <div class="admin-order-stat admin-order-stat--total">
+        <span class="admin-order-stat__icon">📦</span>
+        <span class="admin-order-stat__label">Tổng đơn phù hợp</span>
+        <strong class="admin-order-stat__value">
+          <fmt:formatNumber value="${totalRows}" type="number" groupingUsed="true"/>
+        </strong>
+        <span class="admin-order-stat__note">Theo bộ lọc hiện tại</span>
+      </div>
+
+      <div class="admin-order-stat admin-order-stat--pending">
+        <span class="admin-order-stat__icon">⏳</span>
+        <span class="admin-order-stat__label">Chờ xác nhận</span>
+        <strong class="admin-order-stat__value">
+          <c:out value="${orderPendingCount}" />
+        </strong>
+        <span class="admin-order-stat__note">Tính trên trang đang xem</span>
+      </div>
+
+      <div class="admin-order-stat admin-order-stat--shipping">
+        <span class="admin-order-stat__icon">🚚</span>
+        <span class="admin-order-stat__label">Đang giao</span>
+        <strong class="admin-order-stat__value">
+          <c:out value="${orderShippingCount}" />
+        </strong>
+        <span class="admin-order-stat__note">Cần theo dõi vận chuyển</span>
+      </div>
+
+      <div class="admin-order-stat admin-order-stat--completed">
+        <span class="admin-order-stat__icon">✅</span>
+        <span class="admin-order-stat__label">Hoàn tất</span>
+        <strong class="admin-order-stat__value">
+          <c:out value="${orderCompletedCount}" />
+        </strong>
+        <span class="admin-order-stat__note">Đã giao thành công</span>
+      </div>
+
+      <div class="admin-order-stat admin-order-stat--cancelled">
+        <span class="admin-order-stat__icon">⛔</span>
+        <span class="admin-order-stat__label">Đã hủy</span>
+        <strong class="admin-order-stat__value">
+          <c:out value="${orderCancelledCount}" />
+        </strong>
+        <span class="admin-order-stat__note">Tính trên trang đang xem</span>
+      </div>
+    </section>
 
     <div class="admin-order-filter-card admin-card">
       <div class="admin-card__body">
@@ -49,7 +123,7 @@
           </div>
         </div>
 
-        <form class="admin-order-filter-form" method="get" action="${pageContext.request.contextPath}/admin/orders">
+        <form class="admin-order-filter-form" method="get" action="${ctx}/admin/orders">
           <input type="hidden" name="action" value="list">
 
           <label class="admin-order-filter-field admin-order-filter-field--keyword">
@@ -128,7 +202,7 @@
 
           <div class="admin-order-filter-actions">
             <button class="admin-btn admin-btn--ok admin-order-filter-btn" type="submit">Lọc</button>
-            <a class="admin-btn admin-order-filter-btn" href="${pageContext.request.contextPath}/admin/orders">Xóa lọc</a>
+            <a class="admin-btn admin-order-filter-btn" href="${ctx}/admin/orders">Xóa lọc</a>
           </div>
         </form>
       </div>
@@ -145,7 +219,7 @@
           </div>
         </div>
 
-        <form id="adminBulkOrderForm" class="admin-order-bulk-form" method="post" action="${pageContext.request.contextPath}/admin/orders">
+        <form id="adminBulkOrderForm" class="admin-order-bulk-form" method="post" action="${ctx}/admin/orders">
           <input type="hidden" name="csrf_token" value="${sessionScope.CSRF_TOKEN}">
           <input type="hidden" name="action" value="bulkWorkflow">
           <input type="hidden" name="returnUrl" value="/admin/orders?${filterQueryString}&page=${currentPage}">
@@ -380,18 +454,18 @@
                     <td class="admin-order-action-cell">
                       <div class="admin-order-actions">
                         <a class="admin-btn admin-order-action-btn admin-order-action-btn--view"
-                           href="${pageContext.request.contextPath}/admin/orders?action=detail&id=${o.id}">Chi tiết</a>
+                           href="${ctx}/admin/orders?action=detail&id=${o.id}">Chi tiết</a>
 
                         <c:choose>
                           <c:when test="${isProcessing}">
-                            <form method="post" action="${pageContext.request.contextPath}/admin/order/update-status">
+                            <form method="post" action="${ctx}/admin/order/update-status">
                               <input type="hidden" name="csrf_token" value="${sessionScope.CSRF_TOKEN}">
                               <input type="hidden" name="orderId" value="${o.id}">
                               <input type="hidden" name="workflowAction" value="confirmOrder">
                               <input type="hidden" name="returnUrl" value="/admin/orders?${filterQueryString}&page=${currentPage}">
                               <button class="admin-btn admin-btn--ok admin-order-action-btn" type="submit">Xác nhận</button>
                             </form>
-                            <form method="post" action="${pageContext.request.contextPath}/admin/order/update-status" onsubmit="return confirm('Bạn có chắc muốn hủy đơn hàng này?');">
+                            <form method="post" action="${ctx}/admin/order/update-status" onsubmit="return confirm('Bạn có chắc muốn hủy đơn hàng này?');">
                               <input type="hidden" name="csrf_token" value="${sessionScope.CSRF_TOKEN}">
                               <input type="hidden" name="orderId" value="${o.id}">
                               <input type="hidden" name="workflowAction" value="cancelOrder">
@@ -401,14 +475,14 @@
                           </c:when>
 
                           <c:when test="${isConfirmed}">
-                            <form method="post" action="${pageContext.request.contextPath}/admin/order/update-status">
+                            <form method="post" action="${ctx}/admin/order/update-status">
                               <input type="hidden" name="csrf_token" value="${sessionScope.CSRF_TOKEN}">
                               <input type="hidden" name="orderId" value="${o.id}">
                               <input type="hidden" name="workflowAction" value="startShipping">
                               <input type="hidden" name="returnUrl" value="/admin/orders?${filterQueryString}&page=${currentPage}">
                               <button class="admin-btn admin-btn--primary admin-order-action-btn" type="submit">Giao</button>
                             </form>
-                            <form method="post" action="${pageContext.request.contextPath}/admin/order/update-status" onsubmit="return confirm('Bạn có chắc muốn hủy đơn hàng này?');">
+                            <form method="post" action="${ctx}/admin/order/update-status" onsubmit="return confirm('Bạn có chắc muốn hủy đơn hàng này?');">
                               <input type="hidden" name="csrf_token" value="${sessionScope.CSRF_TOKEN}">
                               <input type="hidden" name="orderId" value="${o.id}">
                               <input type="hidden" name="workflowAction" value="cancelOrder">
@@ -418,14 +492,14 @@
                           </c:when>
 
                           <c:when test="${isOrderShipping and (isDelivering or empty shippingStatus)}">
-                            <form method="post" action="${pageContext.request.contextPath}/admin/order/update-status">
+                            <form method="post" action="${ctx}/admin/order/update-status">
                               <input type="hidden" name="csrf_token" value="${sessionScope.CSRF_TOKEN}">
                               <input type="hidden" name="orderId" value="${o.id}">
                               <input type="hidden" name="workflowAction" value="markDelivered">
                               <input type="hidden" name="returnUrl" value="/admin/orders?${filterQueryString}&page=${currentPage}">
                               <button class="admin-btn admin-btn--ok admin-order-action-btn" type="submit">Đã giao</button>
                             </form>
-                            <form method="post" action="${pageContext.request.contextPath}/admin/order/update-status" onsubmit="return confirm('Xác nhận giao hàng thất bại?');">
+                            <form method="post" action="${ctx}/admin/order/update-status" onsubmit="return confirm('Xác nhận giao hàng thất bại?');">
                               <input type="hidden" name="csrf_token" value="${sessionScope.CSRF_TOKEN}">
                               <input type="hidden" name="orderId" value="${o.id}">
                               <input type="hidden" name="workflowAction" value="markFailed">
@@ -435,14 +509,14 @@
                           </c:when>
 
                           <c:when test="${isDeliveryFailed}">
-                            <form method="post" action="${pageContext.request.contextPath}/admin/order/update-status">
+                            <form method="post" action="${ctx}/admin/order/update-status">
                               <input type="hidden" name="csrf_token" value="${sessionScope.CSRF_TOKEN}">
                               <input type="hidden" name="orderId" value="${o.id}">
                               <input type="hidden" name="workflowAction" value="startShipping">
                               <input type="hidden" name="returnUrl" value="/admin/orders?${filterQueryString}&page=${currentPage}">
                               <button class="admin-btn admin-btn--primary admin-order-action-btn" type="submit">Giao lại</button>
                             </form>
-                            <form method="post" action="${pageContext.request.contextPath}/admin/order/update-status" onsubmit="return confirm('Bạn có chắc muốn hủy đơn giao thất bại này?');">
+                            <form method="post" action="${ctx}/admin/order/update-status" onsubmit="return confirm('Bạn có chắc muốn hủy đơn giao thất bại này?');">
                               <input type="hidden" name="csrf_token" value="${sessionScope.CSRF_TOKEN}">
                               <input type="hidden" name="orderId" value="${o.id}">
                               <input type="hidden" name="workflowAction" value="cancelOrder">
@@ -471,29 +545,29 @@
 
               <div class="admin-order-pagination">
                 <a class="admin-order-page-link ${currentPage le 1 ? 'is-disabled' : ''}"
-                   href="${pageContext.request.contextPath}/admin/orders?${filterQueryString}&page=${currentPage - 1}">
+                   href="${ctx}/admin/orders?${filterQueryString}&page=${currentPage - 1}">
                   Trước
                 </a>
 
                 <c:if test="${pageStart gt 1}">
-                  <a class="admin-order-page-link" href="${pageContext.request.contextPath}/admin/orders?${filterQueryString}&page=1">1</a>
+                  <a class="admin-order-page-link" href="${ctx}/admin/orders?${filterQueryString}&page=1">1</a>
                   <span class="admin-order-page-dots">...</span>
                 </c:if>
 
                 <c:forEach var="p" begin="${pageStart}" end="${pageEnd}">
                   <a class="admin-order-page-link ${p eq currentPage ? 'is-active' : ''}"
-                     href="${pageContext.request.contextPath}/admin/orders?${filterQueryString}&page=${p}">
+                     href="${ctx}/admin/orders?${filterQueryString}&page=${p}">
                       ${p}
                   </a>
                 </c:forEach>
 
                 <c:if test="${pageEnd lt totalPages}">
                   <span class="admin-order-page-dots">...</span>
-                  <a class="admin-order-page-link" href="${pageContext.request.contextPath}/admin/orders?${filterQueryString}&page=${totalPages}">${totalPages}</a>
+                  <a class="admin-order-page-link" href="${ctx}/admin/orders?${filterQueryString}&page=${totalPages}">${totalPages}</a>
                 </c:if>
 
                 <a class="admin-order-page-link ${currentPage ge totalPages ? 'is-disabled' : ''}"
-                   href="${pageContext.request.contextPath}/admin/orders?${filterQueryString}&page=${currentPage + 1}">
+                   href="${ctx}/admin/orders?${filterQueryString}&page=${currentPage + 1}">
                   Sau
                 </a>
               </div>
