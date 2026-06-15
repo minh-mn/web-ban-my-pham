@@ -676,7 +676,7 @@ public class AdminProductServlet extends HttpServlet {
 
 		Files.createDirectories(uploadDir);
 
-		String newName = UUID.randomUUID().toString().replace("-", "") + "." + ext;
+		String newName = Paths.get(submitted).getFileName().toString();
 
 		Path destination = gallery
 				? UploadConfig.resolveProductGalleryFile(newName).toAbsolutePath().normalize()
@@ -782,8 +782,7 @@ public class AdminProductServlet extends HttpServlet {
 		Path uploadDir = UploadConfig.PRODUCT_MEDIA_DIR.toAbsolutePath().normalize();
 		Files.createDirectories(uploadDir);
 
-		String newName = UUID.randomUUID().toString().replace("-", "") + "." + ext;
-		Path destination = UploadConfig.resolveProductMediaFile(newName).toAbsolutePath().normalize();
+		String newName = Paths.get(submitted).getFileName().toString();		Path destination = UploadConfig.resolveProductMediaFile(newName).toAbsolutePath().normalize();
 
 		if (!destination.startsWith(uploadDir)) {
 			throw new IllegalArgumentException("Đường dẫn upload media không hợp lệ.");
