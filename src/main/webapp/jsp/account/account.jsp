@@ -2,7 +2,7 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
-<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/account.css?v=20260614_1" />
+<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/account.css?v=20260616_voucher_home_v30" />
 
 <fmt:setLocale value="vi_VN"/>
 
@@ -465,51 +465,132 @@
                                     <c:choose>
                                         <c:when test="${not empty savedCoupons}">
                                             <!-- Hiển thị toàn bộ không giới hạn số lượng -->
-                                            <div class="account-coupon-grid">
+                                            <div class="saved-voucher-grid saved-voucher-grid--full">
                                                 <c:forEach var="savedCp" items="${savedCoupons}">
-                                                    <div class="account-coupon-card" style="border: 1px dashed var(--pink-main); background: var(--pink-soft);">
-                                                        <div class="account-coupon-top">
-                                                            <div class="account-coupon-code">
-                                                                <span>🎁</span>
-                                                                <span style="color: var(--pink-dark); font-weight: bold;"><c:out value="${savedCp.code}" /></span>
+                                                    <c:set var="isRankVoucher" value="${not empty savedCp.type and savedCp.type eq 'RANK'}" />
+                                                    <c:set var="isReviewVoucher" value="${not empty savedCp.type and savedCp.type eq 'REVIEW_REWARD'}" />
+                                                    <c:set var="scope" value="${savedCp.applyScope}" />
+
+                                                    <article class="saved-voucher-card">
+                                                        <div class="saved-voucher-left">
+                                                            <div class="saved-voucher-mark">
+                                                                <span>MC</span>
+                                                                <small>BEAUTY</small>
                                                             </div>
-                                                            <button type="button" class="account-coupon-copy" style="background: var(--pink-main); color: #fff;" data-coupon-code="<c:out value='${savedCp.code}'/>" onclick="copyCouponCode(this.dataset.couponCode)">
-                                                                Copy
-                                                            </button>
                                                         </div>
 
-                                                        <div class="account-coupon-discount" style="color: var(--text-main);">
-                                                            <c:choose>
-                                                                <c:when test="${savedCp.type eq 'FREESHIP'}">🚚 Freeship Vận Chuyển</c:when>
-                                                                <c:otherwise>Giảm liền ${savedCp.discountPercent}%</c:otherwise>
-                                                            </c:choose>
-                                                        </div>
+                                                        <div class="saved-voucher-divider"></div>
 
-                                                        <div class="account-coupon-meta">
-                                                            <div><strong>Mô tả:</strong> <c:out value="${not empty savedCp.description ? savedCp.description : 'Áp dụng giảm trừ trực tiếp vào hóa đơn khi thanh toán.'}" /></div>
-                                                            <div>
-                                                                <strong>Điều kiện:</strong>
+                                                        <div class="saved-voucher-content">
+                                                            <div class="saved-voucher-top">
+                                                                <div class="saved-voucher-tags">
+                                                                    <span class="saved-voucher-tag saved-voucher-tag-hot">HOT</span>
+                                                                    <c:choose>
+                                                                        <c:when test="${isRankVoucher}">
+                                                                            <span class="saved-voucher-tag saved-voucher-tag-soft">Hạng thành viên</span>
+                                                                        </c:when>
+                                                                        <c:when test="${isReviewVoucher}">
+                                                                            <span class="saved-voucher-tag saved-voucher-tag-soft">Quà đánh giá</span>
+                                                                        </c:when>
+                                                                        <c:when test="${savedCp.type eq 'FREESHIP'}">
+                                                                            <span class="saved-voucher-tag saved-voucher-tag-soft">Freeship</span>
+                                                                        </c:when>
+                                                                        <c:otherwise>
+                                                                            <span class="saved-voucher-tag saved-voucher-tag-soft">Ưu đãi</span>
+                                                                        </c:otherwise>
+                                                                    </c:choose>
+                                                                </div>
+
+                                                                <button type="button"
+                                                                        class="saved-voucher-copy-btn"
+                                                                        data-coupon-code="<c:out value='${savedCp.code}'/>"
+                                                                        onclick="copyCouponCode(this.dataset.couponCode)">
+                                                                    Copy
+                                                                </button>
+                                                            </div>
+
+                                                            <div class="saved-voucher-code-row">
+                                                                <strong><c:out value="${savedCp.code}" /></strong>
+                                                            </div>
+
+                                                            <div class="saved-voucher-discount">
                                                                 <c:choose>
-                                                                    <c:when test="${savedCp.minOrderAmount > 0}">
-                                                                        Đơn hàng từ <fmt:formatNumber value="${savedCp.minOrderAmount}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫
+                                                                    <c:when test="${savedCp.type eq 'FREESHIP'}">
+                                                                        Miễn phí vận chuyển
                                                                     </c:when>
-                                                                    <c:otherwise>Không giới hạn đơn hàng tối thiểu</c:otherwise>
+                                                                    <c:when test="${savedCp.percentDiscount}">
+                                                                        Giảm <b>${savedCp.discountPercent}%</b>
+                                                                    </c:when>
+                                                                    <c:otherwise>
+                                                                        Giảm <b><fmt:formatNumber value="${savedCp.discountValue}" type="number"/>đ</b>
+                                                                    </c:otherwise>
                                                                 </c:choose>
                                                             </div>
-                                                            <div>
-                                                                <strong>Hạn dùng:</strong>
-                                                                <c:choose>
-                                                                    <c:when test="${not empty savedCp.endDate}">
-                                                                        <span style="color: #d97706; font-weight: 500;"><c:out value="${savedCp.endDate}" /></span>
-                                                                    </c:when>
-                                                                    <c:otherwise>Không giới hạn thời gian</c:otherwise>
-                                                                </c:choose>
+
+                                                            <div class="saved-voucher-meta-list">
+                                                                <div class="saved-voucher-meta-item">
+                                                                    <span class="dot"></span>
+                                                                    <span>
+                                                                        <c:choose>
+                                                                            <c:when test="${savedCp.minOrderAmount > 0}">
+                                                                                Đơn hàng từ <b><fmt:formatNumber value="${savedCp.minOrderAmount}" type="number" groupingUsed="true" maxFractionDigits="0"/>đ</b>
+                                                                            </c:when>
+                                                                            <c:otherwise>Không giới hạn đơn hàng tối thiểu</c:otherwise>
+                                                                        </c:choose>
+                                                                    </span>
+                                                                </div>
+
+                                                                <c:if test="${not empty savedCp.maxDiscountAmount and savedCp.maxDiscountAmount > 0}">
+                                                                    <div class="saved-voucher-meta-item">
+                                                                        <span class="dot"></span>
+                                                                        <span>Giảm tối đa <b><fmt:formatNumber value="${savedCp.maxDiscountAmount}" type="number" groupingUsed="true" maxFractionDigits="0"/>đ</b></span>
+                                                                    </div>
+                                                                </c:if>
+
+                                                                <div class="saved-voucher-meta-item">
+                                                                    <span class="dot"></span>
+                                                                    <span>
+                                                                        Áp dụng:
+                                                                        <b>
+                                                                            <c:choose>
+                                                                                <c:when test="${empty scope or scope eq 'ALL'}">Tất cả sản phẩm</c:when>
+                                                                                <c:when test="${scope eq 'BRAND'}">Theo thương hiệu</c:when>
+                                                                                <c:when test="${scope eq 'PRODUCTS'}">Sản phẩm chỉ định</c:when>
+                                                                                <c:otherwise><c:out value="${scope}" /></c:otherwise>
+                                                                            </c:choose>
+                                                                        </b>
+                                                                    </span>
+                                                                </div>
+
+                                                                <c:if test="${not empty savedCp.minRankCode and savedCp.minRankCode ne 'MEMBER'}">
+                                                                    <div class="saved-voucher-meta-item">
+                                                                        <span class="dot"></span>
+                                                                        <span>Hạng tối thiểu: <b><c:out value="${savedCp.minRankCode}" /></b></span>
+                                                                    </div>
+                                                                </c:if>
+                                                            </div>
+
+                                                            <c:if test="${not empty savedCp.description}">
+                                                                <p class="saved-voucher-desc"><c:out value="${savedCp.description}" /></p>
+                                                            </c:if>
+
+                                                            <div class="saved-voucher-footer">
+                                                                <span class="saved-voucher-ready">Sẵn sàng dùng tại Checkout</span>
+
+                                                                <div class="saved-voucher-expire">
+                                                                    HSD:
+                                                                    <b>
+                                                                        <c:choose>
+                                                                            <c:when test="${not empty savedCp.endDate}">
+                                                                                <c:out value="${savedCp.endDate}" />
+                                                                            </c:when>
+                                                                            <c:otherwise>Không giới hạn</c:otherwise>
+                                                                        </c:choose>
+                                                                    </b>
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                        <div class="account-coupon-rank" style="border-top: 1px solid rgba(255, 95, 162, 0.2); background: rgba(255, 95, 162, 0.05);">
-                                                            ✔ Sẵn sàng sử dụng tại Checkout
-                                                        </div>
-                                                    </div>
+                                                    </article>
                                                 </c:forEach>
                                             </div>
                                         </c:when>
@@ -762,39 +843,113 @@
 
                                             <c:choose>
                                                 <c:when test="${not empty savedCoupons}">
-                                                    <div class="mc-compact-voucher-grid">
+                                                    <div class="saved-voucher-grid saved-voucher-grid--compact">
                                                         <c:forEach var="savedCp" items="${savedCoupons}" end="5">
-                                                            <div class="mc-compact-voucher-card">
-                                                                <div class="mc-voucher-top">
-                                                                    <span class="mc-voucher-code">🎁 <c:out value="${savedCp.code}" /></span>
-                                                                    <button type="button"
-                                                                            class="mc-copy-btn"
-                                                                            data-coupon-code="<c:out value='${savedCp.code}'/>"
-                                                                            onclick="copyCouponCode(this.dataset.couponCode)">
-                                                                        Copy
-                                                                    </button>
+                                                            <c:set var="isRankVoucher" value="${not empty savedCp.type and savedCp.type eq 'RANK'}" />
+                                                            <c:set var="isReviewVoucher" value="${not empty savedCp.type and savedCp.type eq 'REVIEW_REWARD'}" />
+                                                            <c:set var="scope" value="${savedCp.applyScope}" />
+
+                                                            <article class="saved-voucher-card saved-voucher-card--compact">
+                                                                <div class="saved-voucher-left">
+                                                                    <div class="saved-voucher-mark">
+                                                                        <span>MC</span>
+                                                                        <small>BEAUTY</small>
+                                                                    </div>
                                                                 </div>
 
-                                                                <h3>
-                                                                    <c:choose>
-                                                                        <c:when test="${savedCp.type eq 'FREESHIP'}">Freeship vận chuyển</c:when>
-                                                                        <c:otherwise>Giảm liền ${savedCp.discountPercent}%</c:otherwise>
-                                                                    </c:choose>
-                                                                </h3>
+                                                                <div class="saved-voucher-divider"></div>
 
-                                                                <p><strong>Mô tả:</strong> <c:out value="${not empty savedCp.description ? savedCp.description : 'Áp dụng giảm trực tiếp vào hóa đơn khi thanh toán.'}" /></p>
-                                                                <p>
-                                                                    <strong>Điều kiện:</strong>
-                                                                    <c:choose>
-                                                                        <c:when test="${savedCp.minOrderAmount > 0}">
-                                                                            Đơn hàng từ <fmt:formatNumber value="${savedCp.minOrderAmount}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫
-                                                                        </c:when>
-                                                                        <c:otherwise>Không giới hạn đơn hàng tối thiểu</c:otherwise>
-                                                                    </c:choose>
-                                                                </p>
+                                                                <div class="saved-voucher-content">
+                                                                    <div class="saved-voucher-top">
+                                                                        <div class="saved-voucher-tags">
+                                                                            <span class="saved-voucher-tag saved-voucher-tag-hot">HOT</span>
+                                                                            <c:choose>
+                                                                                <c:when test="${isRankVoucher}">
+                                                                                    <span class="saved-voucher-tag saved-voucher-tag-soft">Hạng thành viên</span>
+                                                                                </c:when>
+                                                                                <c:when test="${isReviewVoucher}">
+                                                                                    <span class="saved-voucher-tag saved-voucher-tag-soft">Quà đánh giá</span>
+                                                                                </c:when>
+                                                                                <c:when test="${savedCp.type eq 'FREESHIP'}">
+                                                                                    <span class="saved-voucher-tag saved-voucher-tag-soft">Freeship</span>
+                                                                                </c:when>
+                                                                                <c:otherwise>
+                                                                                    <span class="saved-voucher-tag saved-voucher-tag-soft">Ưu đãi</span>
+                                                                                </c:otherwise>
+                                                                            </c:choose>
+                                                                        </div>
 
-                                                                <span class="mc-voucher-ready">Sẵn sàng dùng tại Checkout</span>
-                                                            </div>
+                                                                        <button type="button"
+                                                                                class="saved-voucher-copy-btn"
+                                                                                data-coupon-code="<c:out value='${savedCp.code}'/>"
+                                                                                onclick="copyCouponCode(this.dataset.couponCode)">
+                                                                            Copy
+                                                                        </button>
+                                                                    </div>
+
+                                                                    <div class="saved-voucher-code-row">
+                                                                        <strong><c:out value="${savedCp.code}" /></strong>
+                                                                    </div>
+
+                                                                    <div class="saved-voucher-discount">
+                                                                        <c:choose>
+                                                                            <c:when test="${savedCp.type eq 'FREESHIP'}">
+                                                                                Miễn phí vận chuyển
+                                                                            </c:when>
+                                                                            <c:when test="${savedCp.percentDiscount}">
+                                                                                Giảm <b>${savedCp.discountPercent}%</b>
+                                                                            </c:when>
+                                                                            <c:otherwise>
+                                                                                Giảm <b><fmt:formatNumber value="${savedCp.discountValue}" type="number"/>đ</b>
+                                                                            </c:otherwise>
+                                                                        </c:choose>
+                                                                    </div>
+
+                                                                    <div class="saved-voucher-meta-list">
+                                                                        <div class="saved-voucher-meta-item">
+                                                                            <span class="dot"></span>
+                                                                            <span>
+                                                                                <c:choose>
+                                                                                    <c:when test="${savedCp.minOrderAmount > 0}">
+                                                                                        Đơn hàng từ <b><fmt:formatNumber value="${savedCp.minOrderAmount}" type="number" groupingUsed="true" maxFractionDigits="0"/>đ</b>
+                                                                                    </c:when>
+                                                                                    <c:otherwise>Không giới hạn đơn hàng tối thiểu</c:otherwise>
+                                                                                </c:choose>
+                                                                            </span>
+                                                                        </div>
+
+                                                                        <c:if test="${not empty savedCp.maxDiscountAmount and savedCp.maxDiscountAmount > 0}">
+                                                                            <div class="saved-voucher-meta-item">
+                                                                                <span class="dot"></span>
+                                                                                <span>Giảm tối đa <b><fmt:formatNumber value="${savedCp.maxDiscountAmount}" type="number" groupingUsed="true" maxFractionDigits="0"/>đ</b></span>
+                                                                            </div>
+                                                                        </c:if>
+
+                                                                        <div class="saved-voucher-meta-item">
+                                                                            <span class="dot"></span>
+                                                                            <span>
+                                                                                Áp dụng:
+                                                                                <b>
+                                                                                    <c:choose>
+                                                                                        <c:when test="${empty scope or scope eq 'ALL'}">Tất cả sản phẩm</c:when>
+                                                                                        <c:when test="${scope eq 'BRAND'}">Theo thương hiệu</c:when>
+                                                                                        <c:when test="${scope eq 'PRODUCTS'}">Sản phẩm chỉ định</c:when>
+                                                                                        <c:otherwise><c:out value="${scope}" /></c:otherwise>
+                                                                                    </c:choose>
+                                                                                </b>
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <c:if test="${not empty savedCp.description}">
+                                                                        <p class="saved-voucher-desc"><c:out value="${savedCp.description}" /></p>
+                                                                    </c:if>
+
+                                                                    <div class="saved-voucher-footer">
+                                                                        <span class="saved-voucher-ready">Sẵn sàng dùng tại Checkout</span>
+                                                                    </div>
+                                                                </div>
+                                                            </article>
                                                         </c:forEach>
                                                     </div>
 
