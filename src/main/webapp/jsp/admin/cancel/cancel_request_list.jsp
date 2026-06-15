@@ -4,7 +4,7 @@
 
 <c:set var="pageTitle" value="ADMIN | Yêu cầu hủy đơn" scope="request"/>
 <c:set var="activeMenu" value="cancelRequests" scope="request"/>
-<c:set var="pageCss" value="/assets/css/admin/admin-return.css" scope="request"/>
+<c:set var="pageCss" value="/assets/css/admin/admin-list.css" scope="request"/>
 
 <jsp:include page="/jsp/admin/layout/header.jsp"/>
 <jsp:include page="/jsp/admin/layout/sidebar.jsp"/>
