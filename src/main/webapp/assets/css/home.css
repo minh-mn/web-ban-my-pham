@@ -5505,182 +5505,264 @@ main.site-main div[class*="home-main"] {
     }
 }
 
-
 /* =========================================================
-   HOME PRODUCT GRID 5 COLUMNS FINAL
-   Đồng bộ sản phẩm trang chủ: 1 hàng 5 sản phẩm, card nhỏ gọn hơn
+   HOME DISCOVER + FEATURED BRAND REFINED SYNC
+   - KHÁM PHÁ: 1 hàng 5 sản phẩm giống tinh thần BÁN CHẠY
+   - THƯƠNG HIỆU NỔI BẬT: thanh thương hiệu nhỏ và cân đối hơn
+   - Banner trái được thiết kế lại nhưng giữ nguyên vùng hiển thị
 ========================================================= */
 
-/* Chỉ áp dụng cho các section sản phẩm dạng grid trên trang chủ, không phá flash-scroll ngang */
-.skin-product-section:not(.is-flash) .skin-product-scroll:not(.flash-scroll),
-.home-product-section:not(.is-flash) .skin-product-scroll:not(.flash-scroll),
-.skin-home-section .skin-product-scroll:not(.flash-scroll) {
+/* ===== KHÁM PHÁ: 5 sản phẩm / hàng ===== */
+.skin-product-section.is-discover {
+    padding: 54px 0 56px !important;
+}
+
+.skin-product-section.is-discover .skin-section-top.discover-top {
+    margin-bottom: 20px !important;
+}
+
+.skin-product-section.is-discover .skin-product-scroll {
     display: grid !important;
     grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
     gap: 14px !important;
     overflow: visible !important;
 }
 
-/* Card nhỏ hơn một chút, đồng bộ hơn */
-.skin-product-section:not(.is-flash) .skin-product-card:not(.flash-card),
-.home-product-section:not(.is-flash) .skin-product-card:not(.flash-card),
-.skin-home-section .skin-product-card:not(.flash-card) {
+.skin-product-section.is-discover .skin-product-card {
+    min-width: 0 !important;
+    width: auto !important;
     border-radius: 0 !important;
-    border: 1px solid #f0d4df !important;
-    background: #ffffff !important;
-    box-shadow: 0 8px 20px rgba(212, 20, 79, .045) !important;
+    border-color: #f1d6de !important;
+    box-shadow: 0 8px 18px rgba(176, 18, 57, .05) !important;
 }
 
-.skin-product-section:not(.is-flash) .skin-product-card:not(.flash-card):hover,
-.home-product-section:not(.is-flash) .skin-product-card:not(.flash-card):hover,
-.skin-home-section .skin-product-card:not(.flash-card):hover {
-    transform: translateY(-3px) !important;
-    border-color: #e8b3c5 !important;
-    box-shadow: 0 14px 28px rgba(212, 20, 79, .09) !important;
+.skin-product-section.is-discover .skin-product-image {
+    height: 188px !important;
 }
 
-/* Ảnh thấp hơn để vừa 5 sản phẩm / hàng */
-.skin-product-section:not(.is-flash) .skin-product-card:not(.flash-card) .skin-product-image,
-.home-product-section:not(.is-flash) .skin-product-card:not(.flash-card) .skin-product-image,
-.skin-home-section .skin-product-card:not(.flash-card) .skin-product-image {
-    height: 210px !important;
-}
-
-.skin-product-section:not(.is-flash) .skin-product-card:not(.flash-card) .skin-product-image img,
-.home-product-section:not(.is-flash) .skin-product-card:not(.flash-card) .skin-product-image img,
-.skin-home-section .skin-product-card:not(.flash-card) .skin-product-image img {
+.skin-product-section.is-discover .skin-product-image img {
     padding: 10px !important;
 }
 
-/* Body và chữ nhỏ lại nhẹ */
-.skin-product-section:not(.is-flash) .skin-product-card:not(.flash-card) .skin-product-body,
-.home-product-section:not(.is-flash) .skin-product-card:not(.flash-card) .skin-product-body,
-.skin-home-section .skin-product-card:not(.flash-card) .skin-product-body {
-    padding: 12px 12px 14px !important;
+.skin-product-section.is-discover .skin-product-body {
+    padding: 11px 11px 12px !important;
 }
 
-.skin-product-section:not(.is-flash) .skin-product-title,
-.home-product-section:not(.is-flash) .skin-product-title,
-.skin-home-section .skin-product-title {
-    min-height: 44px !important;
+.skin-product-section.is-discover .skin-product-title {
+    min-height: 42px !important;
     font-size: 14px !important;
-    line-height: 1.45 !important;
-    font-weight: 800 !important;
-    -webkit-line-clamp: 2 !important;
+    line-height: 1.4 !important;
 }
 
-.skin-product-section:not(.is-flash) .skin-price-row,
-.home-product-section:not(.is-flash) .skin-price-row,
-.skin-home-section .skin-price-row {
-    min-height: 28px !important;
-    margin-top: 8px !important;
+.skin-product-section.is-discover .skin-price-row {
     gap: 6px !important;
+    min-height: 27px !important;
+    margin-top: 8px !important;
 }
 
-.skin-product-section:not(.is-flash) .skin-price-row strong,
-.home-product-section:not(.is-flash) .skin-price-row strong,
-.skin-home-section .skin-price-row strong {
+.skin-product-section.is-discover .skin-price-row strong {
     font-size: 16px !important;
 }
 
-.skin-product-section:not(.is-flash) .skin-price-row del,
-.home-product-section:not(.is-flash) .skin-price-row del,
-.skin-home-section .skin-price-row del {
+.skin-product-section.is-discover .skin-price-row del {
     font-size: 12px !important;
 }
 
-.skin-product-section:not(.is-flash) .skin-product-meta,
-.home-product-section:not(.is-flash) .skin-product-meta,
-.skin-home-section .skin-product-meta {
+.skin-product-section.is-discover .skin-product-meta {
     gap: 5px !important;
-    min-height: 22px !important;
+    min-height: 20px !important;
+    margin-top: 6px !important;
 }
 
-.skin-product-section:not(.is-flash) .skin-product-meta span,
-.home-product-section:not(.is-flash) .skin-product-meta span,
-.skin-home-section .skin-product-meta span {
+.skin-product-section.is-discover .skin-product-meta span {
     padding: 3px 7px !important;
     font-size: 11px !important;
 }
 
-.skin-product-section:not(.is-flash) .skin-stock-line,
-.home-product-section:not(.is-flash) .skin-stock-line,
-.skin-home-section .skin-stock-line {
-    margin-top: 9px !important;
+.skin-product-section.is-discover .skin-stock-line {
+    margin-top: 8px !important;
     font-size: 12px !important;
 }
 
-.skin-product-section:not(.is-flash) .skin-card-label,
-.home-product-section:not(.is-flash) .skin-card-label,
-.skin-home-section .skin-card-label {
-    left: 10px !important;
-    bottom: 10px !important;
-    padding: 5px 9px !important;
-    font-size: 10px !important;
-}
-
-.skin-product-section:not(.is-flash) .skin-discount-bubble,
-.home-product-section:not(.is-flash) .skin-discount-bubble,
-.skin-home-section .skin-discount-bubble {
-    right: 10px !important;
-    bottom: 10px !important;
-    width: 40px !important;
-    height: 40px !important;
-    font-size: 11px !important;
-}
-
-/* Nút nhỏ lại cho card 5 cột */
-.skin-product-section:not(.is-flash) .skin-product-card:not(.flash-card) .skin-product-actions,
-.home-product-section:not(.is-flash) .skin-product-card:not(.flash-card) .skin-product-actions,
-.skin-home-section .skin-product-card:not(.flash-card) .skin-product-actions {
+.skin-product-section.is-discover .skin-product-actions {
     gap: 8px !important;
+    margin-top: 12px !important;
 }
 
-.skin-product-section:not(.is-flash) .skin-product-card:not(.flash-card) .skin-product-actions a,
-.skin-product-section:not(.is-flash) .skin-product-card:not(.flash-card) .skin-product-actions button,
-.home-product-section:not(.is-flash) .skin-product-card:not(.flash-card) .skin-product-actions a,
-.home-product-section:not(.is-flash) .skin-product-card:not(.flash-card) .skin-product-actions button,
-.skin-home-section .skin-product-card:not(.flash-card) .skin-product-actions a,
-.skin-home-section .skin-product-card:not(.flash-card) .skin-product-actions button {
-    min-height: 38px !important;
-    padding-inline: 12px !important;
+.skin-product-section.is-discover .skin-card-view-btn,
+.skin-product-section.is-discover .skin-card-cart-btn {
+    min-height: 37px !important;
+    font-size: 12px !important;
+    padding-inline: 10px !important;
+}
+
+/* ===== THƯƠNG HIỆU NỔI BẬT ===== */
+.skin-featured-brand-section {
+    padding: 48px 0 56px !important;
+}
+
+/* Giữ vùng hiển thị banner nhưng làm tab/logo gọn hơn */
+.skin-featured-brand-products {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+    margin-top: 14px !important;
+}
+
+.skin-featured-brand-card {
+    padding-bottom: 14px !important;
+    box-shadow: 0 8px 18px rgba(176, 18, 57, .05) !important;
+}
+
+.skin-featured-brand-image {
+    height: 170px !important;
+}
+
+.skin-featured-brand-image img {
+    padding: 10px !important;
+}
+
+.skin-featured-brand-body {
+    padding: 10px 12px 0 !important;
+}
+
+.skin-featured-brand-product-title {
+    min-height: 42px !important;
+    font-size: 14px !important;
+    line-height: 1.42 !important;
+}
+
+.skin-featured-brand-price strong {
+    font-size: 15px !important;
+}
+
+.skin-featured-brand-price del {
     font-size: 12px !important;
 }
 
-/* Responsive */
-@media (max-width: 1280px) {
-    .skin-product-section:not(.is-flash) .skin-product-scroll:not(.flash-scroll),
-    .home-product-section:not(.is-flash) .skin-product-scroll:not(.flash-scroll),
-    .skin-home-section .skin-product-scroll:not(.flash-scroll) {
+.skin-featured-brand-actions {
+    gap: 8px !important;
+    margin-top: 12px !important;
+}
+
+.skin-featured-brand-view-btn,
+.skin-featured-brand-cart-btn {
+    min-height: 37px !important;
+    font-size: 12px !important;
+}
+
+@media (max-width: 1460px) {
+    .skin-product-section.is-discover .skin-product-scroll,
+    .skin-featured-brand-products {
         grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
     }
 }
 
-@media (max-width: 992px) {
-    .skin-product-section:not(.is-flash) .skin-product-scroll:not(.flash-scroll),
-    .home-product-section:not(.is-flash) .skin-product-scroll:not(.flash-scroll),
-    .skin-home-section .skin-product-scroll:not(.flash-scroll) {
+@media (max-width: 1180px) {
+    .skin-product-section.is-discover .skin-product-scroll,
+    .skin-featured-brand-products {
         grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    }
-
-    .skin-product-section:not(.is-flash) .skin-product-card:not(.flash-card) .skin-product-image,
-    .home-product-section:not(.is-flash) .skin-product-card:not(.flash-card) .skin-product-image,
-    .skin-home-section .skin-product-card:not(.flash-card) .skin-product-image {
-        height: 200px !important;
     }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 820px) {
+    .skin-product-section.is-discover .skin-product-scroll,
+    .skin-featured-brand-products {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+}
+
+@media (max-width: 560px) {
+    .skin-product-section.is-discover .skin-product-scroll,
+    .skin-featured-brand-products {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+
+/* =========================================================
+   HOME PRODUCT 5 COLUMNS EXCEPT FEATURED BRAND
+   1 hàng 5 sản phẩm cho các section sản phẩm, trừ Thương hiệu nổi bật
+========================================================= */
+
+/* Các section sản phẩm chung trên trang chủ: 5 sản phẩm / hàng */
+.skin-product-section:not(.is-flash) .skin-product-scroll:not(.flash-scroll),
+.home-product-section:not(.is-flash) .skin-product-scroll:not(.flash-scroll),
+.skin-product-section.is-discover .skin-product-scroll {
+    display: grid !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+    overflow: visible !important;
+}
+
+/* Riêng Thương hiệu nổi bật: KHÔNG áp dụng 5 sản phẩm / hàng */
+.skin-featured-brand-products {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+}
+
+/* Giữ card ở khu Khám phá nhỏ gọn hơn */
+.skin-product-section.is-discover .skin-product-image,
+.skin-product-section:not(.is-flash) .skin-product-card:not(.flash-card) .skin-product-image,
+.home-product-section:not(.is-flash) .skin-product-card:not(.flash-card) .skin-product-image {
+    height: 188px !important;
+}
+
+.skin-product-section.is-discover .skin-product-image img,
+.skin-product-section:not(.is-flash) .skin-product-card:not(.flash-card) .skin-product-image img,
+.home-product-section:not(.is-flash) .skin-product-card:not(.flash-card) .skin-product-image img {
+    padding: 10px !important;
+}
+
+.skin-product-section.is-discover .skin-product-body,
+.skin-product-section:not(.is-flash) .skin-product-card:not(.flash-card) .skin-product-body,
+.home-product-section:not(.is-flash) .skin-product-card:not(.flash-card) .skin-product-body {
+    padding: 11px 11px 12px !important;
+}
+
+.skin-product-section.is-discover .skin-product-title,
+.skin-product-section:not(.is-flash) .skin-product-title,
+.home-product-section:not(.is-flash) .skin-product-title {
+    min-height: 42px !important;
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+}
+
+/* Responsive: section sản phẩm chung */
+@media (max-width: 1460px) {
     .skin-product-section:not(.is-flash) .skin-product-scroll:not(.flash-scroll),
     .home-product-section:not(.is-flash) .skin-product-scroll:not(.flash-scroll),
-    .skin-home-section .skin-product-scroll:not(.flash-scroll) {
-        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-        gap: 12px !important;
+    .skin-product-section.is-discover .skin-product-scroll {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
     }
 
-    .skin-product-section:not(.is-flash) .skin-product-card:not(.flash-card) .skin-product-image,
-    .home-product-section:not(.is-flash) .skin-product-card:not(.flash-card) .skin-product-image,
-    .skin-home-section .skin-product-card:not(.flash-card) .skin-product-image {
-        height: 170px !important;
+    .skin-featured-brand-products {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    }
+}
+
+@media (max-width: 1180px) {
+    .skin-product-section:not(.is-flash) .skin-product-scroll:not(.flash-scroll),
+    .home-product-section:not(.is-flash) .skin-product-scroll:not(.flash-scroll),
+    .skin-product-section.is-discover .skin-product-scroll,
+    .skin-featured-brand-products {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    }
+}
+
+@media (max-width: 820px) {
+    .skin-product-section:not(.is-flash) .skin-product-scroll:not(.flash-scroll),
+    .home-product-section:not(.is-flash) .skin-product-scroll:not(.flash-scroll),
+    .skin-product-section.is-discover .skin-product-scroll,
+    .skin-featured-brand-products {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+}
+
+@media (max-width: 560px) {
+    .skin-product-section:not(.is-flash) .skin-product-scroll:not(.flash-scroll),
+    .home-product-section:not(.is-flash) .skin-product-scroll:not(.flash-scroll),
+    .skin-product-section.is-discover .skin-product-scroll,
+    .skin-featured-brand-products {
+        grid-template-columns: 1fr !important;
     }
 }
