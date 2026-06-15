@@ -2708,3 +2708,60 @@ html.is-restoring-product-scroll body {
 		line-height: 1.12 !important;
 	}
 }
+
+
+/* =========================================================
+   FINAL HERO TITLE FONT - giống kiểu chữ MyCosmetic
+   Lưu ý: dùng Playfair Display cho tiêu đề, không dùng
+   letter-spacing lớn để tránh tách chữ tiếng Việt.
+========================================================= */
+.mc-category-hero__title,
+.product-hero-title,
+.category-hero-title,
+.product-page-title,
+.hero-title,
+.page-title {
+	font-family: var(--mc-brand-font, "Playfair Display", Georgia, "Times New Roman", serif) !important;
+	font-weight: 900 !important;
+	color: var(--mc-brand-red, #c70b3f) !important;
+	-webkit-text-fill-color: var(--mc-brand-red, #c70b3f) !important;
+	background: none !important;
+	-webkit-background-clip: initial !important;
+	background-clip: initial !important;
+
+	letter-spacing: -0.035em !important;
+	word-spacing: 0 !important;
+	line-height: .98 !important;
+	text-transform: none !important;
+	white-space: normal !important;
+	word-break: keep-all !important;
+	overflow-wrap: normal !important;
+	hyphens: none !important;
+	text-align: center !important;
+	text-rendering: optimizeLegibility !important;
+	font-kerning: normal !important;
+	text-shadow: 0 14px 30px rgba(199, 11, 63, .14) !important;
+}
+
+.mc-category-hero__title {
+	font-size: clamp(52px, 5.1vw, 86px) !important;
+	max-width: min(100%, 1120px) !important;
+	margin-left: auto !important;
+	margin-right: auto !important;
+}
+
+@media (max-width: 920px) {
+	.mc-category-hero__title {
+		font-size: clamp(40px, 8vw, 62px) !important;
+		line-height: 1.04 !important;
+		letter-spacing: -0.025em !important;
+	}
+}
+
+@media (max-width: 560px) {
+	.mc-category-hero__title {
+		font-size: clamp(34px, 10vw, 46px) !important;
+		line-height: 1.08 !important;
+		letter-spacing: -0.018em !important;
+	}
+}
