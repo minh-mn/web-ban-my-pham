@@ -10,6 +10,9 @@
 <jsp:include page="/jsp/admin/layout/header.jsp" />
 <jsp:include page="/jsp/admin/layout/sidebar.jsp" />
 
+<c:set var="ctx" value="${pageContext.request.contextPath}" />
+
+
 <c:set var="orderStatus" value="${fn:toLowerCase(order.status)}" />
 <c:set var="shippingStatus" value="${fn:toUpperCase(order.shippingStatus)}" />
 <c:set var="paymentStatus" value="${fn:toUpperCase(order.paymentStatus)}" />
@@ -50,8 +53,8 @@
 
     <div class="admin-order-detail-hero">
       <div class="admin-order-detail-hero__content">
-        <span class="admin-order-detail-eyebrow">ORDER DETAIL</span>
-        <h1 class="admin-h1 admin-order-detail-title">Chi tiết đơn hàng #${order.id}</h1>
+        <span class="admin-order-detail-eyebrow">BÁN HÀNG &amp; ĐƠN HÀNG</span>
+        <h1 class="admin-order-detail-title">Chi tiết đơn hàng #<c:out value="${order.id}" /></h1>
         <div class="admin-order-detail-status-row">
           <span class="admin-pill admin-pill--${orderCss}">
             <c:choose>
@@ -85,7 +88,7 @@
         </div>
       </div>
       <div class="admin-order-detail-hero__actions">
-        <a class="admin-btn" href="${pageContext.request.contextPath}/admin/orders">Quay lại</a>
+        <a class="admin-btn" href="${ctx}/admin/orders">Quay lại</a>
       </div>
     </div>
 
@@ -95,6 +98,72 @@
     <c:if test="${not empty admin_order_error}">
       <div class="admin-alert admin-alert--danger"><c:out value="${admin_order_error}" /></div>
     </c:if>
+
+
+    <section class="admin-order-detail-summary">
+      <div class="admin-order-detail-stat admin-order-detail-stat--total">
+        <span class="admin-order-detail-stat__icon">💰</span>
+        <span class="admin-order-detail-stat__label">Tổng tiền</span>
+        <strong class="admin-order-detail-stat__value">
+          <fmt:formatNumber value="${order.total}" type="number" groupingUsed="true" maxFractionDigits="0" /> ₫
+        </strong>
+        <span class="admin-order-detail-stat__note">Giá trị cuối của đơn hàng</span>
+      </div>
+
+      <div class="admin-order-detail-stat admin-order-detail-stat--payment">
+        <span class="admin-order-detail-stat__icon">💳</span>
+        <span class="admin-order-detail-stat__label">Thanh toán</span>
+        <strong class="admin-order-detail-stat__value admin-order-detail-stat__value--text">
+          <c:choose>
+            <c:when test="${paymentMethod eq 'COD'}">COD</c:when>
+            <c:when test="${paymentMethod eq 'VNPAY'}">VNPAY</c:when>
+            <c:otherwise>Chưa xác định</c:otherwise>
+          </c:choose>
+        </strong>
+        <span class="admin-order-detail-stat__note">
+          <c:choose>
+            <c:when test="${paymentStatus eq 'PAID'}">Đã thanh toán</c:when>
+            <c:when test="${paymentStatus eq 'FAILED'}">Thanh toán thất bại</c:when>
+            <c:when test="${paymentStatus eq 'REFUNDED'}">Đã hoàn tiền</c:when>
+            <c:otherwise>Chờ thanh toán</c:otherwise>
+          </c:choose>
+        </span>
+      </div>
+
+      <div class="admin-order-detail-stat admin-order-detail-stat--shipping">
+        <span class="admin-order-detail-stat__icon">🚚</span>
+        <span class="admin-order-detail-stat__label">Vận chuyển</span>
+        <strong class="admin-order-detail-stat__value admin-order-detail-stat__value--text">
+          <c:choose>
+            <c:when test="${shippingProvider eq 'GHTK'}">GHTK</c:when>
+            <c:when test="${shippingProvider eq 'GHN'}">GHN</c:when>
+            <c:when test="${shippingProvider eq 'VIETTEL_POST'}">Viettel Post</c:when>
+            <c:when test="${shippingProvider eq 'OTHER'}">Khác</c:when>
+            <c:otherwise>Nội bộ</c:otherwise>
+          </c:choose>
+        </strong>
+        <span class="admin-order-detail-stat__note">
+          Phí ship:
+          <fmt:formatNumber value="${order.shippingFee}" type="number" groupingUsed="true" maxFractionDigits="0" /> ₫
+        </span>
+      </div>
+
+      <div class="admin-order-detail-stat admin-order-detail-stat--status">
+        <span class="admin-order-detail-stat__icon">📌</span>
+        <span class="admin-order-detail-stat__label">Workflow</span>
+        <strong class="admin-order-detail-stat__value admin-order-detail-stat__value--text">
+          <c:choose>
+            <c:when test="${isProcessing}">Chờ xác nhận</c:when>
+            <c:when test="${isConfirmed}">Đã xác nhận</c:when>
+            <c:when test="${isOrderShipping}">Đang giao</c:when>
+            <c:when test="${isCompleted}">Hoàn tất</c:when>
+            <c:when test="${isCancelled}">Đã hủy</c:when>
+            <c:otherwise><c:out value="${order.status}" /></c:otherwise>
+          </c:choose>
+        </strong>
+        <span class="admin-order-detail-stat__note">Trạng thái xử lý hiện tại</span>
+      </div>
+    </section>
 
     <div class="admin-order-detail-layout">
       <section class="admin-order-detail-main">
@@ -146,7 +215,7 @@
 
             <div class="admin-order-workflow-actions">
               <c:if test="${isProcessing}">
-                <form method="post" action="${pageContext.request.contextPath}/admin/order/update-status">
+                <form method="post" action="${ctx}/admin/order/update-status">
                   <input type="hidden" name="csrf_token" value="${sessionScope.CSRF_TOKEN}">
                   <input type="hidden" name="orderId" value="${order.id}">
                   <input type="hidden" name="workflowAction" value="confirmOrder">
@@ -156,7 +225,7 @@
               </c:if>
 
               <c:if test="${isConfirmed or isDeliveryFailed}">
-                <form method="post" action="${pageContext.request.contextPath}/admin/order/update-status">
+                <form method="post" action="${ctx}/admin/order/update-status">
                   <input type="hidden" name="csrf_token" value="${sessionScope.CSRF_TOKEN}">
                   <input type="hidden" name="orderId" value="${order.id}">
                   <input type="hidden" name="workflowAction" value="startShipping">
@@ -166,14 +235,14 @@
               </c:if>
 
               <c:if test="${isOrderShipping and (isDelivering or empty shippingStatus)}">
-                <form method="post" action="${pageContext.request.contextPath}/admin/order/update-status">
+                <form method="post" action="${ctx}/admin/order/update-status">
                   <input type="hidden" name="csrf_token" value="${sessionScope.CSRF_TOKEN}">
                   <input type="hidden" name="orderId" value="${order.id}">
                   <input type="hidden" name="workflowAction" value="markDelivered">
                   <input type="hidden" name="returnUrl" value="/admin/orders?action=detail&id=${order.id}">
                   <button type="submit" class="admin-btn admin-btn--ok">Giao thành công</button>
                 </form>
-                <form method="post" action="${pageContext.request.contextPath}/admin/order/update-status" onsubmit="return confirm('Xác nhận giao hàng thất bại?');">
+                <form method="post" action="${ctx}/admin/order/update-status" onsubmit="return confirm('Xác nhận giao hàng thất bại?');">
                   <input type="hidden" name="csrf_token" value="${sessionScope.CSRF_TOKEN}">
                   <input type="hidden" name="orderId" value="${order.id}">
                   <input type="hidden" name="workflowAction" value="markFailed">
@@ -183,7 +252,7 @@
               </c:if>
 
               <c:if test="${isProcessing or isConfirmed or isDeliveryFailed}">
-                <form method="post" action="${pageContext.request.contextPath}/admin/order/update-status" onsubmit="return confirm('Bạn có chắc muốn hủy đơn hàng này?');">
+                <form method="post" action="${ctx}/admin/order/update-status" onsubmit="return confirm('Bạn có chắc muốn hủy đơn hàng này?');">
                   <input type="hidden" name="csrf_token" value="${sessionScope.CSRF_TOKEN}">
                   <input type="hidden" name="orderId" value="${order.id}">
                   <input type="hidden" name="workflowAction" value="cancelOrder">
@@ -196,7 +265,7 @@
             <hr class="admin-divider" />
 
             <h3 class="admin-order-subtitle-heading">Thông tin vận chuyển</h3>
-            <form method="post" action="${pageContext.request.contextPath}/admin/orders" class="admin-form">
+            <form method="post" action="${ctx}/admin/orders" class="admin-form">
               <%@ include file="/jsp/common/csrf.jspf" %>
               <input type="hidden" name="action" value="updateShippingInfo" />
               <input type="hidden" name="id" value="${order.id}" />
@@ -285,7 +354,7 @@
                       <tr>
                         <td>
                           <c:choose>
-                            <c:when test="${not empty item.imageUrl}"><img class="admin-order-item-img" src="${pageContext.request.contextPath}${item.imageUrl}" alt="${item.productName}" /></c:when>
+                            <c:when test="${not empty item.imageUrl}"><img class="admin-order-item-img" src="${ctx}${item.imageUrl}" alt="${fn:escapeXml(item.productName)}" /></c:when>
                             <c:otherwise><div class="admin-order-item-img admin-order-item-img--empty">—</div></c:otherwise>
                           </c:choose>
                         </td>
