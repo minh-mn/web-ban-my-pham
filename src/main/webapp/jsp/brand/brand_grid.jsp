@@ -1,52 +1,120 @@
-<%--
-  Created by IntelliJ IDEA.
-  User: ASUS
-  Date: 25/05/2026
-  Time: 3:34 CH
-  To change this template use File | Settings | File Templates.
---%>
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
-<section style="padding: 50px 0; background: linear-gradient(135deg, var(--primary-soft) 0%, var(--primary-soft) 100%); text-align: center;">
-  <div style="max-width:760px; margin: 0 auto; padding: 0 15px;">
-    <h2 style="font-size: 36px; font-weight: 900; color: var(--primary); margin-bottom: 12px; letter-spacing: -0.5px;">
-      Thương Hiệu Chính Hãng
-    </h2>
-    <p style="color: var(--text-muted); font-size: 16px; line-height: 1.7; margin: 0;">
+<c:set var="ctx" value="${ctx}" />
+<link rel="stylesheet" href="${ctx}/assets/css/brand-grid.css?v=20260615_brand_ui_fix_1" />
+
+
+<section class="brand-hero-section">
+  <div class="brand-hero-shell">
+    <span class="brand-hero-badge">Đối tác phân phối chính hãng</span>
+    <h2 class="brand-hero-title">Thương Hiệu Chính Hãng</h2>
+    <p class="brand-hero-description">
       MyCosmetic là đối tác phân phối chiến lược của nhiều thương hiệu mỹ phẩm và chăm sóc da nổi tiếng toàn cầu.
       Chúng tôi cam kết 100% sản phẩm phân phối đạt chuẩn chính ngạch, an toàn và uy tín.
     </p>
   </div>
 </section>
 
-<section style="padding: 40px 0;">
-  <div style="max-width: 1200px; margin: 0 auto; padding: 0 20px;">
-    <%-- Danh sách thương hiệu --%>
-    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px;">
+<section class="brand-directory-section" id="brandDirectory">
+  <div class="brand-directory-shell">
+    <div class="brand-directory-toolbar">
+      <div class="brand-directory-heading">
+        <h3>Khám phá thương hiệu</h3>
+        <p>Chọn chữ cái hoặc nhấn trực tiếp vào thương hiệu để xem sản phẩm liên quan.</p>
+      </div>
+
+      <div class="brand-filter-wrap">
+        <div class="brand-filter-chips" id="brandLetterFilters" aria-label="Bộ lọc chữ cái thương hiệu">
+          <button type="button" class="brand-filter-chip is-active" data-letter="ALL">
+            Tất cả
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="brand-grid" id="brandGrid">
       <c:forEach var="b" items="${brands}">
-        <div style="padding: 20px; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--surface); transition: 0.3s;">
-          <div style="width: 100%; height: 90px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; background: var(--surface);">
+        <c:set var="firstLetter" value="${fn:toUpperCase(fn:substring(b.name, 0, 1))}" />
+        <a class="brand-card"
+           data-letter="${firstLetter}"
+           href="${ctx}/products?brandId=${b.id}&brand=${fn:escapeXml(b.name)}"
+           aria-label="Xem sản phẩm của thương hiệu ${b.name}">
+          <div class="brand-card-media">
             <c:choose>
               <c:when test="${not empty b.image}">
-                <img src="${pageContext.request.contextPath}${b.image}"
+                <img src="${ctx}${b.image}"
                      alt="${b.name}"
-                     style="max-width: 100%; max-height: 100%; object-fit: contain; transition: all 0.3s;" />
+                     loading="lazy" />
               </c:when>
               <c:otherwise>
-                <div style="width: 65px; height: 65px; border-radius: 50%; background: var(--primary-soft); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 24px; border: 1px dashed var(--primary);">
-                    ${fn:substring(b.name, 0, 1)}
-                </div>
+                <div class="brand-card-fallback">${firstLetter}</div>
               </c:otherwise>
             </c:choose>
           </div>
 
-          <h3 style="margin: 0 0 8px 0; font-size: 19px; font-weight: 700; color: var(--text-main); text-align: center; font-family: sans-serif;">
-            <c:out value="${b.name}"/>
-          </h3>
-        </div>
+          <div class="brand-card-body">
+            <span class="brand-card-letter">${firstLetter}</span>
+            <h4 class="brand-card-name"><c:out value="${b.name}" /></h4>
+            <span class="brand-card-link">Xem sản phẩm</span>
+          </div>
+        </a>
       </c:forEach>
+    </div>
+
+    <div class="brand-grid-empty" id="brandGridEmpty" hidden>
+      Không tìm thấy thương hiệu phù hợp với bộ lọc đã chọn.
     </div>
   </div>
 </section>
+
+<script>
+  (function () {
+    const grid = document.getElementById('brandGrid');
+    const filterRoot = document.getElementById('brandLetterFilters');
+    const emptyState = document.getElementById('brandGridEmpty');
+    if (!grid || !filterRoot) return;
+
+    const cards = Array.from(grid.querySelectorAll('.brand-card'));
+    const letters = Array.from(new Set(cards.map(card => card.dataset.letter).filter(Boolean))).sort();
+
+    letters.forEach(letter => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'brand-filter-chip';
+      button.dataset.letter = letter;
+      button.textContent = letter;
+      filterRoot.appendChild(button);
+    });
+
+    const applyFilter = (letter) => {
+      let visible = 0;
+      cards.forEach(card => {
+        const matched = letter === 'ALL' || card.dataset.letter === letter;
+        card.hidden = !matched;
+        card.style.display = matched ? '' : 'none';
+        if (matched) visible++;
+      });
+
+      if (emptyState) {
+        const showEmpty = visible === 0;
+        emptyState.hidden = !showEmpty;
+        emptyState.style.display = showEmpty ? 'grid' : 'none';
+      }
+    };
+
+    filterRoot.addEventListener('click', function (event) {
+      const target = event.target.closest('.brand-filter-chip');
+      if (!target) return;
+
+      filterRoot.querySelectorAll('.brand-filter-chip').forEach(button => {
+        button.classList.remove('is-active');
+      });
+      target.classList.add('is-active');
+      applyFilter(target.dataset.letter || 'ALL');
+    });
+
+    applyFilter('ALL');
+  })();
+</script>
