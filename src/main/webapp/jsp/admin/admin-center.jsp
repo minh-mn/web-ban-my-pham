@@ -43,7 +43,7 @@
             <h2 class="admin-h2">Khu vực quản trị</h2>
             <p class="admin-subtext">Chọn nhanh module cần xử lý. Các mục hiển thị theo quyền của tài khoản admin hiện tại.</p>
           </div>
-          <span class="admin-chip admin-chip--brand">UI V2</span>
+          <span class="admin-chip admin-chip--brand">Giao diện mới</span>
         </div>
         <hr class="admin-divider">
         <div class="admin-grid admin-grid--3">
@@ -52,46 +52,46 @@
           <a class="admin-menu-card" href="${pageContext.request.contextPath}/">
             <div class="admin-menu-card__title">Trang chủ</div>
             <p class="admin-menu-card__desc">Quay về trang người dùng.</p>
-            <span class="admin-chip">/</span>
+            <span class="admin-chip admin-menu-card__action">Xem trang chủ</span>
           </a>
 
           <c:if test="${canRevenue}">
             <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/dashboard">
-              <div class="admin-menu-card__title">Dashboard / Doanh thu</div>
+              <div class="admin-menu-card__title">Tổng quan doanh thu</div>
               <p class="admin-menu-card__desc">Tổng quan nhanh hệ thống: đơn hàng, doanh thu, KPI.</p>
-              <span class="admin-chip">/admin/dashboard</span>
+              <span class="admin-chip admin-menu-card__action">Xem báo cáo</span>
             </a>
           </c:if>
 
           <c:if test="${canBanners}">
             <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/banners">
-              <div class="admin-menu-card__title">Banners</div>
+              <div class="admin-menu-card__title">Banner</div>
               <p class="admin-menu-card__desc">Quản lý banner slider hiển thị ở trang chủ.</p>
-              <span class="admin-chip">/admin/banners</span>
+              <span class="admin-chip admin-menu-card__action">Quản lý banner</span>
             </a>
           </c:if>
 
           <c:if test="${canBrands}">
             <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/brands">
-              <div class="admin-menu-card__title">Brands</div>
+              <div class="admin-menu-card__title">Thương hiệu</div>
               <p class="admin-menu-card__desc">Quản lý thương hiệu sản phẩm.</p>
-              <span class="admin-chip">/admin/brands</span>
+              <span class="admin-chip admin-menu-card__action">Quản lý thương hiệu</span>
             </a>
           </c:if>
 
           <c:if test="${canCategories}">
             <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/categories">
-              <div class="admin-menu-card__title">Categories</div>
+              <div class="admin-menu-card__title">Danh mục</div>
               <p class="admin-menu-card__desc">Quản lý danh mục sản phẩm và cây danh mục.</p>
-              <span class="admin-chip">/admin/categories</span>
+              <span class="admin-chip admin-menu-card__action">Quản lý danh mục</span>
             </a>
           </c:if>
 
           <c:if test="${canProducts}">
             <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/products">
-              <div class="admin-menu-card__title">Products</div>
+              <div class="admin-menu-card__title">Sản phẩm</div>
               <p class="admin-menu-card__desc">Quản lý sản phẩm, hình ảnh, giá bán, tồn kho và trạng thái.</p>
-              <span class="admin-chip">/admin/products</span>
+              <span class="admin-chip admin-menu-card__action">Quản lý sản phẩm</span>
             </a>
           </c:if>
 
@@ -99,7 +99,7 @@
             <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/inventory">
               <div class="admin-menu-card__title">Quản lý tồn kho</div>
               <p class="admin-menu-card__desc">Theo dõi tồn kho, nhập thêm hàng, cảnh báo sắp hết hàng và thống kê nhập kho.</p>
-              <span class="admin-chip">/admin/inventory</span>
+              <span class="admin-chip admin-menu-card__action">Kiểm tra tồn kho</span>
             </a>
           </c:if>
 
@@ -107,55 +107,55 @@
             <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/promotions">
               <div class="admin-menu-card__title">Khuyến mãi &amp; Mã giảm giá</div>
               <p class="admin-menu-card__desc">Quản lý tập trung mã giảm giá, giảm giá thương hiệu, giảm theo đơn hàng và chương trình cửa hàng.</p>
-              <span class="admin-chip">/admin/promotions</span>
+              <span class="admin-chip admin-menu-card__action">Quản lý khuyến mãi</span>
             </a>
           </c:if>
 
           <c:if test="${canRanks}">
             <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/ranks">
-              <div class="admin-menu-card__title">User Ranks</div>
+              <div class="admin-menu-card__title">Hạng khách hàng</div>
               <p class="admin-menu-card__desc">Quản lý hạng khách hàng, mốc chi tiêu và ưu đãi theo rank.</p>
-              <span class="admin-chip">/admin/ranks</span>
+              <span class="admin-chip admin-menu-card__action">Quản lý hạng</span>
             </a>
           </c:if>
 
           <c:if test="${canOrders}">
             <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/orders">
-              <div class="admin-menu-card__title">Orders</div>
+              <div class="admin-menu-card__title">Đơn hàng</div>
               <p class="admin-menu-card__desc">Danh sách đơn hàng, xem chi tiết và cập nhật trạng thái.</p>
-              <span class="admin-chip">/admin/orders</span>
+              <span class="admin-chip admin-menu-card__action">Xem đơn hàng</span>
             </a>
           </c:if>
 
           <c:if test="${canReturns}">
             <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/returns">
-              <div class="admin-menu-card__title">Return Requests</div>
+              <div class="admin-menu-card__title">Yêu cầu đổi trả</div>
               <p class="admin-menu-card__desc">Duyệt yêu cầu trả hàng/hoàn hàng của khách.</p>
-              <span class="admin-chip">/admin/returns</span>
+              <span class="admin-chip admin-menu-card__action">Duyệt yêu cầu</span>
             </a>
           </c:if>
 
           <c:if test="${canReviews}">
             <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/reviews">
-              <div class="admin-menu-card__title">Reviews</div>
+              <div class="admin-menu-card__title">Đánh giá</div>
               <p class="admin-menu-card__desc">Quản lý đánh giá và phản hồi của khách hàng.</p>
-              <span class="admin-chip">/admin/reviews</span>
+              <span class="admin-chip admin-menu-card__action">Kiểm duyệt đánh giá</span>
             </a>
           </c:if>
 
           <c:if test="${canUsers}">
             <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/users">
-              <div class="admin-menu-card__title">Quản lí user</div>
+              <div class="admin-menu-card__title">Quản lý người dùng</div>
               <p class="admin-menu-card__desc">Xem tài khoản, role, rank, trạng thái và gán role cho từng user.</p>
-              <span class="admin-chip">/admin/users</span>
+              <span class="admin-chip admin-menu-card__action">Quản lý tài khoản</span>
             </a>
           </c:if>
 
           <c:if test="${canRoles}">
             <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/roles">
-              <div class="admin-menu-card__title">Phân quyền role</div>
+              <div class="admin-menu-card__title">Vai trò &amp; phân quyền</div>
               <p class="admin-menu-card__desc">Tạo role mới và chọn quyền chi tiết cho từng nhóm nhân viên.</p>
-              <span class="admin-chip">/admin/roles</span>
+              <span class="admin-chip admin-menu-card__action">Cấu hình quyền</span>
             </a>
           </c:if>
 
@@ -163,45 +163,45 @@
             <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/flash-sale">
               <div class="admin-menu-card__title">Flash Sale</div>
               <p class="admin-menu-card__desc">Thiết lập chương trình Flash Sale, quản lý thời gian, sản phẩm và giá giảm sốc.</p>
-              <span class="admin-chip">/admin/flash-sale</span>
+              <span class="admin-chip admin-menu-card__action">Quản lý Flash Sale</span>
             </a>
           </c:if>
 
           <c:if test="${canSettings}">
             <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/settings">
-              <div class="admin-menu-card__title">Website Settings</div>
+              <div class="admin-menu-card__title">Cài đặt website</div>
               <p class="admin-menu-card__desc">Quản lý hotline, email, địa chỉ, social, copyright và thông tin footer.</p>
-              <span class="admin-chip">CMS / settings</span>
+              <span class="admin-chip admin-menu-card__action">Cập nhật thông tin</span>
             </a>
           </c:if>
 
           <c:if test="${canCms}">
             <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/pages">
-              <div class="admin-menu-card__title">Pages CMS</div>
+              <div class="admin-menu-card__title">Trang nội dung CMS</div>
               <p class="admin-menu-card__desc">Quản lý chính sách, điều khoản và nội dung trang động.</p>
-              <span class="admin-chip">CMS / pages</span>
+              <span class="admin-chip admin-menu-card__action">Quản lý trang</span>
             </a>
 
             <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/events">
-              <div class="admin-menu-card__title">News / Blogs</div>
+              <div class="admin-menu-card__title">Tin tức / Blog</div>
               <p class="admin-menu-card__desc">Quản lý bài viết tin tức, sự kiện và hình ảnh hiển thị trên trang chủ.</p>
-              <span class="admin-chip">CMS / blogs</span>
+              <span class="admin-chip admin-menu-card__action">Quản lý bài viết</span>
             </a>
           </c:if>
 
           <c:if test="${canContact}">
             <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/contact-messages">
-              <div class="admin-menu-card__title">Contact Messages</div>
+              <div class="admin-menu-card__title">Tin nhắn liên hệ</div>
               <p class="admin-menu-card__desc">Quản lý tin nhắn khách hàng gửi từ form liên hệ.</p>
-              <span class="admin-chip">CMS / contact</span>
+              <span class="admin-chip admin-menu-card__action">Xem tin nhắn</span>
             </a>
           </c:if>
 
           <c:if test="${canNotifications}">
             <a class="admin-menu-card" href="${pageContext.request.contextPath}/admin/notifications">
-              <div class="admin-menu-card__title">Hệ thống Thông báo</div>
+              <div class="admin-menu-card__title">Thông báo hệ thống</div>
               <p class="admin-menu-card__desc">Gửi thông báo sự kiện, voucher, ưu đãi giảm giá đến khách hàng.</p>
-              <span class="admin-chip">Hệ thống / Broadcast</span>
+              <span class="admin-chip admin-menu-card__action">Gửi thông báo</span>
             </a>
           </c:if>
 
@@ -211,7 +211,7 @@
               <p class="admin-menu-card__desc">
                 Truy vết admin đã sửa sản phẩm, đổi trạng thái đơn hàng, nhập kho hoặc thay đổi dữ liệu nhạy cảm.
               </p>
-              <span class="admin-chip">Hệ thống / Audit</span>
+              <span class="admin-chip admin-menu-card__action">Xem nhật ký</span>
             </a>
           </c:if>
         </div>
