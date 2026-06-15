@@ -46,7 +46,7 @@
 
 	<!-- GLOBAL CSS -->
 	<link rel="stylesheet"
-	      href="${pageContext.request.contextPath}/assets/css/base.css?v=20260615_global_compact_v12">
+	      href="${pageContext.request.contextPath}/assets/css/base.css?v=20260615_header_button_stable_v8">
 
 	<!-- PAGE CSS -->
 	<c:if test="${not empty pageCss}">
@@ -54,25 +54,25 @@
 			<%-- Trường hợp servlet truyền: /assets/css/home.css --%>
 			<c:when test="${fn:startsWith(pageCss, '/assets/')}">
 				<link rel="stylesheet"
-				      href="${pageContext.request.contextPath}${pageCss}?v=20260615_global_compact_v12">
+				      href="${pageContext.request.contextPath}${pageCss}?v=20260615_header_button_stable_v8">
 			</c:when>
 
 			<%-- Trường hợp servlet truyền: assets/css/home.css --%>
 			<c:when test="${fn:startsWith(pageCss, 'assets/')}">
 				<link rel="stylesheet"
-				      href="${pageContext.request.contextPath}/${pageCss}?v=20260615_global_compact_v12">
+				      href="${pageContext.request.contextPath}/${pageCss}?v=20260615_header_button_stable_v8">
 			</c:when>
 
 			<%-- Trường hợp servlet truyền: /home.css --%>
 			<c:when test="${fn:startsWith(pageCss, '/')}">
 				<link rel="stylesheet"
-				      href="${pageContext.request.contextPath}/assets/css${pageCss}?v=20260615_global_compact_v12">
+				      href="${pageContext.request.contextPath}/assets/css${pageCss}?v=20260615_header_button_stable_v8">
 			</c:when>
 
 			<%-- Trường hợp servlet truyền: home.css hoặc admin/admin-list.css --%>
 			<c:otherwise>
 				<link rel="stylesheet"
-				      href="${pageContext.request.contextPath}/assets/css/${pageCss}?v=20260615_global_compact_v12">
+				      href="${pageContext.request.contextPath}/assets/css/${pageCss}?v=20260615_header_button_stable_v8">
 			</c:otherwise>
 		</c:choose>
 	</c:if>
@@ -353,7 +353,7 @@
 <jsp:include page="/jsp/common/footer.jsp" />
 
 <!-- GLOBAL JS: chỉ load 1 lần -->
-<script defer src="${pageContext.request.contextPath}/assets/js/main.js?v=20260615_global_compact_v12"></script>
+<script defer src="${pageContext.request.contextPath}/assets/js/main.js?v=20260615_header_button_stable_v8"></script>
 
 
 <script>
