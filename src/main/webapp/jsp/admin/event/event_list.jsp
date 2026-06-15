@@ -3,7 +3,6 @@
   User: ASUS
   Date: 28/05/2026
   Time: 7:09 CH
-  To change this template use File | Settings | File Templates.
 --%>
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
@@ -17,242 +16,274 @@
 <jsp:include page="/jsp/admin/layout/header.jsp"/>
 <jsp:include page="/jsp/admin/layout/sidebar.jsp"/>
 
-<style>
-  /* @import phông chữ bắt buộc nằm trên cùng của thẻ style */
-  @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;600;700;800;900&display=swap');
+<c:set var="ctx" value="${pageContext.request.contextPath}" />
+<c:set var="eventTotal" value="${empty events ? 0 : fn:length(events)}" />
+<c:set var="eventImageCount" value="0" />
+<c:set var="eventNoImageCount" value="0" />
+<c:set var="eventTaggedCount" value="0" />
 
-  /* Đồng bộ phông chữ toàn cục */
-  .admin-main,
-  .custom-popup-overlay {
-    font-family: 'Be Vietnam Pro', sans-serif;
-  }
+<c:forEach var="evStat" items="${events}">
+  <c:choose>
+    <c:when test="${not empty evStat.imageUrl}">
+      <c:set var="eventImageCount" value="${eventImageCount + 1}" />
+    </c:when>
+    <c:otherwise>
+      <c:set var="eventNoImageCount" value="${eventNoImageCount + 1}" />
+    </c:otherwise>
+  </c:choose>
 
-  /* Lớp phủ mờ toàn màn hình của Popup */
-  .custom-popup-overlay {
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(17, 24, 39, 0.6);
-    backdrop-filter: blur(4px);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-    opacity: 0; pointer-events: none;
-    transition: all 0.3s ease;
-  }
-  .custom-popup-overlay.show {
-    opacity: 1; pointer-events: auto;
-  }
-
-  /* Hộp nội dung cấu trúc Popup */
-  .custom-popup-box {
-    background: #ffffff;
-    padding: 30px;
-    border-radius: 12px;
-    width: 90%;
-    max-width: 400px;
-    text-align: center;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    transform: scale(0.8);
-    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-  .custom-popup-overlay.show .custom-popup-box {
-    transform: scale(1);
-  }
-
-  /* Biểu tượng dấu hỏi cảnh báo */
-  .custom-popup-icon {
-    width: 60px; height: 60px;
-    background: #fef3c7; color: #d97706;
-    font-size: 32px; font-weight: bold;
-    display: flex; align-items: center; justify-content: center;
-    margin: 0 auto 15px; border-radius: 50%;
-  }
-
-  /* Biến đổi màu biểu tượng nếu là tác vụ nguy hiểm (như Xóa) */
-  .custom-popup-icon.danger-mode {
-    background: #fee2e2; color: #ef4444;
-  }
-
-  /* Tiêu đề thông báo */
-  .custom-popup-title {
-    font-size: 18px; color: #111827;
-    margin-bottom: 10px; font-weight: 700;
-  }
-
-  /* Chi tiết văn bản hỏi */
-  .custom-popup-msg {
-    font-size: 14px; color: #4b5563;
-    line-height: 1.6; margin-bottom: 25px;
-  }
-
-  /* Khung chứa các nút bấm */
-  .custom-popup-actions {
-    display: flex;
-    gap: 12px;
-    justify-content: center;
-  }
-
-  /* Định dạng các nút bấm trong Popup */
-  .custom-popup-btn {
-    flex: 1;
-    border: none;
-    padding: 12px 20px;
-    font-size: 14px;
-    font-weight: 600;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-  .custom-popup-btn--cancel {
-    background: #f3f4f6; color: #374151;
-  }
-  .custom-popup-btn--cancel:hover {
-    background: #e5e7eb;
-  }
-  .custom-popup-btn--confirm {
-    background: #3b82f6; color: white;
-  }
-  .custom-popup-btn--confirm:hover {
-    background: #2563eb;
-  }
-  .custom-popup-btn--confirm.danger-brand {
-    background: #ef4444;
-  }
-  .custom-popup-btn--confirm.danger-brand:hover {
-    background: #dc2626;
-  }
-</style>
+  <c:if test="${not empty evStat.tag}">
+    <c:set var="eventTaggedCount" value="${eventTaggedCount + 1}" />
+  </c:if>
+</c:forEach>
 
 <main class="admin-main">
-  <div class="admin-container">
+  <div class="admin-container admin-event-page">
 
-    <div class="admin-topbar">
-      <div>
-        <h1 class="admin-h1">Sự kiện cửa hàng</h1>
-        <p class="admin-subtext">
+    <section class="admin-event-hero">
+      <div class="admin-event-hero__content">
+        <span class="admin-event-eyebrow">NỘI DUNG &amp; WEBSITE</span>
+        <h1 class="admin-event-title">Sự kiện cửa hàng</h1>
+        <p class="admin-event-subtitle">
           Quản lý bài viết sự kiện, workshop, tin tức và hình ảnh hiển thị tại trang chủ.
+          Mỗi sự kiện nên có tiêu đề rõ, nhãn phân loại và ảnh đại diện đúng tỉ lệ.
         </p>
       </div>
 
-      <a class="admin-btn admin-btn--primary"
-         href="${pageContext.request.contextPath}/admin/events?action=new">
-        + Thêm sự kiện
-      </a>
-    </div>
+      <div class="admin-event-hero__actions">
+        <a class="admin-btn admin-btn--primary"
+           href="${ctx}/admin/events?action=new">
+          + Thêm sự kiện
+        </a>
+      </div>
+    </section>
 
-    <div class="admin-card">
+    <section class="admin-event-summary">
+      <div class="admin-event-stat admin-event-stat--total">
+        <span class="admin-event-stat__icon">📅</span>
+        <span class="admin-event-stat__label">Tổng sự kiện</span>
+        <strong class="admin-event-stat__value">
+          <c:out value="${eventTotal}" />
+        </strong>
+        <span class="admin-event-stat__note">Tất cả sự kiện trong hệ thống</span>
+      </div>
+
+      <div class="admin-event-stat admin-event-stat--image">
+        <span class="admin-event-stat__icon">🖼️</span>
+        <span class="admin-event-stat__label">Đã có ảnh</span>
+        <strong class="admin-event-stat__value">
+          <c:out value="${eventImageCount}" />
+        </strong>
+        <span class="admin-event-stat__note">Sự kiện có ảnh đại diện</span>
+      </div>
+
+      <div class="admin-event-stat admin-event-stat--missing">
+        <span class="admin-event-stat__icon">⚠️</span>
+        <span class="admin-event-stat__label">Thiếu ảnh</span>
+        <strong class="admin-event-stat__value">
+          <c:out value="${eventNoImageCount}" />
+        </strong>
+        <span class="admin-event-stat__note">Nên bổ sung để hiển thị đẹp hơn</span>
+      </div>
+
+      <div class="admin-event-stat admin-event-stat--tag">
+        <span class="admin-event-stat__icon">🏷️</span>
+        <span class="admin-event-stat__label">Có nhãn dán</span>
+        <strong class="admin-event-stat__value">
+          <c:out value="${eventTaggedCount}" />
+        </strong>
+        <span class="admin-event-stat__note">Dùng để phân loại nội dung</span>
+      </div>
+    </section>
+
+    <section class="admin-card admin-event-filter-card">
       <div class="admin-card__body">
+        <div class="admin-event-section-head">
+          <div>
+            <h2 class="admin-event-section-title">Bộ lọc sự kiện</h2>
+            <p class="admin-event-section-desc">
+              Tìm nhanh sự kiện theo tiêu đề để chỉnh sửa hoặc xóa nội dung.
+            </p>
+          </div>
 
-        <div class="admin-toolbar">
-          <form method="get"
-                action="${pageContext.request.contextPath}/admin/events"
-                class="admin-toolbar__form">
+          <c:if test="${not empty param.q}">
+            <span class="admin-chip admin-chip--brand">
+              Đang lọc: <strong><c:out value="${param.q}" /></strong>
+            </span>
+          </c:if>
+        </div>
 
-            <input type="hidden" name="action" value="list"/>
+        <form method="get"
+              action="${ctx}/admin/events"
+              class="admin-event-filter-form">
 
+          <input type="hidden" name="action" value="list"/>
+
+          <label class="admin-event-filter-field admin-event-filter-field--keyword">
+            <span>Từ khóa</span>
             <input class="admin-input"
                    type="text"
                    name="q"
                    value="${fn:escapeXml(param.q)}"
                    placeholder="Tìm theo tiêu đề sự kiện...">
+          </label>
 
-            <button class="admin-btn" type="submit">Lọc</button>
+          <div class="admin-event-filter-actions">
+            <button class="admin-btn admin-btn--primary admin-event-filter-btn" type="submit">
+              Lọc sự kiện
+            </button>
 
             <c:if test="${not empty param.q}">
-              <a class="admin-btn" href="${pageContext.request.contextPath}/admin/events">Xóa lọc</a>
+              <a class="admin-btn admin-event-filter-btn" href="${ctx}/admin/events">
+                Xóa lọc
+              </a>
             </c:if>
-          </form>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <section class="admin-card admin-event-list-card">
+      <div class="admin-card__body">
+        <div class="admin-event-section-head admin-event-section-head--list">
+          <div>
+            <h2 class="admin-event-section-title">Danh sách sự kiện</h2>
+            <p class="admin-event-section-desc">
+              Kiểm tra ảnh, tiêu đề, nhãn dán, mô tả ngắn và ngày diễn ra của từng sự kiện.
+            </p>
+          </div>
+
+          <span class="admin-chip admin-chip--brand">
+            <c:out value="${eventTotal}" /> sự kiện
+          </span>
         </div>
 
         <c:choose>
           <c:when test="${empty events}">
-            <div class="admin-empty">Chưa có sự kiện nào được tạo.</div>
+            <div class="admin-event-empty">
+              <div class="admin-event-empty__icon">📅</div>
+              <div>
+                <h3>Chưa có sự kiện nào</h3>
+                <p>Hãy thêm sự kiện đầu tiên để hiển thị nội dung nổi bật trên trang chủ.</p>
+                <a class="admin-btn admin-btn--primary" href="${ctx}/admin/events?action=new">
+                  + Thêm sự kiện
+                </a>
+              </div>
+            </div>
           </c:when>
+
           <c:otherwise>
-            <table class="admin-table">
-              <thead>
-              <tr>
-                <th style="width:70px;">ID</th>
-                <th style="width:100px;">Hình ảnh</th>
-                <th style="width:250px;">Tiêu đề</th>
-                <th style="width:120px;">Nhãn dán (Tag)</th>
-                <th style="width:350px;">Mô tả ngắn</th>
-                <th style="width:130px;">Ngày diễn ra</th>
-                <th style="width:200px; text-align: center;">Thao tác</th>
-              </tr>
-              </thead>
-
-              <tbody>
-              <c:forEach var="ev" items="${events}">
+            <div class="admin-event-table-wrap">
+              <table class="admin-table admin-event-table">
+                <thead>
                 <tr>
-                  <td>#${ev.id}</td>
-                  <td>
-                    <c:choose>
-                      <c:when test="${not empty ev.imageUrl}">
-                        <img src="${pageContext.request.contextPath}${ev.imageUrl}"
-                             style="width: 60px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;"
-                             alt="Event Image"/>
-                      </c:when>
-                      <c:otherwise>
-                        <span class="admin-muted">Không có ảnh</span>
-                      </c:otherwise>
-                    </c:choose>
-                  </td>
-
-                  <td>
-                    <strong><c:out value="${ev.title}"/></strong>
-                  </td>
-
-                  <td>
-                    <span class="badge badge-blue"><c:out value="${ev.tag}"/></span>
-                  </td>
-
-                  <td>
-                    <div style="max-height: 40px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.4; color: #555;">
-                      <c:out value="${ev.summary}"/>
-                    </div>
-                  </td>
-
-                  <td>
-                    <fmt:formatDate value="${ev.eventDate}" pattern="dd/MM/yyyy"/>
-                  </td>
-
-                  <td style="text-align: center;">
-                      <%-- SỬA SỰ KIỆN: Kích hoạt thông qua Popup xác nhận --%>
-                    <button type="button"
-                            class="admin-btn"
-                            onclick="triggerEdit('${pageContext.request.contextPath}/admin/events?action=edit&id=${ev.id}', '${fn:escapeXml(ev.title)}')">
-                      Sửa
-                    </button>
-
-                      <%-- XÓA SỰ KIỆN: Gửi form sau khi xác nhận trên Popup --%>
-                    <form method="post"
-                          id="delete-form-${ev.id}"
-                          action="${pageContext.request.contextPath}/admin/events"
-                          class="admin-inline">
-
-                      <%@ include file="/jsp/common/csrf.jspf" %>
-
-                      <input type="hidden" name="action" value="delete">
-                      <input type="hidden" name="id" value="${ev.id}">
-
-                      <button class="admin-btn admin-btn--danger"
-                              type="button"
-                              onclick="triggerDelete('delete-form-${ev.id}', '${fn:escapeXml(ev.title)}')">
-                        Xóa
-                      </button>
-                    </form>
-                  </td>
+                  <th class="admin-event-col-id">ID</th>
+                  <th class="admin-event-col-image">Hình ảnh</th>
+                  <th class="admin-event-col-title">Tiêu đề</th>
+                  <th class="admin-event-col-tag">Nhãn dán</th>
+                  <th class="admin-event-col-summary">Mô tả ngắn</th>
+                  <th class="admin-event-col-date">Ngày diễn ra</th>
+                  <th class="admin-event-col-actions">Thao tác</th>
                 </tr>
-              </c:forEach>
-              </tbody>
-            </table>
+                </thead>
+
+                <tbody>
+                <c:forEach var="ev" items="${events}">
+                  <tr class="${empty ev.imageUrl ? 'admin-event-row--missing-image' : ''}">
+                    <td class="admin-event-id-cell">
+                      <strong>#<c:out value="${ev.id}" /></strong>
+                    </td>
+
+                    <td>
+                      <c:choose>
+                        <c:when test="${not empty ev.imageUrl}">
+                          <img class="admin-event-thumb"
+                               src="${ctx}${ev.imageUrl}"
+                               alt="Event Image"/>
+                        </c:when>
+                        <c:otherwise>
+                          <div class="admin-event-thumb admin-event-thumb--empty">
+                            Ảnh
+                          </div>
+                        </c:otherwise>
+                      </c:choose>
+                    </td>
+
+                    <td>
+                      <div class="admin-event-title-cell">
+                        <strong><c:out value="${ev.title}"/></strong>
+                        <span>Sự kiện / Workshop / Tin tức</span>
+                      </div>
+                    </td>
+
+                    <td>
+                      <c:choose>
+                        <c:when test="${not empty ev.tag}">
+                          <span class="admin-event-tag">
+                            <c:out value="${ev.tag}"/>
+                          </span>
+                        </c:when>
+                        <c:otherwise>
+                          <span class="admin-pill admin-pill--warning">Chưa có nhãn</span>
+                        </c:otherwise>
+                      </c:choose>
+                    </td>
+
+                    <td>
+                      <div class="admin-event-summary-text">
+                        <c:out value="${ev.summary}"/>
+                      </div>
+                    </td>
+
+                    <td>
+                      <div class="admin-event-date">
+                        <span>Ngày diễn ra</span>
+                        <strong>
+                          <fmt:formatDate value="${ev.eventDate}" pattern="dd/MM/yyyy"/>
+                        </strong>
+                      </div>
+                    </td>
+
+                    <td class="admin-event-action-cell">
+                      <div class="admin-event-actions">
+                        <button type="button"
+                                class="admin-btn admin-event-action-btn"
+                                data-edit-url="${ctx}/admin/events?action=edit&id=${ev.id}"
+                                data-event-title="${fn:escapeXml(ev.title)}"
+                                onclick="triggerEdit(this.dataset.editUrl, this.dataset.eventTitle)">
+                          Sửa
+                        </button>
+
+                        <form method="post"
+                              id="delete-form-${ev.id}"
+                              action="${ctx}/admin/events"
+                              class="admin-inline">
+
+                          <%@ include file="/jsp/common/csrf.jspf" %>
+
+                          <input type="hidden" name="action" value="delete">
+                          <input type="hidden" name="id" value="${ev.id}">
+
+                          <button class="admin-btn admin-btn--danger admin-event-action-btn"
+                                  type="button"
+                                  data-form-id="delete-form-${ev.id}"
+                                  data-event-title="${fn:escapeXml(ev.title)}"
+                                  onclick="triggerDelete(this.dataset.formId, this.dataset.eventTitle)">
+                            Xóa
+                          </button>
+                        </form>
+                      </div>
+                    </td>
+                  </tr>
+                </c:forEach>
+                </tbody>
+              </table>
+            </div>
           </c:otherwise>
         </c:choose>
 
       </div>
-    </div>
+    </section>
 
   </div>
 </main>
