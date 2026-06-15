@@ -12532,3 +12532,31 @@ td.product-actions {
     width: 100%;
   }
 }
+
+
+/* =========================================================
+   ADMIN PROMOTION UI V3 - Duplicate action row fix
+   Scope: /jsp/admin/promotions/promotion_list.jsp
+========================================================= */
+
+.admin-promo-page > .admin-promo-container > .admin-promotion-create {
+  display: none !important;
+}
+
+.admin-promo-page .admin-promo-hero {
+  margin-bottom: 16px;
+}
+
+.admin-promo-page .admin-promo-hero__actions {
+  align-self: center;
+}
+
+.admin-promo-page .admin-promo-stats {
+  margin-top: 0;
+}
+
+@media (max-width: 1180px) {
+  .admin-promo-page .admin-promo-hero__actions {
+    width: 100%;
+  }
+}
