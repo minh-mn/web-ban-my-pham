@@ -3699,3 +3699,313 @@ body {
         grid-template-columns: 1fr !important;
     }
 }
+
+/* =========================================================
+   HOME FINAL BACKGROUND SYNC - 20260615
+   Đồng bộ nền khu banner/hình ảnh với phần nội dung bên dưới.
+   Mục tiêu:
+   - Không còn cảm giác hero một màu, voucher/phần dưới một màu khác.
+   - Giữ toàn trang chủ trên cùng một nền hồng nhạt sang và mềm.
+   - Các card vẫn nổi khối bằng nền trắng hồng nhẹ.
+========================================================= */
+
+:root {
+    --home-bg-top: #fff9fc;
+    --home-bg-mid: #fffafc;
+    --home-bg-bottom: #ffffff;
+    --home-card-bg: rgba(255, 253, 254, 0.98);
+    --home-card-border: rgba(245, 203, 216, 0.62);
+    --home-soft-shadow: 0 18px 44px rgba(210, 11, 66, 0.045);
+}
+
+html,
+body {
+    background: linear-gradient(
+            180deg,
+            var(--home-bg-top) 0%,
+            var(--home-bg-mid) 32%,
+            var(--home-bg-bottom) 100%
+    ) !important;
+}
+
+body .site-main,
+body main.site-main {
+    background:
+            radial-gradient(circle at 2% 8%, rgba(255, 183, 209, 0.26), transparent 26%),
+            radial-gradient(circle at 96% 38%, rgba(255, 205, 224, 0.20), transparent 28%),
+            linear-gradient(180deg, var(--home-bg-top) 0%, var(--home-bg-mid) 42%, var(--home-bg-bottom) 100%) !important;
+}
+
+body:has(.skin-hero),
+body:has(.skin-voucher-strip),
+body:has(.skin-home-page) {
+    background: linear-gradient(
+            180deg,
+            var(--home-bg-top) 0%,
+            var(--home-bg-mid) 42%,
+            var(--home-bg-bottom) 100%
+    ) !important;
+}
+
+/* Các section chính dùng chung một mặt nền */
+.skin-hero,
+.skin-voucher-strip,
+.skin-hot-categories,
+.skin-flash-sale,
+.skin-product-section,
+.skin-brand-section,
+.skin-news-section,
+.skin-event-section,
+.skin-home-section,
+.skin-section,
+.home-page,
+.home-main,
+.home-wrapper,
+.home-content {
+    background: transparent !important;
+}
+
+/* Khu hero không dùng nền xanh/trắng riêng nữa */
+.skin-hero {
+    margin-bottom: 0 !important;
+    padding-top: 24px !important;
+    padding-bottom: 22px !important;
+}
+
+/* Section ngay sau hero nối màu mượt hơn */
+.skin-hero + .skin-voucher-strip,
+.skin-hero + section,
+.skin-voucher-strip {
+    margin-top: 0 !important;
+}
+
+.skin-voucher-strip {
+    padding-top: 26px !important;
+    padding-bottom: 42px !important;
+}
+
+/* Đồng bộ các khung lớn phía dưới với nền hồng nhạt */
+.skin-voucher-shell,
+.skin-section-shell,
+.skin-product-shell,
+.skin-brand-shell,
+.skin-news-shell,
+.skin-category-shell,
+.skin-event-shell,
+.skin-home-shell {
+    background:
+            radial-gradient(circle at top left, rgba(255, 242, 247, 0.94), transparent 30%),
+            radial-gradient(circle at bottom right, rgba(255, 232, 241, 0.74), transparent 30%),
+            linear-gradient(135deg, #ffffff 0%, var(--home-card-bg) 56%, #fff4f8 100%) !important;
+    border-color: var(--home-card-border) !important;
+    box-shadow: var(--home-soft-shadow) !important;
+}
+
+/* Vùng trống giữa banner và voucher không bị lệch màu */
+.skin-hero .skin-container,
+.skin-voucher-strip .skin-container,
+.skin-container {
+    background: transparent !important;
+}
+
+/* Giữ banner/card nổi trên cùng nền */
+.skin-hero-slider,
+.skin-side-card,
+.skin-voucher-card,
+.skin-voucher-card--sync,
+.skin-product-card,
+.skin-brand-card,
+.skin-category-card,
+.skin-news-card {
+    border-color: rgba(236, 164, 189, 0.42) !important;
+}
+
+.skin-hero-slider {
+    background: #fff8fb !important;
+    box-shadow: 0 18px 40px rgba(210, 11, 66, 0.08) !important;
+}
+
+/* Card đen/hồng bên phải vẫn giữ màu riêng, chỉ đồng bộ viền và bóng */
+.skin-side-card {
+    box-shadow: 0 18px 38px rgba(210, 11, 66, 0.10) !important;
+}
+
+/* Bỏ các nền section cũ nếu còn bị override ở dưới */
+section[class*="home"],
+section[class*="skin"] {
+    background-color: transparent;
+}
+
+/* Responsive: giữ nền liền mạch trên mobile */
+@media (max-width: 768px) {
+    .skin-hero {
+        padding-top: 18px !important;
+        padding-bottom: 18px !important;
+    }
+
+    .skin-voucher-strip {
+        padding-top: 18px !important;
+        padding-bottom: 32px !important;
+    }
+}
+
+/* =========================================================
+   HOME PAGE - FINAL LIGHT BACKGROUND SYNC
+   Đồng bộ nền toàn bộ phần nội dung, không tác động header
+========================================================= */
+:root {
+    --home-final-bg: #fffafc;
+    --home-final-bg-2: #fffbfe;
+    --home-final-bg-3: #ffffff;
+    --home-final-card: rgba(255, 255, 255, 0.96);
+    --home-final-card-soft: rgba(255, 252, 254, 0.98);
+    --home-final-border: rgba(246, 210, 222, 0.72);
+    --home-final-shadow: 0 16px 38px rgba(214, 26, 97, 0.045);
+}
+
+/* Chỉ đồng bộ vùng nội dung bên dưới header, không chỉnh .site-header */
+main.site-main,
+.site-main,
+body:has(.skin-hero) main.site-main,
+body:has(.skin-voucher-strip) main.site-main {
+    background:
+            radial-gradient(circle at 8% 10%, rgba(255, 224, 236, 0.34), transparent 24%),
+            radial-gradient(circle at 92% 42%, rgba(255, 232, 242, 0.30), transparent 26%),
+            linear-gradient(180deg, var(--home-final-bg) 0%, var(--home-final-bg-2) 46%, var(--home-final-bg-3) 100%) !important;
+}
+
+/* Toàn bộ section trang chủ cùng một nền nhạt */
+.skin-hero,
+.skin-voucher-strip,
+.skin-hot-categories,
+.skin-flash-sale,
+.skin-product-section,
+.skin-brand-section,
+.skin-news-section,
+.skin-event-section,
+.skin-home-section,
+.skin-section,
+.home-page,
+.home-main,
+.home-wrapper,
+.home-content,
+.home-hero-section,
+.home-top-section,
+.home-banner-section,
+.hero-section,
+.index-hero-section,
+.home-coupon-section,
+.home-voucher-section,
+.home-product-section,
+.home-deal-section,
+.home-block-section {
+    background: transparent !important;
+    background-color: transparent !important;
+}
+
+/* Bỏ nền riêng ở vùng hero để không bị tách màu với phần dưới */
+.skin-hero,
+.home-hero-section,
+.home-top-section,
+.home-banner-section,
+.hero-section,
+.index-hero-section {
+    margin-bottom: 0 !important;
+    padding-bottom: 18px !important;
+}
+
+/* Phần sau hero kéo sát và cùng nền */
+.skin-hero + .skin-voucher-strip,
+.skin-hero + section,
+.home-hero-section + section,
+.home-top-section + section,
+.home-banner-section + section,
+.hero-section + section {
+    margin-top: 0 !important;
+    padding-top: 12px !important;
+}
+
+/* Khung nội dung lớn giữ rất nhạt để không lệch nền */
+.skin-voucher-shell,
+.skin-section-shell,
+.skin-product-shell,
+.skin-brand-shell,
+.skin-news-shell,
+.skin-category-shell,
+.skin-event-shell,
+.skin-home-shell,
+.home-section-shell,
+.home-card-shell,
+.section-box {
+    background:
+            radial-gradient(circle at 10% 0%, rgba(255, 245, 249, 0.65), transparent 32%),
+            linear-gradient(135deg, var(--home-final-card) 0%, var(--home-final-card-soft) 100%) !important;
+    border-color: var(--home-final-border) !important;
+    box-shadow: var(--home-final-shadow) !important;
+}
+
+/* Banner/card vẫn nổi nhưng nền sáng hơn, không xanh/xám */
+.skin-hero-slider,
+.home-hero-slider,
+.home-banner-slider,
+.skin-voucher-card,
+.skin-voucher-card--sync,
+.skin-product-card,
+.skin-brand-card,
+.skin-category-card,
+.skin-news-card {
+    background: var(--home-final-card) !important;
+    border-color: var(--home-final-border) !important;
+    box-shadow: var(--home-final-shadow) !important;
+}
+
+/* Giữ card deal/hot cate màu riêng, chỉ làm bóng và viền dịu hơn */
+.skin-side-card,
+.skin-side-card--deal,
+.skin-side-card--category {
+    border-color: rgba(246, 210, 222, 0.55) !important;
+    box-shadow: 0 16px 34px rgba(214, 26, 97, 0.065) !important;
+}
+
+/* Container không được tự tạo mảng nền khác */
+.skin-container,
+.home-container,
+.home-hero-wrap,
+.home-banner-wrap,
+.hero-wrap,
+.home-showcase-wrap,
+.home-top-content,
+.home-hero,
+.home-banner-area,
+.hero-area {
+    background: transparent !important;
+    background-color: transparent !important;
+}
+
+/* Xóa các màu nền cứng còn sót trong section trang chủ */
+main.site-main section[class*="skin"],
+main.site-main section[class*="home"],
+main.site-main div[class*="home-page"],
+main.site-main div[class*="home-main"] {
+    background-color: transparent !important;
+}
+
+@media (max-width: 768px) {
+    .skin-hero,
+    .home-hero-section,
+    .home-top-section,
+    .home-banner-section,
+    .hero-section,
+    .index-hero-section {
+        padding-bottom: 14px !important;
+    }
+
+    .skin-hero + .skin-voucher-strip,
+    .skin-hero + section,
+    .home-hero-section + section,
+    .home-top-section + section,
+    .home-banner-section + section,
+    .hero-section + section {
+        padding-top: 8px !important;
+    }
+}
