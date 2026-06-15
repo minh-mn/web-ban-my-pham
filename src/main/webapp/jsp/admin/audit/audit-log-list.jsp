@@ -14,39 +14,104 @@
 
         <jsp:include page="/jsp/admin/layout/topbar.jsp"/>
 
-        <section class="admin-card admin-mb-3">
+        <section class="admin-audit-hero">
+            <div class="admin-audit-hero__content">
+                <span class="admin-audit-eyebrow">HỆ THỐNG &amp; PHÂN QUYỀN</span>
+                <h1 class="admin-audit-title">Nhật ký hệ thống</h1>
+                <p class="admin-audit-subtitle">
+                    Theo dõi ai đã sửa sản phẩm, đổi trạng thái đơn hàng, nhập kho hoặc thay đổi dữ liệu nhạy cảm.
+                    Trang này giúp admin truy vết thao tác và kiểm soát thay đổi trong hệ thống.
+                </p>
+            </div>
+
+            <div class="admin-audit-hero__actions">
+                <span class="admin-chip admin-chip--brand">
+                    🧾 <c:out value="${empty totalRows ? 0 : totalRows}"/> log
+                </span>
+            </div>
+        </section>
+
+        <section class="admin-audit-summary">
+            <div class="admin-audit-stat admin-audit-stat--total">
+                <span class="admin-audit-stat__icon">🧾</span>
+                <span class="admin-audit-stat__label">Tổng nhật ký</span>
+                <strong class="admin-audit-stat__value">
+                    <c:out value="${empty totalRows ? 0 : totalRows}"/>
+                </strong>
+                <span class="admin-audit-stat__note">Theo bộ lọc hiện tại</span>
+            </div>
+
+            <div class="admin-audit-stat admin-audit-stat--module">
+                <span class="admin-audit-stat__icon">📦</span>
+                <span class="admin-audit-stat__label">Module</span>
+                <strong class="admin-audit-stat__value admin-audit-stat__value--text">
+                    <c:out value="${empty filter.module ? 'Tất cả' : filter.module}"/>
+                </strong>
+                <span class="admin-audit-stat__note">Khu vực đang theo dõi</span>
+            </div>
+
+            <div class="admin-audit-stat admin-audit-stat--action">
+                <span class="admin-audit-stat__icon">⚙️</span>
+                <span class="admin-audit-stat__label">Thao tác</span>
+                <strong class="admin-audit-stat__value admin-audit-stat__value--text">
+                    <c:out value="${empty filter.actionType ? 'Tất cả' : filter.actionType}"/>
+                </strong>
+                <span class="admin-audit-stat__note">Loại hành động</span>
+            </div>
+
+            <div class="admin-audit-stat admin-audit-stat--page">
+                <span class="admin-audit-stat__icon">📄</span>
+                <span class="admin-audit-stat__label">Hiển thị</span>
+                <strong class="admin-audit-stat__value">
+                    <c:out value="${empty pageSize ? 20 : pageSize}"/>
+                </strong>
+                <span class="admin-audit-stat__note">Dòng mỗi trang</span>
+            </div>
+        </section>
+
+        <section class="admin-card admin-audit-filter-card">
             <div class="admin-card__body">
-                <div class="admin-toolbar">
+                <div class="admin-audit-section-head">
                     <div>
-                        <h1 class="admin-h1">Nhật ký hệ thống</h1>
-                        <p class="admin-subtext">
-                            Theo dõi ai đã sửa sản phẩm, đổi trạng thái đơn hàng, nhập kho hoặc thay đổi dữ liệu nhạy cảm.
+                        <h2 class="admin-audit-section-title">Bộ lọc nhật ký</h2>
+                        <p class="admin-audit-section-desc">
+                            Lọc theo từ khóa, người thao tác, module, loại thao tác và khoảng thời gian.
                         </p>
                     </div>
-                    <div class="admin-toolbar__actions">
-            <span class="admin-chip admin-chip--brand">
-              <c:out value="${empty totalRows ? 0 : totalRows}"/> log
-            </span>
+
+                    <div class="admin-audit-active-filters">
+                        <c:if test="${not empty filter.keyword}">
+                            <span class="admin-chip">Từ khóa: <strong><c:out value="${filter.keyword}"/></strong></span>
+                        </c:if>
+                        <c:if test="${not empty filter.actor}">
+                            <span class="admin-chip">Admin: <strong><c:out value="${filter.actor}"/></strong></span>
+                        </c:if>
+                        <c:if test="${not empty filter.module}">
+                            <span class="admin-chip">Module: <strong><c:out value="${filter.module}"/></strong></span>
+                        </c:if>
+                        <c:if test="${not empty filter.actionType}">
+                            <span class="admin-chip">Thao tác: <strong><c:out value="${filter.actionType}"/></strong></span>
+                        </c:if>
                     </div>
                 </div>
 
-                <form class="admin-filter" method="get" action="${pageContext.request.contextPath}/admin/audit-logs">
-                    <div class="admin-filter__grid admin-filter__grid--wide">
-                        <label class="admin-field">
+                <form class="admin-audit-filter-form" method="get" action="${pageContext.request.contextPath}/admin/audit-logs">
+                    <div class="admin-audit-filter-grid">
+                        <label class="admin-audit-filter-field admin-audit-filter-field--keyword">
                             <span>Từ khóa</span>
-                            <input type="text" name="keyword" value="${fn:escapeXml(filter.keyword)}"
+                            <input class="admin-input" type="text" name="keyword" value="${fn:escapeXml(filter.keyword)}"
                                    placeholder="VD: giá, đơn hàng, tên admin, mã sản phẩm...">
                         </label>
 
-                        <label class="admin-field">
+                        <label class="admin-audit-filter-field">
                             <span>Người thao tác</span>
-                            <input type="text" name="actor" value="${fn:escapeXml(filter.actor)}"
+                            <input class="admin-input" type="text" name="actor" value="${fn:escapeXml(filter.actor)}"
                                    placeholder="Username hoặc họ tên admin">
                         </label>
 
-                        <label class="admin-field">
+                        <label class="admin-audit-filter-field">
                             <span>Module</span>
-                            <select name="module">
+                            <select class="admin-select" name="module">
                                 <option value="">Tất cả module</option>
                                 <c:forEach var="m" items="${modules}">
                                     <option value="${fn:escapeXml(m)}" ${filter.module == m ? 'selected' : ''}>
@@ -56,9 +121,9 @@
                             </select>
                         </label>
 
-                        <label class="admin-field">
+                        <label class="admin-audit-filter-field">
                             <span>Thao tác</span>
-                            <select name="actionType">
+                            <select class="admin-select" name="actionType">
                                 <option value="">Tất cả thao tác</option>
                                 <c:forEach var="a" items="${actionTypes}">
                                     <option value="${fn:escapeXml(a)}" ${filter.actionType == a ? 'selected' : ''}>
@@ -68,19 +133,19 @@
                             </select>
                         </label>
 
-                        <label class="admin-field">
+                        <label class="admin-audit-filter-field">
                             <span>Từ ngày</span>
-                            <input type="date" name="dateFrom" value="${filter.dateFrom}">
+                            <input class="admin-input" type="date" name="dateFrom" value="${filter.dateFrom}">
                         </label>
 
-                        <label class="admin-field">
+                        <label class="admin-audit-filter-field">
                             <span>Đến ngày</span>
-                            <input type="date" name="dateTo" value="${filter.dateTo}">
+                            <input class="admin-input" type="date" name="dateTo" value="${filter.dateTo}">
                         </label>
 
-                        <label class="admin-field">
+                        <label class="admin-audit-filter-field">
                             <span>Số dòng</span>
-                            <select name="pageSize">
+                            <select class="admin-select" name="pageSize">
                                 <option value="10" ${pageSize == 10 ? 'selected' : ''}>10</option>
                                 <option value="20" ${pageSize == 20 ? 'selected' : ''}>20</option>
                                 <option value="50" ${pageSize == 50 ? 'selected' : ''}>50</option>
@@ -89,7 +154,7 @@
                         </label>
                     </div>
 
-                    <div class="admin-filter__actions">
+                    <div class="admin-audit-filter-actions">
                         <button type="submit" class="admin-btn admin-btn--primary">Lọc nhật ký</button>
                         <a class="admin-btn admin-btn--ghost" href="${pageContext.request.contextPath}/admin/audit-logs">
                             Xóa lọc
@@ -99,60 +164,75 @@
             </div>
         </section>
 
-        <section class="admin-card">
+        <section class="admin-card admin-audit-list-card">
             <div class="admin-card__body">
+                <div class="admin-audit-section-head admin-audit-section-head--list">
+                    <div>
+                        <h2 class="admin-audit-section-title">Danh sách nhật ký</h2>
+                        <p class="admin-audit-section-desc">
+                            Hiển thị chi tiết thời gian, admin thao tác, module, loại thao tác và giá trị thay đổi.
+                        </p>
+                    </div>
+                    <span class="admin-chip admin-chip--brand">
+                        <c:out value="${empty totalRows ? 0 : totalRows}"/> kết quả
+                    </span>
+                </div>
+
                 <c:choose>
                     <c:when test="${not empty auditLogs}">
-                        <div class="admin-table-wrap">
-                            <table class="admin-table admin-table--audit">
+                        <div class="admin-audit-table-wrap">
+                            <table class="admin-table admin-audit-table">
                                 <thead>
                                 <tr>
-                                    <th>Thời gian</th>
-                                    <th>Admin</th>
-                                    <th>Module</th>
-                                    <th>Thao tác</th>
-                                    <th>Đối tượng</th>
-                                    <th>Nội dung</th>
-                                    <th>Giá trị cũ</th>
-                                    <th>Giá trị mới</th>
-                                    <th>IP</th>
+                                    <th class="admin-audit-col-time">Thời gian</th>
+                                    <th class="admin-audit-col-admin">Admin</th>
+                                    <th class="admin-audit-col-module">Module</th>
+                                    <th class="admin-audit-col-action">Thao tác</th>
+                                    <th class="admin-audit-col-target">Đối tượng</th>
+                                    <th class="admin-audit-col-desc">Nội dung</th>
+                                    <th class="admin-audit-col-value">Giá trị cũ</th>
+                                    <th class="admin-audit-col-value">Giá trị mới</th>
+                                    <th class="admin-audit-col-ip">IP</th>
                                 </tr>
                                 </thead>
                                 <tbody>
                                 <c:forEach var="log" items="${auditLogs}">
-                                    <tr>
-                                        <td class="admin-nowrap">
-                                            <div class="admin-id">#<c:out value="${log.id}"/></div>
-                                            <div><c:out value="${log.createdAtDisplay}"/></div>
+                                    <tr class="admin-audit-row">
+                                        <td class="admin-audit-time">
+                                            <strong>#<c:out value="${log.id}"/></strong>
+                                            <span><c:out value="${log.createdAtDisplay}"/></span>
                                         </td>
 
                                         <td>
-                                            <div class="admin-media__title"><c:out value="${log.actorDisplayName}"/></div>
-                                            <div class="admin-muted">
-                                                <c:out value="${empty log.actorUsername ? '-' : log.actorUsername}"/>
+                                            <div class="admin-audit-actor">
+                                                <span class="admin-audit-actor__avatar">A</span>
+                                                <span class="admin-audit-actor__body">
+                                                    <strong><c:out value="${log.actorDisplayName}"/></strong>
+                                                    <small><c:out value="${empty log.actorUsername ? '-' : log.actorUsername}"/></small>
+                                                    <c:if test="${not empty log.actorRole}">
+                                                        <span class="admin-chip"><c:out value="${log.actorRole}"/></span>
+                                                    </c:if>
+                                                </span>
                                             </div>
-                                            <c:if test="${not empty log.actorRole}">
-                                                <span class="admin-chip"><c:out value="${log.actorRole}"/></span>
-                                            </c:if>
                                         </td>
 
                                         <td>
-                      <span class="admin-chip admin-chip--brand">
-                        <c:out value="${log.moduleLabel}"/>
-                      </span>
+                                            <span class="admin-chip admin-chip--brand">
+                                                <c:out value="${log.moduleLabel}"/>
+                                            </span>
                                         </td>
 
                                         <td>
-                      <span class="admin-pill ${log.actionCssClass}">
-                        <c:out value="${log.actionLabel}"/>
-                      </span>
+                                            <span class="admin-pill ${log.actionCssClass}">
+                                                <c:out value="${log.actionLabel}"/>
+                                            </span>
                                         </td>
 
-                                        <td class="admin-break">
+                                        <td class="admin-audit-target">
                                             <c:out value="${log.entityDisplay}"/>
                                         </td>
 
-                                        <td class="admin-break admin-audit-description">
+                                        <td class="admin-audit-description">
                                             <c:out value="${log.description}"/>
                                             <c:if test="${not empty log.requestUri}">
                                                 <div class="admin-path admin-audit-uri">
@@ -161,15 +241,15 @@
                                             </c:if>
                                         </td>
 
-                                        <td class="admin-break admin-audit-value">
+                                        <td class="admin-audit-value">
                                             <c:out value="${empty log.oldValue ? '-' : log.oldValue}"/>
                                         </td>
 
-                                        <td class="admin-break admin-audit-value">
+                                        <td class="admin-audit-value">
                                             <c:out value="${empty log.newValue ? '-' : log.newValue}"/>
                                         </td>
 
-                                        <td class="admin-path">
+                                        <td class="admin-path admin-audit-ip">
                                             <c:out value="${empty log.ipAddress ? '-' : log.ipAddress}"/>
                                         </td>
                                     </tr>
@@ -179,7 +259,7 @@
                         </div>
 
                         <c:if test="${totalPages gt 1}">
-                            <div class="admin-pagination">
+                            <div class="admin-pagination admin-audit-pagination">
                                 <c:choose>
                                     <c:when test="${currentPage gt 1}">
                                         <a class="admin-btn admin-btn--ghost"
@@ -193,8 +273,8 @@
                                 </c:choose>
 
                                 <span class="admin-chip">
-                  Trang <strong>${currentPage}</strong> / ${totalPages}
-                </span>
+                                    Trang <strong>${currentPage}</strong> / ${totalPages}
+                                </span>
 
                                 <c:choose>
                                     <c:when test="${currentPage lt totalPages}">
@@ -212,10 +292,17 @@
                     </c:when>
 
                     <c:otherwise>
-                        <div class="admin-empty">
-                            <div class="admin-empty__title">Chưa có nhật ký phù hợp</div>
-                            <div class="admin-empty__text">
-                                Hãy thử xóa bộ lọc hoặc thực hiện một thao tác quản trị như sửa giá sản phẩm, cập nhật đơn hàng, nhập kho.
+                        <div class="admin-audit-empty">
+                            <div class="admin-audit-empty__icon">🧾</div>
+                            <div>
+                                <h3>Chưa có nhật ký phù hợp</h3>
+                                <p>
+                                    Hãy thử xóa bộ lọc hoặc thực hiện một thao tác quản trị như sửa giá sản phẩm,
+                                    cập nhật đơn hàng, nhập kho.
+                                </p>
+                                <a class="admin-btn admin-btn--primary" href="${pageContext.request.contextPath}/admin/audit-logs">
+                                    Xóa bộ lọc
+                                </a>
                             </div>
                         </div>
                     </c:otherwise>
