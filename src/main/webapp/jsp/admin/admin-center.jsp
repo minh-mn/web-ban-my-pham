@@ -36,8 +36,16 @@
 
     <jsp:include page="/jsp/admin/layout/topbar.jsp"/>
 
-    <div class="admin-card">
+    <section class="admin-center-overview admin-card">
       <div class="admin-card__body">
+        <div class="admin-row admin-center-overview__head">
+          <div>
+            <h2 class="admin-h2">Khu vực quản trị</h2>
+            <p class="admin-subtext">Chọn nhanh module cần xử lý. Các mục hiển thị theo quyền của tài khoản admin hiện tại.</p>
+          </div>
+          <span class="admin-chip admin-chip--brand">UI V2</span>
+        </div>
+        <hr class="admin-divider">
         <div class="admin-grid admin-grid--3">
 
           <!-- HOME -->
@@ -208,7 +216,7 @@
           </c:if>
         </div>
       </div>
-    </div>
+    </section>
 
   </div>
 </main>
