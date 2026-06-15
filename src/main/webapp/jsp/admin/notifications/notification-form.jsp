@@ -11,11 +11,10 @@
 <main class="admin-main">
   <div class="admin-container admin-notification-form-page">
 
-    <jsp:include page="/jsp/admin/layout/topbar.jsp"/>
 
     <section class="admin-notification-form-hero">
       <div class="admin-notification-form-hero__content">
-        <span class="admin-notification-form-eyebrow">BROADCAST</span>
+        <span class="admin-notification-form-eyebrow">THÔNG BÁO HÀNG LOẠT</span>
 
         <h1 class="admin-h1 admin-notification-form-title">
           Tạo chiến dịch thông báo
@@ -29,7 +28,7 @@
       <div class="admin-notification-form-hero__actions">
         <a href="${pageContext.request.contextPath}/admin/notifications"
            class="admin-btn">
-          Quay lại danh sách
+          ← Quay lại danh sách
         </a>
       </div>
     </section>
@@ -93,7 +92,7 @@
 
                 <div class="admin-field">
                   <label class="admin-label" for="targetUrlInput">
-                    Target URL <span class="admin-required">*</span>
+                    Đường dẫn chuyển hướng <span class="admin-required">*</span>
                   </label>
                   <input id="targetUrlInput"
                          class="admin-input"
