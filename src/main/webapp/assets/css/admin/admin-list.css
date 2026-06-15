@@ -6573,3 +6573,443 @@ td.product-actions {
     justify-items: center;
   }
 }
+
+
+/* =========================================================
+   ADMIN BRAND LIST UI V2
+   Scope: /jsp/admin/brand/brand_list.jsp
+========================================================= */
+
+.admin-main > .admin-container.admin-brand-page {
+  width: 100%;
+  max-width: none !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+.admin-brand-page {
+  width: 100%;
+}
+
+.admin-brand-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: start;
+  margin-bottom: 16px;
+  padding: 18px;
+  border: 1px solid rgba(236, 72, 153, 0.20);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
+    linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.055);
+}
+
+.admin-brand-hero__content {
+  min-width: 0;
+}
+
+.admin-brand-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 10px;
+  margin-bottom: 8px;
+  border: 1px solid rgba(236, 72, 153, 0.32);
+  border-radius: 999px;
+  background: rgba(236, 72, 153, 0.10);
+  color: #be185d;
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 950;
+  letter-spacing: .06em;
+}
+
+.admin-brand-title {
+  margin: 0;
+  color: var(--admin-text);
+  font-size: 28px;
+  line-height: 1.1;
+  font-weight: 1000;
+  letter-spacing: -0.045em;
+}
+
+.admin-brand-subtitle {
+  max-width: 900px;
+  margin: 8px 0 0;
+  color: var(--admin-muted);
+  font-size: 13.5px;
+  line-height: 1.58;
+}
+
+.admin-brand-hero__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.admin-brand-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.admin-brand-stat {
+  position: relative;
+  overflow: hidden;
+  padding: 16px;
+  border: 1px solid var(--admin-border);
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: var(--admin-shadow-sm);
+}
+
+.admin-brand-stat::after {
+  content: "";
+  position: absolute;
+  right: -28px;
+  top: -28px;
+  width: 82px;
+  height: 82px;
+  border-radius: 999px;
+  background: rgba(236, 72, 153, 0.08);
+}
+
+.admin-brand-stat--logo::after {
+  background: rgba(16, 185, 129, 0.10);
+}
+
+.admin-brand-stat--missing::after {
+  background: rgba(245, 158, 11, 0.12);
+}
+
+.admin-brand-stat--product::after {
+  background: rgba(59, 130, 246, 0.10);
+}
+
+.admin-brand-stat__icon {
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  border-radius: 14px;
+  background: rgba(236, 72, 153, 0.10);
+  font-size: 18px;
+  position: relative;
+  z-index: 1;
+}
+
+.admin-brand-stat__label {
+  display: block;
+  color: var(--admin-muted);
+  font-size: 12px;
+  line-height: 1.35;
+  font-weight: 850;
+  position: relative;
+  z-index: 1;
+}
+
+.admin-brand-stat__value {
+  display: block;
+  margin-top: 7px;
+  color: var(--admin-text);
+  font-size: 28px;
+  line-height: 1;
+  font-weight: 1000;
+  letter-spacing: -0.035em;
+  position: relative;
+  z-index: 1;
+}
+
+.admin-brand-stat__note {
+  display: block;
+  margin-top: 8px;
+  color: var(--admin-muted);
+  font-size: 12px;
+  line-height: 1.4;
+  position: relative;
+  z-index: 1;
+}
+
+.admin-brand-list-card {
+  overflow: hidden;
+}
+
+.admin-brand-list-card .admin-card__body {
+  padding: 18px;
+  overflow-x: visible;
+}
+
+.admin-brand-section-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.07);
+}
+
+.admin-brand-section-title {
+  margin: 0;
+  color: var(--admin-text);
+  font-size: 18px;
+  line-height: 1.25;
+  font-weight: 1000;
+  letter-spacing: -0.025em;
+}
+
+.admin-brand-section-desc {
+  margin: 5px 0 0;
+  color: var(--admin-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.admin-brand-empty {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  padding: 22px;
+  border: 1px dashed var(--admin-border);
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.018);
+}
+
+.admin-brand-empty__icon {
+  width: 58px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18px;
+  background: rgba(236, 72, 153, 0.10);
+  font-size: 26px;
+}
+
+.admin-brand-empty h3 {
+  margin: 0 0 5px;
+  color: var(--admin-text);
+  font-size: 16px;
+  font-weight: 950;
+}
+
+.admin-brand-empty p {
+  margin: 0 0 12px;
+  color: var(--admin-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.admin-brand-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid rgba(15, 23, 42, 0.07);
+  border-radius: 16px;
+  background: #ffffff;
+}
+
+.admin-brand-table {
+  width: 100%;
+  min-width: 980px;
+  table-layout: fixed;
+  border-left: 0;
+  border-right: 0;
+  border-radius: 0;
+}
+
+.admin-brand-table th,
+.admin-brand-table td {
+  padding: 12px 10px;
+  vertical-align: middle;
+}
+
+.admin-brand-table tbody tr + tr td {
+  border-top: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.admin-brand-table th {
+  color: rgba(15, 23, 42, 0.66);
+  font-size: 12px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: .025em;
+}
+
+.admin-brand-table tbody tr {
+  transition: background .15s ease;
+}
+
+.admin-brand-table tbody tr:hover {
+  background: rgba(236, 72, 153, 0.028);
+}
+
+.admin-brand-row--missing-logo {
+  background: rgba(245, 158, 11, 0.025);
+}
+
+.admin-brand-col-id {
+  width: 76px;
+}
+
+.admin-brand-col-info {
+  width: 360px;
+}
+
+.admin-brand-col-logo {
+  width: 170px;
+}
+
+.admin-brand-col-products {
+  width: 150px;
+}
+
+.admin-brand-col-actions {
+  width: 180px;
+}
+
+.admin-brand-id-cell {
+  color: var(--admin-text);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.admin-brand-info {
+  display: grid;
+  justify-items: start;
+  gap: 7px;
+  min-width: 0;
+}
+
+.admin-brand-name {
+  color: var(--admin-text);
+  font-size: 14px;
+  line-height: 1.35;
+  font-weight: 1000;
+  overflow-wrap: anywhere;
+}
+
+.admin-brand-path {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.admin-brand-logo {
+  width: 96px;
+  height: 64px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  object-fit: contain;
+  padding: 8px;
+  border: 1px solid var(--admin-border);
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.045);
+}
+
+.admin-brand-logo--empty {
+  border-style: dashed;
+  background: rgba(15, 23, 42, 0.025);
+  color: var(--admin-muted);
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.admin-brand-product-cell {
+  white-space: nowrap;
+}
+
+.admin-brand-product-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(59, 130, 246, 0.26);
+  background: rgba(59, 130, 246, 0.08);
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.admin-brand-action-cell {
+  white-space: nowrap;
+}
+
+.admin-brand-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(70px, 1fr));
+  gap: 8px;
+  align-items: stretch;
+  max-width: 170px;
+}
+
+.admin-brand-actions form,
+.admin-brand-actions .admin-inline {
+  display: block;
+  width: 100%;
+  margin: 0;
+}
+
+.admin-brand-action-btn {
+  width: 100%;
+  min-height: 34px;
+  padding: 0 10px;
+  justify-content: center;
+  border-radius: 11px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+@media (max-width: 1180px) {
+  .admin-brand-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-brand-hero__actions {
+    justify-content: flex-start;
+  }
+
+  .admin-brand-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .admin-brand-hero {
+    padding: 15px;
+    border-radius: 18px;
+  }
+
+  .admin-brand-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-brand-hero__actions {
+    width: 100%;
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-brand-hero__actions .admin-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .admin-brand-empty {
+    grid-template-columns: 1fr;
+    text-align: center;
+    justify-items: center;
+  }
+}
