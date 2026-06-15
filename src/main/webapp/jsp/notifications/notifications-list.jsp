@@ -135,9 +135,7 @@
                   </span>
                 </span>
 
-                <span class="notification-list__arrow" aria-hidden="true">
-                  →
-                </span>
+                <span class="notification-list__arrow" aria-hidden="true">Chi tiết</span>
               </a>
             </c:forEach>
           </div>
