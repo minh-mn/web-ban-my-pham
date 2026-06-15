@@ -5830,3 +5830,91 @@
     justify-items: center;
   }
 }
+
+
+/* =========================================================
+   ADMIN NOTIFICATION FORM UI V3 - No duplicated topbar
+   Scope: /jsp/admin/notification/notification-form.jsp
+========================================================= */
+
+.admin-notification-form-page {
+  width: 100%;
+}
+
+.admin-notification-form-page .admin-notification-form-hero {
+  margin-top: 0;
+  border-radius: 24px;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.055);
+}
+
+.admin-notification-form-page .admin-notification-form-eyebrow {
+  letter-spacing: .06em;
+}
+
+.admin-notification-form-page .admin-card {
+  overflow: hidden;
+  border-radius: 22px;
+}
+
+.admin-notification-form-page .admin-card__body {
+  padding: 18px;
+}
+
+.admin-notification-form-page .admin-form-section + .admin-form-section {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(15, 23, 42, 0.07);
+}
+
+.admin-notification-form-page .admin-notification-url-shortcuts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.admin-notification-form-page .admin-notification-url-btn {
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.admin-notification-form-page .admin-info-box {
+  margin-top: 14px;
+}
+
+.admin-notification-form-page .admin-notification-publish-box {
+  margin-top: 18px;
+  padding: 14px;
+  border: 1px dashed rgba(236, 72, 153, 0.28);
+  border-radius: 18px;
+  background: rgba(236, 72, 153, 0.055);
+}
+
+.admin-notification-form-page .admin-notification-publish-btn {
+  width: 100%;
+  justify-content: center;
+}
+
+.admin-notification-form-page .admin-notification-publish-box p {
+  margin: 10px 0 0;
+  color: var(--admin-muted);
+  font-size: 12px;
+  line-height: 1.45;
+  text-align: center;
+}
+
+@media (max-width: 760px) {
+  .admin-notification-form-page .admin-notification-url-shortcuts,
+  .admin-notification-form-page .admin-notification-form-hero__actions {
+    width: 100%;
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-notification-form-page .admin-notification-url-btn,
+  .admin-notification-form-page .admin-notification-form-hero__actions .admin-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
