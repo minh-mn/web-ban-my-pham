@@ -2,9 +2,8 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
-<c:set var="ctx" value="${ctx}" />
-<link rel="stylesheet" href="${ctx}/assets/css/brand-grid.css?v=20260615_brand_ui_fix_1" />
-
+<c:set var="ctx" value="${pageContext.request.contextPath}" />
+<link rel="stylesheet" href="${ctx}/assets/css/brand-grid.css?v=20260615_brand_clean_1" />
 
 <section class="brand-hero-section">
   <div class="brand-hero-shell">
@@ -27,9 +26,7 @@
 
       <div class="brand-filter-wrap">
         <div class="brand-filter-chips" id="brandLetterFilters" aria-label="Bộ lọc chữ cái thương hiệu">
-          <button type="button" class="brand-filter-chip is-active" data-letter="ALL">
-            Tất cả
-          </button>
+          <button type="button" class="brand-filter-chip is-active" data-letter="ALL">Tất cả</button>
         </div>
       </div>
     </div>
@@ -74,12 +71,13 @@
     const grid = document.getElementById('brandGrid');
     const filterRoot = document.getElementById('brandLetterFilters');
     const emptyState = document.getElementById('brandGridEmpty');
+
     if (!grid || !filterRoot) return;
 
     const cards = Array.from(grid.querySelectorAll('.brand-card'));
     const letters = Array.from(new Set(cards.map(card => card.dataset.letter).filter(Boolean))).sort();
 
-    letters.forEach(letter => {
+    letters.forEach(function (letter) {
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'brand-filter-chip';
@@ -88,13 +86,17 @@
       filterRoot.appendChild(button);
     });
 
-    const applyFilter = (letter) => {
+    function applyFilter(letter) {
       let visible = 0;
-      cards.forEach(card => {
+
+      cards.forEach(function (card) {
         const matched = letter === 'ALL' || card.dataset.letter === letter;
         card.hidden = !matched;
         card.style.display = matched ? '' : 'none';
-        if (matched) visible++;
+
+        if (matched) {
+          visible += 1;
+        }
       });
 
       if (emptyState) {
@@ -102,15 +104,16 @@
         emptyState.hidden = !showEmpty;
         emptyState.style.display = showEmpty ? 'grid' : 'none';
       }
-    };
+    }
 
     filterRoot.addEventListener('click', function (event) {
       const target = event.target.closest('.brand-filter-chip');
       if (!target) return;
 
-      filterRoot.querySelectorAll('.brand-filter-chip').forEach(button => {
+      filterRoot.querySelectorAll('.brand-filter-chip').forEach(function (button) {
         button.classList.remove('is-active');
       });
+
       target.classList.add('is-active');
       applyFilter(target.dataset.letter || 'ALL');
     });
