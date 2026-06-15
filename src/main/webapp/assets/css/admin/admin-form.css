@@ -8131,3 +8131,272 @@
     justify-items: center;
   }
 }
+
+
+/* =========================================================
+   ADMIN SETTING FORM UI V2
+   Scope: /jsp/admin/setting/setting_form.jsp
+========================================================= */
+
+.admin-setting-form-page {
+  width: 100%;
+}
+
+.admin-setting-form-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: start;
+  margin-bottom: 18px;
+  padding: 18px;
+  border: 1px solid rgba(236, 72, 153, 0.20);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
+    linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.055);
+}
+
+.admin-setting-form-hero__content {
+  min-width: 0;
+}
+
+.admin-setting-form-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 10px;
+  margin-bottom: 8px;
+  border: 1px solid rgba(236, 72, 153, 0.32);
+  border-radius: 999px;
+  background: rgba(236, 72, 153, 0.10);
+  color: #be185d;
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 950;
+  letter-spacing: .06em;
+}
+
+.admin-setting-form-title {
+  margin: 0;
+  color: var(--admin-text);
+  font-size: 28px;
+  line-height: 1.1;
+  font-weight: 1000;
+  letter-spacing: -0.045em;
+}
+
+.admin-setting-form-subtitle {
+  max-width: 920px;
+  margin: 8px 0 0;
+  color: var(--admin-muted);
+  font-size: 13.5px;
+  line-height: 1.58;
+}
+
+.admin-setting-form-hero__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.admin-setting-form {
+  display: grid;
+  gap: 18px;
+}
+
+.admin-setting-form-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 390px;
+  gap: 18px;
+  align-items: start;
+}
+
+.admin-setting-form-card,
+.admin-setting-preview-card {
+  overflow: hidden;
+  border-radius: 22px;
+}
+
+.admin-setting-form-card .admin-card__body,
+.admin-setting-preview-card .admin-card__body {
+  padding: 18px;
+}
+
+.admin-setting-form-section-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.07);
+}
+
+.admin-setting-form-section-title {
+  margin: 0;
+  color: var(--admin-text);
+  font-size: 18px;
+  line-height: 1.25;
+  font-weight: 1000;
+  letter-spacing: -0.025em;
+}
+
+.admin-setting-form-section-desc {
+  margin: 5px 0 0;
+  color: var(--admin-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.admin-setting-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.admin-setting-form-grid .admin-field--full {
+  grid-column: 1 / -1;
+}
+
+.admin-setting-preview {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid rgba(236, 72, 153, 0.20);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at top left, rgba(236, 72, 153, 0.10), transparent 35%),
+    #ffffff;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.045);
+}
+
+.admin-setting-preview__icon {
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #ec4899, #f97316);
+  color: #ffffff;
+  font-size: 26px;
+  box-shadow: 0 12px 24px rgba(236, 72, 153, 0.20);
+}
+
+.admin-setting-preview__body {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.admin-setting-preview__body strong {
+  color: var(--admin-text);
+  font-size: 15px;
+  line-height: 1.35;
+  font-weight: 1000;
+  overflow-wrap: anywhere;
+}
+
+.admin-setting-preview__body span {
+  color: var(--admin-muted);
+  font-size: 12.5px;
+  line-height: 1.4;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.admin-setting-preview-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.admin-setting-preview-list div {
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+  border: 1px solid var(--admin-border);
+  border-radius: 15px;
+  background: rgba(15, 23, 42, 0.018);
+}
+
+.admin-setting-preview-list span {
+  color: var(--admin-muted);
+  font-size: 12px;
+  line-height: 1.35;
+  font-weight: 850;
+}
+
+.admin-setting-preview-list strong {
+  color: var(--admin-text);
+  font-size: 12.5px;
+  line-height: 1.4;
+  font-weight: 950;
+  overflow-wrap: anywhere;
+}
+
+.admin-setting-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--admin-border);
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: var(--admin-shadow-sm);
+}
+
+.admin-chip--success {
+  border-color: rgba(16, 185, 129, 0.30);
+  background: rgba(16, 185, 129, 0.10);
+  color: #047857;
+}
+
+@media (max-width: 1280px) {
+  .admin-setting-form-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .admin-setting-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-setting-form-grid .admin-field--full {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 760px) {
+  .admin-setting-form-hero {
+    grid-template-columns: 1fr;
+    padding: 15px;
+    border-radius: 18px;
+  }
+
+  .admin-setting-form-hero__actions,
+  .admin-setting-form-actions {
+    width: 100%;
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-setting-form-hero__actions .admin-btn,
+  .admin-setting-form-actions .admin-btn,
+  .admin-setting-form-actions button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .admin-setting-preview {
+    grid-template-columns: 1fr;
+    text-align: center;
+    justify-items: center;
+  }
+}
