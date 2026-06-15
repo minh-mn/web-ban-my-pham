@@ -2482,3 +2482,382 @@ html body .account-input.is-loading-location {
     border-color: #fed7aa !important;
     color: #92400e !important;
 }
+
+
+/* =========================================================
+   MYCOSMETIC ACCOUNT UI POLISH - 20260615
+   - Gọn bố cục tài khoản.
+   - Tách style inline của trang voucher ra CSS.
+   - Chỉnh menu trái, profile form và modal OTP đồng bộ tone.
+========================================================= */
+
+html body .account-dashboard {
+    --mc-primary: #e85d75;
+    --mc-primary-dark: #be123c;
+    --mc-primary-soft: #fff1f4;
+    --mc-primary-soft-2: #fff7f9;
+    --mc-border: #edf0f5;
+    --mc-border-pink: #ffd8e1;
+    --mc-text: #111827;
+    --mc-muted: #667085;
+}
+
+html body .account-dashboard .container.order-page {
+    width: min(1240px, calc(100vw - 32px)) !important;
+}
+
+html body .mc-compact-hero {
+    align-items: stretch !important;
+    padding: 20px 22px !important;
+    border-radius: 24px !important;
+}
+
+html body .mc-compact-user-info {
+    min-width: 0 !important;
+}
+
+html body .mc-compact-user-info p {
+    max-width: 720px !important;
+}
+
+html body .mc-compact-actions {
+    align-content: center !important;
+}
+
+html body .mc-account-center {
+    grid-template-columns: 292px minmax(0, 1fr) !important;
+}
+
+html body .mc-account-menu {
+    top: 104px !important;
+    max-height: calc(100vh - 124px) !important;
+    overflow-y: auto !important;
+    scrollbar-width: thin !important;
+}
+
+html body .mc-account-menu::-webkit-scrollbar,
+html body .mc-search-list::-webkit-scrollbar {
+    width: 6px !important;
+    height: 6px !important;
+}
+
+html body .mc-account-menu::-webkit-scrollbar-thumb,
+html body .mc-search-list::-webkit-scrollbar-thumb {
+    border-radius: 999px !important;
+    background: #fecdd3 !important;
+}
+
+html body .mc-account-content {
+    min-height: 620px !important;
+}
+
+html body .mc-account-view {
+    min-height: 620px !important;
+    padding: 22px !important;
+}
+
+html body .mc-view-head {
+    align-items: center !important;
+}
+
+html body .mc-view-head h2 {
+    font-size: 23px !important;
+}
+
+html body .mc-compact-stat,
+html body .mc-mini-section,
+html body .mc-compact-voucher-card,
+html body .mc-security-card,
+html body .mc-security-row,
+html body .mc-profile-form-section {
+    transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease, background .16s ease !important;
+}
+
+html body .mc-compact-stat:hover,
+html body .mc-mini-section:hover,
+html body .mc-compact-voucher-card:hover,
+html body .mc-security-card:hover,
+html body .mc-profile-form-section:hover {
+    border-color: #ffd8e1 !important;
+    box-shadow: 0 12px 28px rgba(232, 93, 117, .055) !important;
+}
+
+html body .mc-order-shortcut-grid a {
+    min-height: 118px !important;
+}
+
+html body .mc-order-shortcut-grid a strong {
+    line-height: 1.35 !important;
+}
+
+html body .mc-compact-voucher-grid,
+html body .account-coupon-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+}
+
+html body .mc-voucher-back-row {
+    margin-bottom: 18px !important;
+}
+
+html body .mc-voucher-back-btn {
+    min-height: 38px !important;
+    padding: 0 16px !important;
+    border-radius: 999px !important;
+    border: 1px solid #e5e7eb !important;
+    background: #f8fafc !important;
+    color: #344054 !important;
+    text-decoration: none !important;
+    font-weight: 900 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    transition: .16s ease !important;
+}
+
+html body .mc-voucher-back-btn:hover {
+    background: #fff1f4 !important;
+    border-color: #fecdd3 !important;
+    color: #be123c !important;
+    transform: translateY(-1px) !important;
+}
+
+html body .mc-full-voucher-title {
+    color: #be123c !important;
+    font-size: 22px !important;
+}
+
+html body .mc-full-voucher-count {
+    background: #fff1f4 !important;
+    color: #be123c !important;
+    border-color: #fecdd3 !important;
+    font-weight: 950 !important;
+}
+
+html body .account-coupon-card.mc-full-coupon-card {
+    padding: 18px !important;
+    border: 1px dashed #fda4af !important;
+    border-radius: 22px !important;
+    background: linear-gradient(135deg, #fff7f9 0%, #ffffff 100%) !important;
+    box-shadow: 0 10px 26px rgba(232, 93, 117, .045) !important;
+}
+
+html body .account-coupon-card.mc-full-coupon-card:hover {
+    border-color: #fb7185 !important;
+    box-shadow: 0 14px 34px rgba(232, 93, 117, .09) !important;
+    transform: translateY(-1px) !important;
+}
+
+html body .account-coupon-top {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+    margin-bottom: 14px !important;
+}
+
+html body .account-coupon-code {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    min-width: 0 !important;
+}
+
+html body .mc-full-coupon-code-text {
+    display: inline-block !important;
+    max-width: 210px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    color: #be123c !important;
+    font-weight: 950 !important;
+}
+
+html body .account-coupon-copy.mc-full-coupon-copy {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 32px !important;
+    padding: 0 13px !important;
+    border-radius: 999px !important;
+    border: 1px solid #fecdd3 !important;
+    background: #fff1f4 !important;
+    color: #be123c !important;
+    font-size: 12.5px !important;
+    font-weight: 900 !important;
+    cursor: pointer !important;
+}
+
+html body .account-coupon-copy.mc-full-coupon-copy:hover {
+    background: #ffe4ea !important;
+}
+
+html body .mc-full-coupon-discount {
+    margin-bottom: 10px !important;
+    color: #111827 !important;
+    font-size: 17px !important;
+    font-weight: 950 !important;
+}
+
+html body .account-coupon-meta {
+    display: grid !important;
+    gap: 8px !important;
+    color: #667085 !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    line-height: 1.5 !important;
+}
+
+html body .account-coupon-meta strong {
+    color: #344054 !important;
+}
+
+html body .mc-full-coupon-date {
+    color: #d97706 !important;
+    font-weight: 900 !important;
+}
+
+html body .account-coupon-rank.mc-full-coupon-ready {
+    margin: 14px -18px -18px !important;
+    padding: 11px 18px !important;
+    border-top: 1px solid rgba(232, 93, 117, .16) !important;
+    border-radius: 0 0 22px 22px !important;
+    background: rgba(255, 241, 244, .72) !important;
+    color: #be123c !important;
+    font-size: 12.6px !important;
+    font-weight: 900 !important;
+}
+
+html body .mc-voucher-empty {
+    display: grid !important;
+    place-items: center !important;
+    gap: 10px !important;
+    min-height: 220px !important;
+    padding: 34px 14px !important;
+    color: #667085 !important;
+    text-align: center !important;
+}
+
+html body .mc-voucher-empty span {
+    font-size: 38px !important;
+}
+
+html body .mc-voucher-empty p {
+    margin: 0 !important;
+    font-size: 14px !important;
+    font-weight: 800 !important;
+}
+
+html body .mc-form-section-head p {
+    display: block !important;
+    margin: 3px 0 0 !important;
+}
+
+html body .mc-account-view[data-account-view="profile"] .mc-view-head p {
+    display: block !important;
+}
+
+html body .account-profile-note {
+    display: block !important;
+    max-width: 560px !important;
+    margin: 0 !important;
+}
+
+html body .modal-cancel-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 36px !important;
+    margin-top: 10px !important;
+    padding: 0 14px !important;
+    border: 0 !important;
+    border-radius: 999px !important;
+    background: transparent !important;
+    color: #667085 !important;
+    font-size: 13px !important;
+    font-weight: 850 !important;
+    cursor: pointer !important;
+}
+
+html body .modal-cancel-btn:hover {
+    background: #f8fafc !important;
+    color: #344054 !important;
+}
+
+@media (max-width: 1100px) {
+    html body .mc-account-center {
+        grid-template-columns: 1fr !important;
+    }
+
+    html body .mc-account-menu {
+        max-height: none !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+    }
+
+    html body .mc-compact-hero {
+        flex-direction: column !important;
+    }
+
+    html body .mc-compact-actions {
+        justify-content: flex-start !important;
+    }
+
+    html body .mc-compact-stat-grid,
+    html body .mc-order-shortcut-grid,
+    html body .mc-compact-utility-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+}
+
+@media (max-width: 768px) {
+    html body .account-dashboard .container.order-page {
+        width: min(100%, calc(100vw - 22px)) !important;
+    }
+
+    html body .mc-account-view {
+        padding: 16px !important;
+    }
+
+    html body .mc-view-head {
+        align-items: flex-start !important;
+        flex-direction: column !important;
+    }
+
+    html body .mc-compact-user {
+        align-items: flex-start !important;
+    }
+
+    html body .mc-compact-avatar {
+        width: 56px !important;
+        height: 56px !important;
+        border-radius: 19px !important;
+        font-size: 24px !important;
+    }
+
+    html body .mc-compact-name-row h1 {
+        font-size: 23px !important;
+    }
+
+    html body .mc-compact-voucher-grid,
+    html body .account-coupon-grid,
+    html body .mc-compact-stat-grid,
+    html body .mc-order-shortcut-grid,
+    html body .mc-compact-utility-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    html body .account-address-row {
+        grid-template-columns: 1fr !important;
+    }
+
+    html body .account-profile-form-actions {
+        align-items: stretch !important;
+        flex-direction: column !important;
+    }
+
+    html body .btn-save.account-save-profile-btn {
+        width: 100% !important;
+    }
+}
