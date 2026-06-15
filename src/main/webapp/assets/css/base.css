@@ -5026,45 +5026,36 @@ html body #searchHistoryDropdown .header-search-history__item {
 
 
 /* =========================================================
-   HEADER SUBMENU COLUMN 2 SCROLL FIX
-   Làm cột 2 của menu con (vd: Chăm Mụn, Dưỡng Mắt...) cuộn nội bộ
+   HEADER TOP-LEVEL DROPDOWN COMPACT SCROLL
+   Làm menu cấp 1 (đặc biệt menu Thương hiệu) gọn hơn và có cuộn
 ========================================================= */
-.dropdown-menu li > .sub-dropdown-menu {
-  top: 0 !important;
-  left: 100% !important;
-  max-height: min(340px, calc(100vh - 180px)) !important;
+.menu-horizontal-list > li > .dropdown-menu {
+  max-height: min(360px, calc(100vh - 170px)) !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
   overscroll-behavior: contain !important;
   scrollbar-gutter: stable !important;
 }
 
-.dropdown-menu li:hover > .sub-dropdown-menu {
-  max-height: min(340px, calc(100vh - 180px)) !important;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-}
-
-.dropdown-menu li > .sub-dropdown-menu::-webkit-scrollbar {
+.menu-horizontal-list > li > .dropdown-menu::-webkit-scrollbar {
   width: 6px;
 }
 
-.dropdown-menu li > .sub-dropdown-menu::-webkit-scrollbar-track {
+.menu-horizontal-list > li > .dropdown-menu::-webkit-scrollbar-track {
   background: #fff5f8;
   border-radius: 999px;
 }
 
-.dropdown-menu li > .sub-dropdown-menu::-webkit-scrollbar-thumb {
+.menu-horizontal-list > li > .dropdown-menu::-webkit-scrollbar-thumb {
   background: rgba(214, 23, 95, 0.45);
   border-radius: 999px;
 }
 
-.dropdown-menu li > .sub-dropdown-menu::-webkit-scrollbar-thumb:hover {
+.menu-horizontal-list > li > .dropdown-menu::-webkit-scrollbar-thumb:hover {
   background: rgba(214, 23, 95, 0.65);
 }
 
-.dropdown-menu li > .sub-dropdown-menu li a {
-  padding-top: 11px !important;
-  padding-bottom: 11px !important;
+.menu-horizontal-list > li > .dropdown-menu li a {
+  padding: 11px 18px !important;
   line-height: 1.35 !important;
 }
