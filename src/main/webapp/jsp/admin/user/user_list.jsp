@@ -2,12 +2,14 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 
-<c:set var="pageTitle" value="ADMIN | Quản lí user" scope="request"/>
+<c:set var="pageTitle" value="ADMIN | Quản lý user" scope="request"/>
 <c:set var="activeMenu" value="users" scope="request"/>
 <c:set var="pageCss" value="/assets/css/admin/admin-list.css" scope="request"/>
 
 <jsp:include page="/jsp/admin/layout/header.jsp"/>
 <jsp:include page="/jsp/admin/layout/sidebar.jsp"/>
+
+<c:set var="ctx" value="${ctx}" />
 
 <c:set var="currentAdminId" value="0"/>
 <c:choose>
@@ -54,7 +56,8 @@
 
     <section class="admin-user-hero">
       <div class="admin-user-hero__content">
-        <h1 class="admin-h1 admin-user-title">Quản lí user</h1>
+        <span class="admin-user-eyebrow">TÀI KHOẢN &amp; PHÂN QUYỀN</span>
+        <h1 class="admin-h1 admin-user-title">Quản lý user</h1>
         <p class="admin-subtext admin-user-subtitle">
           Hiển thị tên tài khoản, role, rank, trạng thái và thông tin liên hệ.
           Admin chỉ được quản trị role, rank và trạng thái; không tự ý sửa thông tin cá nhân nếu user chưa yêu cầu.
@@ -62,7 +65,7 @@
       </div>
 
       <div class="admin-user-hero__actions">
-        <a class="admin-btn" href="${pageContext.request.contextPath}/admin/users">
+        <a class="admin-btn" href="${ctx}/admin/users">
           Làm mới
         </a>
       </div>
@@ -112,30 +115,35 @@
 
     <section class="admin-user-stats">
       <div class="admin-user-stat admin-user-stat--total">
+        <span class="admin-user-stat__icon">👥</span>
         <span class="admin-user-stat__label">Tổng user</span>
         <strong class="admin-user-stat__value">${totalUsers}</strong>
         <span class="admin-user-stat__note">Theo bộ lọc hiện tại</span>
       </div>
 
       <div class="admin-user-stat admin-user-stat--admin">
+        <span class="admin-user-stat__icon">🛡️</span>
         <span class="admin-user-stat__label">Admin</span>
         <strong class="admin-user-stat__value">${adminUsers}</strong>
         <span class="admin-user-stat__note">Tài khoản được bảo vệ</span>
       </div>
 
       <div class="admin-user-stat admin-user-stat--active">
+        <span class="admin-user-stat__icon">✅</span>
         <span class="admin-user-stat__label">Đang hoạt động</span>
         <strong class="admin-user-stat__value">${activeUsers}</strong>
         <span class="admin-user-stat__note">Có thể đăng nhập</span>
       </div>
 
       <div class="admin-user-stat admin-user-stat--locked">
+        <span class="admin-user-stat__icon">🔒</span>
         <span class="admin-user-stat__label">Đã khóa</span>
         <strong class="admin-user-stat__value">${lockedUsers}</strong>
         <span class="admin-user-stat__note">Không thể đăng nhập</span>
       </div>
 
       <div class="admin-user-stat admin-user-stat--rank">
+        <span class="admin-user-stat__icon">🏅</span>
         <span class="admin-user-stat__label">Rank thủ công</span>
         <strong class="admin-user-stat__value">${manualRankUsers}</strong>
         <span class="admin-user-stat__note">Admin chỉ định</span>
@@ -179,7 +187,7 @@
         </div>
 
         <form method="get"
-              action="${pageContext.request.contextPath}/admin/users"
+              action="${ctx}/admin/users"
               class="admin-user-filter-form">
 
           <label class="admin-user-filter-field admin-user-filter-field--keyword">
@@ -232,7 +240,7 @@
             </button>
 
             <a class="admin-btn admin-user-filter-btn"
-               href="${pageContext.request.contextPath}/admin/users">
+               href="${ctx}/admin/users">
               Xóa lọc
             </a>
           </div>
@@ -260,7 +268,7 @@
               <div>
                 <h3>Chưa có user phù hợp</h3>
                 <p>Thử thay đổi từ khóa hoặc bỏ bớt bộ lọc để xem thêm tài khoản.</p>
-                <a class="admin-btn" href="${pageContext.request.contextPath}/admin/users">
+                <a class="admin-btn" href="${ctx}/admin/users">
                   Xóa bộ lọc
                 </a>
               </div>
@@ -302,7 +310,7 @@
 
                         <div class="admin-user-account__body">
                           <a class="admin-user-name"
-                             href="${pageContext.request.contextPath}/admin/users?action=detail&id=${u.id}">
+                             href="${ctx}/admin/users?action=detail&id=${u.id}">
                             <c:out value="${u.username}"/>
                           </a>
 
@@ -421,17 +429,17 @@
                       <div class="admin-user-actions">
 
                         <a class="admin-btn admin-user-action-btn admin-user-action-btn--view"
-                           href="${pageContext.request.contextPath}/admin/users?action=detail&id=${u.id}">
+                           href="${ctx}/admin/users?action=detail&id=${u.id}">
                           Chi tiết
                         </a>
 
                         <a class="admin-btn admin-user-action-btn"
-                           href="${pageContext.request.contextPath}/admin/users?action=edit&id=${u.id}">
+                           href="${ctx}/admin/users?action=edit&id=${u.id}">
                           Sửa quyền
                         </a>
 
                         <form method="post"
-                              action="${pageContext.request.contextPath}/admin/users"
+                              action="${ctx}/admin/users"
                               class="admin-inline"
                               onsubmit="return confirm('${u.active ? 'Khóa tài khoản user này?' : 'Mở khóa tài khoản user này?'}');">
                           <%@ include file="/jsp/common/csrf.jspf" %>
