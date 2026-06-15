@@ -4968,3 +4968,135 @@ main.site-main div[class*="home-main"] {
         min-height: auto !important;
     }
 }
+
+
+/* =========================================================
+   HOME VOUCHER FINAL TWEAK
+   Thu nhỏ nhẹ card voucher và tăng khoảng cách để 2 card không chạm nhau
+========================================================= */
+.skin-voucher-row--full {
+    gap: 30px !important;
+    align-items: stretch !important;
+}
+
+.skin-voucher-card--full {
+    min-height: 208px !important;
+    grid-template-columns: 118px 1px minmax(0, 1fr) !important;
+    border-radius: 22px !important;
+}
+
+.skin-voucher-card--full::before,
+.skin-voucher-card--full::after {
+    width: 22px !important;
+    height: 22px !important;
+}
+
+.skin-voucher-card--full::before {
+    left: -11px !important;
+}
+
+.skin-voucher-card--full::after {
+    right: -11px !important;
+}
+
+.skin-voucher-card--full .skin-voucher-left {
+    padding: 16px 12px !important;
+}
+
+.skin-voucher-mark--beauty {
+    width: 70px !important;
+    height: 70px !important;
+}
+
+.skin-voucher-mark--beauty span {
+    font-size: 25px !important;
+}
+
+.skin-voucher-mark--beauty small {
+    font-size: 8px !important;
+    letter-spacing: .10em !important;
+}
+
+.skin-voucher-card--full .skin-voucher-content {
+    padding: 14px 16px 12px !important;
+}
+
+.skin-voucher-card--full .skin-voucher-tag {
+    min-height: 22px !important;
+    padding: 0 8px !important;
+    font-size: 8px !important;
+}
+
+.skin-voucher-card--full .skin-voucher-link-btn {
+    font-size: 11px !important;
+}
+
+.skin-voucher-card--full .skin-voucher-code-row {
+    margin-bottom: 6px !important;
+}
+
+.skin-voucher-card--full .skin-voucher-code-row strong {
+    font-size: 17px !important;
+}
+
+.skin-voucher-card--full .skin-save-voucher {
+    min-width: 72px !important;
+    min-height: 34px !important;
+    padding: 0 12px !important;
+    font-size: 11px !important;
+}
+
+.skin-voucher-card--full .skin-voucher-discount {
+    margin-bottom: 5px !important;
+    font-size: 14px !important;
+}
+
+.skin-voucher-card--full .skin-voucher-discount b {
+    font-size: 14px !important;
+}
+
+.skin-voucher-meta-list {
+    gap: 3px !important;
+    margin-top: 4px !important;
+}
+
+.skin-voucher-meta-item {
+    font-size: 11px !important;
+    line-height: 1.35 !important;
+}
+
+.skin-voucher-desc {
+    font-size: 11px !important;
+    line-height: 1.35 !important;
+    min-height: 28px !important;
+    -webkit-line-clamp: 1 !important;
+}
+
+.skin-voucher-footer {
+    padding-top: 8px !important;
+}
+
+.skin-voucher-expire {
+    font-size: 11px !important;
+}
+
+.skin-voucher-expire b {
+    font-size: 12px !important;
+}
+
+@media (max-width: 1200px) {
+    .skin-voucher-row--full {
+        gap: 22px !important;
+    }
+}
+
+@media (max-width: 760px) {
+    .skin-voucher-row--full {
+        gap: 16px !important;
+    }
+
+    .skin-voucher-card--full {
+        min-height: auto !important;
+        grid-template-columns: 1fr !important;
+    }
+}
