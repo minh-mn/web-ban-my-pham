@@ -10,7 +10,7 @@
 <c:set var="discountPercent" value="${p.discountPercent}" />
 <c:set var="mainImage" value="${p.image}" />
 
-<link rel="stylesheet" href="${ctx}/assets/css/product-detail.css" />
+<link rel="stylesheet" href="${ctx}/assets/css/product-detail.css?v=20260615_pd_rework_1" />
 
 <c:if test="${empty p}">
   <section class="pd-page">
@@ -139,6 +139,13 @@
               <span class="pd-rating-count">(<c:out value="${empty p.reviewCount ? 0 : p.reviewCount}" /> đánh giá)</span>
             </div>
 
+            <div class="pd-anchor-row" aria-label="Điều hướng nhanh trong trang chi tiết sản phẩm">
+              <a href="#pd-description">Mô tả</a>
+              <a href="#pd-combo">Mua kèm</a>
+              <a href="#pd-related">Tương tự</a>
+              <a href="#pd-reviews">Đánh giá</a>
+            </div>
+
             <div class="pd-price-panel">
               <div class="pd-price-line">
                 <strong class="pd-current-price" id="price-display" data-base-price="${currentPrice}">
@@ -168,6 +175,21 @@
               </p>
             </div>
 
+            <div class="pd-product-meta-grid" aria-label="Thông tin nhanh sản phẩm">
+              <div class="pd-product-meta-item">
+                <span>Thương hiệu</span>
+                <strong><c:out value="${empty p.brandName ? 'MyCosmetic' : p.brandName}" /></strong>
+              </div>
+              <div class="pd-product-meta-item">
+                <span>Danh mục</span>
+                <strong><c:out value="${empty p.categoryName ? 'Chính hãng' : p.categoryName}" /></strong>
+              </div>
+              <div class="pd-product-meta-item">
+                <span>Tồn kho</span>
+                <strong><c:out value="${p.stock}" /> sản phẩm</strong>
+              </div>
+            </div>
+
             <form class="pd-cart-form" action="${ctx}/cart/add" method="post">
               <input type="hidden" name="action" value="add" />
               <input type="hidden" name="quickAdd" value="1" />
@@ -188,7 +210,7 @@
                           <c:if test="${not empty v.size && not empty v.type}"> - </c:if>
                           <c:out value="${v.type}" />
                           <c:if test="${not empty v.extraPrice && v.extraPrice > 0}">
-                            <span style="font-size: 0.8rem; margin-left: 4px; opacity: 0.8;">
+                            <span class="pd-variant-extra">
                               (+<fmt:formatNumber value="${v.extraPrice}" type="number" groupingUsed="true" />đ)
                             </span>
                           </c:if>
@@ -213,11 +235,26 @@
                 </button>
               </div>
             </form>
+
+            <div class="pd-service-grid" aria-label="Cam kết dịch vụ MyCosmetic">
+              <div class="pd-service-item">
+                <span>✓</span>
+                <div><strong>Hàng chính hãng</strong><small>Cam kết nguồn gốc rõ ràng</small></div>
+              </div>
+              <div class="pd-service-item">
+                <span>↩</span>
+                <div><strong>Hỗ trợ đổi trả</strong><small>Theo chính sách cửa hàng</small></div>
+              </div>
+              <div class="pd-service-item">
+                <span>🚚</span>
+                <div><strong>Giao hàng nhanh</strong><small>Đóng gói an toàn</small></div>
+              </div>
+            </div>
           </article>
         </div>
       </div>
 
-      <section class="pd-section pd-detail-section">
+      <section class="pd-section pd-detail-section" id="pd-description">
         <div class="pd-section-head">
           <h2>Mô tả chi tiết</h2>
           <p>Thông tin đầy đủ về sản phẩm, công dụng và cách sử dụng.</p>
@@ -236,7 +273,7 @@
 
       <c:set var="comboProducts" value="${not empty boughtTogetherProducts ? boughtTogetherProducts : frequentlyBoughtProducts}" />
       <c:if test="${not empty comboProducts}">
-        <section class="pd-section">
+        <section class="pd-section pd-combo-section" id="pd-combo">
           <div class="pd-section-head">
             <h2>Thường được mua kèm</h2>
             <p>Gợi ý các sản phẩm phù hợp để hoàn thiện quy trình chăm sóc của bạn.</p>
@@ -267,7 +304,7 @@
       </c:if>
 
       <c:if test="${not empty relatedProducts}">
-        <section class="pd-section">
+        <section class="pd-section pd-related-section" id="pd-related">
           <div class="pd-section-head">
             <h2>Sản phẩm tương tự</h2>
             <p>Các lựa chọn khác có thể bạn sẽ quan tâm.</p>
@@ -300,64 +337,65 @@
           </div>
         </section>
 
-        <section class="pd-section pd-reviews-section">
-          <div class="pd-section-head">
-            <h2>Đánh giá từ khách hàng</h2>
-            <p>Sản phẩm có tổng cộng <c:out value="${empty p.reviewCount ? 0 : p.reviewCount}" /> lượt đánh giá thực tế.</p>
-          </div>
-          <div class="pd-reviews-container">
-            <c:choose>
-              <c:when test="${empty reviews}">
-                <div class="pd-no-reviews">
-                  <p>Chưa có đánh giá nào. Hãy là người đầu tiên trải nghiệm và nhận xét!</p>
-                </div>
-              </c:when>
-              <c:otherwise>
-                <div class="pd-reviews-list">
-                  <c:forEach var="rev" items="${reviews}">
-                    <div class="pd-review-item">
-                      <div class="pd-review-avatar">
-                        <div class="pd-review-avatar-circle">
-                          <c:out value="${fn:substring(not empty rev.authorName ? rev.authorName : 'K', 0, 1)}" />
-                        </div>
+      </c:if>
+
+      <section class="pd-section pd-reviews-section" id="pd-reviews">
+        <div class="pd-section-head">
+          <h2>Đánh giá từ khách hàng</h2>
+          <p>Sản phẩm có tổng cộng <c:out value="${empty p.reviewCount ? 0 : p.reviewCount}" /> lượt đánh giá thực tế.</p>
+        </div>
+        <div class="pd-reviews-container">
+          <c:choose>
+            <c:when test="${empty reviews}">
+              <div class="pd-no-reviews">
+                <p>Chưa có đánh giá nào. Hãy là người đầu tiên trải nghiệm và nhận xét!</p>
+              </div>
+            </c:when>
+            <c:otherwise>
+              <div class="pd-reviews-list">
+                <c:forEach var="rev" items="${reviews}">
+                  <div class="pd-review-item">
+                    <div class="pd-review-avatar">
+                      <div class="pd-review-avatar-circle">
+                        <c:out value="${fn:substring(not empty rev.authorName ? rev.authorName : 'K', 0, 1)}" />
                       </div>
-                      <div class="pd-review-content">
-                        <div class="pd-review-header">
+                    </div>
+                    <div class="pd-review-content">
+                      <div class="pd-review-header">
                           <span class="pd-review-author">
                             <c:out value="${not empty rev.authorFullName ? rev.authorFullName : (not empty rev.authorName ? rev.authorName : 'Khách hàng')}" />
                           </span>
-                          <c:if test="${not empty rev.orderId && rev.orderId > 0}">
-                            <span class="pd-verified-badge">✓ Đã mua hàng</span>
-                          </c:if>
-                        </div>
-                        <div class="pd-review-meta">
+                        <c:if test="${not empty rev.orderId && rev.orderId > 0}">
+                          <span class="pd-verified-badge">✓ Đã mua hàng</span>
+                        </c:if>
+                      </div>
+                      <div class="pd-review-meta">
                           <span class="pd-review-stars">
                             <c:forEach begin="1" end="${rev.rating}">★</c:forEach><c:forEach begin="${rev.rating + 1}" end="5">☆</c:forEach>
                           </span>
-                          <span class="pd-review-date">
+                        <span class="pd-review-date">
                             <fmt:formatDate value="${rev.createdAtDate}" pattern="dd/MM/yyyy HH:mm" />
                           </span>
-                        </div>
-                        <div class="pd-purchased-product">
-                          <span style="font-weight: 500;">Phân loại:</span> <c:out value="${not empty rev.productName ? rev.productName : p.title}" />
-                        </div>
-                        <div class="pd-review-body">
-                          <c:out value="${rev.comment}" />
-                        </div>
-                        <c:if test="${rev.hasImage && not empty rev.imageUrl}">
-                          <div class="pd-review-images">
-                            <img src="${ctx}/${rev.imageUrl}" alt="Ảnh review" />
-                          </div>
-                        </c:if>
                       </div>
+                      <div class="pd-purchased-product">
+                        <span class="pd-review-product-label">Phân loại:</span> <c:out value="${not empty rev.productName ? rev.productName : p.title}" />
+                      </div>
+                      <div class="pd-review-body">
+                        <c:out value="${rev.comment}" />
+                      </div>
+                      <c:if test="${rev.hasImage && not empty rev.imageUrl}">
+                        <div class="pd-review-images">
+                          <img src="${ctx}/${rev.imageUrl}" alt="Ảnh review" />
+                        </div>
+                      </c:if>
                     </div>
-                  </c:forEach>
-                </div>
-              </c:otherwise>
-            </c:choose>
-          </div>
-        </section>
-      </c:if>
+                  </div>
+                </c:forEach>
+              </div>
+            </c:otherwise>
+          </c:choose>
+        </div>
+      </section>
     </div>
   </section>
 
