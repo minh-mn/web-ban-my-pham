@@ -10,10 +10,10 @@
 <c:set var="discountPercent" value="${p.discountPercent}" />
 <c:set var="mainImage" value="${p.image}" />
 
-<link rel="stylesheet" href="${ctx}/assets/css/product-detail.css?v=20260615_pd_review_filter_fix_1" />
+<link rel="stylesheet" href="${ctx}/assets/css/product-detail.css?v=20260615_pd_ui_v7" />
 
 <c:if test="${empty p}">
-  <section class="pd-page">
+  <section class="pd-page pd-page-v5">
     <div class="pd-container">
       <div class="pd-empty-state">
         <div class="pd-empty-icon">!</div>
@@ -248,17 +248,6 @@
       </div>
 
       <c:set var="comboProducts" value="${not empty boughtTogetherProducts ? boughtTogetherProducts : frequentlyBoughtProducts}" />
-
-      <nav class="pd-section-nav" aria-label="Điều hướng nội dung sản phẩm">
-        <a href="#pd-description">Mô tả chi tiết</a>
-        <a href="#pd-reviews">Đánh giá từ khách hàng</a>
-        <c:if test="${not empty comboProducts}">
-          <a href="#pd-combo">Thường được mua kèm</a>
-        </c:if>
-        <c:if test="${not empty relatedProducts}">
-          <a href="#pd-related">Sản phẩm tương tự</a>
-        </c:if>
-      </nav>
       <section class="pd-section pd-section-compact pd-detail-section" id="pd-description">
         <div class="pd-section-head">
           <h2>Mô tả chi tiết</h2>
