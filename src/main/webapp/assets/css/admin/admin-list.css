@@ -5414,6 +5414,7 @@ td.product-actions {
   }
 }
 
+
 /* =========================================================
    ADMIN UI V2 - LIST / TABLE / FILTER REFINEMENT
 ========================================================= */
@@ -7885,6 +7886,7 @@ td.product-actions {
   }
 }
 
+
 /* =========================================================
    MERGED FROM admin-return.css
    Return request + cancel request pages
@@ -7892,225 +7894,163 @@ td.product-actions {
 ========================================================= */
 
 .return-alert {
-    padding: 13px 15px;
-    border-radius: 14px;
-    margin-bottom: 16px;
-    font-size: 14px;
-    font-weight: 850;
+  padding: 13px 15px;
+  border-radius: 14px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  font-weight: 850;
 }
 
 .return-alert.success {
-    background: #ecfdf5;
-    color: #047857;
-    border: 1px solid #a7f3d0;
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
 }
 
 .return-alert.error {
-    background: #fff1f2;
-    color: #be123c;
-    border: 1px solid #fecdd3;
+  background: #fff1f2;
+  color: #be123c;
+  border: 1px solid #fecdd3;
 }
 
 .return-table-wrap {
-    width: 100%;
-    overflow-x: auto;
+  width: 100%;
+  overflow-x: auto;
 }
 
 .return-table {
-    min-width: 1200px;
+  min-width: 1200px;
 }
 
 .return-order-link {
-    color: #d63384;
-    font-weight: 900;
-    text-decoration: none;
+  color: #d63384;
+  font-weight: 900;
+  text-decoration: none;
 }
 
 .return-muted {
-    margin-top: 4px;
-    color: #64748b;
-    font-size: 12px;
-    font-weight: 750;
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 750;
 }
 
 .return-reason {
-    max-width: 320px;
-    color: #1f2a44;
-    font-size: 13.5px;
-    line-height: 1.45;
-    font-weight: 750;
+  max-width: 320px;
+  color: #1f2a44;
+  font-size: 13.5px;
+  line-height: 1.45;
+  font-weight: 750;
 }
 
 .return-admin-note {
-    margin-top: 8px;
-    padding: 8px 10px;
-    border-radius: 10px;
-    background: #fff8fb;
-    color: #7b3a56;
-    font-size: 12.5px;
-    font-weight: 800;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #fff8fb;
+  color: #7b3a56;
+  font-size: 12.5px;
+  font-weight: 800;
 }
 
 .return-pill {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 30px;
-    padding: 0 11px;
-    border-radius: 999px;
-    font-size: 12.5px;
-    font-weight: 900;
-    white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 0 11px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 900;
+  white-space: nowrap;
 }
 
 .return-pill.warning {
-    background: #fff7ed;
-    color: #c2410c;
-    border: 1px solid #fed7aa;
+  background: #fff7ed;
+  color: #c2410c;
+  border: 1px solid #fed7aa;
 }
 
 .return-pill.info {
-    background: #eff6ff;
-    color: #1d4ed8;
-    border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
 }
 
 .return-pill.ok {
-    background: #ecfdf5;
-    color: #047857;
-    border: 1px solid #a7f3d0;
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
 }
 
 .return-pill.danger {
-    background: #fff1f2;
-    color: #be123c;
-    border: 1px solid #fecdd3;
+  background: #fff1f2;
+  color: #be123c;
+  border: 1px solid #fecdd3;
 }
 
 .return-action-form {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .return-form-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
 }
 
 .return-action-form select,
 .return-action-form input,
 .return-action-form textarea {
-    width: 100%;
-    border: 1px solid #dbe3ef;
-    border-radius: 10px;
-    background: #ffffff;
-    color: #1f2a44;
-    padding: 8px 9px;
-    font-size: 12.5px;
-    font-weight: 750;
-    box-sizing: border-box;
+  width: 100%;
+  border: 1px solid #dbe3ef;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #1f2a44;
+  padding: 8px 9px;
+  font-size: 12.5px;
+  font-weight: 750;
+  box-sizing: border-box;
 }
 
 .return-action-form textarea {
-    min-height: 58px;
-    resize: vertical;
+  min-height: 58px;
+  resize: vertical;
 }
 
 .return-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 .return-btn {
-    min-height: 30px;
-    border-radius: 999px;
-    border: none;
-    padding: 0 10px;
-    color: #ffffff;
-    font-size: 12px;
-    font-weight: 900;
-    cursor: pointer;
+  min-height: 30px;
+  border-radius: 999px;
+  border: none;
+  padding: 0 10px;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
 }
 
 .return-btn.info {
-    background: #2563eb;
+  background: #2563eb;
 }
 
 .return-btn.danger {
-    background: #e11d48;
+  background: #e11d48;
 }
 
 .return-btn.warning {
-    background: #f59e0b;
+  background: #f59e0b;
 }
 
 .return-btn.ok {
-    background: #059669;
-}
-
-/* =========================================================
-   ADMIN UI V2 - RETURN REQUEST PAGE
-========================================================= */
-
-.return-alert{
-    border-radius: 18px;
-    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.045);
-}
-
-.return-table-wrap{
-    border: 1px solid rgba(148, 163, 184, 0.22);
-    border-radius: 20px;
-    background: #ffffff;
-    box-shadow: 0 10px 26px rgba(15, 23, 42, 0.045);
-}
-
-.return-table th{
-    background: linear-gradient(180deg, #fff7fb 0%, #fdf2f8 100%);
-    color: #64748b;
-    font-weight: 1000;
-    text-transform: uppercase;
-    letter-spacing: .03em;
-}
-
-.return-order-link{
-    color: var(--admin-brand-2, #be185d);
-}
-
-.return-admin-note{
-    border: 1px dashed rgba(236, 72, 153, 0.24);
-    border-radius: 14px;
-    background: #fff7fb;
-}
-
-.return-pill{
-    border-radius: 999px;
-    font-weight: 1000;
-}
-
-.return-action-form select,
-.return-action-form input,
-.return-action-form textarea{
-    min-height: 38px;
-    border-color: rgba(148, 163, 184, 0.30);
-    border-radius: 14px;
-    color: var(--admin-text, #111827);
-}
-
-.return-action-form select:focus,
-.return-action-form input:focus,
-.return-action-form textarea:focus{
-    outline: none;
-    border-color: rgba(236, 72, 153, 0.55);
-    box-shadow: var(--admin-focus, 0 0 0 4px rgba(236, 72, 153, 0.18));
-}
-
-.return-btn{
-    min-height: 34px;
-    border-radius: 999px;
-    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.10);
+  background: #059669;
 }
 
 
@@ -8120,503 +8060,503 @@ td.product-actions {
 ========================================================= */
 
 .admin-main > .admin-container.admin-cancel-page {
-    width: 100%;
-    max-width: none !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
+  width: 100%;
+  max-width: none !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
 }
 
 .admin-cancel-page {
-    width: 100%;
+  width: 100%;
 }
 
 .admin-cancel-hero {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 18px;
-    align-items: start;
-    margin-bottom: 16px;
-    padding: 18px;
-    border: 1px solid rgba(236, 72, 153, 0.20);
-    border-radius: 24px;
-    background:
-            radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
-            linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
-    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.055);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: start;
+  margin-bottom: 16px;
+  padding: 18px;
+  border: 1px solid rgba(236, 72, 153, 0.20);
+  border-radius: 24px;
+  background:
+          radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
+          linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.055);
 }
 
 .admin-cancel-hero__content {
-    min-width: 0;
+  min-width: 0;
 }
 
 .admin-cancel-eyebrow {
-    display: inline-flex;
-    align-items: center;
-    min-height: 26px;
-    padding: 0 10px;
-    margin-bottom: 8px;
-    border: 1px solid rgba(236, 72, 153, 0.32);
-    border-radius: 999px;
-    background: rgba(236, 72, 153, 0.10);
-    color: #be185d;
-    font-size: 12px;
-    line-height: 1;
-    font-weight: 950;
-    letter-spacing: .06em;
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 10px;
+  margin-bottom: 8px;
+  border: 1px solid rgba(236, 72, 153, 0.32);
+  border-radius: 999px;
+  background: rgba(236, 72, 153, 0.10);
+  color: #be185d;
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 950;
+  letter-spacing: .06em;
 }
 
 .admin-cancel-title {
-    margin: 0;
-    color: var(--admin-text);
-    font-size: 28px;
-    line-height: 1.1;
-    font-weight: 1000;
-    letter-spacing: -0.045em;
+  margin: 0;
+  color: var(--admin-text);
+  font-size: 28px;
+  line-height: 1.1;
+  font-weight: 1000;
+  letter-spacing: -0.045em;
 }
 
 .admin-cancel-subtitle {
-    max-width: 900px;
-    margin: 8px 0 0;
-    color: var(--admin-muted);
-    font-size: 13.5px;
-    line-height: 1.58;
+  max-width: 900px;
+  margin: 8px 0 0;
+  color: var(--admin-muted);
+  font-size: 13.5px;
+  line-height: 1.58;
 }
 
 .admin-cancel-hero__actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    flex-wrap: wrap;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .admin-cancel-summary {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 12px;
-    margin-bottom: 16px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
 .admin-cancel-stat {
-    position: relative;
-    overflow: hidden;
-    padding: 16px;
-    border: 1px solid var(--admin-border);
-    border-radius: 20px;
-    background: #ffffff;
-    box-shadow: var(--admin-shadow-sm);
+  position: relative;
+  overflow: hidden;
+  padding: 16px;
+  border: 1px solid var(--admin-border);
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: var(--admin-shadow-sm);
 }
 
 .admin-cancel-stat::after {
-    content: "";
-    position: absolute;
-    right: -28px;
-    top: -28px;
-    width: 82px;
-    height: 82px;
-    border-radius: 999px;
-    background: rgba(236, 72, 153, 0.08);
+  content: "";
+  position: absolute;
+  right: -28px;
+  top: -28px;
+  width: 82px;
+  height: 82px;
+  border-radius: 999px;
+  background: rgba(236, 72, 153, 0.08);
 }
 
 .admin-cancel-stat--pending::after {
-    background: rgba(245, 158, 11, 0.13);
+  background: rgba(245, 158, 11, 0.13);
 }
 
 .admin-cancel-stat--approved::after {
-    background: rgba(16, 185, 129, 0.12);
+  background: rgba(16, 185, 129, 0.12);
 }
 
 .admin-cancel-stat--rejected::after {
-    background: rgba(220, 38, 38, 0.10);
+  background: rgba(220, 38, 38, 0.10);
 }
 
 .admin-cancel-stat__icon {
-    width: 38px;
-    height: 38px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 12px;
-    border-radius: 14px;
-    background: rgba(236, 72, 153, 0.10);
-    font-size: 18px;
-    position: relative;
-    z-index: 1;
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  border-radius: 14px;
+  background: rgba(236, 72, 153, 0.10);
+  font-size: 18px;
+  position: relative;
+  z-index: 1;
 }
 
 .admin-cancel-stat__label {
-    display: block;
-    color: var(--admin-muted);
-    font-size: 12px;
-    line-height: 1.35;
-    font-weight: 850;
-    position: relative;
-    z-index: 1;
+  display: block;
+  color: var(--admin-muted);
+  font-size: 12px;
+  line-height: 1.35;
+  font-weight: 850;
+  position: relative;
+  z-index: 1;
 }
 
 .admin-cancel-stat__value {
-    display: block;
-    margin-top: 7px;
-    color: var(--admin-text);
-    font-size: 28px;
-    line-height: 1;
-    font-weight: 1000;
-    letter-spacing: -0.035em;
-    position: relative;
-    z-index: 1;
+  display: block;
+  margin-top: 7px;
+  color: var(--admin-text);
+  font-size: 28px;
+  line-height: 1;
+  font-weight: 1000;
+  letter-spacing: -0.035em;
+  position: relative;
+  z-index: 1;
 }
 
 .admin-cancel-stat__note {
-    display: block;
-    margin-top: 8px;
-    color: var(--admin-muted);
-    font-size: 12px;
-    line-height: 1.4;
-    position: relative;
-    z-index: 1;
+  display: block;
+  margin-top: 8px;
+  color: var(--admin-muted);
+  font-size: 12px;
+  line-height: 1.4;
+  position: relative;
+  z-index: 1;
 }
 
 .admin-cancel-list-card {
-    overflow: hidden;
+  overflow: hidden;
 }
 
 .admin-cancel-list-card .admin-card__body {
-    padding: 18px;
-    overflow-x: visible;
+  padding: 18px;
+  overflow-x: visible;
 }
 
 .admin-cancel-section-head {
-    display: flex;
-    justify-content: space-between;
-    gap: 14px;
-    align-items: flex-start;
-    flex-wrap: wrap;
-    margin-bottom: 16px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid rgba(15, 23, 42, 0.07);
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.07);
 }
 
 .admin-cancel-section-title {
-    margin: 0;
-    color: var(--admin-text);
-    font-size: 18px;
-    line-height: 1.25;
-    font-weight: 1000;
-    letter-spacing: -0.025em;
+  margin: 0;
+  color: var(--admin-text);
+  font-size: 18px;
+  line-height: 1.25;
+  font-weight: 1000;
+  letter-spacing: -0.025em;
 }
 
 .admin-cancel-section-desc {
-    margin: 5px 0 0;
-    color: var(--admin-muted);
-    font-size: 13px;
-    line-height: 1.5;
+  margin: 5px 0 0;
+  color: var(--admin-muted);
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .admin-cancel-empty {
-    display: grid;
-    grid-template-columns: 58px minmax(0, 1fr);
-    gap: 14px;
-    align-items: center;
-    padding: 22px;
-    border: 1px dashed var(--admin-border);
-    border-radius: 18px;
-    background: rgba(15, 23, 42, 0.018);
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  padding: 22px;
+  border: 1px dashed var(--admin-border);
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.018);
 }
 
 .admin-cancel-empty__icon {
-    width: 58px;
-    height: 58px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 18px;
-    background: rgba(236, 72, 153, 0.10);
-    font-size: 26px;
+  width: 58px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18px;
+  background: rgba(236, 72, 153, 0.10);
+  font-size: 26px;
 }
 
 .admin-cancel-empty h3 {
-    margin: 0 0 5px;
-    color: var(--admin-text);
-    font-size: 16px;
-    font-weight: 950;
+  margin: 0 0 5px;
+  color: var(--admin-text);
+  font-size: 16px;
+  font-weight: 950;
 }
 
 .admin-cancel-empty p {
-    margin: 0;
-    color: var(--admin-muted);
-    font-size: 13px;
-    line-height: 1.5;
+  margin: 0;
+  color: var(--admin-muted);
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .admin-cancel-table-wrap {
-    width: 100%;
-    overflow-x: auto;
-    border: 1px solid rgba(15, 23, 42, 0.07);
-    border-radius: 16px;
-    background: #ffffff;
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid rgba(15, 23, 42, 0.07);
+  border-radius: 16px;
+  background: #ffffff;
 }
 
 .admin-cancel-table {
-    width: 100%;
-    min-width: 1520px;
-    table-layout: fixed;
-    border-left: 0;
-    border-right: 0;
-    border-radius: 0;
+  width: 100%;
+  min-width: 1520px;
+  table-layout: fixed;
+  border-left: 0;
+  border-right: 0;
+  border-radius: 0;
 }
 
 .admin-cancel-table th,
 .admin-cancel-table td {
-    padding: 12px 10px;
-    vertical-align: top;
+  padding: 12px 10px;
+  vertical-align: top;
 }
 
 .admin-cancel-table tbody tr + tr td {
-    border-top: 1px solid rgba(15, 23, 42, 0.06);
+  border-top: 1px solid rgba(15, 23, 42, 0.06);
 }
 
 .admin-cancel-table th {
-    color: rgba(15, 23, 42, 0.66);
-    font-size: 12px;
-    font-weight: 950;
-    text-transform: uppercase;
-    letter-spacing: .025em;
+  color: rgba(15, 23, 42, 0.66);
+  font-size: 12px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: .025em;
 }
 
 .admin-cancel-table tbody tr {
-    transition: background .15s ease;
+  transition: background .15s ease;
 }
 
 .admin-cancel-table tbody tr:hover {
-    background: rgba(236, 72, 153, 0.028);
+  background: rgba(236, 72, 153, 0.028);
 }
 
 .admin-cancel-row--pending {
-    background: rgba(245, 158, 11, 0.030);
+  background: rgba(245, 158, 11, 0.030);
 }
 
 .admin-cancel-col-id {
-    width: 70px;
+  width: 70px;
 }
 
 .admin-cancel-col-order {
-    width: 210px;
+  width: 210px;
 }
 
 .admin-cancel-col-customer {
-    width: 220px;
+  width: 220px;
 }
 
 .admin-cancel-col-reason {
-    width: 300px;
+  width: 300px;
 }
 
 .admin-cancel-col-status {
-    width: 130px;
+  width: 130px;
 }
 
 .admin-cancel-col-refund {
-    width: 140px;
+  width: 140px;
 }
 
 .admin-cancel-col-date {
-    width: 150px;
+  width: 150px;
 }
 
 .admin-cancel-col-actions {
-    width: 300px;
+  width: 300px;
 }
 
 .admin-cancel-id-cell {
-    color: var(--admin-text);
-    font-size: 13px;
-    white-space: nowrap;
+  color: var(--admin-text);
+  font-size: 13px;
+  white-space: nowrap;
 }
 
 .admin-cancel-order {
-    display: grid;
-    gap: 5px;
-    min-width: 0;
+  display: grid;
+  gap: 5px;
+  min-width: 0;
 }
 
 .admin-cancel-order span {
-    color: var(--admin-muted);
-    font-size: 12px;
-    line-height: 1.35;
+  color: var(--admin-muted);
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 .admin-cancel-order strong {
-    color: var(--admin-text);
-    font-weight: 900;
+  color: var(--admin-text);
+  font-weight: 900;
 }
 
 .admin-cancel-customer {
-    display: grid;
-    grid-template-columns: 42px minmax(0, 1fr);
-    gap: 10px;
-    align-items: start;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
 }
 
 .admin-cancel-customer__avatar {
-    width: 42px;
-    height: 42px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 14px;
-    background: linear-gradient(135deg, #ec4899, #8b5cf6);
-    color: #ffffff;
-    font-size: 11px;
-    font-weight: 1000;
-    box-shadow: 0 8px 18px rgba(236, 72, 153, 0.22);
+  width: 42px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #ec4899, #8b5cf6);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 1000;
+  box-shadow: 0 8px 18px rgba(236, 72, 153, 0.22);
 }
 
 .admin-cancel-customer__body {
-    display: grid;
-    gap: 4px;
-    min-width: 0;
+  display: grid;
+  gap: 4px;
+  min-width: 0;
 }
 
 .admin-cancel-customer__body strong {
-    color: var(--admin-text);
-    font-size: 13px;
-    line-height: 1.35;
-    font-weight: 950;
-    overflow-wrap: anywhere;
+  color: var(--admin-text);
+  font-size: 13px;
+  line-height: 1.35;
+  font-weight: 950;
+  overflow-wrap: anywhere;
 }
 
 .admin-cancel-customer__body small {
-    color: var(--admin-muted);
-    font-size: 12px;
-    line-height: 1.35;
-    overflow-wrap: anywhere;
+  color: var(--admin-muted);
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .admin-cancel-reason {
-    max-width: none;
-    overflow-wrap: anywhere;
+  max-width: none;
+  overflow-wrap: anywhere;
 }
 
 .admin-cancel-admin-note {
-    overflow-wrap: anywhere;
+  overflow-wrap: anywhere;
 }
 
 .admin-cancel-refund {
-    display: grid;
-    gap: 5px;
-    color: var(--admin-text);
-    font-size: 13px;
+  display: grid;
+  gap: 5px;
+  color: var(--admin-text);
+  font-size: 13px;
 }
 
 .admin-cancel-refund strong {
-    color: #be185d;
-    font-size: 15px;
-    font-weight: 1000;
-    white-space: nowrap;
+  color: #be185d;
+  font-size: 15px;
+  font-weight: 1000;
+  white-space: nowrap;
 }
 
 .admin-cancel-refund span {
-    color: var(--admin-muted);
-    font-size: 12px;
-    line-height: 1.35;
+  color: var(--admin-muted);
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 .admin-cancel-time {
-    display: grid;
-    gap: 4px;
-    color: var(--admin-text);
-    font-size: 12px;
-    line-height: 1.35;
+  display: grid;
+  gap: 4px;
+  color: var(--admin-text);
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 .admin-cancel-time strong {
-    font-weight: 950;
+  font-weight: 950;
 }
 
 .admin-cancel-time span,
 .admin-cancel-time small {
-    color: var(--admin-muted);
-    font-weight: 800;
+  color: var(--admin-muted);
+  font-weight: 800;
 }
 
 .admin-cancel-action-cell {
-    white-space: normal;
+  white-space: normal;
 }
 
 .admin-cancel-action-form {
-    min-width: 260px;
+  min-width: 260px;
 }
 
 .admin-cancel-form-grid {
-    grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
 }
 
 .admin-cancel-actions {
-    gap: 8px;
+  gap: 8px;
 }
 
 .admin-cancel-actions .return-btn {
-    flex: 1 1 110px;
-    min-height: 34px;
+  flex: 1 1 110px;
+  min-height: 34px;
 }
 
 .admin-cancel-done {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 32px;
-    padding: 0 12px;
-    border-radius: 999px;
-    border: 1px solid var(--admin-border);
-    background: rgba(15, 23, 42, 0.035);
-    color: var(--admin-muted);
-    font-size: 12px;
-    font-weight: 900;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--admin-border);
+  background: rgba(15, 23, 42, 0.035);
+  color: var(--admin-muted);
+  font-size: 12px;
+  font-weight: 900;
 }
 
 @media (max-width: 1180px) {
-    .admin-cancel-hero {
-        grid-template-columns: 1fr;
-    }
+  .admin-cancel-hero {
+    grid-template-columns: 1fr;
+  }
 
-    .admin-cancel-hero__actions {
-        justify-content: flex-start;
-    }
+  .admin-cancel-hero__actions {
+    justify-content: flex-start;
+  }
 
-    .admin-cancel-summary {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
+  .admin-cancel-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 760px) {
-    .admin-cancel-hero {
-        padding: 15px;
-        border-radius: 18px;
-    }
+  .admin-cancel-hero {
+    padding: 15px;
+    border-radius: 18px;
+  }
 
-    .admin-cancel-summary {
-        grid-template-columns: 1fr;
-    }
+  .admin-cancel-summary {
+    grid-template-columns: 1fr;
+  }
 
-    .admin-cancel-hero__actions {
-        width: 100%;
-        align-items: stretch;
-        flex-direction: column;
-    }
+  .admin-cancel-hero__actions {
+    width: 100%;
+    align-items: stretch;
+    flex-direction: column;
+  }
 
-    .admin-cancel-hero__actions .admin-btn {
-        width: 100%;
-        justify-content: center;
-    }
+  .admin-cancel-hero__actions .admin-btn {
+    width: 100%;
+    justify-content: center;
+  }
 
-    .admin-cancel-empty {
-        grid-template-columns: 1fr;
-        text-align: center;
-        justify-items: center;
-    }
+  .admin-cancel-empty {
+    grid-template-columns: 1fr;
+    text-align: center;
+    justify-items: center;
+  }
 
-    .admin-cancel-form-grid {
-        grid-template-columns: 1fr;
-    }
+  .admin-cancel-form-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 
@@ -9259,8 +9199,8 @@ td.product-actions {
   border: 1px solid rgba(236, 72, 153, 0.20);
   border-radius: 24px;
   background:
-    radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
-    linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
+          radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
+          linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.055);
 }
 
@@ -9708,8 +9648,8 @@ td.product-actions {
   border: 1px solid rgba(236, 72, 153, 0.20);
   border-radius: 24px;
   background:
-    radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
-    linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
+          radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
+          linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.055);
 }
 
@@ -10082,8 +10022,8 @@ td.product-actions {
   border: 1px solid rgba(148, 163, 184, 0.22);
   border-radius: 18px;
   background:
-    radial-gradient(circle at top right, rgba(236, 72, 153, 0.06), transparent 36%),
-    #ffffff;
+          radial-gradient(circle at top right, rgba(236, 72, 153, 0.06), transparent 36%),
+          #ffffff;
 }
 
 .inventory-excel-title {
@@ -10442,8 +10382,8 @@ td.product-actions {
   border-radius: 24px;
   border-color: rgba(236, 72, 153, 0.20);
   background:
-    radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
-    linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
+          radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
+          linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
 }
 
 .admin-order-title {
@@ -10468,8 +10408,8 @@ td.product-actions {
 .admin-order-bulk-form {
   border-color: rgba(236, 72, 153, 0.28);
   background:
-    radial-gradient(circle at top left, rgba(236, 72, 153, 0.08), transparent 32%),
-    rgba(236, 72, 153, 0.045);
+          radial-gradient(circle at top left, rgba(236, 72, 153, 0.08), transparent 32%),
+          rgba(236, 72, 153, 0.045);
 }
 
 .admin-order-result-count {
@@ -10768,231 +10708,6 @@ td.product-actions {
 
 
 /* =========================================================
-   ADMIN ORDER LIST ACTION COLUMN FIX V4
-   Scope: /jsp/admin/order/order_list.jsp
-   Mục tiêu:
-   - Bỏ nền sticky quá nổi ở cột Thao tác
-   - Thu gọn nút xử lý
-   - Giữ bảng vừa màn hình và không cắt thao tác
-========================================================= */
-
-.admin-order-table-wrap {
-  overflow-x: auto;
-  overflow-y: visible;
-  border-radius: 18px;
-}
-
-.admin-order-table,
-.admin-order-table--bulk {
-  min-width: 1380px !important;
-  width: 100%;
-  table-layout: fixed;
-}
-
-.admin-order-table th,
-.admin-order-table td {
-  padding: 10px 8px !important;
-}
-
-.admin-order-col-check {
-  width: 40px !important;
-}
-
-.admin-order-col-id {
-  width: 62px !important;
-}
-
-.admin-order-col-customer {
-  width: 205px !important;
-}
-
-.admin-order-col-total {
-  width: 110px !important;
-}
-
-.admin-order-col-payment {
-  width: 152px !important;
-}
-
-.admin-order-col-status {
-  width: 112px !important;
-}
-
-.admin-order-col-shipping {
-  width: 172px !important;
-}
-
-.admin-order-col-timeline {
-  width: 184px !important;
-}
-
-.admin-order-col-date {
-  width: 138px !important;
-}
-
-.admin-order-col-actions {
-  width: 118px !important;
-}
-
-.admin-order-action-cell,
-.admin-order-table th.admin-order-col-actions {
-  position: static !important;
-  right: auto !important;
-  z-index: auto !important;
-  box-shadow: none !important;
-  background: transparent !important;
-}
-
-.admin-order-table th.admin-order-col-actions {
-  background: linear-gradient(180deg, #fff7fb 0%, #fdf2f8 100%) !important;
-}
-
-.admin-order-action-cell {
-  vertical-align: top !important;
-  text-align: center;
-}
-
-.admin-order-actions {
-  display: grid !important;
-  grid-template-columns: 1fr !important;
-  gap: 6px !important;
-  width: 100% !important;
-  max-width: 104px !important;
-  margin: 0 auto;
-}
-
-.admin-order-actions form,
-.admin-order-actions .admin-inline {
-  width: 100% !important;
-  margin: 0 !important;
-  display: block !important;
-}
-
-.admin-order-action-btn,
-.admin-order-action-done {
-  width: 100% !important;
-  min-height: 28px !important;
-  padding: 0 8px !important;
-  border-radius: 999px !important;
-  font-size: 11px !important;
-  line-height: 1 !important;
-  font-weight: 1000 !important;
-  white-space: nowrap !important;
-  box-shadow: 0 6px 14px rgba(225, 29, 72, 0.12) !important;
-}
-
-.admin-order-action-done {
-  color: #64748b !important;
-  background: #fff7fb !important;
-  border-color: rgba(148, 163, 184, 0.30) !important;
-  box-shadow: none !important;
-}
-
-.admin-order-id-cell,
-.admin-order-customer,
-.admin-order-total-cell,
-.admin-order-payment,
-.admin-order-status-stack,
-.admin-order-shipping,
-.admin-order-time {
-  font-size: 12px;
-}
-
-.admin-order-customer strong {
-  font-size: 13px;
-}
-
-.admin-order-total-content strong,
-.admin-order-money strong {
-  font-size: 15px;
-}
-
-.admin-order-payment .admin-pill,
-.admin-order-status-stack .admin-pill,
-.admin-order-shipping .admin-pill {
-  min-height: 22px !important;
-  padding: 3px 8px !important;
-  font-size: 11px !important;
-}
-
-.admin-order-flow {
-  grid-template-columns: 20px 24px 20px 24px 20px 24px 20px !important;
-}
-
-.admin-order-flow__step {
-  width: 20px !important;
-  height: 20px !important;
-  font-size: 10px !important;
-}
-
-.admin-order-flow-labels {
-  max-width: 154px !important;
-}
-
-.admin-order-flow-labels span {
-  font-size: 9px !important;
-}
-
-.admin-order-time {
-  gap: 4px !important;
-}
-
-.admin-order-time span {
-  line-height: 1.25 !important;
-}
-
-.admin-order-bulk-form {
-  grid-template-columns: minmax(190px, .48fr) minmax(0, 1.52fr) !important;
-  padding: 12px !important;
-}
-
-.admin-order-bulk-controls {
-  grid-template-columns: minmax(170px, 220px) minmax(220px, 1fr) 96px !important;
-  gap: 8px !important;
-}
-
-.admin-order-bulk-controls .admin-input,
-.admin-order-bulk-controls .admin-select,
-.admin-order-bulk-controls .admin-btn {
-  min-height: 36px !important;
-}
-
-@media (max-width: 1500px) {
-  .admin-order-table,
-  .admin-order-table--bulk {
-    min-width: 1320px !important;
-  }
-
-  .admin-order-col-customer {
-    width: 190px !important;
-  }
-
-  .admin-order-col-shipping {
-    width: 160px !important;
-  }
-
-  .admin-order-col-timeline {
-    width: 172px !important;
-  }
-
-  .admin-order-col-date {
-    width: 132px !important;
-  }
-}
-
-@media (max-width: 1180px) {
-  .admin-order-bulk-form,
-  .admin-order-bulk-controls {
-    grid-template-columns: 1fr !important;
-  }
-
-  .admin-order-actions {
-    max-width: 112px !important;
-  }
-}
-
-
-/* =========================================================
    ADMIN PAGE CMS LIST UI V2
    Scope: /jsp/admin/page/page-list.jsp
 ========================================================= */
@@ -11018,8 +10733,8 @@ td.product-actions {
   border: 1px solid rgba(236, 72, 153, 0.20);
   border-radius: 24px;
   background:
-    radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
-    linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
+          radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
+          linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.055);
 }
 
@@ -11577,8 +11292,8 @@ td.product-actions {
   border: 1px solid rgba(236, 72, 153, 0.20);
   border-radius: 24px;
   background:
-    radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
-    linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
+          radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
+          linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.055);
 }
 
@@ -12131,8 +11846,8 @@ td.product-actions {
   border: 1px solid rgba(236, 72, 153, 0.20);
   border-radius: 24px;
   background:
-    radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
-    linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
+          radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
+          linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.055);
 }
 
@@ -12333,8 +12048,8 @@ td.product-actions {
   border: 1px solid rgba(148, 163, 184, 0.20);
   border-radius: 18px;
   background:
-    radial-gradient(circle at top left, rgba(236, 72, 153, 0.055), transparent 30%),
-    rgba(15, 23, 42, 0.018);
+          radial-gradient(circle at top left, rgba(236, 72, 153, 0.055), transparent 30%),
+          rgba(15, 23, 42, 0.018);
 }
 
 .admin-promo-filter-form {
@@ -12535,34 +12250,6 @@ td.product-actions {
 
 
 /* =========================================================
-   ADMIN PROMOTION UI V3 - Duplicate action row fix
-   Scope: /jsp/admin/promotions/promotion_list.jsp
-========================================================= */
-
-.admin-promo-page > .admin-promo-container > .admin-promotion-create {
-  display: none !important;
-}
-
-.admin-promo-page .admin-promo-hero {
-  margin-bottom: 16px;
-}
-
-.admin-promo-page .admin-promo-hero__actions {
-  align-self: center;
-}
-
-.admin-promo-page .admin-promo-stats {
-  margin-top: 0;
-}
-
-@media (max-width: 1180px) {
-  .admin-promo-page .admin-promo-hero__actions {
-    width: 100%;
-  }
-}
-
-
-/* =========================================================
    ADMIN RANK LIST UI V2
    Scope: /jsp/admin/rank/rank_list.jsp
 ========================================================= */
@@ -12588,8 +12275,8 @@ td.product-actions {
   border: 1px solid rgba(236, 72, 153, 0.20);
   border-radius: 24px;
   background:
-    radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
-    linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
+          radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
+          linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.055);
 }
 
@@ -13027,6 +12714,686 @@ td.product-actions {
 
 
 /* =========================================================
+   ADMIN RETURN REQUEST LIST UI V2
+   Scope: /jsp/admin/return/return_list.jsp
+========================================================= */
+
+.admin-main > .admin-container.admin-return-page {
+  width: 100%;
+  max-width: none !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+.admin-return-page {
+  width: 100%;
+}
+
+.admin-return-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: start;
+  margin-bottom: 16px;
+  padding: 18px;
+  border: 1px solid rgba(236, 72, 153, 0.20);
+  border-radius: 24px;
+  background:
+          radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
+          linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.055);
+}
+
+.admin-return-hero__content {
+  min-width: 0;
+}
+
+.admin-return-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 10px;
+  margin-bottom: 8px;
+  border: 1px solid rgba(236, 72, 153, 0.32);
+  border-radius: 999px;
+  background: rgba(236, 72, 153, 0.10);
+  color: #be185d;
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 950;
+  letter-spacing: .06em;
+}
+
+.admin-return-title {
+  margin: 0;
+  color: var(--admin-text);
+  font-size: 28px;
+  line-height: 1.1;
+  font-weight: 1000;
+  letter-spacing: -0.045em;
+}
+
+.admin-return-subtitle {
+  max-width: 920px;
+  margin: 8px 0 0;
+  color: var(--admin-muted);
+  font-size: 13.5px;
+  line-height: 1.58;
+}
+
+.admin-return-hero__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.admin-return-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.admin-return-stat {
+  position: relative;
+  overflow: hidden;
+  padding: 16px;
+  border: 1px solid var(--admin-border);
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: var(--admin-shadow-sm);
+}
+
+.admin-return-stat::after {
+  content: "";
+  position: absolute;
+  right: -28px;
+  top: -28px;
+  width: 82px;
+  height: 82px;
+  border-radius: 999px;
+  background: rgba(236, 72, 153, 0.08);
+}
+
+.admin-return-stat--pending::after {
+  background: rgba(245, 158, 11, 0.14);
+}
+
+.admin-return-stat--processing::after {
+  background: rgba(59, 130, 246, 0.10);
+}
+
+.admin-return-stat--done::after {
+  background: rgba(16, 185, 129, 0.12);
+}
+
+.admin-return-stat__icon {
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  border-radius: 14px;
+  background: rgba(236, 72, 153, 0.10);
+  font-size: 18px;
+  position: relative;
+  z-index: 1;
+}
+
+.admin-return-stat__label {
+  display: block;
+  color: var(--admin-muted);
+  font-size: 12px;
+  line-height: 1.35;
+  font-weight: 850;
+  position: relative;
+  z-index: 1;
+}
+
+.admin-return-stat__value {
+  display: block;
+  margin-top: 7px;
+  color: var(--admin-text);
+  font-size: 28px;
+  line-height: 1;
+  font-weight: 1000;
+  letter-spacing: -0.035em;
+  position: relative;
+  z-index: 1;
+}
+
+.admin-return-stat__note {
+  display: block;
+  margin-top: 8px;
+  color: var(--admin-muted);
+  font-size: 12px;
+  line-height: 1.4;
+  position: relative;
+  z-index: 1;
+}
+
+.admin-return-list-card {
+  overflow: hidden;
+}
+
+.admin-return-list-card .admin-card__body {
+  padding: 18px;
+  overflow-x: visible;
+}
+
+.admin-return-section-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.07);
+}
+
+.admin-return-section-title {
+  margin: 0;
+  color: var(--admin-text);
+  font-size: 18px;
+  line-height: 1.25;
+  font-weight: 1000;
+  letter-spacing: -0.025em;
+}
+
+.admin-return-section-desc {
+  margin: 5px 0 0;
+  color: var(--admin-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.admin-return-head-chips {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.admin-return-empty {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  padding: 22px;
+  border: 1px dashed var(--admin-border);
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.018);
+}
+
+.admin-return-empty__icon {
+  width: 58px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18px;
+  background: rgba(236, 72, 153, 0.10);
+  font-size: 26px;
+}
+
+.admin-return-empty h3 {
+  margin: 0 0 5px;
+  color: var(--admin-text);
+  font-size: 16px;
+  font-weight: 950;
+}
+
+.admin-return-empty p {
+  margin: 0;
+  color: var(--admin-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.admin-return-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid rgba(15, 23, 42, 0.07);
+  border-radius: 16px;
+  background: #ffffff;
+}
+
+.admin-return-table {
+  width: 100%;
+  min-width: 1450px;
+  table-layout: fixed;
+  border-left: 0;
+  border-right: 0;
+  border-radius: 0;
+}
+
+.admin-return-table th,
+.admin-return-table td {
+  padding: 12px 10px;
+  vertical-align: top;
+}
+
+.admin-return-table tbody tr + tr td {
+  border-top: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.admin-return-table th {
+  color: rgba(15, 23, 42, 0.66);
+  font-size: 12px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: .025em;
+}
+
+.admin-return-row {
+  transition: background .15s ease;
+}
+
+.admin-return-row:hover {
+  background: rgba(236, 72, 153, 0.028);
+}
+
+.admin-return-row--warning {
+  background: rgba(245, 158, 11, 0.030);
+}
+
+.admin-return-row--danger {
+  background: rgba(220, 38, 38, 0.020);
+}
+
+.admin-return-col-id {
+  width: 70px;
+}
+
+.admin-return-col-order {
+  width: 125px;
+}
+
+.admin-return-col-customer {
+  width: 220px;
+}
+
+.admin-return-col-reason {
+  width: 310px;
+}
+
+.admin-return-col-money {
+  width: 140px;
+}
+
+.admin-return-col-status {
+  width: 145px;
+}
+
+.admin-return-col-date {
+  width: 130px;
+}
+
+.admin-return-col-actions {
+  width: 310px;
+}
+
+.admin-return-id-cell {
+  color: var(--admin-text);
+  font-size: 13px;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.admin-return-order {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.admin-return-order span {
+  color: var(--admin-muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.admin-return-customer {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.admin-return-customer__avatar {
+  width: 42px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #ec4899, #8b5cf6);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 1000;
+  box-shadow: 0 8px 18px rgba(236, 72, 153, 0.22);
+}
+
+.admin-return-customer__body {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.admin-return-customer__body strong {
+  color: var(--admin-text);
+  font-size: 13px;
+  line-height: 1.35;
+  font-weight: 950;
+  overflow-wrap: anywhere;
+}
+
+.admin-return-customer__body small {
+  color: var(--admin-muted);
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.admin-return-reason {
+  max-width: none;
+  overflow-wrap: anywhere;
+}
+
+.admin-return-admin-note {
+  overflow-wrap: anywhere;
+}
+
+.admin-return-money {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.admin-return-money strong {
+  color: #be185d;
+  font-size: 15px;
+  line-height: 1.2;
+  font-weight: 1000;
+  white-space: nowrap;
+}
+
+.admin-return-money span {
+  color: var(--admin-muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.admin-return-status {
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+}
+
+.admin-return-status small {
+  color: var(--admin-muted);
+  font-size: 12px;
+  line-height: 1.35;
+  font-weight: 800;
+}
+
+.admin-return-time {
+  display: grid;
+  gap: 4px;
+  color: var(--admin-text);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.admin-return-time strong {
+  font-weight: 950;
+}
+
+.admin-return-time span {
+  color: var(--admin-muted);
+  font-weight: 850;
+}
+
+.admin-return-action-cell {
+  white-space: normal;
+}
+
+.admin-return-action-form {
+  min-width: 280px;
+}
+
+.admin-return-form-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.admin-return-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.admin-return-actions .return-btn {
+  width: 100%;
+  min-height: 34px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 1000;
+}
+
+.admin-chip--success {
+  border-color: rgba(16, 185, 129, 0.35);
+  background: rgba(16, 185, 129, 0.10);
+  color: #065f46;
+}
+
+@media (max-width: 1180px) {
+  .admin-return-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-return-hero__actions {
+    justify-content: flex-start;
+  }
+
+  .admin-return-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .admin-return-hero {
+    padding: 15px;
+    border-radius: 18px;
+  }
+
+  .admin-return-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-return-hero__actions {
+    width: 100%;
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-return-hero__actions .admin-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .admin-return-empty {
+    grid-template-columns: 1fr;
+    text-align: center;
+    justify-items: center;
+  }
+
+  .admin-return-form-grid,
+  .admin-return-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* =========================================================
+   ADMIN REVIEW LIST UI V2 REFINEMENT
+   Scope: /jsp/admin/review/review_list.jsp
+========================================================= */
+
+.admin-main > .admin-container.admin-review-page {
+  width: 100%;
+  max-width: none !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+.admin-review-page {
+  width: 100%;
+}
+
+.admin-review-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: start;
+  margin-bottom: 16px;
+  padding: 18px;
+  border: 1px solid rgba(236, 72, 153, 0.20);
+  border-radius: 24px;
+  background:
+          radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
+          linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.055);
+}
+
+.admin-review-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 10px;
+  margin-bottom: 8px;
+  border: 1px solid rgba(236, 72, 153, 0.32);
+  border-radius: 999px;
+  background: rgba(236, 72, 153, 0.10);
+  color: #be185d;
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 950;
+  letter-spacing: .06em;
+}
+
+.admin-review-title {
+  margin: 0;
+  color: var(--admin-text);
+  font-size: 28px;
+  line-height: 1.1;
+  font-weight: 1000;
+  letter-spacing: -0.045em;
+}
+
+.admin-review-stat__icon {
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  border-radius: 14px;
+  background: rgba(236, 72, 153, 0.10);
+  font-size: 18px;
+  position: relative;
+  z-index: 1;
+}
+
+.admin-review-stats {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.admin-review-stat {
+  border-color: rgba(148, 163, 184, 0.22);
+  border-radius: 20px;
+}
+
+.admin-review-filter-card,
+.admin-review-list-card {
+  border-radius: 22px;
+}
+
+.admin-review-table-wrap {
+  border-radius: 18px;
+}
+
+.admin-review-table {
+  min-width: 1320px;
+}
+
+.admin-review-table th,
+.admin-review-table td {
+  padding: 12px 10px;
+}
+
+.admin-review-actions {
+  max-width: 150px;
+}
+
+.admin-review-action-btn {
+  border-radius: 999px;
+  font-weight: 1000;
+}
+
+.admin-review-comment-preview {
+  line-height: 1.58;
+}
+
+@media (max-width: 1500px) {
+  .admin-review-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1180px) {
+  .admin-review-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-review-hero__actions {
+    justify-content: flex-start;
+  }
+
+  .admin-review-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .admin-review-hero {
+    padding: 15px;
+    border-radius: 18px;
+  }
+
+  .admin-review-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-review-hero__actions {
+    width: 100%;
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-review-hero__actions .admin-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+
+/* =========================================================
    ADMIN ROLE LIST UI V2
    Scope: /jsp/admin/role/role_list.jsp
 ========================================================= */
@@ -13052,8 +13419,8 @@ td.product-actions {
   border: 1px solid rgba(236, 72, 153, 0.20);
   border-radius: 24px;
   background:
-    radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
-    linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
+          radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
+          linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.055);
 }
 
@@ -13505,8 +13872,8 @@ td.product-actions {
   border: 1px solid rgba(236, 72, 153, 0.20);
   border-radius: 24px;
   background:
-    radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
-    linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
+          radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
+          linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.055);
 }
 
@@ -13873,8 +14240,8 @@ td.product-actions {
   border: 1px solid rgba(236, 72, 153, 0.20);
   border-radius: 24px;
   background:
-    radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
-    linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
+          radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
+          linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.055);
 }
 
@@ -14400,4 +14767,181 @@ td.product-actions {
     text-align: center;
     justify-items: center;
   }
+}
+
+
+/* =========================================================
+   ADMIN CSS SYNC PATCH - Missing shared utility variants
+========================================================= */
+
+.admin-btn--ghost {
+  background: rgba(255, 255, 255, 0.74) !important;
+  color: var(--admin-text) !important;
+  border-color: rgba(148, 163, 184, 0.28) !important;
+}
+
+.admin-btn--ghost:hover {
+  background: #ffffff !important;
+  border-color: rgba(236, 72, 153, 0.34) !important;
+}
+
+.admin-field--full {
+  grid-column: 1 / -1;
+}
+
+.admin-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.admin-switch-field {
+  align-items: center;
+}
+
+.admin-switch {
+  position: relative;
+  width: 48px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.28);
+  cursor: pointer;
+  transition: background .16s ease;
+}
+
+.admin-switch input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.admin-switch::after {
+  content: "";
+  width: 22px;
+  height: 22px;
+  margin-left: 3px;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.16);
+  transition: transform .16s ease;
+}
+
+.admin-switch:has(input:checked) {
+  background: linear-gradient(135deg, var(--admin-brand), var(--admin-brand-2));
+}
+
+.admin-switch:has(input:checked)::after {
+  transform: translateX(20px);
+}
+
+/* =========================================================
+   ADMIN CSS SYNC PATCH - Structural aliases and total variants
+========================================================= */
+
+.admin-audit-stat--total::after,
+.admin-banner-stat--total::after,
+.admin-brand-stat--total::after,
+.admin-cancel-stat--total::after,
+.admin-category-stat--total::after,
+.admin-contact-stat--total::after,
+.admin-event-stat--total::after,
+.admin-flashsale-stat--total::after,
+.admin-flashsale-items-stat--total::after,
+.admin-order-stat--total::after,
+.admin-order-detail-stat--total::after,
+.admin-page-stat--total::after,
+.admin-product-stat--total::after,
+.admin-promo-stat--total::after,
+.admin-rank-stat--total::after,
+.admin-return-stat--total::after,
+.admin-role-stat--total::after,
+.admin-setting-stat--total::after,
+.admin-notification-metric--total::after,
+.inventory-stat-card--product::after,
+.admin-dashboard-kpi--products::after,
+.admin-dashboard-kpi--users::after {
+  background: rgba(236, 72, 153, 0.10);
+}
+
+.admin-center-group--overview,
+.admin-center-group--catalog,
+.admin-center-group--sales,
+.admin-center-group--growth,
+.admin-center-group--content,
+.admin-center-group--system {
+  position: relative;
+}
+
+.admin-event-filter-field--keyword,
+.admin-product-filter-field--keyword {
+  min-width: 0;
+}
+
+.admin-flashsale-item-form {
+  display: grid;
+  gap: 14px;
+}
+
+.admin-order-detail-card--side,
+.user-detail-summary-card--account,
+.review-summary-card--status,
+.admin-promo-product-picker--v2 {
+  position: relative;
+}
+
+.admin-review-meta-row--user {
+  align-items: flex-start;
+}
+
+.admin-promo-coupon-products,
+.admin-promo-brand-products,
+.admin-promo-event-products,
+.admin-promo-coupon-brand-field,
+.admin-promo-scope-field,
+.admin-promo-scope-brand,
+.admin-promo-scope-category {
+  min-width: 0;
+}
+
+.admin-notification-page {
+  width: 100%;
+}
+
+.admin-notification-list {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-notification-section-title {
+  margin: 0;
+  color: var(--admin-text);
+  font-size: 17px;
+  line-height: 1.25;
+  font-weight: 950;
+  letter-spacing: -0.02em;
+}
+
+.admin-notification-section-desc {
+  margin: 5px 0 0;
+  color: var(--admin-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.admin-notification-campaign-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.admin-notification-col-id {
+  width: 70px;
+}
+
+.admin-notification-col-type {
+  width: 150px;
 }
