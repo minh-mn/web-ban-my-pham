@@ -5100,3 +5100,407 @@ main.site-main div[class*="home-main"] {
         grid-template-columns: 1fr !important;
     }
 }
+
+
+/* =========================================================
+   HOT CATEGORY FINAL TWEAK
+   Đổi màu chữ nổi bật hơn và bỏ khung trắng quanh item
+========================================================= */
+.skin-hot-categories {
+    background: transparent !important;
+}
+
+.skin-category-grid,
+.skin-category-grid--circle {
+    gap: 34px 24px !important;
+}
+
+.skin-category-card {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+}
+
+.skin-category-card:hover {
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.skin-category-thumb {
+    margin-bottom: 14px !important;
+    box-shadow: 0 12px 28px rgba(63, 173, 214, .16) !important;
+}
+
+.skin-category-card strong {
+    max-width: 180px !important;
+    color: #c2185b !important;
+    font-size: 18px !important;
+    line-height: 1.32 !important;
+    font-weight: 850 !important;
+    letter-spacing: .01em !important;
+    text-shadow: 0 1px 0 rgba(255,255,255,.65) !important;
+}
+
+.skin-category-card:hover strong {
+    color: #a70f47 !important;
+}
+
+@media (max-width: 992px) {
+    .skin-category-card strong {
+        font-size: 17px !important;
+    }
+}
+
+@media (max-width: 640px) {
+    .skin-category-card strong {
+        font-size: 16px !important;
+    }
+}
+
+
+/* =========================================================
+   HOT CATEGORY TEXT BLACK FINAL
+   Đổi chữ danh mục hot về màu đen như trước
+========================================================= */
+.skin-category-card strong {
+    color: #161616 !important;
+    font-size: 18px !important;
+    line-height: 1.32 !important;
+    font-weight: 750 !important;
+    letter-spacing: 0 !important;
+    text-shadow: none !important;
+}
+
+.skin-category-card:hover strong {
+    color: #000000 !important;
+}
+
+@media (max-width: 992px) {
+    .skin-category-card strong {
+        font-size: 17px !important;
+    }
+}
+
+@media (max-width: 640px) {
+    .skin-category-card strong {
+        font-size: 16px !important;
+    }
+}
+
+
+/* =========================================================
+   HOME SECTION TITLE SIZE SYNC FINAL
+   Đồng bộ kích cỡ chữ "Danh mục hot" và "Khám phá" với "Thương hiệu nổi bật"
+========================================================= */
+:root {
+    --home-section-title-size-sync: clamp(32px, 3.2vw, 48px);
+    --home-section-title-line-sync: 1.06;
+    --home-section-title-weight-sync: 950;
+    --home-section-title-spacing-sync: .03em;
+}
+
+/* Danh mục hot */
+.skin-hot-categories .skin-section-top h2,
+.skin-hot-categories h2,
+.skin-hot-category-head h2 {
+    font-size: var(--home-section-title-size-sync) !important;
+    line-height: var(--home-section-title-line-sync) !important;
+    font-weight: var(--home-section-title-weight-sync) !important;
+    letter-spacing: var(--home-section-title-spacing-sync) !important;
+}
+
+/* Khám phá / các section sản phẩm dùng title chung */
+.skin-product-section h2,
+.skin-product-section .skin-section-top h2,
+.home-product-section h2,
+.home-product-section .skin-section-top h2,
+.skin-section-top h2 {
+    font-size: var(--home-section-title-size-sync) !important;
+    line-height: var(--home-section-title-line-sync) !important;
+    font-weight: var(--home-section-title-weight-sync) !important;
+    letter-spacing: var(--home-section-title-spacing-sync) !important;
+}
+
+/* Thương hiệu nổi bật cũng dùng cùng biến để đảm bảo đồng bộ */
+.skin-featured-brand-section h2,
+.skin-featured-brand-section .skin-section-top h2,
+.skin-brand-section h2,
+.skin-brand-section .skin-section-top h2 {
+    font-size: var(--home-section-title-size-sync) !important;
+    line-height: var(--home-section-title-line-sync) !important;
+    font-weight: var(--home-section-title-weight-sync) !important;
+    letter-spacing: var(--home-section-title-spacing-sync) !important;
+}
+
+/* Giữ màu chữ từng section theo tone hiện tại */
+.skin-hot-categories .skin-section-top h2,
+.skin-hot-categories h2,
+.skin-hot-category-head h2,
+.skin-product-section h2,
+.skin-product-section .skin-section-top h2,
+.home-product-section h2,
+.home-product-section .skin-section-top h2,
+.skin-section-top h2,
+.skin-featured-brand-section h2,
+.skin-featured-brand-section .skin-section-top h2,
+.skin-brand-section h2,
+.skin-brand-section .skin-section-top h2 {
+    text-transform: uppercase !important;
+}
+
+@media (max-width: 992px) {
+    :root {
+        --home-section-title-size-sync: clamp(28px, 5vw, 40px);
+    }
+}
+
+@media (max-width: 640px) {
+    :root {
+        --home-section-title-size-sync: 30px;
+        --home-section-title-spacing-sync: .02em;
+    }
+}
+
+
+/* =========================================================
+   HOME SECTION TITLE SIZE + DIACRITIC FIX
+   Thu nhỏ tiêu đề section và tránh mất dấu tiếng Việt
+========================================================= */
+:root {
+    --home-section-title-size-sync: clamp(28px, 2.65vw, 40px);
+    --home-section-title-line-sync: 1.18;
+    --home-section-title-weight-sync: 950;
+    --home-section-title-spacing-sync: .02em;
+}
+
+/* Cho tiêu đề đủ khoảng trống để không bị cắt dấu tiếng Việt */
+.skin-section-top,
+.skin-hot-category-head,
+.skin-hot-categories .skin-section-top,
+.skin-product-section .skin-section-top,
+.home-product-section .skin-section-top,
+.skin-featured-brand-section .skin-section-top,
+.skin-brand-section .skin-section-top {
+    overflow: visible !important;
+}
+
+/* Đồng bộ tiêu đề: Danh mục hot, Khám phá, Thương hiệu nổi bật... */
+.skin-hot-categories .skin-section-top h2,
+.skin-hot-categories h2,
+.skin-hot-category-head h2,
+.skin-product-section h2,
+.skin-product-section .skin-section-top h2,
+.home-product-section h2,
+.home-product-section .skin-section-top h2,
+.skin-section-top h2,
+.skin-featured-brand-section h2,
+.skin-featured-brand-section .skin-section-top h2,
+.skin-brand-section h2,
+.skin-brand-section .skin-section-top h2 {
+    font-size: var(--home-section-title-size-sync) !important;
+    line-height: var(--home-section-title-line-sync) !important;
+    font-weight: var(--home-section-title-weight-sync) !important;
+    letter-spacing: var(--home-section-title-spacing-sync) !important;
+    padding-bottom: .12em !important;
+    overflow: visible !important;
+    text-transform: uppercase !important;
+}
+
+/* Riêng tiêu đề Danh mục hot đang có icon ở giữa, giữ nhỏ hơn một chút để không quá chiếm chỗ */
+.skin-hot-categories .skin-section-top h2,
+.skin-hot-categories h2,
+.skin-hot-category-head h2 {
+    font-size: clamp(30px, 2.75vw, 42px) !important;
+    line-height: 1.2 !important;
+}
+
+/* Chữ tên danh mục nhỏ vừa lại và không bị nặng */
+.skin-category-card strong {
+    color: #161616 !important;
+    font-size: 16px !important;
+    line-height: 1.35 !important;
+    font-weight: 750 !important;
+    letter-spacing: 0 !important;
+    text-shadow: none !important;
+}
+
+.skin-category-card:hover strong {
+    color: #000000 !important;
+}
+
+@media (max-width: 992px) {
+    :root {
+        --home-section-title-size-sync: clamp(26px, 4.4vw, 36px);
+    }
+
+    .skin-hot-categories .skin-section-top h2,
+    .skin-hot-categories h2,
+    .skin-hot-category-head h2 {
+        font-size: clamp(28px, 4.8vw, 38px) !important;
+    }
+
+    .skin-category-card strong {
+        font-size: 15px !important;
+    }
+}
+
+@media (max-width: 640px) {
+    :root {
+        --home-section-title-size-sync: 28px;
+        --home-section-title-spacing-sync: .015em;
+    }
+
+    .skin-hot-categories .skin-section-top h2,
+    .skin-hot-categories h2,
+    .skin-hot-category-head h2 {
+        font-size: 30px !important;
+    }
+
+    .skin-category-card strong {
+        font-size: 14px !important;
+    }
+}
+
+
+/* =========================================================
+   FORCE HOME TITLES SMALLER + VIETNAMESE DIACRITIC SAFE
+   Target đúng các heading custom: hot-category-word, discover-heading, featured-brand-title
+========================================================= */
+
+/* Reset vùng tiêu đề để không cắt dấu tiếng Việt */
+.skin-section-top,
+.skin-section-top *,
+.skin-hot-category-head,
+.skin-hot-category-head *,
+.hot-category-heading-wrap,
+.hot-category-heading,
+.discover-heading-wrap,
+.discover-heading,
+.best-selling-heading-wrap,
+.best-selling-heading,
+.flash-deal-heading-wrap,
+.flash-deal-heading,
+.skin-featured-brand-head,
+.skin-featured-brand-title {
+    overflow: visible !important;
+}
+
+/* DANH MỤC HOT - class thực tế là hot-category-word, không phải h2 thường */
+.hot-category-heading {
+    align-items: center !important;
+    gap: 12px !important;
+    line-height: 1.25 !important;
+    padding: 6px 0 10px !important;
+    margin: 0 !important;
+}
+
+.hot-category-word {
+    display: inline-block !important;
+    font-size: clamp(26px, 2.75vw, 38px) !important;
+    line-height: 1.28 !important;
+    font-weight: 950 !important;
+    letter-spacing: .04em !important;
+    padding: 4px 0 8px !important;
+    vertical-align: middle !important;
+}
+
+.hot-category-icon {
+    width: clamp(36px, 3vw, 44px) !important;
+    height: clamp(36px, 3vw, 44px) !important;
+    border-radius: 14px !important;
+    font-size: clamp(18px, 1.9vw, 24px) !important;
+}
+
+/* KHÁM PHÁ - class thực tế trong JSP là discover-heading */
+.discover-heading,
+.skin-discover-heading {
+    display: inline-block !important;
+    font-size: clamp(26px, 2.75vw, 38px) !important;
+    line-height: 1.28 !important;
+    font-weight: 950 !important;
+    letter-spacing: .055em !important;
+    padding: 6px 0 10px !important;
+    margin: 0 !important;
+    overflow: visible !important;
+}
+
+/* Nếu có gạch trước tiêu đề khám phá thì đưa xuống nhẹ để không đè dấu */
+.discover-heading::before,
+.skin-discover-heading::before {
+    transform: translateY(-5px) !important;
+}
+
+/* THƯƠNG HIỆU NỔI BẬT */
+.skin-featured-brand-title,
+.skin-featured-brand-section .skin-featured-brand-title,
+.skin-featured-brand-section h2.skin-featured-brand-title {
+    display: inline-block !important;
+    font-size: clamp(24px, 2.25vw, 34px) !important;
+    line-height: 1.28 !important;
+    font-weight: 950 !important;
+    letter-spacing: .045em !important;
+    padding: 8px 0 10px !important;
+    margin: 0 !important;
+    overflow: visible !important;
+}
+
+/* Các title section sản phẩm còn lại */
+.skin-product-section .skin-section-top h2:not(.discover-heading):not(.flash-deal-heading):not(.best-selling-heading),
+.home-product-section .skin-section-top h2,
+.skin-section-top h2:not(.hot-category-heading):not(.discover-heading):not(.flash-deal-heading):not(.best-selling-heading) {
+    font-size: clamp(26px, 2.75vw, 38px) !important;
+    line-height: 1.28 !important;
+    letter-spacing: .055em !important;
+    padding: 6px 0 10px !important;
+}
+
+/* Danh mục con giữ nhỏ vừa, không bị quá đậm */
+.skin-category-card strong {
+    color: #161616 !important;
+    font-size: 15px !important;
+    line-height: 1.35 !important;
+    font-weight: 700 !important;
+    letter-spacing: 0 !important;
+    text-shadow: none !important;
+}
+
+@media (max-width: 992px) {
+    .hot-category-word,
+    .discover-heading,
+    .skin-discover-heading {
+        font-size: clamp(25px, 4.4vw, 34px) !important;
+        letter-spacing: .035em !important;
+    }
+
+    .skin-featured-brand-title,
+    .skin-featured-brand-section .skin-featured-brand-title {
+        font-size: clamp(24px, 4.2vw, 32px) !important;
+    }
+
+    .skin-category-card strong {
+        font-size: 14px !important;
+    }
+}
+
+@media (max-width: 640px) {
+    .hot-category-word,
+    .discover-heading,
+    .skin-discover-heading {
+        font-size: 28px !important;
+        letter-spacing: .025em !important;
+    }
+
+    .hot-category-icon {
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 19px !important;
+    }
+
+    .skin-featured-brand-title,
+    .skin-featured-brand-section .skin-featured-brand-title {
+        font-size: 26px !important;
+        letter-spacing: .025em !important;
+    }
+}
