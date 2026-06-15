@@ -31,16 +31,6 @@
   <c:set var="hrEmail" value="hr@mycosmetic.vn" />
 </c:if>
 
-<c:set var="businessCode" value="${settings.business_code}" />
-<c:if test="${empty businessCode}">
-  <c:set var="businessCode" value="Đang cập nhật" />
-</c:if>
-
-<c:set var="businessDate" value="${settings.business_date}" />
-<c:if test="${empty businessDate}">
-  <c:set var="businessDate" value="Đang cập nhật" />
-</c:if>
-
 <c:set var="facebookUrl" value="${settings.facebook}" />
 <c:if test="${empty facebookUrl}">
   <c:set var="facebookUrl" value="#" />
@@ -141,17 +131,6 @@
         </div>
       </div>
 
-      <div class="contact-business-box">
-        <div>
-          <span>MSDN</span>
-          <strong><c:out value="${businessCode}" /></strong>
-        </div>
-        <div>
-          <span>Ngày cấp</span>
-          <strong><c:out value="${businessDate}" /></strong>
-        </div>
-      </div>
-
       <div class="contact-social-row">
         <a href="${facebookUrl}" aria-label="Facebook">
           <i class="fa-brands fa-facebook-f"></i>
@@ -243,10 +222,6 @@
             <span>Gửi lời nhắn</span>
             <i class="fa-solid fa-arrow-right"></i>
           </button>
-
-          <p>
-            Bằng việc gửi thông tin, bạn đồng ý để MyCosmetic liên hệ lại nhằm hỗ trợ yêu cầu.
-          </p>
         </div>
 
       </form>
