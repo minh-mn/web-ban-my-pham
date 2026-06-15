@@ -9,6 +9,8 @@
 <jsp:include page="/jsp/admin/layout/header.jsp"/>
 <jsp:include page="/jsp/admin/layout/sidebar.jsp"/>
 
+<c:set var="ctx" value="${ctx}" />
+
 <c:set var="currentAdmin" value="${sessionScope.user}" />
 <c:if test="${empty currentAdmin and not empty sessionScope.authUser}">
   <c:set var="currentAdmin" value="${sessionScope.authUser}" />
@@ -26,24 +28,24 @@
 
     <div class="user-detail-hero">
       <div class="user-detail-hero__content">
-        <span class="user-detail-eyebrow">Issue 130 · Quản lí user</span>
+        <span class="user-detail-eyebrow">TÀI KHOẢN & PHÂN QUYỀN</span>
         <h1 class="admin-h1 user-detail-title">
           Chi tiết tài khoản
           <c:if test="${not empty user}">#${user.id}</c:if>
         </h1>
         <p class="admin-subtext user-detail-subtitle">
           Xem thông tin tài khoản, role, rank, trạng thái đăng nhập và quyền quản trị.
-          Admin chỉ được quản lí quyền, trạng thái và rank; thông tin cá nhân chỉ xem.
+          Admin chỉ được quản lý quyền, trạng thái và rank; thông tin cá nhân chỉ xem.
         </p>
       </div>
 
       <div class="user-detail-hero__actions">
-        <a class="admin-btn" href="${pageContext.request.contextPath}/admin/users">
+        <a class="admin-btn" href="${ctx}/admin/users">
           Quay lại danh sách
         </a>
         <c:if test="${not empty user}">
           <a class="admin-btn admin-btn--primary"
-             href="${pageContext.request.contextPath}/admin/users?action=edit&id=${user.id}">
+             href="${ctx}/admin/users?action=edit&id=${user.id}">
             Sửa quyền / trạng thái
           </a>
         </c:if>
@@ -454,7 +456,7 @@
               <div class="user-detail-card__body">
                 <div class="user-detail-action-list">
                   <a class="admin-btn admin-btn--primary user-detail-action-btn"
-                     href="${pageContext.request.contextPath}/admin/users?action=edit&id=${user.id}">
+                     href="${ctx}/admin/users?action=edit&id=${user.id}">
                     Sửa quyền / trạng thái
                   </a>
 
@@ -477,7 +479,7 @@
 
                     <c:otherwise>
                       <form method="post"
-                            action="${pageContext.request.contextPath}/admin/users"
+                            action="${ctx}/admin/users"
                             class="user-detail-action-form"
                             onsubmit="return confirm('${user.active ? 'Khóa tài khoản user này?' : 'Mở khóa tài khoản user này?'}');">
                         <%@ include file="/jsp/common/csrf.jspf" %>
@@ -500,7 +502,7 @@
                   </c:choose>
 
                   <a class="admin-btn user-detail-action-btn"
-                     href="${pageContext.request.contextPath}/admin/users">
+                     href="${ctx}/admin/users">
                     Đóng
                   </a>
                 </div>
