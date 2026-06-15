@@ -401,12 +401,13 @@ Layout theo mẫu: banner lớn bên trái, logo thương hiệu + sản phẩm 
 				margin: 0;
 				display: inline-block;
 				width: fit-content;
-				padding: 6px 0;
+				padding: 8px 0 10px;
+				overflow: visible;
 				color: #111;
-				font-size: clamp(24px, 2.4vw, 38px);
+				font-size: clamp(24px, 2.25vw, 34px);
 				font-weight: 950;
-				letter-spacing: .075em;
-				line-height: 1.25;
+				letter-spacing: .045em;
+				line-height: 1.28;
 				text-transform: uppercase;
 				background: none;
 				-webkit-text-fill-color: currentColor;
