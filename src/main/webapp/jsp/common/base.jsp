@@ -254,81 +254,69 @@
 			</a>
 
 			<c:set var="unreadCount" value="${sessionScope.user.admin ? adminUnreadCount : unreadNotificationCount}" />
+			<c:set var="notificationsPageUrl" value="${pageContext.request.contextPath}${sessionScope.user.admin ? '/admin/notifications' : '/notifications'}" />
 
-			<button id="notifBellBtn" class="notification-bell" type="button" aria-haspopup="true" aria-expanded="false">
-				<span class="notification-bell__icon" aria-hidden="true">
-				<svg viewBox="0 0 24 24" focusable="false"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path><path d="M10 21a2.2 2.2 0 0 0 4 0"></path></svg>
-			</span>
+			<div class="notification-container" id="notificationContainer">
+				<button id="notifBellBtn" class="notification-bell" type="button" aria-haspopup="true" aria-expanded="false">
+					<span class="notification-bell__icon" aria-hidden="true">
+						<svg viewBox="0 0 24 24" focusable="false"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path><path d="M10 21a2.2 2.2 0 0 0 4 0"></path></svg>
+					</span>
 
-				<%-- Hiển thị số lượng thông báo chưa đọc nếu > 0 --%>
-				<c:if test="${unreadCount > 0}">
+					<c:if test="${unreadCount > 0}">
 						<span class="notif-badge">
 							<c:out value="${unreadCount > 99 ? '99+' : unreadCount}" />
 						</span>
-				</c:if>
-			</button>
+					</c:if>
+				</button>
 
-			<div class="notif-dropdown" id="notifDropdown">
-				<div class="notif-dropdown__header" style="padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between;">
-					<strong>Thông báo mới nhận</strong>
+				<div class="notif-dropdown" id="notifDropdown">
+					<div class="notif-dropdown__head">
+						<div class="notif-dropdown__title-group">
+							<strong>Thông báo mới nhận</strong>
+							<span>Theo dõi cập nhật đơn hàng và hoạt động mới nhất của bạn</span>
+						</div>
+						<c:if test="${unreadCount > 0}">
+							<span class="notif-dropdown__counter"><c:out value="${unreadCount > 99 ? '99+' : unreadCount}" /> mới</span>
+						</c:if>
+					</div>
+
+					<div class="notif-dropdown__body">
+						<c:choose>
+							<c:when test="${not empty headerNotifications}">
+								<c:forEach var="notif" items="${headerNotifications}">
+									<c:url var="notifReadUrl" value="/notifications/read">
+										<c:param name="id" value="${notif.id}" />
+										<c:param name="redirect" value="${empty notif.targetUrl ? (sessionScope.user.admin ? '/admin/notifications' : '/notifications') : notif.targetUrl}" />
+									</c:url>
+
+									<a href="${notifReadUrl}" class="notif-card ${notif.read ? 'is-read' : 'is-unread'}">
+										<span class="notif-card__icon" aria-hidden="true"><span class="notif-card__brand-mark">MC</span></span>
+										<span class="notif-card__content">
+											<span class="notif-card__top">
+												<strong><c:out value="${notif.title}" /></strong>
+												<c:if test="${not notif.read}"><span class="notif-card__badge">Mới</span></c:if>
+											</span>
+											<span class="notif-card__message"><c:out value="${notif.message}" /></span>
+											<span class="notif-card__meta">
+												<span class="notif-card__time"><c:out value="${not empty notif.createdAt ? notif.createdAt : 'Thông báo hệ thống'}" /></span>
+											</span>
+										</span>
+										<c:if test="${not notif.read}"><span class="notif-card__dot" aria-hidden="true"></span></c:if>
+									</a>
+								</c:forEach>
+							</c:when>
+							<c:otherwise>
+								<div class="notification-empty">
+									<div class="notification-empty__icon">MC</div>
+									<p>Bạn chưa có thông báo mới.</p>
+								</div>
+							</c:otherwise>
+						</c:choose>
+					</div>
+
+					<a href="${notificationsPageUrl}" class="notif-dropdown__view-all">Xem tất cả thông báo</a>
 				</div>
-
-				<div class="notif-dropdown__body" style="max-height: 300px; overflow-y: auto;">
-					<c:choose>
-						<c:when test="${not empty headerNotifications}">
-							<%-- Vòng lặp duyệt danh sách thông báo --%>
-							<c:forEach var="notif" items="${headerNotifications}">
-
-								<%-- Đường dẫn chuyển hướng khi click đọc thông báo --%>
-								<c:url var="notifReadUrl" value="/notifications/read">
-									<c:param name="id" value="${notif.id}" />
-									<c:param name="redirect" value="${empty notif.targetUrl ? '/admin/notifications' : notif.targetUrl}" />
-								</c:url>
-
-								<a href="${notifReadUrl}" class="notification-item ${notif.read ? 'is-read' : 'is-unread'}"
-								   style="display: flex; padding: 10px; border-bottom: 1px solid #f9f9f9; text-decoration: none; color: #333; ${!notif.read ? 'background-color: #f0f7ff;' : ''}">
-
-			                        <span class="notification-item__icon" style="font-size: 20px; margin-right: 10px;">
-			                            <c:choose>
-											<c:when test="${notif.type == 'CONTACT_CREATED'}">✉️</c:when>
-											<c:when test="${notif.type == 'ORDER_CREATED'}">🛒</c:when>
-											<c:otherwise>🔔</c:otherwise>
-										</c:choose>
-			                        </span>
-
-									<span class="notification-item__content" style="display: flex; flex-direction: column;">
-			                            <strong style="font-size: 13px; color: #111;">
-			                                <c:out value="${notif.title}" />
-			                            </strong>
-			                            <small style="font-size: 12px; color: #666; margin-top: 2px;">
-			                                <c:out value="${notif.message}" />
-			                            </small>
-			                        </span>
-
-									<c:if test="${not notif.read}">
-										<span class="notification-item__dot" style="width: 8px; height: 8px; background-color: #007bff; border-radius: 50%; margin-left: auto; align-self: center;"></span>
-									</c:if>
-								</a>
-							</c:forEach>
-						</c:when>
-
-						<%-- Nếu không có thông báo nào --%>
-						<c:otherwise>
-							<div class="notification-empty" style="padding: 20px; text-align: center; color: #999;">
-								<p>Bạn không có thông báo nào mới.</p>
-							</div>
-						</c:otherwise>
-					</c:choose>
-				</div>
-
-				<div class="notif-dropdown__footer" style="padding: 10px; text-align: center; border-top: 1px solid #eee;">
-					<a href="${pageContext.request.contextPath}${sessionScope.user.admin ? '/admin/notifications' : '/notifications'}" style="font-size: 12px; color: #ff5fa2; text-decoration: none; font-weight: bold;">
-						Xem tất cả thông báo
-					</a>
-				</div>
-			</div>
-
-		</div>
+			</div></div>
 	</div>
 
 	<jsp:include page="/jsp/common/header.jsp" />
@@ -636,9 +624,21 @@
 	document.addEventListener("DOMContentLoaded", function () {
 		const bellBtn = document.getElementById("notifBellBtn");
 		const dropdown = document.getElementById("notifDropdown");
+		const notificationContainer = document.getElementById("notificationContainer");
 
-		if (!bellBtn || !dropdown) {
+		if (!bellBtn || !dropdown || !notificationContainer) {
 			return;
+		}
+
+		let closeTimer = null;
+
+		function openNotificationDropdown() {
+			if (closeTimer) {
+				clearTimeout(closeTimer);
+				closeTimer = null;
+			}
+			dropdown.classList.add("is-open");
+			bellBtn.setAttribute("aria-expanded", "true");
 		}
 
 		function closeNotificationDropdown() {
@@ -646,16 +646,26 @@
 			bellBtn.setAttribute("aria-expanded", "false");
 		}
 
-		bellBtn.addEventListener("click", function (event) {
-			event.preventDefault();
-			event.stopPropagation();
+		function scheduleClose() {
+			if (closeTimer) clearTimeout(closeTimer);
+			closeTimer = setTimeout(closeNotificationDropdown, 120);
+		}
 
-			const isOpen = dropdown.classList.toggle("is-open");
-			bellBtn.setAttribute("aria-expanded", String(isOpen));
+		notificationContainer.addEventListener("mouseenter", openNotificationDropdown);
+		notificationContainer.addEventListener("mouseleave", scheduleClose);
+		bellBtn.addEventListener("focus", openNotificationDropdown);
+		dropdown.addEventListener("focusin", openNotificationDropdown);
+		bellBtn.addEventListener("click", function (event) {
+			if (window.matchMedia && window.matchMedia("(hover: none)").matches) {
+				event.preventDefault();
+				event.stopPropagation();
+				const isOpen = dropdown.classList.toggle("is-open");
+				bellBtn.setAttribute("aria-expanded", String(isOpen));
+			}
 		});
 
 		document.addEventListener("click", function (event) {
-			if (!dropdown.contains(event.target) && !bellBtn.contains(event.target)) {
+			if (!notificationContainer.contains(event.target)) {
 				closeNotificationDropdown();
 			}
 		});
