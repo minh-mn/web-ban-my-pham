@@ -5413,3 +5413,171 @@ td.product-actions {
     width: 100%;
   }
 }
+
+/* =========================================================
+   ADMIN UI V2 - LIST / TABLE / FILTER REFINEMENT
+========================================================= */
+
+.admin-toolbar,
+.admin-promo-toolbar,
+.admin-order-filter-card,
+.admin-user-filter-card,
+.admin-review-filter-card{
+  border-radius: 24px;
+}
+
+.admin-table-wrap,
+.admin-category-table-wrap,
+.admin-promo-table-wrap,
+.inventory-table-wrap,
+.inventory-import-history-wrap,
+.admin-review-table-wrap,
+.admin-user-table-wrap,
+.admin-flashsale-table-wrap,
+.admin-order-table-wrap{
+  border-color: rgba(148, 163, 184, 0.22);
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.045);
+}
+
+.admin-table th,
+.admin-category-table th,
+.admin-promo-table th,
+.inventory-table th,
+.inventory-import-history-table th,
+.admin-review-table th,
+.admin-user-table th,
+.admin-flashsale-table th,
+.admin-order-table th{
+  background: linear-gradient(180deg, #fff7fb 0%, #fdf2f8 100%);
+  color: #64748b;
+  font-weight: 1000;
+  letter-spacing: .03em;
+}
+
+.admin-table td,
+.admin-category-table td,
+.admin-promo-table td,
+.inventory-table td,
+.inventory-import-history-table td,
+.admin-review-table td,
+.admin-user-table td,
+.admin-flashsale-table td,
+.admin-order-table td{
+  border-color: rgba(148, 163, 184, 0.16);
+}
+
+.admin-category-table tbody tr,
+.admin-promo-table tbody tr,
+.inventory-table tbody tr,
+.inventory-import-history-table tbody tr,
+.admin-review-table tbody tr,
+.admin-user-table tbody tr,
+.admin-flashsale-table tbody tr,
+.admin-order-table tbody tr{
+  transition: background .14s ease, transform .14s ease;
+}
+
+.admin-category-table tbody tr:hover,
+.admin-promo-table tbody tr:hover,
+.inventory-table tbody tr:hover,
+.inventory-import-history-table tbody tr:hover,
+.admin-review-table tbody tr:hover,
+.admin-user-table tbody tr:hover,
+.admin-flashsale-table tbody tr:hover,
+.admin-order-table tbody tr:hover{
+  background: rgba(236, 72, 153, 0.028);
+}
+
+.admin-thumb,
+.admin-review-user__avatar,
+.admin-user-avatar,
+.user-detail-avatar,
+.review-avatar{
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
+}
+
+.admin-promo-stat,
+.inventory-stat-card,
+.admin-review-stat,
+.admin-user-stat,
+.admin-flashsale-stat,
+.user-detail-summary-card{
+  border-color: rgba(148, 163, 184, 0.22);
+  border-radius: 22px;
+  background: #ffffff;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.055);
+}
+
+.admin-promo-stat__value,
+.inventory-card-value,
+.admin-review-stat__value,
+.admin-user-stat__value,
+.admin-flashsale-stat__value,
+.user-detail-summary-value{
+  letter-spacing: -0.045em;
+}
+
+.admin-review-hero,
+.admin-user-hero,
+.admin-flashsale-hero,
+.admin-order-hero{
+  border-radius: 28px;
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.07);
+}
+
+.admin-review-filter-card .admin-card__body,
+.admin-user-filter-card .admin-card__body,
+.admin-review-list-card .admin-card__body,
+.admin-user-list-card .admin-card__body,
+.admin-order-card .admin-card__body,
+.admin-flashsale-list-card .admin-card__body{
+  padding: 20px;
+}
+
+.admin-review-filter-main,
+.admin-user-filter-form,
+.admin-order-filter-form,
+.admin-promo-filter-form{
+  gap: 14px;
+}
+
+.admin-review-filter-field span,
+.admin-user-filter-field span,
+.admin-order-filter-field span{
+  color: #475569;
+  font-weight: 1000;
+}
+
+.admin-review-action-btn,
+.admin-user-action-btn,
+.admin-order-action-btn,
+.admin-flashsale-action-btn,
+.admin-promo-action-btn,
+.admin-category-action-btn{
+  border-radius: 999px;
+  font-weight: 1000;
+}
+
+.admin-empty,
+.admin-review-empty,
+.admin-user-empty,
+.admin-flashsale-empty,
+.admin-order-empty{
+  border-color: rgba(148, 163, 184, 0.28);
+  background:
+    radial-gradient(circle at top left, rgba(236, 72, 153, 0.08), transparent 30%),
+    linear-gradient(180deg, #ffffff, #fbfcff);
+}
+
+@media (max-width: 760px){
+  .admin-review-filter-card .admin-card__body,
+  .admin-user-filter-card .admin-card__body,
+  .admin-review-list-card .admin-card__body,
+  .admin-user-list-card .admin-card__body,
+  .admin-order-card .admin-card__body,
+  .admin-flashsale-list-card .admin-card__body{
+    padding: 16px;
+  }
+}
