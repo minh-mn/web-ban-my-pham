@@ -1909,6 +1909,73 @@
     }
   }
 
+
+
+  /* =========================================================
+     FINAL: Chỉnh kiểu chữ tiêu đề giống logo MyCosmetic
+     - Tiêu đề dùng font serif sang giống logo
+     - Không tách chữ tiếng Việt
+     - Màu đỏ hồng đồng bộ trang chủ
+  ========================================================= */
+  .mc-category-hero__title {
+    display: block !important;
+    width: 100% !important;
+    max-width: 1120px !important;
+    margin: 6px auto 12px !important;
+
+    font-family: var(--mc-brand-font, "Playfair Display", Georgia, "Times New Roman", serif) !important;
+    font-size: clamp(54px, 5.1vw, 86px) !important;
+    font-weight: 900 !important;
+    line-height: .98 !important;
+    letter-spacing: -0.035em !important;
+    word-spacing: 0 !important;
+
+    color: var(--mc-brand-red, #c70b3f) !important;
+    background: none !important;
+    -webkit-background-clip: initial !important;
+    background-clip: initial !important;
+    -webkit-text-fill-color: var(--mc-brand-red, #c70b3f) !important;
+
+    text-align: center !important;
+    text-transform: none !important;
+    white-space: normal !important;
+    word-break: keep-all !important;
+    overflow-wrap: normal !important;
+    hyphens: none !important;
+    text-rendering: optimizeLegibility !important;
+    font-kerning: normal !important;
+    font-variant-ligatures: normal !important;
+    unicode-bidi: isolate !important;
+    text-shadow: 0 14px 30px rgba(199, 11, 63, .14) !important;
+  }
+
+  .mc-category-hero__title::before {
+    left: -44px !important;
+    top: 14px !important;
+  }
+
+  .mc-category-hero__title::after {
+    right: -42px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+  }
+
+  @media (max-width: 920px) {
+    .mc-category-hero__title {
+      font-size: clamp(40px, 8vw, 62px) !important;
+      line-height: 1.04 !important;
+      letter-spacing: -0.025em !important;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .mc-category-hero__title {
+      font-size: clamp(34px, 10vw, 46px) !important;
+      line-height: 1.08 !important;
+      letter-spacing: -0.018em !important;
+    }
+  }
+
 </style>
 
 <script>
