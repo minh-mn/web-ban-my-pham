@@ -36,13 +36,6 @@
       </div>
     </section>
 
-<div class="admin-promotion-create">
-        <a class="admin-btn"
-           href="${ctx}/admin/promotions?type=${promotionType}">
-          ← Quay lại danh sách
-        </a>
-      </div>
-    </div>
 
     <!-- TYPE TABS -->
     <div class="admin-card admin-promo-type-card admin-promo-form-type-card">
