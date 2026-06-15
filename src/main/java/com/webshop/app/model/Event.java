@@ -10,8 +10,13 @@ public class Event {
     private String imageUrl;
     private Date eventDate;
 
-    // Thông tin hỗ trợ hiển thị ở trang người dùng
+    /*
+     * Dùng cho trang Tin tức & Sự kiện phía user.
+     * Các field này không bắt buộc phải có trong database.
+     */
+    private String slug;
     private String topicKey;
+    private String content;
     private String actionUrl;
     private String actionText;
 
@@ -34,6 +39,7 @@ public class Event {
         this.id = id;
     }
 
+
     public String getTitle() {
         return title;
     }
@@ -41,6 +47,7 @@ public class Event {
     public void setTitle(String title) {
         this.title = title;
     }
+
 
     public String getSummary() {
         return summary;
@@ -50,6 +57,7 @@ public class Event {
         this.summary = summary;
     }
 
+
     public String getTag() {
         return tag;
     }
@@ -57,6 +65,7 @@ public class Event {
     public void setTag(String tag) {
         this.tag = tag;
     }
+
 
     public String getImageUrl() {
         return imageUrl;
@@ -66,6 +75,7 @@ public class Event {
         this.imageUrl = imageUrl;
     }
 
+
     public Date getEventDate() {
         return eventDate;
     }
@@ -73,6 +83,16 @@ public class Event {
     public void setEventDate(Date eventDate) {
         this.eventDate = eventDate;
     }
+
+
+    public String getSlug() {
+        return slug;
+    }
+
+    public void setSlug(String slug) {
+        this.slug = slug;
+    }
+
 
     public String getTopicKey() {
         return topicKey;
@@ -82,6 +102,16 @@ public class Event {
         this.topicKey = topicKey;
     }
 
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+
     public String getActionUrl() {
         return actionUrl;
     }
@@ -89,6 +119,7 @@ public class Event {
     public void setActionUrl(String actionUrl) {
         this.actionUrl = actionUrl;
     }
+
 
     public String getActionText() {
         return actionText;
