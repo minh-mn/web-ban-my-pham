@@ -5630,3 +5630,83 @@ html body .mc-filter-option input[type="radio"]:checked ~ .mc-filter-name {
 	color: #b01239 !important;
 	font-weight: 950 !important;
 }
+
+/* =========================================================
+   FINAL FIX - PREVENT FILTER CLICK JUMP
+   Bỏ nhảy màn hình khi bấm chọn bộ lọc
+========================================================= */
+
+html {
+	scroll-behavior: auto !important;
+}
+
+html body .collection-filter-sidebar,
+html body .filter-sidebar.collection-filter-sidebar,
+html body form.mc-filter-form,
+html body .mc-filter-block,
+html body .mc-filter-list,
+html body .mc-filter-option,
+html body .mc-filter-option:hover,
+html body .mc-filter-option:active,
+html body .mc-filter-option:focus-within {
+	transform: none !important;
+	transition-property: color, background-color, border-color, box-shadow !important;
+}
+
+html body .mc-filter-option:hover {
+	background: transparent !important;
+}
+
+html body .mc-filter-option input[type="radio"],
+html body .mc-filter-option input[type="checkbox"] {
+	scroll-margin: 0 !important;
+}
+
+html body .mc-filter-option,
+html body .mc-filter-option * {
+	scroll-margin-top: 0 !important;
+}
+
+html body .collection-filter-sidebar {
+	overflow-anchor: none !important;
+}
+
+html body .collection-main,
+html body #collectionResults {
+	overflow-anchor: auto !important;
+}
+
+/* =========================================================
+   FINAL APPLY FILTER NO JUMP
+   Giảm giật khi nhấn nút Áp dụng lọc
+========================================================= */
+
+html,
+body {
+	scroll-behavior: auto !important;
+}
+
+html.mc-filter-submitting *,
+html.mc-filter-submitting *::before,
+html.mc-filter-submitting *::after {
+	transition: none !important;
+	animation: none !important;
+}
+
+html body .mc-filter-actions .mc-filter-apply,
+html body .mc-filter-actions .mc-filter-apply:hover,
+html body .mc-filter-actions .mc-filter-apply:active,
+html body .mc-filter-actions .mc-filter-apply:focus {
+	transform: none !important;
+	transition: background-color .15s ease, color .15s ease, border-color .15s ease !important;
+}
+
+html body .collection-filter-sidebar,
+html body .filter-sidebar.collection-filter-sidebar,
+html body .collection-main,
+html body #collectionResults,
+html body .collection-toolbar,
+html body .collection-filter-tags {
+	scroll-margin-top: 0 !important;
+	overflow-anchor: none !important;
+}
