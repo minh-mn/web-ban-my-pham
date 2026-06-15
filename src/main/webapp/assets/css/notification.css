@@ -719,3 +719,115 @@ main.site-main > .notification-page,
         display: none !important;
     }
 }
+
+
+/* =========================================================
+   NOTIFICATION PAGE V19 - FIX HERO HIDDEN UNDER HEADER
+   Add at the VERY END of notification.css
+========================================================= */
+
+/*
+   Header của web đang nằm dạng sticky/fixed và có chiều cao lớn.
+   Nếu section notification bắt đầu từ y=0, hero sẽ chui dưới header.
+   Block này chỉ áp dụng cho /notifications để đẩy toàn bộ nội dung xuống.
+*/
+html body main.site-main > section.notification-page,
+html body .site-main > section.notification-page,
+body.site-body main.site-main > section.notification-page,
+section.notification-page {
+    display: block !important;
+    position: relative !important;
+    box-sizing: border-box !important;
+    min-height: 70vh !important;
+
+    /* Quan trọng: đẩy hero xuống dưới header */
+    padding-top: 235px !important;
+    padding-bottom: 56px !important;
+
+    margin-top: 0 !important;
+    overflow: visible !important;
+}
+
+/* Đảm bảo hero không bị CSS cũ ẩn/cắt */
+section.notification-page .notification-page__hero {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 22px !important;
+    align-items: center !important;
+
+    width: min(1040px, 100%) !important;
+    min-height: 150px !important;
+    height: auto !important;
+
+    margin: 0 0 20px 0 !important;
+    padding: 24px 26px !important;
+
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: none !important;
+    overflow: visible !important;
+    z-index: 1 !important;
+}
+
+/* Ép toàn bộ chữ và phần thống kê trong hero hiện đầy đủ */
+section.notification-page .notification-page__hero *,
+section.notification-page .notification-page__hero-content,
+section.notification-page .notification-page__eyebrow,
+section.notification-page .notification-page__title,
+section.notification-page .notification-page__subtitle,
+section.notification-page .notification-page__hero-actions,
+section.notification-page .notification-page__stat-grid,
+section.notification-page .notification-page__stat,
+section.notification-page .notification-page__mark-form,
+section.notification-page .notification-page__mark-btn {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: none !important;
+}
+
+section.notification-page .notification-page__title {
+    display: block !important;
+    margin: 0 !important;
+    color: #111827 !important;
+    font-size: 32px !important;
+    line-height: 1.15 !important;
+    font-weight: 950 !important;
+}
+
+section.notification-page .notification-page__subtitle {
+    display: block !important;
+    margin-top: 10px !important;
+    color: #6b7280 !important;
+    font-size: 14px !important;
+    line-height: 1.65 !important;
+}
+
+/* Card danh sách nằm dưới hero */
+section.notification-page .notification-list-card {
+    position: relative !important;
+    z-index: 1 !important;
+    margin-top: 0 !important;
+}
+
+/* Mobile/tablet: header thấp hơn nên giảm khoảng đẩy */
+@media (max-width: 900px) {
+    html body main.site-main > section.notification-page,
+    html body .site-main > section.notification-page,
+    body.site-body main.site-main > section.notification-page,
+    section.notification-page {
+        padding-top: 205px !important;
+    }
+
+    section.notification-page .notification-page__hero {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+@media (max-width: 640px) {
+    html body main.site-main > section.notification-page,
+    html body .site-main > section.notification-page,
+    body.site-body main.site-main > section.notification-page,
+    section.notification-page {
+        padding-top: 180px !important;
+    }
+}

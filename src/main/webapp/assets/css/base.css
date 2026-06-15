@@ -5837,3 +5837,13 @@ html body:has(.notification-page) main.site-main > .notification-page {
 .site-header .notif-dropdown.is-open {
   animation: none !important;
 }
+
+
+/* =========================================================
+   NOTIFICATION V19 - LET NOTIFICATION.CSS CONTROL TOP OFFSET
+========================================================= */
+html body main.site-main:has(section.notification-page),
+html body .site-main:has(section.notification-page) {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
