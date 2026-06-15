@@ -100,7 +100,7 @@
                                     <input type="checkbox" id="cartCheckAll" class="cart-check-all" checked />
                                 </th>
                                 <th>Sản phẩm</th>
-                                <th>Biến thể</th>
+                                <th>Phân loại</th>
                                 <th>Đơn giá</th>
                                 <th>Số lượng</th>
                                 <th>Tạm tính</th>
