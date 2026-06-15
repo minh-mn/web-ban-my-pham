@@ -1,252 +1,294 @@
-<%--
-  Created by IntelliJ IDEA.
-  User: ASUS
-  Date: 28/05/2026
-  Time: 7:09 CH
---%>
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 
-<c:set var="pageTitle" value="ADMIN | Form Sự kiện" scope="request"/>
+<c:set var="pageTitle" value="${mode == 'edit' ? 'ADMIN | Sửa sự kiện' : 'ADMIN | Thêm sự kiện'}" scope="request"/>
 <c:set var="activeMenu" value="events" scope="request"/>
 <c:set var="pageCss" value="/assets/css/admin/admin-form.css" scope="request"/>
 
 <jsp:include page="/jsp/admin/layout/header.jsp"/>
 <jsp:include page="/jsp/admin/layout/sidebar.jsp"/>
 
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;600;700;800;900&display=swap');
+<c:set var="ctx" value="${pageContext.request.contextPath}" />
 
-  /* Áp dụng phông chữ thống nhất cho toàn bộ khu vực quản trị và popup */
-  .admin-main,
-  .custom-popup-overlay {
-    font-family: 'Be Vietnam Pro', sans-serif;
-  }
-
-  /* Lớp phủ mờ toàn màn hình của Popup */
-  .custom-popup-overlay {
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(17, 24, 39, 0.6);
-    backdrop-filter: blur(4px);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-    opacity: 0; pointer-events: none;
-    transition: all 0.3s ease;
-  }
-  .custom-popup-overlay.show {
-    opacity: 1; pointer-events: auto;
-  }
-
-  /* Hộp nội dung cấu trúc Popup */
-  .custom-popup-box {
-    background: #ffffff;
-    padding: 30px;
-    border-radius: 12px;
-    width: 90%;
-    max-width: 420px;
-    text-align: center;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    transform: scale(0.8);
-    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-  .custom-popup-overlay.show .custom-popup-box {
-    transform: scale(1);
-  }
-
-  /* Biểu tượng Icon lỗi (Dấu X) */
-  .custom-popup-icon {
-    width: 60px; height: 60px;
-    background: #fee2e2; color: #ef4444;
-    font-size: 26px; font-weight: bold;
-    display: flex; align-items: center; justify-content: center;
-    margin: 0 auto 15px; border-radius: 50%;
-  }
-
-  /* Tiêu đề thông báo */
-  .custom-popup-title {
-    font-size: 18px; color: #111827;
-    margin-bottom: 10px; font-weight: 700;
-  }
-
-  /* Chi tiết văn bản lỗi */
-  .custom-popup-msg {
-    font-size: 14px; color: #4b5563;
-    line-height: 1.6; margin-bottom: 25px;
-  }
-
-  /* Nút tương tác đóng popup */
-  .custom-popup-btn {
-    background: #ef4444; color: white;
-    border: none; padding: 12px 24px;
-    font-size: 14px; font-weight: 600;
-    border-radius: 6px; cursor: pointer;
-    transition: background 0.2s;
-    width: 100%;
-  }
-  .custom-popup-btn:hover {
-    background: #dc2626;
-  }
-</style>
+<%-- Định dạng dữ liệu ngày tương thích chuẩn thẻ <input type="date"> (yyyy-MM-dd) --%>
+<c:set var="eventDateValue" value=""/>
+<c:if test="${not empty event && not empty event.eventDate}">
+  <fmt:formatDate var="eventDateValue" value="${event.eventDate}" pattern="yyyy-MM-dd"/>
+</c:if>
 
 <main class="admin-main">
-  <div class="admin-container">
+  <div class="admin-container admin-event-form-page">
 
-    <div class="admin-topbar">
-      <div>
-        <h1 class="admin-h1">
+    <section class="admin-event-form-hero">
+      <div class="admin-event-form-hero__content">
+        <span class="admin-event-form-eyebrow">NỘI DUNG &amp; WEBSITE</span>
+        <h1 class="admin-event-form-title">
           <c:choose>
             <c:when test="${mode == 'edit'}">Sửa sự kiện</c:when>
             <c:otherwise>Thêm sự kiện</c:otherwise>
           </c:choose>
         </h1>
-        <p class="admin-subtext">
-          Nhập thông tin sự kiện và tải lên hình ảnh trực tiếp từ máy tính của bạn.
+        <p class="admin-event-form-subtitle">
+          Nhập thông tin sự kiện, workshop hoặc tin tức hiển thị trên trang chủ.
+          Ảnh đại diện nên rõ nét, đúng tỉ lệ và phù hợp với tone màu của website.
         </p>
       </div>
-      <a class="admin-btn" href="${pageContext.request.contextPath}/admin/events">Quay lại</a>
-    </div>
 
-    <div class="admin-card">
-      <div class="admin-card__body">
+      <div class="admin-event-form-hero__actions">
+        <a class="admin-btn" href="${ctx}/admin/events">
+          ← Quay lại danh sách
+        </a>
+      </div>
+    </section>
 
-        <%-- Định dạng dữ liệu ngày tương thích chuẩn thẻ <input type="date"> (yyyy-MM-dd) --%>
-        <c:set var="eventDateValue" value=""/>
-        <c:if test="${not empty event && not empty event.eventDate}">
-          <fmt:formatDate var="eventDateValue" value="${event.eventDate}" pattern="yyyy-MM-dd"/>
-        </c:if>
+    <c:if test="${not empty success}">
+      <div class="admin-alert admin-alert--success">
+        <c:out value="${success}" />
+      </div>
+    </c:if>
 
-        <%-- Biểu mẫu gửi thông tin --%>
-        <form method="post"
-              action="${pageContext.request.contextPath}/admin/events"
-              enctype="multipart/form-data"
-              class="admin-form">
+    <form method="post"
+          action="${ctx}/admin/events"
+          enctype="multipart/form-data"
+          class="admin-form admin-event-form">
 
-          <%@ include file="/jsp/common/csrf.jspf" %>
+      <%@ include file="/jsp/common/csrf.jspf" %>
 
-          <%-- Xác định chế độ Thêm (create) hoặc Sửa (update) --%>
-          <input type="hidden" name="action" value="${mode == 'edit' ? 'update' : 'create'}"/>
+      <%-- Xác định chế độ Thêm (create) hoặc Sửa (update) --%>
+      <input type="hidden" name="action" value="${mode == 'edit' ? 'update' : 'create'}"/>
 
-          <c:if test="${mode == 'edit'}">
-            <input type="hidden" name="id" value="${event.id}"/>
-          </c:if>
+      <c:if test="${mode == 'edit'}">
+        <input type="hidden" name="id" value="${event.id}"/>
+      </c:if>
 
-          <div class="admin-grid-2">
+      <div class="admin-event-form-layout">
 
-            <%-- Trường dữ liệu: Tiêu đề sự kiện --%>
-            <div class="admin-field admin-field--full">
-              <div class="admin-label">Tiêu đề sự kiện *</div>
-              <input class="admin-input"
-                     type="text"
-                     name="title"
-                     value="${not empty event ? fn:escapeXml(event.title) : ''}"
-                     maxlength="255"
-                     autocomplete="off"
-                     required />
-              <div class="admin-help">Tiêu đề ngắn gọn, thu hút. Ví dụ: Workshop tự làm son môi handmade</div>
+        <section class="admin-card admin-event-form-card">
+          <div class="admin-card__body">
+            <div class="admin-event-form-section-head">
+              <div>
+                <h2 class="admin-event-form-section-title">Thông tin sự kiện</h2>
+                <p class="admin-event-form-section-desc">
+                  Cập nhật tiêu đề, nhãn dán, ngày diễn ra và mô tả ngắn của sự kiện.
+                </p>
+              </div>
+
+              <c:choose>
+                <c:when test="${mode == 'edit'}">
+                  <span class="admin-chip admin-chip--brand">Đang chỉnh sửa</span>
+                </c:when>
+                <c:otherwise>
+                  <span class="admin-chip admin-chip--success">Sự kiện mới</span>
+                </c:otherwise>
+              </c:choose>
             </div>
 
-            <%-- Trường dữ liệu: Nhãn dán --%>
-            <div class="admin-field">
-              <div class="admin-label">Nhãn dán (Tag) *</div>
-              <input class="admin-input"
-                     type="text"
-                     name="tag"
-                     value="${not empty event ? fn:escapeXml(event.tag) : ''}"
-                     maxlength="50"
-                     placeholder="VD: Workshop, Khai trương, Tin tức"
-                     required />
-              <div class="admin-help">Phân loại sự kiện hiển thị trên nhãn góc bài viết.</div>
-            </div>
-
-            <%-- Trường dữ liệu: Ngày diễn ra --%>
-            <div class="admin-field">
-              <div class="admin-label">Ngày diễn ra sự kiện *</div>
-              <input class="admin-input"
-                     type="date"
-                     name="eventDate"
-                     value="${eventDateValue}"
-                     required />
-              <div class="admin-help">Hệ thống sẽ tự bóc tách ngày và tháng để hiển thị theo UI trang chủ.</div>
-            </div>
-
-            <%-- Trường tải file: Hình ảnh đại diện --%>
-            <div class="admin-field admin-field--full">
-              <div class="admin-label">Hình ảnh đại diện *</div>
-
-              <%-- Xem trước ảnh cũ nếu đang trong chế độ chỉnh sửa bài viết --%>
-              <c:if test="${mode == 'edit' && not empty event.imageUrl}">
-                <div style="margin-bottom: 12px;">
-                  <p style="font-size: 12px; color: #6b7280; margin-bottom: 6px;">Ảnh hiện tại đang sử dụng:</p>
-                  <img src="${pageContext.request.contextPath}${event.imageUrl}"
-                       alt="Event Preview"
-                       style="max-width: 200px; max-height: 120px; object-fit: cover; border-radius: 6px; border: 1px solid #e5e7eb;"/>
+            <div class="admin-event-form-grid">
+              <div class="admin-field admin-event-form-field--full">
+                <label class="admin-label" for="eventTitle">
+                  Tiêu đề sự kiện <span class="admin-required">*</span>
+                </label>
+                <input class="admin-input"
+                       id="eventTitle"
+                       type="text"
+                       name="title"
+                       value="${not empty event ? fn:escapeXml(event.title) : ''}"
+                       maxlength="255"
+                       autocomplete="off"
+                       placeholder="VD: Workshop tự làm son môi handmade"
+                       required />
+                <div class="admin-help">
+                  Tiêu đề nên ngắn gọn, rõ nội dung và thu hút người dùng.
                 </div>
-              </c:if>
+              </div>
 
-              <input class="admin-input"
-                     type="file"
-                     name="imageFile"
-                     accept="image/*"
-              ${mode == 'edit' ? '' : 'required'} />
-              <div class="admin-help">Hỗ trợ định dạng: .jpg, .jpeg, .png. Chọn file trực tiếp từ máy tính của bạn.</div>
+              <div class="admin-field">
+                <label class="admin-label" for="eventTag">
+                  Nhãn dán <span class="admin-required">*</span>
+                </label>
+                <input class="admin-input"
+                       id="eventTag"
+                       type="text"
+                       name="tag"
+                       value="${not empty event ? fn:escapeXml(event.tag) : ''}"
+                       maxlength="50"
+                       placeholder="VD: Workshop, Khai trương, Tin tức"
+                       required />
+                <div class="admin-help">
+                  Nhãn dán dùng để phân loại sự kiện trên giao diện.
+                </div>
+              </div>
+
+              <div class="admin-field">
+                <label class="admin-label" for="eventDate">
+                  Ngày diễn ra <span class="admin-required">*</span>
+                </label>
+                <input class="admin-input"
+                       id="eventDate"
+                       type="date"
+                       name="eventDate"
+                       value="${eventDateValue}"
+                       required />
+                <div class="admin-help">
+                  Hệ thống sẽ dùng ngày này để hiển thị lịch sự kiện.
+                </div>
+              </div>
+
+              <div class="admin-field admin-event-form-field--full">
+                <label class="admin-label" for="eventImageFile">
+                  Hình ảnh đại diện <span class="admin-required">*</span>
+                </label>
+                <input class="admin-input"
+                       id="eventImageFile"
+                       type="file"
+                       name="imageFile"
+                       accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                  ${mode == 'edit' ? '' : 'required'} />
+                <div class="admin-help">
+                  Hỗ trợ JPG, JPEG, PNG, WEBP. Khi sửa sự kiện, nếu không chọn ảnh mới thì hệ thống giữ ảnh cũ.
+                </div>
+              </div>
+
+              <div class="admin-field admin-event-form-field--full">
+                <label class="admin-label" for="eventSummary">Mô tả ngắn sự kiện</label>
+                <textarea class="admin-textarea"
+                          id="eventSummary"
+                          name="summary"
+                          maxlength="500"
+                          placeholder="Nhập nội dung tóm tắt hiển thị ở trang chủ..."><c:out value="${event.summary}"/></textarea>
+                <div class="admin-help">
+                  Tóm tắt ngắn gọn nội dung sự kiện, tối đa 500 ký tự.
+                </div>
+              </div>
             </div>
 
-            <%-- Trường dữ liệu: Mô tả tóm tắt --%>
-            <div class="admin-field admin-field--full">
-              <div class="admin-label">Mô tả ngắn sự kiện</div>
-              <textarea class="admin-textarea"
-                        name="summary"
-                        maxlength="500"
-                        placeholder="Nhập nội dung tóm tắt hiển thị ở trang chủ..."><c:out value="${event.summary}"/></textarea>
-              <div class="admin-help">Tóm tắt ngắn gọn nội dung sự kiện (Tối đa 500 ký tự).</div>
+            <div class="admin-event-form-note">
+              <span class="admin-event-form-note__icon">💡</span>
+              <div>
+                <strong>Gợi ý hiển thị</strong>
+                <span>Nên dùng ảnh ngang, rõ chủ đề sự kiện và tránh chữ quá nhỏ để khi hiển thị ở trang chủ không bị rối.</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <aside class="admin-card admin-event-preview-card">
+          <div class="admin-card__body">
+            <div class="admin-event-preview-head">
+              <div>
+                <h2 class="admin-event-form-section-title">Xem trước ảnh</h2>
+                <p class="admin-event-form-section-desc">
+                  Kiểm tra ảnh hiện tại hoặc ảnh mới vừa chọn trước khi lưu.
+                </p>
+              </div>
             </div>
 
+            <div class="admin-event-preview-box">
+              <c:choose>
+                <c:when test="${mode == 'edit' && not empty event.imageUrl}">
+                  <img id="eventPreviewImage"
+                       class="admin-event-preview-img"
+                       src="${ctx}${event.imageUrl}"
+                       alt="Event Preview" />
+
+                  <div id="eventPreviewEmpty" class="admin-event-preview-empty is-hidden">
+                    Chưa có ảnh xem trước.
+                  </div>
+
+                  <div class="admin-help admin-break">
+                    Đường dẫn hiện tại:
+                    <strong><c:out value="${event.imageUrl}" /></strong>
+                  </div>
+                </c:when>
+
+                <c:otherwise>
+                  <img id="eventPreviewImage"
+                       class="admin-event-preview-img is-hidden"
+                       src=""
+                       alt="Event preview" />
+
+                  <div id="eventPreviewEmpty" class="admin-event-preview-empty">
+                    <span>📅</span>
+                    <strong>Chưa có ảnh xem trước</strong>
+                    <small>Vui lòng chọn ảnh đại diện để kiểm tra trước khi lưu.</small>
+                  </div>
+                </c:otherwise>
+              </c:choose>
+            </div>
           </div>
-
-          <hr class="admin-divider"/>
-
-          <%-- Khu vực các nút bấm xác nhận hành động --%>
-          <div class="admin-actions">
-            <button class="admin-btn admin-btn--primary" type="submit">Lưu sự kiện</button>
-            <a class="admin-btn" href="${pageContext.request.contextPath}/admin/events">Hủy</a>
-          </div>
-
-        </form>
+        </aside>
 
       </div>
-    </div>
+
+      <div class="admin-event-form-actions">
+        <a class="admin-btn" href="${ctx}/admin/events">
+          Hủy
+        </a>
+
+        <button class="admin-btn admin-btn--primary" type="submit">
+          Lưu sự kiện
+        </button>
+      </div>
+    </form>
 
   </div>
 </main>
 
 <div id="errorPopup" class="custom-popup-overlay">
   <div class="custom-popup-box">
-    <div class="custom-popup-icon">✕</div>
+    <div class="custom-popup-icon danger-mode">✕</div>
     <div class="custom-popup-title">Thông báo hệ thống</div>
     <div class="custom-popup-msg" id="errorPopupMsg">
       <c:out value="${error}"/>
     </div>
-    <button type="button" class="custom-popup-btn" onclick="closeErrorPopup()">Đóng</button>
+    <button type="button" class="custom-popup-btn custom-popup-btn--confirm danger-brand" onclick="closeErrorPopup()">Đóng</button>
   </div>
 </div>
 
 <script>
   document.addEventListener("DOMContentLoaded", function() {
-    // Ép kiểu kiểm tra xem biến lỗi được truyền từ Servlet có dữ liệu hay không
+    const fileInput = document.getElementById("eventImageFile");
+    const previewImage = document.getElementById("eventPreviewImage");
+    const previewEmpty = document.getElementById("eventPreviewEmpty");
+
+    if (fileInput && previewImage) {
+      fileInput.addEventListener("change", function () {
+        const file = this.files && this.files[0];
+
+        if (!file) {
+          return;
+        }
+
+        const allowedTypes = [
+          "image/jpeg",
+          "image/png",
+          "image/webp"
+        ];
+
+        if (allowedTypes.indexOf(file.type) === -1) {
+          alert("File không hợp lệ. Vui lòng chọn ảnh JPG, PNG hoặc WEBP.");
+          this.value = "";
+          return;
+        }
+
+        previewImage.src = URL.createObjectURL(file);
+        previewImage.classList.remove("is-hidden");
+
+        if (previewEmpty) {
+          previewEmpty.classList.add("is-hidden");
+        }
+      });
+    }
+
     var hasError = "${not empty error}";
 
     if (hasError === "true") {
-      // Kích hoạt hiển thị popup mượt mà bằng việc thêm class 'show'
       document.getElementById("errorPopup").classList.add("show");
     }
   });
 
-  // Đóng chủ động popup đóng giao diện mờ
   function closeErrorPopup() {
     document.getElementById("errorPopup").classList.remove("show");
   }
