@@ -48,9 +48,7 @@
 
           <section class="admin-center-group admin-center-group--overview">
             <div class="admin-center-group__header">
-              <div>
-                <span class="admin-center-group__eyebrow">01</span>
-                <h3 class="admin-center-group__title">Tổng quan</h3>
+              <div>                <h3 class="admin-center-group__title">Tổng quan</h3>
               </div>
               <p class="admin-center-group__desc">Các mục mở nhanh và theo dõi bức tranh chung của hệ thống.</p>
             </div>
@@ -75,9 +73,7 @@
           <c:if test="${canProducts or canInventory or canCategories or canBrands or canBanners}">
             <section class="admin-center-group admin-center-group--catalog">
               <div class="admin-center-group__header">
-                <div>
-                  <span class="admin-center-group__eyebrow">02</span>
-                  <h3 class="admin-center-group__title">Sản phẩm &amp; danh mục</h3>
+                <div>                  <h3 class="admin-center-group__title">Sản phẩm &amp; danh mục</h3>
                 </div>
                 <p class="admin-center-group__desc">Quản lý dữ liệu nền tảng của cửa hàng: sản phẩm, kho, thương hiệu, banner.</p>
               </div>
@@ -94,9 +90,7 @@
           <c:if test="${canOrders or canReturns or canReviews}">
             <section class="admin-center-group admin-center-group--sales">
               <div class="admin-center-group__header">
-                <div>
-                  <span class="admin-center-group__eyebrow">03</span>
-                  <h3 class="admin-center-group__title">Bán hàng &amp; đơn hàng</h3>
+                <div>                  <h3 class="admin-center-group__title">Bán hàng &amp; đơn hàng</h3>
                 </div>
                 <p class="admin-center-group__desc">Theo dõi vận hành bán hàng, xử lý đơn và chăm sóc sau mua.</p>
               </div>
@@ -111,9 +105,7 @@
           <c:if test="${canPromotions or canFlashsale or canRanks or canNotifications}">
             <section class="admin-center-group admin-center-group--growth">
               <div class="admin-center-group__header">
-                <div>
-                  <span class="admin-center-group__eyebrow">04</span>
-                  <h3 class="admin-center-group__title">Khuyến mãi &amp; tăng trưởng</h3>
+                <div>                  <h3 class="admin-center-group__title">Khuyến mãi &amp; tăng trưởng</h3>
                 </div>
                 <p class="admin-center-group__desc">Các công cụ thúc đẩy doanh số, giữ chân khách hàng và truyền thông ưu đãi.</p>
               </div>
@@ -129,9 +121,7 @@
           <c:if test="${canCms or canContact or canSettings}">
             <section class="admin-center-group admin-center-group--content">
               <div class="admin-center-group__header">
-                <div>
-                  <span class="admin-center-group__eyebrow">05</span>
-                  <h3 class="admin-center-group__title">Nội dung &amp; website</h3>
+                <div>                  <h3 class="admin-center-group__title">Nội dung &amp; website</h3>
                 </div>
                 <p class="admin-center-group__desc">Quản lý nội dung hiển thị trên website, liên hệ và cấu hình trang.</p>
               </div>
@@ -147,9 +137,7 @@
           <c:if test="${canUsers or canRoles or canAuditLogs}">
             <section class="admin-center-group admin-center-group--system">
               <div class="admin-center-group__header">
-                <div>
-                  <span class="admin-center-group__eyebrow">06</span>
-                  <h3 class="admin-center-group__title">Hệ thống &amp; phân quyền</h3>
+                <div>                  <h3 class="admin-center-group__title">Hệ thống &amp; phân quyền</h3>
                 </div>
                 <p class="admin-center-group__desc">Nhóm cấu hình người dùng nội bộ, phân quyền vận hành và theo dõi lịch sử thay đổi.</p>
               </div>
