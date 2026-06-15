@@ -5097,3 +5097,145 @@ main.site-main:has(#searchHistoryPage) {
   padding-top: var(--mc-sticky-header-height, 184px) !important;
   margin-top: 0 !important;
 }
+
+
+/* =========================================================
+   GLOBAL HEADER SPACING FIX V12
+   Bỏ khoảng trắng dư dưới header fixed/sticky trên toàn bộ website
+========================================================= */
+:root {
+  --mc-sticky-header-height: 184px;
+}
+
+html body main.site-main,
+html body .site-main,
+body.site-body main.site-main,
+body.site-body .site-main,
+main.site-main,
+.site-main {
+  padding-top: var(--mc-sticky-header-height, 184px) !important;
+  margin-top: 0 !important;
+}
+
+html body main.site-main > *:first-child,
+html body .site-main > *:first-child,
+body.site-body main.site-main > *:first-child,
+body.site-body .site-main > *:first-child,
+main.site-main > *:first-child,
+.site-main > *:first-child {
+  margin-top: 0 !important;
+}
+
+html body main.site-main > section:first-child,
+html body main.site-main > div:first-child,
+html body .site-main > section:first-child,
+html body .site-main > div:first-child,
+body.site-body main.site-main > section:first-child,
+body.site-body main.site-main > div:first-child,
+body.site-body .site-main > section:first-child,
+body.site-body .site-main > div:first-child,
+main.site-main > section:first-child,
+main.site-main > div:first-child,
+.site-main > section:first-child,
+.site-main > div:first-child {
+  padding-top: 0 !important;
+}
+
+/* Các wrapper thường tạo khoảng cách đầu trang: ép về sát ngay dưới header */
+.page-shell,
+.page-wrapper,
+.page-content,
+.content-wrapper,
+.content-shell,
+.main-content,
+.mc-page,
+.mc-page-shell,
+.products-page,
+.product-page,
+.product-list-page,
+.product-detail-page,
+.cart-page,
+.checkout-page,
+.account-page,
+.search-page,
+.search-history-page,
+.order-page,
+.contact-page,
+.news-page,
+.brand-page {
+  margin-top: 0 !important;
+}
+
+/* Hero/section đầu tiên không tự chừa thêm khoảng trắng ở phía trên */
+body .site-main .page-hero:first-child,
+body .site-main .hero:first-child,
+body .site-main .banner:first-child,
+body .site-main .section:first-child,
+body .site-main .container:first-child,
+body .site-main .home-page:first-child,
+body .site-main .products-page:first-child,
+body .site-main .cart-page:first-child,
+body .site-main .account-page:first-child,
+body .site-main .checkout-page:first-child,
+body .site-main .search-page:first-child,
+body .site-main .search-history-page:first-child {
+  margin-top: 0 !important;
+}
+
+/* Trang lịch sử tìm kiếm: bỏ hoàn toàn breadcrumb cũ nếu còn cache/include */
+#searchHistoryPage .sh-breadcrumb,
+.sh-page .sh-breadcrumb {
+  display: none !important;
+}
+
+/* Chữ "Xem tất cả" trong dropdown lịch sử tìm kiếm - màu đồng bộ MyCosmetic */
+.header-search-history__head a,
+.header-search-history__head a[href*="search-history"],
+.search-history-dropdown a[href*="search-history"],
+.search-history-box a[href*="search-history"],
+.header-search-history a[href*="search-history"],
+.mc-search-history__all,
+.mc-search-history-more,
+.search-history-view-all,
+.header-search-history__view-all {
+  color: #d61a61 !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.01em !important;
+  text-decoration: none !important;
+}
+
+.header-search-history__head a:hover,
+.header-search-history__head a[href*="search-history"]:hover,
+.search-history-dropdown a[href*="search-history"]:hover,
+.search-history-box a[href*="search-history"]:hover,
+.header-search-history a[href*="search-history"]:hover,
+.mc-search-history__all:hover,
+.mc-search-history-more:hover,
+.search-history-view-all:hover,
+.header-search-history__view-all:hover {
+  color: #b80f4f !important;
+  text-decoration: underline !important;
+  text-underline-offset: 4px !important;
+}
+
+@media (max-width: 900px) {
+  html body main.site-main,
+  html body .site-main,
+  body.site-body main.site-main,
+  body.site-body .site-main,
+  main.site-main,
+  .site-main {
+    padding-top: var(--mc-sticky-header-height, 218px) !important;
+  }
+}
+
+@media (max-width: 640px) {
+  html body main.site-main,
+  html body .site-main,
+  body.site-body main.site-main,
+  body.site-body .site-main,
+  main.site-main,
+  .site-main {
+    padding-top: var(--mc-sticky-header-height, 246px) !important;
+  }
+}
