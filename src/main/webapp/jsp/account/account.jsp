@@ -1483,9 +1483,25 @@
 
                             const hash = (window.location.hash || "").replace("#account-", "");
                             const allowed = ["overview", "orders", "vouchers", "rank", "activity", "profile", "security"];
+                            const params = new URLSearchParams(window.location.search || "");
+                            const rawTab = (params.get("tab") || "").trim();
+                            const tabAlias = {
+                                "search-history": "activity",
+                                "history": "activity",
+                                "activity": "activity",
+                                "orders": "orders",
+                                "vouchers": "vouchers",
+                                "rank": "rank",
+                                "profile": "profile",
+                                "security": "security",
+                                "overview": "overview"
+                            };
+                            const tabTarget = tabAlias[rawTab] || "";
 
                             if (allowed.indexOf(hash) >= 0) {
                                 setAccountView(hash);
+                            } else if (tabTarget && allowed.indexOf(tabTarget) >= 0) {
+                                setAccountView(tabTarget);
                             } else if (window.location.hash === "#profile-settings") {
                                 setAccountView("profile");
                             } else {
