@@ -61,7 +61,7 @@ public final class UploadConfig {
     public static final String POLICY_URL_PREFIX = UPLOAD_URL_PREFIX + "/policy/";
 
     // Issue 118: URL lưu vào database cho logo thương hiệu
-    public static final String BRAND_URL_PREFIX = "/assets/images/brand/";
+    public static final String BRAND_URL_PREFIX = UPLOAD_URL_PREFIX + "/brand/";
 
     private UploadConfig() {
     }
