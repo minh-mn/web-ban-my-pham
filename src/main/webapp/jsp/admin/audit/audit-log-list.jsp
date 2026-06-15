@@ -12,8 +12,6 @@
 <main class="admin-main">
     <div class="admin-container admin-audit-page">
 
-        <jsp:include page="/jsp/admin/layout/topbar.jsp"/>
-
         <section class="admin-audit-hero">
             <div class="admin-audit-hero__content">
                 <span class="admin-audit-eyebrow">HỆ THỐNG &amp; PHÂN QUYỀN</span>
