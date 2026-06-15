@@ -41,7 +41,7 @@ public class ProductListServlet extends HttpServlet {
         String keyword = req.getParameter("q");
         String sort = req.getParameter("sort");
 
-        List<String> priceRangeList = parseStringList(req.getParameterValues("priceRange"));
+        List<String> priceRangeList = keepFirstSelectedValue(parseStringList(req.getParameterValues("priceRange")));
 
         /*
          * Hỗ trợ cả 3 kiểu URL:
@@ -90,7 +90,7 @@ public class ProductListServlet extends HttpServlet {
         String effectiveKeyword = keyword;
         List<Integer> effectiveCategoryFilterList = productCategoryFilterList;
 
-        List<Integer> selectedBrandList = parseIntegerList(req.getParameterValues("brand"));
+        List<Integer> selectedBrandList = keepFirstSelectedValue(parseIntegerList(req.getParameterValues("brand")));
 
         Integer minRating = null; // Đã bỏ bộ lọc đánh giá khỏi trang danh sách sản phẩm.
 
@@ -1943,6 +1943,25 @@ public class ProductListServlet extends HttpServlet {
      * - Bỏ qua "all".
      * - Bỏ qua chuỗi lỗi không phải số để tránh HTTP 500.
      */
+
+    private <T> List<T> keepFirstSelectedValue(List<T> values) {
+        if (values == null || values.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        T firstValue = values.get(0);
+
+        if (firstValue == null) {
+            return Collections.emptyList();
+        }
+
+        List<T> result = new ArrayList<>();
+        result.add(firstValue);
+
+        return result;
+    }
+
+
     private List<Integer> parseIntegerList(String[] values) {
         if (values == null || values.length == 0) {
             return Collections.emptyList();
