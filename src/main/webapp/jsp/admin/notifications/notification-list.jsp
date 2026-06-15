@@ -21,6 +21,8 @@
 
     <section class="admin-notification-command">
       <div class="admin-notification-command__main">
+        <span class="admin-notification-eyebrow">HỆ THỐNG &amp; THÔNG BÁO</span>
+
         <h1 class="admin-h1 admin-notification-title">
           Trung tâm thông báo
         </h1>
