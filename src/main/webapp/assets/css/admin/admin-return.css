@@ -157,3 +157,65 @@
 .return-btn.ok {
     background: #059669;
 }
+
+/* =========================================================
+   ADMIN UI V2 - RETURN REQUEST PAGE
+========================================================= */
+
+.return-alert{
+  border-radius: 18px;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.045);
+}
+
+.return-table-wrap{
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.045);
+}
+
+.return-table th{
+  background: linear-gradient(180deg, #fff7fb 0%, #fdf2f8 100%);
+  color: #64748b;
+  font-weight: 1000;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+
+.return-order-link{
+  color: var(--admin-brand-2, #be185d);
+}
+
+.return-admin-note{
+  border: 1px dashed rgba(236, 72, 153, 0.24);
+  border-radius: 14px;
+  background: #fff7fb;
+}
+
+.return-pill{
+  border-radius: 999px;
+  font-weight: 1000;
+}
+
+.return-action-form select,
+.return-action-form input,
+.return-action-form textarea{
+  min-height: 38px;
+  border-color: rgba(148, 163, 184, 0.30);
+  border-radius: 14px;
+  color: var(--admin-text, #111827);
+}
+
+.return-action-form select:focus,
+.return-action-form input:focus,
+.return-action-form textarea:focus{
+  outline: none;
+  border-color: rgba(236, 72, 153, 0.55);
+  box-shadow: var(--admin-focus, 0 0 0 4px rgba(236, 72, 153, 0.18));
+}
+
+.return-btn{
+  min-height: 34px;
+  border-radius: 999px;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.10);
+}
