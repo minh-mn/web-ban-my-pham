@@ -2861,3 +2861,459 @@ html body .modal-cancel-btn:hover {
         width: 100% !important;
     }
 }
+
+
+/* =========================================================
+   ACCOUNT PAGE REWORK V2 - ADMIN ACCOUNT CLEAN LAYOUT
+   Mục tiêu:
+   - Không nhồi toàn bộ Admin Dashboard vào trang Tài khoản.
+   - Admin có giao diện tài khoản riêng: tổng quan nhanh, báo cáo, hồ sơ, bảo mật.
+   - Hồ sơ cá nhân nằm trong tab, không tràn xuống dưới dashboard.
+   - Giữ nguyên account.css của user, chỉ bổ sung override cuối file.
+========================================================= */
+
+html {
+    scroll-padding-top: 220px !important;
+}
+
+html body .account-dashboard {
+    padding: 28px 0 54px !important;
+    background:
+            radial-gradient(circle at 20% 0%, rgba(255, 228, 235, .58), transparent 34%),
+            linear-gradient(180deg, #ffffff 0%, #fafbfc 34%, #ffffff 100%) !important;
+}
+
+html body .account-dashboard .container.order-page,
+html body .account-dashboard .order-page {
+    width: min(1160px, calc(100vw - 42px)) !important;
+    max-width: 1160px !important;
+}
+
+/* Giảm cảm giác trang bị kéo quá dài */
+html body .mc-account-compact {
+    gap: 18px !important;
+}
+
+html body .mc-account-center {
+    grid-template-columns: 280px minmax(0, 1fr) !important;
+    gap: 18px !important;
+}
+
+html body .mc-account-content {
+    min-height: 560px !important;
+    border-radius: 26px !important;
+    box-shadow: 0 18px 48px rgba(15, 23, 42, .055) !important;
+}
+
+html body .mc-account-view {
+    min-height: 560px !important;
+    padding: 24px !important;
+}
+
+html body .mc-view-head {
+    align-items: flex-start !important;
+    margin-bottom: 18px !important;
+    padding-bottom: 16px !important;
+}
+
+html body .mc-view-head h2 {
+    font-size: 24px !important;
+    letter-spacing: -.02em !important;
+}
+
+html body .mc-view-head p {
+    max-width: 760px !important;
+}
+
+/* ================= ADMIN ACCOUNT ================= */
+
+html body .mc-admin-account {
+    --admin-pink: #e85d75;
+    --admin-pink-dark: #be123c;
+    --admin-purple: #a855f7;
+    --admin-blue: #2563eb;
+    --admin-green: #059669;
+    --admin-orange: #d97706;
+}
+
+html body .mc-admin-hero {
+    position: relative !important;
+    overflow: hidden !important;
+    align-items: center !important;
+    min-height: 138px !important;
+    padding: 24px 26px !important;
+    border-radius: 28px !important;
+    border: 1px solid #ffd8e1 !important;
+    background:
+            radial-gradient(circle at 88% 18%, rgba(168, 85, 247, .14), transparent 28%),
+            linear-gradient(135deg, #fff7f9 0%, #ffffff 54%, #fff1f4 100%) !important;
+    box-shadow: 0 18px 50px rgba(232, 93, 117, .10) !important;
+}
+
+html body .mc-admin-hero::after {
+    content: "" !important;
+    position: absolute !important;
+    right: -42px !important;
+    bottom: -62px !important;
+    width: 190px !important;
+    height: 190px !important;
+    border-radius: 999px !important;
+    background: linear-gradient(135deg, rgba(232, 93, 117, .12), rgba(168, 85, 247, .14)) !important;
+    pointer-events: none !important;
+}
+
+html body .mc-admin-hero > * {
+    position: relative !important;
+    z-index: 1 !important;
+}
+
+html body .mc-admin-avatar {
+    width: 70px !important;
+    height: 70px !important;
+    border-radius: 24px !important;
+    background: linear-gradient(135deg, #fb7185 0%, #d946ef 100%) !important;
+    box-shadow: 0 16px 34px rgba(217, 70, 239, .18) !important;
+}
+
+html body .mc-admin-role-chip {
+    background: #111827 !important;
+    color: #ffffff !important;
+    border-color: #111827 !important;
+}
+
+html body .mc-admin-account-center {
+    grid-template-columns: 286px minmax(0, 1fr) !important;
+}
+
+html body .mc-admin-account-menu {
+    top: 118px !important;
+    max-height: calc(100vh - 138px) !important;
+    border-radius: 26px !important;
+    border: 1px solid #e8edf5 !important;
+    box-shadow: 0 16px 42px rgba(15, 23, 42, .05) !important;
+}
+
+html body .mc-admin-account-menu .mc-account-menu-item.is-active {
+    background: linear-gradient(135deg, #fff1f4 0%, #ffffff 100%) !important;
+    border-color: #fecdd3 !important;
+    box-shadow: inset 4px 0 0 #e85d75, 0 10px 22px rgba(232, 93, 117, .06) !important;
+}
+
+html body .mc-admin-account-content {
+    border-color: #e8edf5 !important;
+    background: rgba(255, 255, 255, .96) !important;
+}
+
+/* KPI admin gọn */
+html body .mc-admin-kpi-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 13px !important;
+}
+
+html body .mc-admin-stat {
+    position: relative !important;
+    min-height: 144px !important;
+    padding: 17px !important;
+    border-radius: 22px !important;
+    background: #ffffff !important;
+    border: 1px solid #e8edf5 !important;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, .035) !important;
+}
+
+html body .mc-admin-stat span {
+    margin-bottom: 14px !important;
+    background: #fff1f4 !important;
+}
+
+html body .mc-admin-stat strong {
+    font-size: clamp(20px, 1.4vw, 25px) !important;
+    color: #0f172a !important;
+}
+
+html body .mc-admin-stat small {
+    color: #64748b !important;
+    line-height: 1.45 !important;
+}
+
+/* Quick modules */
+html body .mc-admin-module-section {
+    margin-top: 18px !important;
+    padding: 18px !important;
+}
+
+html body .mc-admin-module-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+}
+
+html body .mc-admin-module-grid a {
+    display: grid !important;
+    grid-template-columns: 44px minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 12px !important;
+    min-height: 90px !important;
+    padding: 15px !important;
+    border-radius: 20px !important;
+    border: 1px solid #edf2f7 !important;
+    background: #ffffff !important;
+    color: #111827 !important;
+    text-decoration: none !important;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, .028) !important;
+    transition: .16s ease !important;
+}
+
+html body .mc-admin-module-grid a:hover {
+    transform: translateY(-2px) !important;
+    border-color: #ffd8e1 !important;
+    background: #fff9fb !important;
+    box-shadow: 0 14px 30px rgba(232, 93, 117, .08) !important;
+}
+
+html body .mc-admin-module-grid a > span {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 44px !important;
+    height: 44px !important;
+    border-radius: 16px !important;
+    background: #fff1f4 !important;
+    font-size: 22px !important;
+    grid-row: span 2 !important;
+}
+
+html body .mc-admin-module-grid strong {
+    display: block !important;
+    font-size: 14px !important;
+    font-weight: 950 !important;
+    color: #111827 !important;
+}
+
+html body .mc-admin-module-grid small {
+    display: block !important;
+    margin-top: 4px !important;
+    color: #667085 !important;
+    font-size: 12.2px !important;
+    font-weight: 700 !important;
+    line-height: 1.45 !important;
+}
+
+/* Alert admin */
+html body .mc-admin-alert-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+    margin-top: 18px !important;
+}
+
+html body .mc-admin-alert-card {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 15px !important;
+    border-radius: 20px !important;
+    border: 1px solid #edf2f7 !important;
+    background: #fbfcff !important;
+}
+
+html body .mc-admin-alert-card > span {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 16px !important;
+    background: #f8fafc !important;
+    font-size: 20px !important;
+    flex: 0 0 auto !important;
+}
+
+html body .mc-admin-alert-card strong {
+    display: block !important;
+    color: #111827 !important;
+    font-size: 22px !important;
+    font-weight: 950 !important;
+    line-height: 1.1 !important;
+}
+
+html body .mc-admin-alert-card small {
+    display: block !important;
+    margin-top: 4px !important;
+    color: #667085 !important;
+    font-size: 12.3px !important;
+    font-weight: 800 !important;
+}
+
+html body .mc-admin-alert-card.is-danger {
+    border-color: #fecdd3 !important;
+    background: #fff7f9 !important;
+}
+
+html body .mc-admin-alert-card.is-danger > span {
+    background: #fff1f4 !important;
+}
+
+html body .mc-admin-alert-card.is-warning {
+    border-color: #fed7aa !important;
+    background: #fffaf3 !important;
+}
+
+html body .mc-admin-alert-card.is-warning > span {
+    background: #fff7ed !important;
+}
+
+/* Report admin */
+html body .mc-admin-report-grid {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1.04fr) minmax(0, .96fr) !important;
+    gap: 16px !important;
+}
+
+html body .mc-admin-report-card {
+    margin-top: 0 !important;
+    min-height: 430px !important;
+}
+
+html body .mc-admin-chart-wrap {
+    min-height: 320px !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+html body .mc-admin-chart-wrap canvas {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+html body .mc-admin-table-wrap {
+    max-height: 330px !important;
+    overflow: auto !important;
+}
+
+html body .mc-admin-mini-table th,
+html body .mc-admin-mini-table td {
+    vertical-align: middle !important;
+}
+
+html body .mc-admin-mini-table td strong {
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    line-height: 1.45 !important;
+}
+
+/* Profile trong tab admin/user */
+html body .mc-profile-embed .mc-profile-source {
+    margin: 0 !important;
+}
+
+html body .mc-profile-embed .account-card-body {
+    padding: 0 !important;
+}
+
+html body .mc-profile-embed .mc-profile-form-sections {
+    gap: 14px !important;
+}
+
+html body .mc-profile-embed .mc-profile-form-section {
+    box-shadow: none !important;
+    background: #ffffff !important;
+}
+
+html body .mc-profile-embed .account-profile-form-actions {
+    margin-top: 14px !important;
+}
+
+/* Footer không bị dính quá sát form */
+html body .account-dashboard + footer,
+html body .site-footer {
+    margin-top: 0 !important;
+}
+
+/* Responsive */
+@media (max-width: 1180px) {
+    html body .mc-admin-kpi-grid,
+    html body .mc-admin-alert-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+
+    html body .mc-admin-module-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+
+    html body .mc-admin-report-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+@media (max-width: 1100px) {
+    html body .mc-account-center,
+    html body .mc-admin-account-center {
+        grid-template-columns: 1fr !important;
+    }
+
+    html body .mc-admin-account-menu {
+        position: static !important;
+        max-height: none !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+    }
+}
+
+@media (max-width: 768px) {
+    html body .account-dashboard {
+        padding-top: 18px !important;
+    }
+
+    html body .account-dashboard .container.order-page,
+    html body .account-dashboard .order-page {
+        width: min(100%, calc(100vw - 22px)) !important;
+    }
+
+    html body .mc-admin-hero {
+        padding: 20px !important;
+        border-radius: 24px !important;
+    }
+
+    html body .mc-admin-kpi-grid,
+    html body .mc-admin-alert-grid,
+    html body .mc-admin-module-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    html body .mc-admin-module-grid a {
+        min-height: 84px !important;
+    }
+
+    html body .mc-account-content,
+    html body .mc-account-view {
+        min-height: 520px !important;
+    }
+}
+
+@media (max-width: 560px) {
+    html body .mc-admin-avatar {
+        width: 58px !important;
+        height: 58px !important;
+        border-radius: 20px !important;
+    }
+
+    html body .mc-admin-hero .mc-compact-user {
+        align-items: flex-start !important;
+    }
+
+    html body .mc-admin-hero .mc-compact-actions {
+        width: 100% !important;
+    }
+
+    html body .mc-admin-hero .mc-compact-btn {
+        flex: 1 1 100% !important;
+    }
+
+    html body .mc-account-menu-item {
+        min-width: 220px !important;
+    }
+}
+
