@@ -3764,105 +3764,6 @@
   }
 }
 
-/* =========================================================
-   ADMIN UI V2 - FORM REFINEMENT
-========================================================= */
-
-.admin-form,
-.admin-promo-form,
-.product-form-layout,
-.flashsale-form-page{
-  gap: 18px;
-}
-
-.admin-form-section,
-.user-edit-card,
-.user-detail-card,
-.review-card,
-.flashsale-form-card,
-.flashsale-form-side,
-.flashsale-form-items-card{
-  border-color: rgba(148, 163, 184, 0.22);
-  border-radius: 24px;
-  background: #ffffff;
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.055);
-}
-
-.admin-form-section__title,
-.user-edit-card__title,
-.user-detail-card__title,
-.review-card__title{
-  font-weight: 1000;
-  letter-spacing: -0.025em;
-}
-
-.admin-help,
-.user-edit-card__desc,
-.user-detail-card__desc,
-.review-card__desc{
-  color: var(--admin-muted);
-  line-height: 1.58;
-}
-
-.admin-actions,
-.product-form-actions,
-.user-form-actions{
-  padding-top: 16px;
-  border-top: 1px solid rgba(148, 163, 184, 0.18);
-}
-
-.admin-preview__box,
-.product-media-upload-box,
-.admin-info-box,
-.admin-empty{
-  border-color: rgba(148, 163, 184, 0.24);
-  background: linear-gradient(180deg, #ffffff, #fbfcff);
-}
-
-.admin-preview__img,
-.product-media-card,
-.product-gallery-item{
-  border-color: rgba(148, 163, 184, 0.22);
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.055);
-}
-
-.admin-promo-tab,
-.product-description-tool{
-  border-color: rgba(148, 163, 184, 0.26);
-  box-shadow: var(--admin-shadow-xs);
-}
-
-.admin-promo-tab.is-active,
-.product-description-tool:hover{
-  border-color: rgba(236, 72, 153, 0.34);
-  background: rgba(236, 72, 153, 0.10);
-  color: var(--admin-brand-2);
-}
-
-.user-edit-hero,
-.user-detail-hero,
-.review-topbar,
-.flashsale-form-hero{
-  border-radius: 28px;
-  border-color: rgba(236, 72, 153, 0.20);
-  background:
-    radial-gradient(circle at top left, rgba(236, 72, 153, 0.15), transparent 34%),
-    linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
-  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.07);
-}
-
-.user-policy-note,
-.flashsale-form-note,
-.flashsale-limit-note{
-  border-radius: 18px;
-}
-
-.product-media-current__title,
-.admin-promo-product-picker__title{
-  font-weight: 1000;
-  letter-spacing: -0.02em;
-}
-
 
 /* =========================================================
    ADMIN BANNER FORM UI V2
@@ -3890,8 +3791,8 @@
   border: 1px solid rgba(236, 72, 153, 0.20);
   border-radius: 24px;
   background:
-    radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
-    linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
+          radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
+          linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.055);
 }
 
@@ -4186,8 +4087,8 @@
   border: 1px solid rgba(236, 72, 153, 0.20);
   border-radius: 24px;
   background:
-    radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
-    linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
+          radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
+          linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.055);
 }
 
@@ -4345,11 +4246,11 @@
   border: 1px solid var(--admin-border);
   border-radius: 20px;
   background:
-    linear-gradient(45deg, rgba(15, 23, 42, 0.025) 25%, transparent 25%),
-    linear-gradient(-45deg, rgba(15, 23, 42, 0.025) 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, rgba(15, 23, 42, 0.025) 75%),
-    linear-gradient(-45deg, transparent 75%, rgba(15, 23, 42, 0.025) 75%),
-    #ffffff;
+          linear-gradient(45deg, rgba(15, 23, 42, 0.025) 25%, transparent 25%),
+          linear-gradient(-45deg, rgba(15, 23, 42, 0.025) 25%, transparent 25%),
+          linear-gradient(45deg, transparent 75%, rgba(15, 23, 42, 0.025) 75%),
+          linear-gradient(-45deg, transparent 75%, rgba(15, 23, 42, 0.025) 75%),
+          #ffffff;
   background-position: 0 0, 0 10px, 10px -10px, -10px 0;
   background-size: 20px 20px;
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.045);
@@ -4464,8 +4365,8 @@
   border: 1px solid rgba(236, 72, 153, 0.20);
   border-radius: 24px;
   background:
-    radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
-    linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
+          radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
+          linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.055);
 }
 
@@ -5124,8 +5025,8 @@
   border: 1px solid rgba(236, 72, 153, 0.20);
   border-radius: 24px;
   background:
-    radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
-    linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
+          radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
+          linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.055);
 }
 
@@ -5929,8 +5830,8 @@
   border-radius: 24px;
   border-color: rgba(236, 72, 153, 0.20);
   background:
-    radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
-    linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
+          radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
+          linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.055);
 }
 
@@ -6045,8 +5946,8 @@
 
 .admin-order-detail-card__header {
   background:
-    radial-gradient(circle at top left, rgba(236, 72, 153, 0.07), transparent 34%),
-    linear-gradient(180deg, #ffffff, #fbfcff);
+          radial-gradient(circle at top left, rgba(236, 72, 153, 0.07), transparent 34%),
+          linear-gradient(180deg, #ffffff, #fbfcff);
 }
 
 .admin-order-info-item,
@@ -6111,8 +6012,8 @@
   border: 1px solid rgba(236, 72, 153, 0.20);
   border-radius: 24px;
   background:
-    radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
-    linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
+          radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
+          linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.055);
 }
 
@@ -6240,8 +6141,8 @@
   border: 1px dashed rgba(148, 163, 184, 0.38);
   border-radius: 18px;
   background:
-    radial-gradient(circle at top left, rgba(236, 72, 153, 0.08), transparent 34%),
-    rgba(15, 23, 42, 0.020);
+          radial-gradient(circle at top left, rgba(236, 72, 153, 0.08), transparent 34%),
+          rgba(15, 23, 42, 0.020);
 }
 
 .admin-page-thumbnail-img {
@@ -6386,8 +6287,8 @@
   border: 1px solid rgba(236, 72, 153, 0.20);
   border-radius: 24px;
   background:
-    radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
-    linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
+          radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
+          linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.055);
 }
 
@@ -7033,8 +6934,8 @@
   border: 1px solid rgba(236, 72, 153, 0.20);
   border-radius: 24px;
   background:
-    radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
-    linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
+          radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
+          linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.055);
 }
 
@@ -7112,8 +7013,8 @@
   border: 1px solid rgba(148, 163, 184, 0.18);
   border-radius: 20px;
   background:
-    radial-gradient(circle at top left, rgba(236, 72, 153, 0.045), transparent 32%),
-    #ffffff;
+          radial-gradient(circle at top left, rgba(236, 72, 153, 0.045), transparent 32%),
+          #ffffff;
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.035);
 }
 
@@ -7376,24 +7277,6 @@
 
 
 /* =========================================================
-   ADMIN PROMOTION FORM UI V3 - Duplicate back action fix
-   Scope: /jsp/admin/promotions/promotion_form.jsp
-========================================================= */
-
-.admin-promo-form-page > .admin-promo-form-container > .admin-promotion-create {
-  display: none !important;
-}
-
-.admin-promo-form-page .admin-promo-form-hero {
-  margin-bottom: 16px;
-}
-
-.admin-promo-form-page .admin-promo-form-hero__actions {
-  align-self: center;
-}
-
-
-/* =========================================================
    ADMIN RANK FORM UI V2
    Scope: /jsp/admin/rank/rank_form.jsp
 ========================================================= */
@@ -7412,8 +7295,8 @@
   border: 1px solid rgba(236, 72, 153, 0.20);
   border-radius: 24px;
   background:
-    radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
-    linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
+          radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
+          linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.055);
 }
 
@@ -7575,8 +7458,8 @@
   border: 1px dashed rgba(236, 72, 153, 0.28);
   border-radius: 18px;
   background:
-    radial-gradient(circle at top left, rgba(236, 72, 153, 0.08), transparent 32%),
-    rgba(15, 23, 42, 0.018);
+          radial-gradient(circle at top left, rgba(236, 72, 153, 0.08), transparent 32%),
+          rgba(15, 23, 42, 0.018);
 }
 
 .admin-rank-preview-badge {
@@ -7682,6 +7565,526 @@
 
 
 /* =========================================================
+   ADMIN REVIEW DETAIL UI V2
+   Scope: /jsp/admin/review/review_detail.jsp
+========================================================= */
+
+.admin-main > .admin-container.review-detail-page {
+  width: 100%;
+  max-width: none !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+.review-detail-page {
+  width: 100%;
+}
+
+.admin-review-detail-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: start;
+  margin-bottom: 16px;
+  padding: 18px;
+  border: 1px solid rgba(236, 72, 153, 0.20);
+  border-radius: 24px;
+  background:
+          radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
+          linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.055);
+}
+
+.admin-review-detail-hero__content {
+  min-width: 0;
+}
+
+.admin-review-detail-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 10px;
+  margin-bottom: 8px;
+  border: 1px solid rgba(236, 72, 153, 0.32);
+  border-radius: 999px;
+  background: rgba(236, 72, 153, 0.10);
+  color: #be185d;
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 950;
+  letter-spacing: .06em;
+}
+
+.admin-review-detail-title {
+  margin: 0;
+  color: var(--admin-text);
+  font-size: 28px;
+  line-height: 1.1;
+  font-weight: 1000;
+  letter-spacing: -0.045em;
+}
+
+.admin-review-detail-subtitle {
+  max-width: 920px;
+  margin: 8px 0 0;
+  color: var(--admin-muted);
+  font-size: 13.5px;
+  line-height: 1.58;
+}
+
+.admin-review-detail-hero__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.review-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.review-summary-card {
+  position: relative;
+  overflow: hidden;
+  padding: 16px;
+  border: 1px solid var(--admin-border);
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: var(--admin-shadow-sm);
+}
+
+.review-summary-card::after {
+  content: "";
+  position: absolute;
+  right: -28px;
+  top: -28px;
+  width: 82px;
+  height: 82px;
+  border-radius: 999px;
+  background: rgba(236, 72, 153, 0.08);
+}
+
+.review-summary-card--rating::after {
+  background: rgba(245, 158, 11, 0.13);
+}
+
+.review-summary-card--product::after {
+  background: rgba(59, 130, 246, 0.10);
+}
+
+.review-summary-card--user::after {
+  background: rgba(16, 185, 129, 0.10);
+}
+
+.review-summary-card__icon {
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  border-radius: 14px;
+  background: rgba(236, 72, 153, 0.10);
+  font-size: 18px;
+  position: relative;
+  z-index: 1;
+}
+
+.review-summary-card__label {
+  display: block;
+  color: var(--admin-muted);
+  font-size: 12px;
+  line-height: 1.35;
+  font-weight: 850;
+  position: relative;
+  z-index: 1;
+}
+
+.review-summary-card__value {
+  display: grid;
+  justify-items: start;
+  gap: 7px;
+  margin-top: 7px;
+  color: var(--admin-text);
+  font-size: 18px;
+  line-height: 1.2;
+  font-weight: 1000;
+  letter-spacing: -0.025em;
+  position: relative;
+  z-index: 1;
+}
+
+.review-summary-card__hint {
+  display: block;
+  margin-top: 8px;
+  color: var(--admin-muted);
+  font-size: 12px;
+  line-height: 1.4;
+  position: relative;
+  z-index: 1;
+}
+
+.review-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 390px;
+  gap: 18px;
+  align-items: start;
+}
+
+.review-main,
+.review-side {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.review-card {
+  overflow: hidden;
+  border: 1px solid var(--admin-border);
+  border-radius: 22px;
+  background: #ffffff;
+  box-shadow: var(--admin-shadow-sm);
+}
+
+.review-card__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  padding: 18px 18px 14px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.07);
+}
+
+.review-card__title {
+  margin: 0;
+  color: var(--admin-text);
+  font-size: 18px;
+  line-height: 1.25;
+  font-weight: 1000;
+  letter-spacing: -0.025em;
+}
+
+.review-card__desc {
+  margin: 5px 0 0;
+  color: var(--admin-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.review-card__body {
+  padding: 18px;
+}
+
+.review-comment-box {
+  min-height: 118px;
+  padding: 16px;
+  border: 1px solid rgba(236, 72, 153, 0.16);
+  border-radius: 18px;
+  background:
+          radial-gradient(circle at top left, rgba(236, 72, 153, 0.07), transparent 30%),
+          linear-gradient(180deg, #ffffff, #fbfcff);
+  color: var(--admin-text);
+  font-size: 14px;
+  line-height: 1.7;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+.review-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  color: #d1d5db;
+  font-size: 17px;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.review-rating .is-on {
+  color: #f59e0b;
+}
+
+.review-media-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.review-media-box {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--admin-border);
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.018);
+}
+
+.review-media-box__title {
+  margin: 0;
+  color: var(--admin-text);
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.review-media-preview {
+  min-height: 190px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px dashed rgba(148, 163, 184, 0.34);
+  border-radius: 16px;
+  background: #ffffff;
+}
+
+.review-media-preview img,
+.review-media-preview video {
+  width: 100%;
+  max-height: 360px;
+  object-fit: contain;
+  border-radius: 14px;
+}
+
+.review-product-box {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.review-product-thumb,
+.review-product-thumb__empty {
+  width: 88px;
+  height: 88px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--admin-border);
+  border-radius: 18px;
+  background: #ffffff;
+  color: var(--admin-muted);
+  font-size: 12px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.review-product-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.review-product-name {
+  color: var(--admin-text);
+  font-size: 15px;
+  line-height: 1.35;
+  font-weight: 1000;
+  overflow-wrap: anywhere;
+}
+
+.review-author-card {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.review-avatar {
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #ec4899, #8b5cf6);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 1000;
+  box-shadow: 0 10px 22px rgba(236, 72, 153, 0.18);
+}
+
+.review-author-name {
+  color: var(--admin-text);
+  font-size: 15px;
+  font-weight: 1000;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.review-author-meta,
+.review-info-grid,
+.review-mini-list,
+.review-timeline {
+  display: grid;
+  gap: 10px;
+}
+
+.review-info-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.review-info-grid--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.review-info-item,
+.review-mini-row,
+.review-timeline-item {
+  padding: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.20);
+  border-radius: 15px;
+  background: rgba(15, 23, 42, 0.018);
+}
+
+.review-info-item--full {
+  grid-column: 1 / -1;
+}
+
+.review-info-label,
+.review-timeline-label {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--admin-muted);
+  font-size: 12px;
+  line-height: 1.35;
+  font-weight: 850;
+}
+
+.review-info-value {
+  color: var(--admin-text);
+  font-size: 13px;
+  line-height: 1.5;
+  font-weight: 850;
+  overflow-wrap: anywhere;
+}
+
+.review-action-form {
+  display: grid;
+  gap: 12px;
+}
+
+.review-action-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.review-action-grid .admin-btn {
+  width: 100%;
+  justify-content: center;
+}
+
+.review-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.review-chip-row--compact {
+  justify-content: flex-end;
+}
+
+.review-muted {
+  color: var(--admin-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.review-spacer {
+  height: 14px;
+}
+
+.admin-review-detail-empty {
+  min-height: 240px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 9px;
+  padding: 26px;
+  border: 1px dashed rgba(148, 163, 184, 0.32);
+  border-radius: 22px;
+  background:
+          radial-gradient(circle at top, rgba(236, 72, 153, 0.08), transparent 36%),
+          #ffffff;
+  text-align: center;
+}
+
+.admin-review-detail-empty span {
+  font-size: 34px;
+}
+
+.admin-review-detail-empty strong {
+  color: var(--admin-text);
+  font-size: 16px;
+  font-weight: 1000;
+}
+
+.admin-review-detail-empty small {
+  color: var(--admin-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+@media (max-width: 1180px) {
+  .admin-review-detail-hero,
+  .review-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-review-detail-hero__actions {
+    justify-content: flex-start;
+  }
+
+  .review-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .review-side {
+    position: static;
+  }
+}
+
+@media (max-width: 760px) {
+  .admin-review-detail-hero {
+    padding: 15px;
+    border-radius: 18px;
+  }
+
+  .review-summary,
+  .review-media-grid,
+  .review-info-grid,
+  .review-info-grid--3 {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-review-detail-hero__actions {
+    width: 100%;
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-review-detail-hero__actions .admin-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .review-product-box,
+  .review-author-card {
+    grid-template-columns: 1fr;
+  }
+
+  .review-card__header {
+    padding: 15px;
+  }
+
+  .review-card__body {
+    padding: 15px;
+  }
+}
+
+
+/* =========================================================
    ADMIN ROLE FORM UI V2
    Scope: /jsp/admin/role/role_form.jsp
 ========================================================= */
@@ -7700,8 +8103,8 @@
   border: 1px solid rgba(236, 72, 153, 0.20);
   border-radius: 24px;
   background:
-    radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
-    linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
+          radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
+          linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.055);
 }
 
@@ -7820,8 +8223,8 @@
   border: 1px solid rgba(236, 72, 153, 0.20);
   border-radius: 18px;
   background:
-    radial-gradient(circle at top left, rgba(236, 72, 153, 0.10), transparent 35%),
-    #ffffff;
+          radial-gradient(circle at top left, rgba(236, 72, 153, 0.10), transparent 35%),
+          #ffffff;
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.045);
 }
 
@@ -7947,10 +8350,10 @@
   background: #ffffff;
   cursor: pointer;
   transition:
-    transform .14s ease,
-    border-color .14s ease,
-    box-shadow .14s ease,
-    background .14s ease;
+          transform .14s ease,
+          border-color .14s ease,
+          box-shadow .14s ease,
+          background .14s ease;
 }
 
 .admin-role-check-card:hover {
@@ -8152,8 +8555,8 @@
   border: 1px solid rgba(236, 72, 153, 0.20);
   border-radius: 24px;
   background:
-    radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
-    linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
+          radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
+          linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.055);
 }
 
@@ -8270,8 +8673,8 @@
   border: 1px solid rgba(236, 72, 153, 0.20);
   border-radius: 18px;
   background:
-    radial-gradient(circle at top left, rgba(236, 72, 153, 0.10), transparent 35%),
-    #ffffff;
+          radial-gradient(circle at top left, rgba(236, 72, 153, 0.10), transparent 35%),
+          #ffffff;
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.045);
 }
 
@@ -8432,8 +8835,8 @@
   border: 1px solid rgba(236, 72, 153, 0.20);
   border-radius: 24px;
   background:
-    radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
-    linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
+          radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
+          linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.055);
 }
 
@@ -8980,4 +9383,181 @@
     text-align: center;
     justify-items: center;
   }
+}
+
+
+/* =========================================================
+   ADMIN CSS SYNC PATCH - Missing shared utility variants
+========================================================= */
+
+.admin-btn--ghost {
+  background: rgba(255, 255, 255, 0.74) !important;
+  color: var(--admin-text) !important;
+  border-color: rgba(148, 163, 184, 0.28) !important;
+}
+
+.admin-btn--ghost:hover {
+  background: #ffffff !important;
+  border-color: rgba(236, 72, 153, 0.34) !important;
+}
+
+.admin-field--full {
+  grid-column: 1 / -1;
+}
+
+.admin-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.admin-switch-field {
+  align-items: center;
+}
+
+.admin-switch {
+  position: relative;
+  width: 48px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.28);
+  cursor: pointer;
+  transition: background .16s ease;
+}
+
+.admin-switch input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.admin-switch::after {
+  content: "";
+  width: 22px;
+  height: 22px;
+  margin-left: 3px;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.16);
+  transition: transform .16s ease;
+}
+
+.admin-switch:has(input:checked) {
+  background: linear-gradient(135deg, var(--admin-brand), var(--admin-brand-2));
+}
+
+.admin-switch:has(input:checked)::after {
+  transform: translateX(20px);
+}
+
+/* =========================================================
+   ADMIN CSS SYNC PATCH - Structural aliases and total variants
+========================================================= */
+
+.admin-audit-stat--total::after,
+.admin-banner-stat--total::after,
+.admin-brand-stat--total::after,
+.admin-cancel-stat--total::after,
+.admin-category-stat--total::after,
+.admin-contact-stat--total::after,
+.admin-event-stat--total::after,
+.admin-flashsale-stat--total::after,
+.admin-flashsale-items-stat--total::after,
+.admin-order-stat--total::after,
+.admin-order-detail-stat--total::after,
+.admin-page-stat--total::after,
+.admin-product-stat--total::after,
+.admin-promo-stat--total::after,
+.admin-rank-stat--total::after,
+.admin-return-stat--total::after,
+.admin-role-stat--total::after,
+.admin-setting-stat--total::after,
+.admin-notification-metric--total::after,
+.inventory-stat-card--product::after,
+.admin-dashboard-kpi--products::after,
+.admin-dashboard-kpi--users::after {
+  background: rgba(236, 72, 153, 0.10);
+}
+
+.admin-center-group--overview,
+.admin-center-group--catalog,
+.admin-center-group--sales,
+.admin-center-group--growth,
+.admin-center-group--content,
+.admin-center-group--system {
+  position: relative;
+}
+
+.admin-event-filter-field--keyword,
+.admin-product-filter-field--keyword {
+  min-width: 0;
+}
+
+.admin-flashsale-item-form {
+  display: grid;
+  gap: 14px;
+}
+
+.admin-order-detail-card--side,
+.user-detail-summary-card--account,
+.review-summary-card--status,
+.admin-promo-product-picker--v2 {
+  position: relative;
+}
+
+.admin-review-meta-row--user {
+  align-items: flex-start;
+}
+
+.admin-promo-coupon-products,
+.admin-promo-brand-products,
+.admin-promo-event-products,
+.admin-promo-coupon-brand-field,
+.admin-promo-scope-field,
+.admin-promo-scope-brand,
+.admin-promo-scope-category {
+  min-width: 0;
+}
+
+.admin-notification-page {
+  width: 100%;
+}
+
+.admin-notification-list {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-notification-section-title {
+  margin: 0;
+  color: var(--admin-text);
+  font-size: 17px;
+  line-height: 1.25;
+  font-weight: 950;
+  letter-spacing: -0.02em;
+}
+
+.admin-notification-section-desc {
+  margin: 5px 0 0;
+  color: var(--admin-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.admin-notification-campaign-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.admin-notification-col-id {
+  width: 70px;
+}
+
+.admin-notification-col-type {
+  width: 150px;
 }
