@@ -1,168 +1,215 @@
 <%@ page contentType="text/html; charset=UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 
-<c:set var="pageTitle" value="ADMIN | Page Form" scope="request"/>
+<c:set var="pageTitle" value="ADMIN | ${not empty page.id ? 'Sửa page' : 'Thêm page'}" scope="request"/>
 <c:set var="activeMenu" value="pages" scope="request"/>
 <c:set var="pageCss" value="/assets/css/admin/admin-form.css" scope="request"/>
 
 <jsp:include page="/jsp/admin/layout/header.jsp"/>
 <jsp:include page="/jsp/admin/layout/sidebar.jsp"/>
 
-<style>
-  .page-editor-layout {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 320px;
-    gap: 20px;
-    align-items: start;
-  }
-
-  .page-editor-sidebar {
-    display: grid;
-    gap: 18px;
-  }
-
-  .page-thumbnail-preview {
-    width: 100%;
-    height: 180px;
-    border-radius: 14px;
-    border: 1px dashed #d1d5db;
-    overflow: hidden;
-    background: #f9fafb;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-top: 10px;
-  }
-
-  .page-thumbnail-preview img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  .page-thumbnail-empty {
-    color: #9ca3af;
-    font-size: 14px;
-  }
-</style>
+<c:set var="ctx" value="${pageContext.request.contextPath}" />
+<c:set var="isEditPage" value="${not empty page.id}" />
 
 <main class="admin-main">
-  <div class="admin-container">
+  <div class="admin-container admin-page-form-page">
 
-    <div class="admin-topbar">
-      <div>
-        <h1 class="admin-h1">
+    <section class="admin-page-form-hero">
+      <div class="admin-page-form-hero__content">
+        <span class="admin-page-form-eyebrow">NỘI DUNG &amp; WEBSITE</span>
+        <h1 class="admin-page-form-title">
           <c:choose>
-            <c:when test="${not empty page.id}">Sửa Page #${page.id}</c:when>
-            <c:otherwise>Thêm mới Page Content</c:otherwise>
+            <c:when test="${isEditPage}">Sửa Page #${page.id}</c:when>
+            <c:otherwise>Thêm Page Content</c:otherwise>
           </c:choose>
         </h1>
+        <p class="admin-page-form-subtitle">
+          Quản lý nội dung tĩnh của website như chính sách, giới thiệu và các trang hiển thị ở footer.
+          Nội dung được soạn bằng CKEditor và có thể gắn thumbnail đại diện.
+        </p>
       </div>
-    </div>
+
+      <div class="admin-page-form-hero__actions">
+        <a href="${ctx}/admin/pages"
+           class="admin-btn">
+          ← Quay lại danh sách
+        </a>
+      </div>
+    </section>
 
     <form method="post"
-          action="${pageContext.request.contextPath}/admin/pages/save?csrf_token=${sessionScope.CSRF_TOKEN}"
+          action="${ctx}/admin/pages/save?csrf_token=${sessionScope.CSRF_TOKEN}"
           enctype="multipart/form-data"
-          class="admin-form">
-
+          class="admin-form admin-page-form">
       <%@ include file="/jsp/common/csrf.jspf" %>
 
-      <c:if test="${not empty page.id}">
+      <c:if test="${isEditPage}">
         <input type="hidden" name="id" value="${page.id}">
       </c:if>
 
-      <div class="page-editor-layout">
+      <div class="admin-page-form-layout">
 
-        <div class="page-editor-main-cards" style="display:grid; gap:20px;">
-          <div class="admin-card">
-            <div class="admin-card__body">
+        <section class="admin-card admin-page-editor-card">
+          <div class="admin-card__body">
+            <div class="admin-page-form-section-head">
+              <div>
+                <h2 class="admin-page-form-section-title">Nội dung page</h2>
+                <p class="admin-page-form-section-desc">
+                  Nhập tiêu đề, slug và nội dung hiển thị cho khách hàng.
+                </p>
+              </div>
 
+              <c:choose>
+                <c:when test="${isEditPage}">
+                  <span class="admin-chip admin-chip--brand">Đang chỉnh sửa</span>
+                </c:when>
+                <c:otherwise>
+                  <span class="admin-chip admin-chip--success">Page mới</span>
+                </c:otherwise>
+              </c:choose>
+            </div>
+
+            <div class="admin-page-form-grid">
               <div class="admin-field">
-                <label class="admin-label">Tiêu đề Page</label>
-                <input type="text" class="admin-input" name="title" value="<c:out value='${page.title}'/>" required placeholder="Nhập tiêu đề...">
+                <label class="admin-label" for="pageTitleInput">
+                  Tiêu đề Page <span class="admin-required">*</span>
+                </label>
+                <input id="pageTitleInput"
+                       type="text"
+                       class="admin-input"
+                       name="title"
+                       value="<c:out value='${page.title}'/>"
+                       required
+                       placeholder="Nhập tiêu đề...">
               </div>
 
               <div class="admin-field">
-                <label class="admin-label">Slug URL (Ví dụ: chinh-sach-bao-mat)</label>
-                <input type="text" class="admin-input" name="slug" value="<c:out value='${page.slug}'/>" required placeholder="Không nhập dấu gạch chéo / ở đầu...">
+                <label class="admin-label" for="pageSlugInput">
+                  Slug URL <span class="admin-required">*</span>
+                </label>
+                <input id="pageSlugInput"
+                       type="text"
+                       class="admin-input"
+                       name="slug"
+                       value="<c:out value='${page.slug}'/>"
+                       required
+                       placeholder="Ví dụ: chinh-sach-bao-mat">
+                <small class="admin-help">
+                  Không nhập dấu gạch chéo <b>/</b> ở đầu slug.
+                </small>
               </div>
 
-              <div class="admin-field">
-                <label class="admin-label">Nội dung</label>
-
+              <div class="admin-field admin-page-content-field">
+                <label class="admin-label" for="content">
+                  Nội dung <span class="admin-required">*</span>
+                </label>
                 <textarea class="admin-textarea"
                           id="content"
                           name="content">${page.content}</textarea>
+                <small class="admin-help">
+                  Nội dung này sẽ hiển thị khi người dùng click vào link ở footer hoặc trang tĩnh tương ứng.
+                </small>
+              </div>
+            </div>
+          </div>
+        </section>
 
-                <div class="admin-help">
-                  Nội dung hiển thị khi user click footer link
+        <aside class="admin-page-editor-sidebar">
+
+          <section class="admin-card admin-page-settings-card">
+            <div class="admin-card__body">
+              <div class="admin-page-form-section-head">
+                <div>
+                  <h2 class="admin-page-form-section-title">Thiết lập hiển thị</h2>
+                  <p class="admin-page-form-section-desc">
+                    Cấu hình trạng thái, loại page và thumbnail.
+                  </p>
                 </div>
               </div>
 
-            </div>
-          </div>
-        </div>
+              <div class="admin-page-settings-grid">
+                <div class="admin-field">
+                  <label class="admin-label" for="pageStatusSelect">Trạng thái hiển thị</label>
+                  <select id="pageStatusSelect" class="admin-input" name="status">
+                    <option value="published">Published (Công khai)</option>
+                    <option value="draft">Draft (Nháp)</option>
+                  </select>
+                </div>
 
-        <div class="page-editor-sidebar">
+                <div class="admin-field">
+                  <label class="admin-label" for="pageTypeSelect">Loại cấu trúc</label>
+                  <select id="pageTypeSelect" class="admin-input" name="type">
+                    <option value="policy" ${page.type == 'policy' ? 'selected' : ''}>Policy (Chính sách)</option>
+                    <option value="about" ${page.type == 'about' ? 'selected' : ''}>About (Giới thiệu)</option>
+                  </select>
+                </div>
 
-          <div class="admin-card">
-            <div class="admin-card__body">
-
-              <div class="admin-field">
-                <label class="admin-label">Trạng thái hiển thị</label>
-                <select class="admin-input" name="status">
-                  <!-- ĐÃ SỬA: Loại bỏ các đoạn check page.status gây crash hệ thống -->
-                  <option value="published">Published (Công khai)</option>
-                  <option value="draft">Draft (Nháp)</option>
-                </select>
+                <div class="admin-field">
+                  <label class="admin-label" for="thumbnailInput">Thumbnail</label>
+                  <input type="file"
+                         class="admin-input"
+                         name="thumbnailFile"
+                         accept="image/*"
+                         id="thumbnailInput">
+                  <input type="hidden" name="thumbnail" value="${page.thumbnail}">
+                  <small class="admin-help">
+                    Nên dùng ảnh ngang, rõ nội dung chính.
+                  </small>
+                </div>
               </div>
 
-              <div class="admin-field">
-                <label class="admin-label">Loại cấu trúc (Type)</label>
-                <select class="admin-input" name="type">
-                  <option value="policy" ${page.type == 'policy' ? 'selected' : ''}>Policy (Chính sách)</option>
-                  <option value="about" ${page.type == 'about' ? 'selected' : ''}>About (Giới thiệu)</option>
-                </select>
-              </div>
-
-              <div class="admin-field">
-                <label class="admin-label">Thumbnail (Hình đại diện)</label>
-                <input type="file" class="admin-input" name="thumbnailFile" accept="image/*" id="thumbnailInput">
-
-                <input type="hidden" name="thumbnail" value="${page.thumbnail}">
-              </div>
-
-              <div class="page-thumbnail-preview">
+              <div class="admin-page-thumbnail-preview">
                 <c:choose>
-                  <%-- Nếu trong DB có lưu đường dẫn ảnh --%>
                   <c:when test="${not empty page.thumbnail}">
-                    <img id="imgPreview" src="${page.thumbnail}"
-                         onerror="this.onerror=null; document.getElementById('emptyPreviewText').style.display='none'; this.src='${pageContext.request.contextPath}/assets/images/pages/default-thumbnail.png';"
-                         alt="thumb">
-                    <div id="emptyPreviewText" class="page-thumbnail-empty" style="display: none;">Chưa có ảnh</div>
+                    <img id="imgPreview"
+                         class="admin-page-thumbnail-img"
+                         src="${page.thumbnail}"
+                         data-default-src="${ctx}/assets/images/pages/default-thumbnail.png"
+                         alt="Thumbnail page">
+                    <div id="emptyPreviewText"
+                         class="admin-page-thumbnail-empty is-hidden">
+                      Chưa có ảnh
+                    </div>
                   </c:when>
-
-                  <%-- Nếu DB hoàn toàn trống (Tạo trang mới tinh) --%>
                   <c:otherwise>
-                    <img id="imgPreview" src="" alt="thumb" style="display: none; width: 100%; height: 100%; object-fit: cover;">
-                    <div id="emptyPreviewText" class="page-thumbnail-empty">Chưa có ảnh</div>
+                    <img id="imgPreview"
+                         class="admin-page-thumbnail-img is-hidden"
+                         src=""
+                         data-default-src="${ctx}/assets/images/pages/default-thumbnail.png"
+                         alt="Thumbnail page">
+                    <div id="emptyPreviewText"
+                         class="admin-page-thumbnail-empty">
+                      Chưa có ảnh
+                    </div>
                   </c:otherwise>
                 </c:choose>
               </div>
-
             </div>
-          </div>
+          </section>
 
-          <div class="admin-card">
+          <section class="admin-card admin-page-guide-card">
             <div class="admin-card__body">
-              <button class="admin-btn admin-btn--primary" type="submit" style="width: 100%;">
+              <div class="admin-page-guide">
+                <span class="admin-page-guide__icon">📝</span>
+                <div>
+                  <strong>Gợi ý nội dung</strong>
+                  <small>
+                    Page chính sách nên có tiêu đề rõ, slug ngắn và nội dung chia đoạn để dễ đọc trên website.
+                  </small>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="admin-card admin-page-submit-card">
+            <div class="admin-card__body">
+              <button class="admin-btn admin-btn--primary admin-page-submit-btn" type="submit">
                 Lưu chỉnh sửa
               </button>
             </div>
-          </div>
+          </section>
 
-        </div>
-
+        </aside>
       </div>
     </form>
   </div>
@@ -172,29 +219,47 @@
 
 <script src="https://cdn.ckeditor.com/4.16.2/standard/ckeditor.js"></script>
 <script>
-  // Kích hoạt Trình soạn thảo văn bản CKEditor
   CKEDITOR.replace('content', {
     height: 400,
     removePlugins: 'elementspath',
     resize_enabled: false
   });
 
-  // Xử lý sự kiện tải ảnh lên và render preview lập tức cho Admin nhìn thấy
-  document.getElementById('thumbnailInput').addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (file) {
+  const thumbnailInput = document.getElementById('thumbnailInput');
+  const imgPreview = document.getElementById('imgPreview');
+  const emptyText = document.getElementById('emptyPreviewText');
+
+  if (imgPreview) {
+    imgPreview.addEventListener('error', function() {
+      const defaultSrc = imgPreview.getAttribute('data-default-src');
+      if (defaultSrc && imgPreview.src !== defaultSrc) {
+        imgPreview.src = defaultSrc;
+      }
+      imgPreview.classList.remove('is-hidden');
+      if (emptyText) {
+        emptyText.classList.add('is-hidden');
+      }
+    });
+  }
+
+  if (thumbnailInput) {
+    thumbnailInput.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+
+      if (!file || !imgPreview) {
+        return;
+      }
+
       const reader = new FileReader();
       reader.onload = function(event) {
-        const imgPreview = document.getElementById('imgPreview');
-        const emptyText = document.getElementById('emptyPreviewText');
-
         imgPreview.src = event.target.result;
-        imgPreview.style.display = 'block';
+        imgPreview.classList.remove('is-hidden');
+
         if (emptyText) {
-          emptyText.style.display = 'none';
+          emptyText.classList.add('is-hidden');
         }
       };
       reader.readAsDataURL(file);
-    }
-  });
+    });
+  }
 </script>
