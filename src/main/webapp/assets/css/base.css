@@ -4988,3 +4988,38 @@ summary#userMenuBtn.user-btn,
     padding-top: 18px !important;
   }
 }
+
+
+/* =========================================================
+   FINAL V7 - SEARCH HISTORY DROPDOWN FIX
+   - Lịch sử tìm kiếm mở ngay lần bấm đầu tiên.
+   - Ghi đè inline style display:none/opacity:0 do các script đóng overlay cũ để lại.
+   - Link "Xem tất cả" và item lịch sử vẫn bấm được khi header fixed.
+   ========================================================= */
+html body .search-wrapper.search-history-wrapper,
+html body .header-actions .search-wrapper.search-history-wrapper {
+  position: relative !important;
+  overflow: visible !important;
+  z-index: 2147483200 !important;
+}
+
+html body #searchHistoryDropdown.header-search-history.is-open,
+html body .header-search-history.is-open {
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  transform: translateY(0) !important;
+  z-index: 2147483400 !important;
+}
+
+html body #searchHistoryDropdown.header-search-history:not(.is-open),
+html body .header-search-history:not(.is-open) {
+  pointer-events: none !important;
+}
+
+html body #searchHistoryDropdown .header-search-history__head a,
+html body #searchHistoryDropdown .header-search-history__item {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
