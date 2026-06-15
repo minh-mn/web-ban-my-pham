@@ -46,28 +46,6 @@
             </div>
         </section>
 
-<div class="admin-promotion-create">
-                <a class="admin-btn admin-btn--primary admin-promo-create-btn"
-                   href="${ctx}/admin/promotions?action=new&type=COUPON">
-                    + Tạo mã giảm giá
-                </a>
-
-                <a class="admin-btn admin-promo-create-btn"
-                   href="${ctx}/admin/promotions?action=new&type=BRAND">
-                    + Giảm giá thương hiệu
-                </a>
-
-                <a class="admin-btn admin-promo-create-btn"
-                   href="${ctx}/admin/promotions?action=new&type=ORDER">
-                    + Giảm theo đơn hàng
-                </a>
-
-                <a class="admin-btn admin-promo-create-btn"
-                   href="${ctx}/admin/promotions?action=new&type=EVENT">
-                    + Chương trình khuyến mãi
-                </a>
-            </div>
-        </div>
 
         <!-- STATS -->
         <section class="admin-promo-stats">
