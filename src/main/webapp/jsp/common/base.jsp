@@ -46,7 +46,7 @@
 
 	<!-- GLOBAL CSS -->
 	<link rel="stylesheet"
-	      href="${pageContext.request.contextPath}/assets/css/base.css?v=20260615_fixed_header_v6">
+	      href="${pageContext.request.contextPath}/assets/css/base.css?v=20260615_search_history_page_v8">
 
 	<!-- PAGE CSS -->
 	<c:if test="${not empty pageCss}">
@@ -54,25 +54,25 @@
 			<%-- Trường hợp servlet truyền: /assets/css/home.css --%>
 			<c:when test="${fn:startsWith(pageCss, '/assets/')}">
 				<link rel="stylesheet"
-				      href="${pageContext.request.contextPath}${pageCss}?v=20260615_fixed_header_v6">
+				      href="${pageContext.request.contextPath}${pageCss}?v=20260615_search_history_page_v8">
 			</c:when>
 
 			<%-- Trường hợp servlet truyền: assets/css/home.css --%>
 			<c:when test="${fn:startsWith(pageCss, 'assets/')}">
 				<link rel="stylesheet"
-				      href="${pageContext.request.contextPath}/${pageCss}?v=20260615_fixed_header_v6">
+				      href="${pageContext.request.contextPath}/${pageCss}?v=20260615_search_history_page_v8">
 			</c:when>
 
 			<%-- Trường hợp servlet truyền: /home.css --%>
 			<c:when test="${fn:startsWith(pageCss, '/')}">
 				<link rel="stylesheet"
-				      href="${pageContext.request.contextPath}/assets/css${pageCss}?v=20260615_fixed_header_v6">
+				      href="${pageContext.request.contextPath}/assets/css${pageCss}?v=20260615_search_history_page_v8">
 			</c:when>
 
 			<%-- Trường hợp servlet truyền: home.css hoặc admin/admin-list.css --%>
 			<c:otherwise>
 				<link rel="stylesheet"
-				      href="${pageContext.request.contextPath}/assets/css/${pageCss}?v=20260615_fixed_header_v6">
+				      href="${pageContext.request.contextPath}/assets/css/${pageCss}?v=20260615_search_history_page_v8">
 			</c:otherwise>
 		</c:choose>
 	</c:if>
@@ -125,7 +125,7 @@
 				<div id="searchHistoryDropdown" class="header-search-history" aria-label="Lịch sử tìm kiếm">
 					<div class="header-search-history__head">
 						<span>Lịch sử tìm kiếm</span>
-						<a href="${pageContext.request.contextPath}/account?tab=search-history">Xem tất cả</a>
+						<a href="${pageContext.request.contextPath}/search-history">Xem tất cả</a>
 					</div>
 
 					<div id="searchHistoryBody" class="header-search-history__body">
@@ -353,7 +353,7 @@
 <jsp:include page="/jsp/common/footer.jsp" />
 
 <!-- GLOBAL JS: chỉ load 1 lần -->
-<script defer src="${pageContext.request.contextPath}/assets/js/main.js?v=20260615_fixed_header_v6"></script>
+<script defer src="${pageContext.request.contextPath}/assets/js/main.js?v=20260615_search_history_page_v8"></script>
 
 
 <script>
@@ -380,6 +380,19 @@
 					.replaceAll("'", "&#039;");
 		}
 
+		function resetOverlayInlineStyle(element) {
+			if (!element) {
+				return;
+			}
+
+			/*
+			 * Một số đoạn JS đóng overlay cũ có set inline style display:none/opacity:0.
+			 * Nếu không xóa các style này thì lần click đầu tiên chỉ add class is-open
+			 * nhưng dropdown vẫn bị ẩn, người dùng phải bấm lần thứ hai mới thấy.
+			 */
+			element.removeAttribute("style");
+		}
+
 		function showHistoryDropdown() {
 			if (searchInput.value.trim().length > 0) {
 				hideHistoryDropdown();
@@ -387,10 +400,11 @@
 			}
 
 			if (searchResults) {
-				searchResults.classList.remove("show");
-				searchResults.removeAttribute("style");
+				searchResults.classList.remove("show", "is-open", "active");
+				resetOverlayInlineStyle(searchResults);
 			}
 
+			resetOverlayInlineStyle(historyDropdown);
 			historyDropdown.classList.add("is-open");
 
 			if (!historyLoaded && !historyLoading) {
@@ -463,6 +477,24 @@
 		searchInput.addEventListener("focus", showHistoryDropdown);
 		searchInput.addEventListener("click", showHistoryDropdown);
 		searchInput.addEventListener("blur", hideHistoryDropdownLater);
+
+		const searchForm = searchInput.closest("form");
+		if (searchForm) {
+			searchForm.addEventListener("submit", function (event) {
+				if (searchInput.value.trim().length === 0) {
+					event.preventDefault();
+					searchInput.focus();
+					showHistoryDropdown();
+				}
+			});
+		}
+
+		if (historyDropdown) {
+			/* Giữ dropdown mở khi bấm vào các link bên trong, tránh blur input đóng sớm. */
+			historyDropdown.addEventListener("mousedown", function (event) {
+				event.stopPropagation();
+			});
+		}
 
 		searchInput.addEventListener("input", function () {
 			if (searchInput.value.trim().length > 0) {
@@ -865,7 +897,17 @@
 		window.addEventListener("scroll", function () {
 			if (!ticking) {
 				window.requestAnimationFrame(function () {
-					closeSearchOverlaysV5();
+					var searchInput = document.getElementById("search-input");
+					var searchHistory = document.getElementById("searchHistoryDropdown");
+
+					/*
+					 * Không đóng lịch sử tìm kiếm khi trình duyệt tự scroll nhẹ để focus input.
+					 * Đây là nguyên nhân làm màn hình bị giật và lần bấm đầu không thấy dropdown.
+					 */
+					if (!(searchInput && document.activeElement === searchInput && searchHistory && searchHistory.classList.contains("is-open"))) {
+						closeSearchOverlaysV5();
+					}
+
 					ticking = false;
 				});
 				ticking = true;
