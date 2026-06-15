@@ -153,6 +153,8 @@ public class HomeServlet extends HttpServlet {
     }
 
     private void loadVouchers(HttpServletRequest req) {
+        String savedCodes = buildSavedCouponCodeString(req);
+
         try {
             List<Coupon> vouchers = couponDAO.findActiveCouponsForHome();
             req.setAttribute("vouchers", vouchers);
@@ -160,6 +162,68 @@ public class HomeServlet extends HttpServlet {
             e.printStackTrace();
             req.setAttribute("vouchers", new ArrayList<Coupon>());
         }
+
+        /*
+         * Dạng chuỗi có dấu phẩy 2 đầu: ,CAP30K,VIP30,
+         * JSP dùng để kiểm tra mã nào user đã lưu giống trang /vouchers.
+         */
+        req.setAttribute("savedCodes", savedCodes);
+    }
+
+    private String buildSavedCouponCodeString(HttpServletRequest req) {
+        int userId = resolveCurrentUserId(req);
+
+        if (userId <= 0) {
+            return ",";
+        }
+
+        StringBuilder savedCodes = new StringBuilder(",");
+
+        try {
+            List<Coupon> savedCoupons = couponDAO.findSavedCouponsByUserId(userId);
+
+            if (savedCoupons != null) {
+                for (Coupon coupon : savedCoupons) {
+                    if (coupon != null && coupon.getCode() != null && !coupon.getCode().isBlank()) {
+                        savedCodes.append(coupon.getCode().trim().toUpperCase()).append(',');
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return savedCodes.toString();
+    }
+
+    private int resolveCurrentUserId(HttpServletRequest req) {
+        Object userObj = req.getSession().getAttribute("user");
+
+        if (userObj == null) {
+            return 0;
+        }
+
+        if (userObj instanceof User) {
+            return ((User) userObj).getId();
+        }
+
+        try {
+            Object id = userObj.getClass().getMethod("getId").invoke(userObj);
+            if (id instanceof Number) {
+                return ((Number) id).intValue();
+            }
+        } catch (Exception ignored) {
+        }
+
+        try {
+            Object id = userObj.getClass().getMethod("getUserId").invoke(userObj);
+            if (id instanceof Number) {
+                return ((Number) id).intValue();
+            }
+        } catch (Exception ignored) {
+        }
+
+        return 0;
     }
 
     private List<Product> loadFeaturedProducts() {
