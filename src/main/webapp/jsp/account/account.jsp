@@ -2,7 +2,7 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
-<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/account.css?v=20260615_account_ui_1" />
+<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/account.css?v=20260614_1" />
 
 <fmt:setLocale value="vi_VN"/>
 
@@ -19,316 +19,414 @@
                 <!-- ========================================================= -->
                 <c:if test="${sessionScope.user.admin}">
 
-                    <div class="account-hero admin-mode">
-                        <div class="account-profile">
-                            <div class="account-avatar">
-                                <c:out value="${fn:toUpperCase(fn:substring(safeUsername, 0, 1))}" />
-                            </div>
+                    <!-- ADMIN ACCOUNT CENTER: gọn, tách phần quản trị khỏi hồ sơ cá nhân -->
+                    <div class="mc-account-compact mc-admin-account">
 
-                            <div>
-                                <h1 class="account-title">Admin Dashboard</h1>
-                                <p class="account-subtitle">
-                                    Xin chào, <strong><c:out value="${safeUsername}" /></strong>. Đây là khu vực tổng quan quản trị.
-                                </p>
+                        <section class="mc-compact-hero mc-admin-hero">
+                            <div class="mc-compact-user">
+                                <div class="mc-compact-avatar mc-admin-avatar">
+                                    <c:out value="${fn:toUpperCase(fn:substring(safeUsername, 0, 1))}" />
+                                </div>
 
-                                <c:if test="${not empty rankLabel}">
-                                    <div class="account-chip-row">
-                    <span class="account-chip ${rankCss}">
-                      🎖 <c:out value="${rankLabel}" />
-                      <c:if test="${rankDiscount > 0}">
-                          -<c:out value="${rankDiscount}" />%
-                      </c:if>
-                    </span>
+                                <div class="mc-compact-user-info">
+                                    <div class="mc-compact-name-row">
+                                        <h1>Tài khoản quản trị</h1>
+                                        <span class="mc-compact-rank mc-admin-role-chip">ADMIN</span>
+
+                                        <c:if test="${not empty rankLabel}">
+                                            <span class="mc-compact-rank ${rankCss}">
+                                                <c:out value="${rankLabel}" />
+                                                <c:if test="${rankDiscount > 0}"> -<c:out value="${rankDiscount}" />%</c:if>
+                                            </span>
+                                        </c:if>
                                     </div>
-                                </c:if>
-                            </div>
-                        </div>
 
-                        <div class="account-actions">
-                            <a href="${pageContext.request.contextPath}/admin" class="account-btn primary">🛠 Vào trang Admin</a>
-                            <a href="${pageContext.request.contextPath}/account/change-password" class="account-btn">🔒 Đổi mật khẩu</a>
-                        </div>
-                    </div>
+                                    <p>
+                                        Xin chào, <strong><c:out value="${safeUsername}" /></strong>.
+                                        Trang này chỉ giữ các thông tin nhanh của tài khoản và lối tắt quản trị,
+                                        không hiển thị toàn bộ dashboard để tránh trang tài khoản bị quá dài.
+                                    </p>
 
-                    <!-- ADMIN KPI -->
-                    <div class="account-grid account-grid-4">
-                        <div class="account-card">
-                            <div class="account-card-body account-kpi">
-                                <div>
-                                    <p class="account-kpi-label">Tổng doanh thu</p>
-                                    <div class="account-kpi-value">
-                                        <c:choose>
-                                            <c:when test="${not empty admin_total_revenue_vnd}">
-                                                <fmt:formatNumber value="${admin_total_revenue_vnd}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫
-                                            </c:when>
-                                            <c:otherwise>0 ₫</c:otherwise>
-                                        </c:choose>
+                                    <div class="mc-compact-contact">
+                                        <span>📧 <c:choose><c:when test="${not empty userEmail}"><c:out value="${userEmail}" /></c:when><c:otherwise>Chưa cập nhật email</c:otherwise></c:choose></span>
+                                        <span>📱 <c:choose><c:when test="${not empty userPhone}"><c:out value="${userPhone}" /></c:when><c:otherwise>Chưa cập nhật SĐT</c:otherwise></c:choose></span>
                                     </div>
-                                    <div class="account-kpi-note">Doanh thu từ đơn hợp lệ.</div>
                                 </div>
-                                <div class="account-kpi-icon">💵</div>
                             </div>
-                        </div>
 
-                        <div class="account-card">
-                            <div class="account-card-body account-kpi">
-                                <div>
-                                    <p class="account-kpi-label">Tổng đơn</p>
-                                    <div class="account-kpi-value">
-                                        <c:out value="${empty admin_total_orders ? 0 : admin_total_orders}" />
+                            <div class="mc-compact-actions">
+                                <a href="${pageContext.request.contextPath}/admin" class="mc-compact-btn is-primary">🛠 Vào Admin</a>
+                                <button type="button" class="mc-compact-btn" data-account-target="profile">Sửa hồ sơ</button>
+                                <a href="${pageContext.request.contextPath}/account/change-password" class="mc-compact-btn">Đổi mật khẩu</a>
+                            </div>
+                        </section>
+
+                        <section class="mc-account-center mc-admin-account-center">
+                            <aside class="mc-account-menu mc-admin-account-menu">
+                                <div class="mc-account-menu-group">
+                                    <div class="mc-account-menu-label">Quản trị</div>
+
+                                    <button type="button" class="mc-account-menu-item is-active" data-account-target="overview">
+                                        <span class="mc-menu-icon">📊</span>
+                                        <span>
+                                            <strong>Tổng quan nhanh</strong>
+                                            <small>Doanh thu, đơn hàng, tồn kho</small>
+                                        </span>
+                                        <em>›</em>
+                                    </button>
+
+                                    <button type="button" class="mc-account-menu-item" data-account-target="report">
+                                        <span class="mc-menu-icon">📈</span>
+                                        <span>
+                                            <strong>Báo cáo bán hàng</strong>
+                                            <small>Biểu đồ và top sản phẩm</small>
+                                        </span>
+                                        <em>›</em>
+                                    </button>
+                                </div>
+
+                                <div class="mc-account-menu-group">
+                                    <div class="mc-account-menu-label">Tài khoản</div>
+
+                                    <button type="button" class="mc-account-menu-item" data-account-target="profile">
+                                        <span class="mc-menu-icon">👤</span>
+                                        <span>
+                                            <strong>Hồ sơ cá nhân</strong>
+                                            <small>Cập nhật thông tin admin</small>
+                                        </span>
+                                        <em>›</em>
+                                    </button>
+
+                                    <button type="button" class="mc-account-menu-item" data-account-target="security">
+                                        <span class="mc-menu-icon">🔐</span>
+                                        <span>
+                                            <strong>Bảo mật</strong>
+                                            <small>Mật khẩu và quyền truy cập</small>
+                                        </span>
+                                        <em>›</em>
+                                    </button>
+                                </div>
+                            </aside>
+
+                            <div class="mc-account-content mc-admin-account-content">
+
+                                <div class="mc-account-view is-active" data-account-view="overview">
+                                    <div class="mc-view-head">
+                                        <div>
+                                            <h2>Tổng quan quản trị</h2>
+                                            <p>Các chỉ số quan trọng nhất được rút gọn để xem nhanh trong trang tài khoản.</p>
+                                        </div>
+                                        <a class="mc-view-link" href="${pageContext.request.contextPath}/admin">Mở dashboard đầy đủ ›</a>
                                     </div>
-                                    <div class="account-kpi-note">Tổng số đơn đã ghi nhận.</div>
-                                </div>
-                                <div class="account-kpi-icon">🧾</div>
-                            </div>
-                        </div>
 
-                        <div class="account-card">
-                            <div class="account-card-body account-kpi">
-                                <div>
-                                    <p class="account-kpi-label">AOV</p>
-                                    <div class="account-kpi-value">
-                                        <c:choose>
-                                            <c:when test="${not empty admin_aov_vnd}">
-                                                <fmt:formatNumber value="${admin_aov_vnd}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫
-                                            </c:when>
-                                            <c:otherwise>0 ₫</c:otherwise>
-                                        </c:choose>
+                                    <div class="mc-admin-kpi-grid">
+                                        <div class="mc-compact-stat mc-admin-stat">
+                                            <span>💵</span>
+                                            <strong>
+                                                <c:choose>
+                                                    <c:when test="${not empty admin_total_revenue_vnd}">
+                                                        <fmt:formatNumber value="${admin_total_revenue_vnd}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫
+                                                    </c:when>
+                                                    <c:otherwise>0 ₫</c:otherwise>
+                                                </c:choose>
+                                            </strong>
+                                            <small>Tổng doanh thu hợp lệ</small>
+                                        </div>
+
+                                        <div class="mc-compact-stat mc-admin-stat">
+                                            <span>🧾</span>
+                                            <strong><c:out value="${empty admin_total_orders ? 0 : admin_total_orders}" /></strong>
+                                            <small>Tổng số đơn hàng</small>
+                                        </div>
+
+                                        <div class="mc-compact-stat mc-admin-stat">
+                                            <span>📊</span>
+                                            <strong>
+                                                <c:choose>
+                                                    <c:when test="${not empty admin_aov_vnd}">
+                                                        <fmt:formatNumber value="${admin_aov_vnd}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫
+                                                    </c:when>
+                                                    <c:otherwise>0 ₫</c:otherwise>
+                                                </c:choose>
+                                            </strong>
+                                            <small>Giá trị đơn trung bình</small>
+                                        </div>
+
+                                        <div class="mc-compact-stat mc-admin-stat">
+                                            <span>
+                                                <c:choose>
+                                                    <c:when test="${empty revenue_diff_vnd or revenue_diff_vnd >= 0}">📈</c:when>
+                                                    <c:otherwise>📉</c:otherwise>
+                                                </c:choose>
+                                            </span>
+                                            <strong><c:out value="${empty revenue_percent ? 0 : revenue_percent}" />%</strong>
+                                            <small>Tăng trưởng so với tháng trước</small>
+                                        </div>
                                     </div>
-                                    <div class="account-kpi-note">Giá trị đơn trung bình.</div>
-                                </div>
-                                <div class="account-kpi-icon">📊</div>
-                            </div>
-                        </div>
 
-                        <div class="account-card">
-                            <div class="account-card-body account-kpi">
-                                <div>
-                                    <p class="account-kpi-label">Tăng trưởng</p>
-                                    <div class="account-kpi-value">
-                                        <c:out value="${empty revenue_percent ? 0 : revenue_percent}" />%
+                                    <div class="mc-mini-section mc-admin-module-section">
+                                        <div class="mc-mini-section-head">
+                                            <div>
+                                                <h3>Truy cập nhanh</h3>
+                                                <span>Các khu vực admin thường dùng</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="mc-admin-module-grid">
+                                            <a href="${pageContext.request.contextPath}/admin/orders">
+                                                <span>🧾</span>
+                                                <strong>Đơn hàng</strong>
+                                                <small>Xử lý và cập nhật trạng thái</small>
+                                            </a>
+
+                                            <a href="${pageContext.request.contextPath}/admin/products">
+                                                <span>🧴</span>
+                                                <strong>Sản phẩm</strong>
+                                                <small>Quản lý sản phẩm và biến thể</small>
+                                            </a>
+
+                                            <a href="${pageContext.request.contextPath}/admin/users">
+                                                <span>👥</span>
+                                                <strong>Người dùng</strong>
+                                                <small>Role, trạng thái, hạng thành viên</small>
+                                            </a>
+
+                                            <a href="${pageContext.request.contextPath}/admin/inventory">
+                                                <span>📦</span>
+                                                <strong>Kho hàng</strong>
+                                                <small>Tồn kho và cảnh báo nhập hàng</small>
+                                            </a>
+
+                                            <a href="${pageContext.request.contextPath}/admin/promotions">
+                                                <span>🏷️</span>
+                                                <strong>Khuyến mãi</strong>
+                                                <small>Voucher, flash sale, promotion</small>
+                                            </a>
+
+                                            <a href="${pageContext.request.contextPath}/admin/notifications">
+                                                <span>🔔</span>
+                                                <strong>Thông báo</strong>
+                                                <small>Gửi và quản lý thông báo</small>
+                                            </a>
+                                        </div>
                                     </div>
-                                    <div class="account-kpi-note">So với tháng trước.</div>
-                                </div>
-                                <div class="account-kpi-icon">
-                                    <c:choose>
-                                        <c:when test="${empty revenue_diff_vnd or revenue_diff_vnd >= 0}">📈</c:when>
-                                        <c:otherwise>📉</c:otherwise>
-                                    </c:choose>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
-                    <!-- ADMIN MONTH SUMMARY -->
-                    <div class="account-grid account-grid-3 account-section-space">
-                        <div class="account-card">
-                            <div class="account-card-body">
-                                <p class="account-kpi-label">Doanh thu tháng này</p>
-                                <div class="account-kpi-value">
-                                    <c:choose>
-                                        <c:when test="${not empty this_month_revenue}">
-                                            <fmt:formatNumber value="${this_month_revenue}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫
-                                        </c:when>
-                                        <c:otherwise>0 ₫</c:otherwise>
-                                    </c:choose>
-                                </div>
-                                <div class="account-kpi-note">Không dùng tổng doanh thu toàn hệ thống.</div>
-                            </div>
-                        </div>
+                                    <div class="mc-admin-alert-grid">
+                                        <div class="mc-admin-alert-card">
+                                            <span>📉</span>
+                                            <div>
+                                                <strong><c:out value="${empty unsoldThisMonthCount ? 0 : unsoldThisMonthCount}" /></strong>
+                                                <small>Không bán tháng này</small>
+                                            </div>
+                                        </div>
 
-                        <div class="account-card">
-                            <div class="account-card-body">
-                                <p class="account-kpi-label">Doanh thu tháng trước</p>
-                                <div class="account-kpi-value">
-                                    <c:choose>
-                                        <c:when test="${not empty prev_month_revenue}">
-                                            <fmt:formatNumber value="${prev_month_revenue}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫
-                                        </c:when>
-                                        <c:when test="${not empty last_month_revenue}">
-                                            <fmt:formatNumber value="${last_month_revenue}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫
-                                        </c:when>
-                                        <c:otherwise>0 ₫</c:otherwise>
-                                    </c:choose>
-                                </div>
-                                <div class="account-kpi-note">Dữ liệu dùng để so sánh tăng trưởng.</div>
-                            </div>
-                        </div>
+                                        <div class="mc-admin-alert-card">
+                                            <span>🕒</span>
+                                            <div>
+                                                <strong><c:out value="${empty unsoldLast30DaysCount ? 0 : unsoldLast30DaysCount}" /></strong>
+                                                <small>Không bán 30 ngày</small>
+                                            </div>
+                                        </div>
 
-                        <div class="account-card">
-                            <div class="account-card-body">
-                                <p class="account-kpi-label">Chênh lệch doanh thu</p>
-                                <div class="account-kpi-value">
-                                    <c:choose>
-                                        <c:when test="${not empty revenue_diff_vnd}">
-                                            <fmt:formatNumber value="${revenue_diff_vnd}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫
-                                        </c:when>
-                                        <c:otherwise>0 ₫</c:otherwise>
-                                    </c:choose>
-                                </div>
-                                <div class="account-kpi-note">
-                                    Tỷ lệ: <strong><c:out value="${empty revenue_percent ? 0 : revenue_percent}" />%</strong>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                                        <div class="mc-admin-alert-card is-danger">
+                                            <span>🚫</span>
+                                            <div>
+                                                <strong><c:out value="${empty outOfStockCount ? 0 : outOfStockCount}" /></strong>
+                                                <small>Hết hàng</small>
+                                            </div>
+                                        </div>
 
-                    <!-- ADMIN PRODUCT QUICK STATS -->
-                    <div class="account-grid account-grid-4 account-section-space">
-
-                        <div class="account-card">
-                            <div class="account-card-body account-kpi">
-                                <div>
-                                    <p class="account-kpi-label">Không bán tháng này</p>
-                                    <div class="account-kpi-value">
-                                        <c:out value="${empty unsoldThisMonthCount ? 0 : unsoldThisMonthCount}" />
+                                        <div class="mc-admin-alert-card is-warning">
+                                            <span>⚠️</span>
+                                            <div>
+                                                <strong><c:out value="${empty lowStockCount ? 0 : lowStockCount}" /></strong>
+                                                <small>Sắp hết hàng</small>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div class="account-kpi-note">Sản phẩm chưa phát sinh bán trong tháng.</div>
                                 </div>
-                                <div class="account-kpi-icon">📉</div>
-                            </div>
-                        </div>
 
-                        <div class="account-card">
-                            <div class="account-card-body account-kpi">
-                                <div>
-                                    <p class="account-kpi-label">Không bán 30 ngày</p>
-                                    <div class="account-kpi-value">
-                                        <c:out value="${empty unsoldLast30DaysCount ? 0 : unsoldLast30DaysCount}" />
+                                <div class="mc-account-view" data-account-view="report">
+                                    <div class="mc-view-head">
+                                        <div>
+                                            <h2>Báo cáo bán hàng</h2>
+                                            <p>Rút gọn biểu đồ doanh thu và danh sách sản phẩm bán chạy để kiểm tra nhanh.</p>
+                                        </div>
+                                        <a class="mc-view-link" href="${pageContext.request.contextPath}/admin">Xem chi tiết ›</a>
                                     </div>
-                                    <div class="account-kpi-note">Sản phẩm không bán trong 30 ngày gần nhất.</div>
-                                </div>
-                                <div class="account-kpi-icon">🕒</div>
-                            </div>
-                        </div>
 
-                        <div class="account-card">
-                            <div class="account-card-body account-kpi">
-                                <div>
-                                    <p class="account-kpi-label">Hết hàng</p>
-                                    <div class="account-kpi-value">
-                                        <c:out value="${empty outOfStockCount ? 0 : outOfStockCount}" />
+                                    <div class="mc-admin-report-grid">
+                                        <section class="mc-mini-section mc-admin-report-card">
+                                            <div class="mc-mini-section-head">
+                                                <div>
+                                                    <h3>🏬 Doanh thu toàn cửa hàng</h3>
+                                                    <span>Biểu đồ doanh thu theo thời gian</span>
+                                                </div>
+                                            </div>
+
+                                            <c:choose>
+                                                <c:when test="${not empty admin_chart_labels and not empty admin_chart_values}">
+                                                    <div class="mc-admin-chart-wrap">
+                                                        <canvas id="storeRevenueChart" height="120"></canvas>
+                                                    </div>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <p class="mc-empty-state"><span>📊</span> Chưa có dữ liệu doanh thu.</p>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </section>
+
+                                        <section class="mc-mini-section mc-admin-report-card">
+                                            <div class="mc-mini-section-head">
+                                                <div>
+                                                    <h3>🔥 Top sản phẩm bán chạy</h3>
+                                                    <span>Sản phẩm có doanh số tốt nhất</span>
+                                                </div>
+                                            </div>
+
+                                            <div class="account-table-wrap mc-admin-table-wrap">
+                                                <c:choose>
+                                                    <c:when test="${not empty top_products}">
+                                                        <table class="account-table mc-admin-mini-table">
+                                                            <thead>
+                                                            <tr>
+                                                                <th>Sản phẩm</th>
+                                                                <th class="account-text-right">Đã bán</th>
+                                                                <th class="account-text-right">Doanh thu</th>
+                                                            </tr>
+                                                            </thead>
+
+                                                            <tbody>
+                                                            <c:forEach var="p" items="${top_products}">
+                                                                <c:set var="pLen" value="${fn:length(p)}" />
+                                                                <c:set var="isNewTopFormat" value="${pLen >= 4}" />
+
+                                                                <tr>
+                                                                    <td>
+                                                                        <strong>
+                                                                            <c:choose>
+                                                                                <c:when test="${isNewTopFormat}">
+                                                                                    <c:out value="${p[1]}" />
+                                                                                </c:when>
+                                                                                <c:otherwise>
+                                                                                    <c:out value="${p[0]}" />
+                                                                                </c:otherwise>
+                                                                            </c:choose>
+                                                                        </strong>
+                                                                    </td>
+
+                                                                    <td class="account-text-right">
+                                                                        <c:choose>
+                                                                            <c:when test="${isNewTopFormat}">
+                                                                                <c:out value="${p[2]}" />
+                                                                            </c:when>
+                                                                            <c:otherwise>
+                                                                                <c:out value="${p[1]}" />
+                                                                            </c:otherwise>
+                                                                        </c:choose>
+                                                                    </td>
+
+                                                                    <td class="account-text-right">
+                                                                        <c:choose>
+                                                                            <c:when test="${isNewTopFormat and not empty p[3]}">
+                                                                                <fmt:formatNumber value="${p[3]}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫
+                                                                            </c:when>
+                                                                            <c:when test="${not isNewTopFormat and not empty p[2]}">
+                                                                                <fmt:formatNumber value="${p[2]}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫
+                                                                            </c:when>
+                                                                            <c:otherwise>0 ₫</c:otherwise>
+                                                                        </c:choose>
+                                                                    </td>
+                                                                </tr>
+                                                            </c:forEach>
+                                                            </tbody>
+                                                        </table>
+                                                    </c:when>
+
+                                                    <c:otherwise>
+                                                        <p class="mc-empty-state"><span>🧴</span> Chưa có dữ liệu bán hàng.</p>
+                                                    </c:otherwise>
+                                                </c:choose>
+                                            </div>
+                                        </section>
                                     </div>
-                                    <div class="account-kpi-note">Sản phẩm active nhưng tồn kho bằng 0.</div>
                                 </div>
-                                <div class="account-kpi-icon">🚫</div>
-                            </div>
-                        </div>
 
-                        <div class="account-card">
-                            <div class="account-card-body account-kpi">
-                                <div>
-                                    <p class="account-kpi-label">Sắp hết hàng</p>
-                                    <div class="account-kpi-value">
-                                        <c:out value="${empty lowStockCount ? 0 : lowStockCount}" />
+                                <div class="mc-account-view" data-account-view="profile">
+                                    <div class="mc-view-head">
+                                        <div>
+                                            <h2>Hồ sơ quản trị</h2>
+                                            <p>Cập nhật thông tin cá nhân, email, số điện thoại và địa chỉ giao hàng của tài khoản admin.</p>
+                                        </div>
                                     </div>
-                                    <div class="account-kpi-note">Tồn kho còn từ 1 đến 10 sản phẩm.</div>
+
+                                    <div class="mc-profile-embed" data-profile-form-holder></div>
                                 </div>
-                                <div class="account-kpi-icon">⚠️</div>
-                            </div>
-                        </div>
 
-                    </div>
-
-                    <!-- ADMIN CHART + TOP PRODUCT -->
-                    <div class="account-grid account-grid-2 account-section-space">
-                        <div class="account-card">
-                            <div class="account-card-body">
-                                <div class="account-card-head account-card-head-center">
-                                    <div>
-                                        <h2 class="account-card-title">🏬 Doanh thu toàn cửa hàng</h2>
-                                        <p class="account-muted">Biểu đồ doanh thu theo thời gian.</p>
+                                <div class="mc-account-view" data-account-view="security">
+                                    <div class="mc-view-head">
+                                        <div>
+                                            <h2>Tài khoản & Bảo mật</h2>
+                                            <p>Kiểm tra nhanh các thông tin đăng nhập và thao tác bảo mật của tài khoản quản trị.</p>
+                                        </div>
                                     </div>
-                                    <span class="account-chip">Revenue</span>
-                                </div>
 
-                                <c:choose>
-                                    <c:when test="${not empty admin_chart_labels and not empty admin_chart_values}">
-                                        <canvas id="storeRevenueChart" height="130"></canvas>
-                                    </c:when>
-                                    <c:otherwise>
-                                        <p class="account-empty">Chưa có dữ liệu doanh thu.</p>
-                                    </c:otherwise>
-                                </c:choose>
-                            </div>
-                        </div>
+                                    <div class="mc-security-layout">
+                                        <div class="mc-security-overview">
+                                            <span class="mc-security-icon">🛡️</span>
+                                            <div>
+                                                <h3>Tài khoản có quyền quản trị</h3>
+                                                <p>
+                                                    Tài khoản admin có quyền truy cập các khu vực quản lý quan trọng.
+                                                    Hãy đổi mật khẩu định kỳ và không chia sẻ OTP cho người khác.
+                                                </p>
+                                            </div>
+                                        </div>
 
-                        <div class="account-card">
-                            <div class="account-card-body">
-                                <div class="account-card-head account-card-head-center">
-                                    <div>
-                                        <h2 class="account-card-title">🔥 Top sản phẩm bán chạy</h2>
-                                        <p class="account-muted">Sản phẩm có số lượng bán tốt nhất.</p>
+                                        <div class="mc-security-card-grid">
+                                            <div class="mc-security-card">
+                                                <span class="mc-security-card-icon">👤</span>
+                                                <div>
+                                                    <strong>Tên đăng nhập</strong>
+                                                    <small><c:out value="${safeUsername}" /></small>
+                                                    <p>Dùng để nhận diện tài khoản trong hệ thống.</p>
+                                                </div>
+                                            </div>
+
+                                            <div class="mc-security-card">
+                                                <span class="mc-security-card-icon">📧</span>
+                                                <div>
+                                                    <strong>Email</strong>
+                                                    <small><c:choose><c:when test="${not empty userEmail}"><c:out value="${userEmail}" /></c:when><c:otherwise>Chưa cập nhật</c:otherwise></c:choose></small>
+                                                    <p>Email dùng để nhận OTP và thông báo hệ thống.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="mc-security-list">
+                                            <a href="${pageContext.request.contextPath}/account/change-password" class="mc-security-row is-danger">
+                                                <span class="mc-security-row-icon">🔑</span>
+                                                <div>
+                                                    <strong>Đổi mật khẩu</strong>
+                                                    <small>Nên thay đổi định kỳ để bảo vệ tài khoản quản trị.</small>
+                                                </div>
+                                                <em>Đổi ngay ›</em>
+                                            </a>
+
+                                            <a href="${pageContext.request.contextPath}/admin/users" class="mc-security-row">
+                                                <span class="mc-security-row-icon">👥</span>
+                                                <div>
+                                                    <strong>Quản lý người dùng</strong>
+                                                    <small>Kiểm tra role, trạng thái khóa/mở khóa và hạng thành viên của user.</small>
+                                                </div>
+                                                <em>Mở admin ›</em>
+                                            </a>
+                                        </div>
                                     </div>
-                                    <span class="account-chip">Top</span>
                                 </div>
 
-                                <div class="account-table-wrap">
-                                    <c:choose>
-                                        <c:when test="${not empty top_products}">
-                                            <table class="account-table">
-                                                <thead>
-                                                <tr>
-                                                    <th>Sản phẩm</th>
-                                                    <th class="account-text-right">Đã bán</th>
-                                                    <th class="account-text-right">Doanh thu</th>
-                                                </tr>
-                                                </thead>
-
-                                                <tbody>
-                                                <c:forEach var="p" items="${top_products}">
-                                                    <c:set var="pLen" value="${fn:length(p)}" />
-                                                    <c:set var="isNewTopFormat" value="${pLen >= 4}" />
-
-                                                    <tr>
-                                                        <td>
-                                                            <strong>
-                                                                <c:choose>
-                                                                    <c:when test="${isNewTopFormat}">
-                                                                        <c:out value="${p[1]}" />
-                                                                    </c:when>
-                                                                    <c:otherwise>
-                                                                        <c:out value="${p[0]}" />
-                                                                    </c:otherwise>
-                                                                </c:choose>
-                                                            </strong>
-                                                        </td>
-
-                                                        <td class="account-text-right">
-                                                            <c:choose>
-                                                                <c:when test="${isNewTopFormat}">
-                                                                    <c:out value="${p[2]}" />
-                                                                </c:when>
-                                                                <c:otherwise>
-                                                                    <c:out value="${p[1]}" />
-                                                                </c:otherwise>
-                                                            </c:choose>
-                                                        </td>
-
-                                                        <td class="account-text-right">
-                                                            <c:choose>
-                                                                <c:when test="${isNewTopFormat and not empty p[3]}">
-                                                                    <fmt:formatNumber value="${p[3]}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫
-                                                                </c:when>
-                                                                <c:when test="${not isNewTopFormat and not empty p[2]}">
-                                                                    <fmt:formatNumber value="${p[2]}" type="number" groupingUsed="true" maxFractionDigits="0"/> ₫
-                                                                </c:when>
-                                                                <c:otherwise>0 ₫</c:otherwise>
-                                                            </c:choose>
-                                                        </td>
-                                                    </tr>
-                                                </c:forEach>
-                                                </tbody>
-                                            </table>
-                                        </c:when>
-
-                                        <c:otherwise>
-                                            <p class="account-empty">Chưa có dữ liệu bán hàng.</p>
-                                        </c:otherwise>
-                                    </c:choose>
-                                </div>
                             </div>
-                        </div>
+                        </section>
                     </div>
 
                 </c:if>
@@ -346,20 +444,20 @@
                                 <div class="account-card-body">
 
                                     <!-- NÚT QUAY LẠI TRANG TÀI KHOẢN -->
-                                    <div class="mc-voucher-back-row">
-                                        <a href="?" class="account-btn mc-voucher-back-btn">
+                                    <div style="margin-bottom: 25px;">
+                                        <a href="?" class="account-btn" style="background: #6b7280; color: #fff; padding: 8px 18px; border-radius: 20px; text-decoration: none; font-weight: bold; display: inline-flex; align-items: center; gap: 8px; border: none; transition: 0.3s;">
                                             ⬅ Quay lại trang tài khoản
                                         </a>
                                     </div>
 
                                     <div class="account-card-head account-card-head-start">
                                         <div>
-                                            <h2 class="account-card-title mc-full-voucher-title">💼 Ví voucher của bạn (Tất cả mã)</h2>
+                                            <h2 class="account-card-title" style="color: var(--pink-dark); font-size: 22px;">💼 Ví voucher của bạn (Tất cả mã)</h2>
                                             <p class="account-muted">
                                                 Danh sách đầy đủ các mã giảm giá bạn đã thu thập thành công.
                                             </p>
                                         </div>
-                                        <span class="account-chip user-chip mc-full-voucher-count">
+                                        <span class="account-chip user-chip" style="background-color: var(--pink-soft); color: var(--pink-main); font-weight: bold;">
                       🎰 Đã lưu: ${fn:length(savedCoupons)} mã
                     </span>
                                     </div>
@@ -369,18 +467,18 @@
                                             <!-- Hiển thị toàn bộ không giới hạn số lượng -->
                                             <div class="account-coupon-grid">
                                                 <c:forEach var="savedCp" items="${savedCoupons}">
-                                                    <div class="account-coupon-card mc-full-coupon-card">
+                                                    <div class="account-coupon-card" style="border: 1px dashed var(--pink-main); background: var(--pink-soft);">
                                                         <div class="account-coupon-top">
                                                             <div class="account-coupon-code">
                                                                 <span>🎁</span>
-                                                                <span class="mc-full-coupon-code-text"><c:out value="${savedCp.code}" /></span>
+                                                                <span style="color: var(--pink-dark); font-weight: bold;"><c:out value="${savedCp.code}" /></span>
                                                             </div>
-                                                            <button type="button" class="account-coupon-copy mc-full-coupon-copy" data-coupon-code="<c:out value='${savedCp.code}'/>" onclick="copyCouponCode(this.dataset.couponCode)">
+                                                            <button type="button" class="account-coupon-copy" style="background: var(--pink-main); color: #fff;" data-coupon-code="<c:out value='${savedCp.code}'/>" onclick="copyCouponCode(this.dataset.couponCode)">
                                                                 Copy
                                                             </button>
                                                         </div>
 
-                                                        <div class="account-coupon-discount mc-full-coupon-discount">
+                                                        <div class="account-coupon-discount" style="color: var(--text-main);">
                                                             <c:choose>
                                                                 <c:when test="${savedCp.type eq 'FREESHIP'}">🚚 Freeship Vận Chuyển</c:when>
                                                                 <c:otherwise>Giảm liền ${savedCp.discountPercent}%</c:otherwise>
@@ -402,13 +500,13 @@
                                                                 <strong>Hạn dùng:</strong>
                                                                 <c:choose>
                                                                     <c:when test="${not empty savedCp.endDate}">
-                                                                        <span class="mc-full-coupon-date"><c:out value="${savedCp.endDate}" /></span>
+                                                                        <span style="color: #d97706; font-weight: 500;"><c:out value="${savedCp.endDate}" /></span>
                                                                     </c:when>
                                                                     <c:otherwise>Không giới hạn thời gian</c:otherwise>
                                                                 </c:choose>
                                                             </div>
                                                         </div>
-                                                        <div class="account-coupon-rank mc-full-coupon-ready">
+                                                        <div class="account-coupon-rank" style="border-top: 1px solid rgba(255, 95, 162, 0.2); background: rgba(255, 95, 162, 0.05);">
                                                             ✔ Sẵn sàng sử dụng tại Checkout
                                                         </div>
                                                     </div>
@@ -416,9 +514,8 @@
                                             </div>
                                         </c:when>
                                         <c:otherwise>
-                                            <div class="mc-voucher-empty">
-                                                <span>🎟️</span>
-                                                <p>Bạn chưa lưu mã giảm giá nào.</p>
+                                            <div style="text-align: center; padding: 30px 10px; color: var(--text-muted);">
+                                                <p style="font-size: 14px;">Bạn chưa lưu mã giảm giá nào.</p>
                                             </div>
                                         </c:otherwise>
                                     </c:choose>
@@ -1194,7 +1291,7 @@
                                             <div class="mc-view-head">
                                                 <div>
                                                     <h2>Hồ sơ cá nhân</h2>
-                                                    <p>Cập nhật thông tin cá nhân, liên hệ và địa chỉ giao hàng để đặt hàng nhanh hơn.</p>
+
                                                 </div>
                                             </div>
 
@@ -1345,7 +1442,7 @@
                                         <span>01</span>
                                         <div>
                                             <h3>Thông tin cá nhân</h3>
-                                            <p>Họ tên, ngày sinh và giới tính dùng để cá nhân hóa trải nghiệm mua sắm.</p>
+
                                         </div>
                                     </div>
 
@@ -1376,7 +1473,7 @@
                                         <span>02</span>
                                         <div>
                                             <h3>Thông tin liên hệ</h3>
-                                            <p>Email và số điện thoại dùng để nhận OTP, thông báo đơn hàng và hỗ trợ giao hàng.</p>
+
                                         </div>
                                     </div>
 
@@ -1400,7 +1497,7 @@
                                         <span>03</span>
                                         <div>
                                             <h3>Địa chỉ giao hàng</h3>
-                                            <p>Nhập địa chỉ cụ thể hoặc dùng vị trí hiện tại để hỗ trợ giao hàng chính xác.</p>
+
                                         </div>
                                     </div>
 
@@ -1416,7 +1513,7 @@
                             </div>
 
                             <div class="account-profile-form-actions">
-                                <p class="account-profile-note">Sau khi đổi email, hệ thống sẽ gửi OTP để xác thực trước khi lưu.</p>
+
                                 <button type="submit" class="btn-save account-save-profile-btn" id="saveProfileBtn">Lưu thay đổi</button>
                             </div>
                         </form>
@@ -1483,7 +1580,7 @@
                             moveProfileFormIntoPanel();
 
                             const hash = (window.location.hash || "").replace("#account-", "");
-                            const allowed = ["overview", "orders", "vouchers", "rank", "activity", "profile", "security"];
+                            const allowed = ["overview", "orders", "vouchers", "rank", "activity", "profile", "security", "report"];
                             const params = new URLSearchParams(window.location.search || "");
                             const rawTab = (params.get("tab") || "").trim();
                             const tabAlias = {
@@ -1503,7 +1600,7 @@
                                 setAccountView(hash);
                             } else if (tabTarget && allowed.indexOf(tabTarget) >= 0) {
                                 setAccountView(tabTarget);
-                            } else if (window.location.hash === "#profile-settings") {
+                            } else if (params.has("update") || window.location.hash === "#profile-settings") {
                                 setAccountView("profile");
                             } else {
                                 setAccountView("overview");
@@ -1925,7 +2022,7 @@
         <p>Hệ thống đã gửi một mã OTP gồm 6 chữ số đến Email của bạn.</p>
         <input type="text" id="otp_input" placeholder="******" maxlength="6">
         <button type="button" onclick="xacThucOtp()" class="btn-save">Xác nhận</button>
-        <button type="button" onclick="dongPopupOtp()" class="modal-cancel-btn">Hủy bỏ</button>
+        <button type="button" onclick="dongPopupOtp()" style="background:none; border:none; color:#777; margin-top:10px; cursor:pointer;">Hủy bỏ</button>
     </div>
 </div>
 
@@ -2112,5 +2209,3 @@
         document.getElementById('otpModal').style.display = 'none';
     }
 </script>
-
-
