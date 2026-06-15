@@ -1,3 +1,8 @@
+/* BRAND GRID CLEAN CSS - 20260615
+   Toàn bộ giao diện brand grid nằm trong file CSS này.
+   JSP chỉ còn markup + JS lọc chữ cái, không chứa CSS inline/style tag.
+*/
+
 .brand-hero-section {
     padding: 44px 0 26px;
     background: linear-gradient(180deg, rgba(255, 243, 247, .95) 0%, rgba(255, 248, 250, .78) 100%);
@@ -296,100 +301,5 @@
 @media (max-width: 420px) {
     .brand-grid {
         grid-template-columns: 1fr;
-    }
-}
-
-
-/* =========================================================
-   BRAND GRID UI FIX 2026-06-15
-   - Đảm bảo layout không bị hiển thị dạng HTML thô.
-   - Đồng bộ khoảng cách với header MyCosmetic.
-   - Tối ưu vùng hero, filter chips và card thương hiệu.
-========================================================= */
-
-.site-main:has(.brand-hero-section),
-main:has(.brand-hero-section) {
-    background:
-            radial-gradient(circle at 10% 0%, rgba(255, 95, 151, .10), transparent 28%),
-            linear-gradient(180deg, #fff9fb 0%, #f7f9fc 100%);
-}
-
-.brand-hero-section,
-.brand-directory-section,
-.brand-hero-section *,
-.brand-directory-section * {
-    box-sizing: border-box;
-}
-
-.brand-hero-section {
-    margin-top: 0;
-    padding: 46px 0 30px;
-    border-top: 1px solid rgba(212, 20, 79, .08);
-}
-
-.brand-hero-shell,
-.brand-directory-shell {
-    width: min(1240px, calc(100vw - 42px));
-}
-
-.brand-hero-title {
-    color: #111827;
-    text-shadow: 0 8px 24px rgba(212, 20, 79, .08);
-}
-
-.brand-directory-section {
-    padding-top: 18px;
-}
-
-.brand-directory-toolbar {
-    position: relative;
-    overflow: hidden;
-}
-
-.brand-directory-toolbar::before {
-    content: "";
-    position: absolute;
-    inset: 0 auto 0 0;
-    width: 5px;
-    background: linear-gradient(180deg, #ff5f97, #d4144f, #980028);
-}
-
-.brand-filter-chip {
-    font-family: inherit;
-}
-
-.brand-card {
-    color: inherit;
-}
-
-.brand-card:focus-visible,
-.brand-filter-chip:focus-visible {
-    outline: 3px solid rgba(212, 20, 79, .22);
-    outline-offset: 3px;
-}
-
-.brand-card-media {
-    border: 1px solid rgba(15, 23, 42, .06);
-}
-
-.brand-card-name {
-    font-family: inherit;
-}
-
-@media (min-width: 1180px) {
-    .brand-grid {
-        grid-template-columns: repeat(5, minmax(0, 1fr));
-    }
-}
-
-@media (max-width: 768px) {
-    .brand-hero-shell,
-    .brand-directory-shell {
-        width: min(100vw - 28px, 1240px);
-    }
-
-    .brand-filter-chip {
-        min-height: 36px;
-        padding: 0 12px;
     }
 }
