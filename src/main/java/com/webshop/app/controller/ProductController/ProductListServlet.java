@@ -53,13 +53,18 @@ public class ProductListServlet extends HttpServlet {
          * như Son Lót, Son Thỏi, Son Kem, Son Bóng/Son Tint,... để danh sách sản phẩm hiện đúng.
          */
         List<Integer> selectedCategoryList = parseCategoryRequest(req);
+        boolean overviewFilterMode = isOverviewProductPage(req, selectedCategoryList);
 
         /*
          * Load category tree sớm để:
          * - Mở rộng danh mục cha sang danh mục con trước khi count/query sản phẩm.
          * - Giữ đúng tên danh mục trong phần "Đang lọc".
          */
-        List<Category> categories = categoryDAO.findParents();
+        List<Category> categories = categoryDAO.findAllAsTree();
+
+        if (categories == null || categories.isEmpty()) {
+            categories = categoryDAO.findParents();
+        }
         List<Integer> productCategoryFilterList = expandCategoryIdsForProductFilter(categories, selectedCategoryList);
 
         /*
@@ -87,7 +92,7 @@ public class ProductListServlet extends HttpServlet {
 
         List<Integer> selectedBrandList = parseIntegerList(req.getParameterValues("brand"));
 
-        Integer minRating = parseInt(req.getParameter("rating"));
+        Integer minRating = null; // Đã bỏ bộ lọc đánh giá khỏi trang danh sách sản phẩm.
 
         WishlistDAO wishlistDAO = new WishlistDAO();
 
@@ -161,16 +166,20 @@ public class ProductListServlet extends HttpServlet {
         // ===== 6. DỮ LIỆU SIDEBAR =====
         List<Brand> brands = brandDAO.findWithProductCount();
 
-        Category primaryCategory = useLipCollectionSearch
-                ? resolveLipPrimaryCategory(categories)
-                : resolvePrimaryCategoryForSidebar(categories, selectedCategoryList);
+        Category primaryCategory = overviewFilterMode
+                ? null
+                : (useLipCollectionSearch
+                   ? resolveLipPrimaryCategory(categories)
+                   : resolvePrimaryCategoryForSidebar(categories, selectedCategoryList));
 
-        boolean lipCollectionPage = isLipCollectionPage(categories, selectedCategoryList, primaryCategory);
+        boolean lipCollectionPage = !overviewFilterMode && isLipCollectionPage(categories, selectedCategoryList, primaryCategory);
 
         req.setAttribute("categories", categories);
         req.setAttribute("brands", brands);
         req.setAttribute("primaryCategory", primaryCategory);
         req.setAttribute("lipCollectionPage", lipCollectionPage);
+        req.setAttribute("overviewFilterMode", overviewFilterMode);
+        req.setAttribute("allCategoryFilterItems", buildAllCategoryFilterItems(categories, selectedCategoryList));
 
         /*
          * Dữ liệu riêng cho layout collection giống trang mẫu:
@@ -188,6 +197,11 @@ public class ProductListServlet extends HttpServlet {
         req.setAttribute(
                 "sidebarTypeCategoryItems",
                 buildSidebarTypeCategoryItems(primaryCategory, selectedCategoryList, lipCollectionPage)
+        );
+
+        req.setAttribute(
+                "hotCategoryFilterItems",
+                buildHotCategoryFilterItems(categories, selectedCategoryList)
         );
 
         // ===== 7. GIỮ LẠI TRẠNG THÁI FILTER =====
@@ -266,6 +280,31 @@ public class ProductListServlet extends HttpServlet {
         req.getRequestDispatcher("/jsp/common/base.jsp").forward(req, resp);
     }
 
+
+
+    private boolean isOverviewProductPage(HttpServletRequest req, List<Integer> selectedCategoryIds) {
+        String view = req.getParameter("view");
+
+        if ("all".equalsIgnoreCase(trimToEmpty(view))) {
+            return true;
+        }
+
+        String[] categoryValues = req.getParameterValues("category");
+
+        if (categoryValues != null) {
+            for (String rawValue : categoryValues) {
+                if ("all".equalsIgnoreCase(trimToEmpty(rawValue))) {
+                    return true;
+                }
+            }
+        }
+
+        return selectedCategoryIds == null || selectedCategoryIds.isEmpty();
+    }
+
+    private String trimToEmpty(String value) {
+        return value == null ? "" : value.trim();
+    }
 
     /* =====================================================
        SEARCH HISTORY
@@ -1320,6 +1359,279 @@ public class ProductListServlet extends HttpServlet {
 
         return false;
     }
+
+
+    private List<SidebarCategoryItem> buildHotCategoryFilterItems(
+            List<Category> categories,
+            List<Integer> selectedCategoryIds
+    ) {
+        if (categories == null || categories.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        Set<Integer> selectedSet = selectedCategoryIds == null
+                ? Collections.emptySet()
+                : new LinkedHashSet<>(selectedCategoryIds);
+
+        List<Category> flatCategories = flattenCategoriesForHotFilter(categories);
+        List<SidebarCategoryItem> items = new ArrayList<>();
+        Set<Integer> usedIds = new LinkedHashSet<>();
+
+        List<String> hotCategoryNames = Arrays.asList(
+                "Son Môi",
+                "Má Hồng",
+                "Phấn Mắt",
+                "Phấn Nước",
+                "Xịt Khóa Nền",
+                "Phụ Kiện",
+                "Tẩy Trang",
+                "Kem Chống Nắng",
+                "Sữa Rửa Mặt",
+                "Nước Hoa Hồng",
+                "Tinh Chất Dưỡng",
+                "Kem Dưỡng",
+                "Mặt Nạ"
+        );
+
+        for (String displayName : hotCategoryNames) {
+            Category matchedCategory = findBestHotCategory(flatCategories, displayName);
+
+            if (matchedCategory == null || matchedCategory.getId() <= 0 || usedIds.contains(matchedCategory.getId())) {
+                continue;
+            }
+
+            usedIds.add(matchedCategory.getId());
+
+            items.add(new SidebarCategoryItem(
+                    matchedCategory.getId(),
+                    displayName,
+                    matchedCategory.getSlug(),
+                    selectedSet.contains(matchedCategory.getId())
+            ));
+        }
+
+        return items;
+    }
+
+    private List<Category> flattenCategoriesForHotFilter(List<Category> categories) {
+        if (categories == null || categories.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<Category> result = new ArrayList<>();
+
+        for (Category category : categories) {
+            collectCategoryForHotFilter(category, result);
+        }
+
+        return result;
+    }
+
+    private void collectCategoryForHotFilter(Category category, List<Category> result) {
+        if (category == null) {
+            return;
+        }
+
+        result.add(category);
+
+        List<Category> children = category.getChildren();
+
+        if (children == null || children.isEmpty()) {
+            return;
+        }
+
+        for (Category child : children) {
+            collectCategoryForHotFilter(child, result);
+        }
+    }
+
+    private Category findBestHotCategory(List<Category> categories, String displayName) {
+        if (categories == null || categories.isEmpty() || isBlank(displayName)) {
+            return null;
+        }
+
+        String targetKey = normalizeCategoryKey(displayName);
+
+        for (Category category : categories) {
+            if (category == null || category.getId() <= 0) {
+                continue;
+            }
+
+            String categoryKey = normalizeCategoryKey(category.getName() + " " + category.getSlug());
+
+            if (isExactHotCategoryMatch(categoryKey, targetKey)) {
+                return category;
+            }
+        }
+
+        for (Category category : categories) {
+            if (category == null || category.getId() <= 0) {
+                continue;
+            }
+
+            String categoryKey = normalizeCategoryKey(category.getName() + " " + category.getSlug());
+
+            if (isAliasHotCategoryMatch(categoryKey, targetKey)) {
+                return category;
+            }
+        }
+
+        return null;
+    }
+
+    private boolean isExactHotCategoryMatch(String categoryKey, String targetKey) {
+        return !isBlank(categoryKey)
+                && !isBlank(targetKey)
+                && (categoryKey.equals(targetKey)
+                || categoryKey.contains(targetKey + "-")
+                || categoryKey.contains("-" + targetKey)
+                || categoryKey.contains(targetKey));
+    }
+
+    private boolean isAliasHotCategoryMatch(String categoryKey, String targetKey) {
+        if (isBlank(categoryKey) || isBlank(targetKey)) {
+            return false;
+        }
+
+        switch (targetKey) {
+            case "son-moi":
+                return categoryKey.contains("son-moi")
+                        || categoryKey.contains("trang-diem-moi")
+                        || categoryKey.contains("lip")
+                        || categoryKey.contains("son-thoi")
+                        || categoryKey.contains("son-kem")
+                        || categoryKey.contains("son-tint")
+                        || categoryKey.contains("son-bong");
+
+            case "ma-hong":
+                return categoryKey.contains("ma-hong")
+                        || categoryKey.contains("blush");
+
+            case "phan-mat":
+                return categoryKey.contains("phan-mat")
+                        || categoryKey.contains("eye-shadow")
+                        || categoryKey.contains("eyeshadow");
+
+            case "phan-nuoc":
+                return categoryKey.contains("phan-nuoc")
+                        || categoryKey.contains("cushion");
+
+            case "xit-khoa-nen":
+                return categoryKey.contains("xit-khoa-nen")
+                        || categoryKey.contains("setting-spray")
+                        || categoryKey.contains("khoa-nen");
+
+            case "phu-kien":
+                return categoryKey.contains("phu-kien")
+                        || categoryKey.contains("accessory")
+                        || categoryKey.contains("accessories");
+
+            case "tay-trang":
+                return categoryKey.contains("tay-trang")
+                        || categoryKey.contains("micellar")
+                        || categoryKey.contains("cleansing-oil");
+
+            case "kem-chong-nang":
+                return categoryKey.contains("kem-chong-nang")
+                        || categoryKey.contains("chong-nang")
+                        || categoryKey.contains("sunscreen");
+
+            case "sua-rua-mat":
+                return categoryKey.contains("sua-rua-mat")
+                        || categoryKey.contains("cleanser")
+                        || categoryKey.contains("gel-rua-mat");
+
+            case "nuoc-hoa-hong":
+                return categoryKey.contains("nuoc-hoa-hong")
+                        || categoryKey.contains("toner")
+                        || categoryKey.contains("can-bang-da");
+
+            case "tinh-chat-duong":
+                return categoryKey.contains("tinh-chat-duong")
+                        || categoryKey.contains("tinh-chat")
+                        || categoryKey.contains("serum")
+                        || categoryKey.contains("essence");
+
+            case "kem-duong":
+                return categoryKey.contains("kem-duong")
+                        || categoryKey.contains("duong-am")
+                        || categoryKey.contains("cream")
+                        || categoryKey.contains("moisturizer");
+
+            case "mat-na":
+                return categoryKey.contains("mat-na")
+                        || categoryKey.contains("mask");
+
+            default:
+                return false;
+        }
+    }
+
+
+
+    private List<SidebarCategoryItem> buildAllCategoryFilterItems(
+            List<Category> categories,
+            List<Integer> selectedCategoryIds
+    ) {
+        if (categories == null || categories.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        Set<Integer> selectedSet = selectedCategoryIds == null
+                ? Collections.emptySet()
+                : new LinkedHashSet<>(selectedCategoryIds);
+
+        List<Category> leafCategories = new ArrayList<>();
+        collectLeafCategoriesForFilter(categories, leafCategories);
+
+        List<SidebarCategoryItem> items = new ArrayList<>();
+        Set<Integer> usedIds = new LinkedHashSet<>();
+
+        for (Category category : leafCategories) {
+            if (category == null || category.getId() <= 0 || usedIds.contains(category.getId())) {
+                continue;
+            }
+
+            String categoryName = category.getName();
+
+            if (isBlank(categoryName)) {
+                continue;
+            }
+
+            usedIds.add(category.getId());
+
+            items.add(new SidebarCategoryItem(
+                    category.getId(),
+                    categoryName,
+                    category.getSlug(),
+                    selectedSet.contains(category.getId())
+            ));
+        }
+
+        return items;
+    }
+
+    private void collectLeafCategoriesForFilter(List<Category> categories, List<Category> result) {
+        if (categories == null || categories.isEmpty()) {
+            return;
+        }
+
+        for (Category category : categories) {
+            if (category == null) {
+                continue;
+            }
+
+            List<Category> children = category.getChildren();
+
+            if (children == null || children.isEmpty()) {
+                result.add(category);
+                continue;
+            }
+
+            collectLeafCategoriesForFilter(children, result);
+        }
+    }
+
 
     private List<SidebarCategoryItem> buildSidebarMainCategoryItems(
             Category primaryCategory,
