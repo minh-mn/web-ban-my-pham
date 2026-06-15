@@ -5099,3 +5099,734 @@
     min-height: 190px;
   }
 }
+
+
+/* =========================================================
+   ADMIN FLASH SALE FORM / ITEMS UI V2
+   Scope:
+   - /jsp/admin/flashsale/flashsale-form.jsp
+   - /jsp/admin/flashsale/flashsale-items.jsp
+========================================================= */
+
+.admin-flashsale-form-page,
+.admin-flashsale-items-page {
+  width: 100%;
+}
+
+.admin-flashsale-form-hero,
+.admin-flashsale-items-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: start;
+  margin-bottom: 18px;
+  padding: 18px;
+  border: 1px solid rgba(236, 72, 153, 0.20);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at top left, rgba(236, 72, 153, 0.14), transparent 35%),
+    linear-gradient(135deg, #ffffff 0%, #fff7fb 62%, #ffffff 100%);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.055);
+}
+
+.admin-flashsale-form-hero__content,
+.admin-flashsale-items-hero__content {
+  min-width: 0;
+}
+
+.admin-flashsale-form-eyebrow,
+.admin-flashsale-items-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 10px;
+  margin-bottom: 8px;
+  border: 1px solid rgba(236, 72, 153, 0.32);
+  border-radius: 999px;
+  background: rgba(236, 72, 153, 0.10);
+  color: #be185d;
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 950;
+  letter-spacing: .06em;
+}
+
+.admin-flashsale-form-title,
+.admin-flashsale-items-title {
+  margin: 0;
+  color: var(--admin-text);
+  font-size: 28px;
+  line-height: 1.1;
+  font-weight: 1000;
+  letter-spacing: -0.045em;
+}
+
+.admin-flashsale-form-subtitle,
+.admin-flashsale-items-subtitle {
+  max-width: 920px;
+  margin: 8px 0 0;
+  color: var(--admin-muted);
+  font-size: 13.5px;
+  line-height: 1.58;
+}
+
+.admin-flashsale-form-hero__actions,
+.admin-flashsale-items-hero__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.admin-flashsale-form {
+  display: grid;
+  gap: 16px;
+}
+
+.admin-flashsale-form-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 390px;
+  gap: 18px;
+  align-items: start;
+}
+
+.admin-flashsale-form-card,
+.admin-flashsale-config-card,
+.admin-flashsale-form-items-card,
+.admin-flashsale-item-form-card,
+.admin-flashsale-items-card {
+  overflow: hidden;
+  border-radius: 22px;
+}
+
+.admin-flashsale-form-card .admin-card__body,
+.admin-flashsale-config-card .admin-card__body,
+.admin-flashsale-form-items-card .admin-card__body,
+.admin-flashsale-item-form-card .admin-card__body,
+.admin-flashsale-items-card .admin-card__body {
+  padding: 18px;
+}
+
+.admin-flashsale-form-section-head,
+.admin-flashsale-items-section-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.07);
+}
+
+.admin-flashsale-items-section-head--list {
+  margin-bottom: 16px;
+}
+
+.admin-flashsale-form-section-title,
+.admin-flashsale-items-section-title {
+  margin: 0;
+  color: var(--admin-text);
+  font-size: 18px;
+  line-height: 1.25;
+  font-weight: 1000;
+  letter-spacing: -0.025em;
+}
+
+.admin-flashsale-form-section-desc,
+.admin-flashsale-items-section-desc {
+  margin: 5px 0 0;
+  color: var(--admin-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.admin-flashsale-form-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.admin-flashsale-time-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.admin-flashsale-form-note,
+.admin-flashsale-limit-note {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  margin-top: 16px;
+  padding: 13px 14px;
+  border: 1px solid rgba(245, 158, 11, 0.32);
+  border-radius: 16px;
+  background: rgba(245, 158, 11, 0.08);
+  color: #92400e;
+}
+
+.admin-flashsale-form-note__icon,
+.admin-flashsale-limit-note__icon {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 15px;
+  background: #ffffff;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.055);
+  font-weight: 1000;
+}
+
+.admin-flashsale-form-note strong,
+.admin-flashsale-limit-note strong {
+  display: block;
+  margin-bottom: 4px;
+  color: currentColor;
+  font-size: 13px;
+  font-weight: 950;
+  line-height: 1.35;
+}
+
+.admin-flashsale-form-note span,
+.admin-flashsale-limit-note span {
+  display: block;
+  color: currentColor;
+  opacity: .94;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.admin-flashsale-limit-note code {
+  color: #be185d;
+  font-weight: 950;
+}
+
+.admin-flashsale-config-steps {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-flashsale-config-step {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  padding: 12px;
+  border: 1px solid var(--admin-border);
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.018);
+}
+
+.admin-flashsale-config-step > span {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  border: 1px solid var(--admin-border);
+  background: #ffffff;
+  color: var(--admin-muted);
+  font-size: 13px;
+  font-weight: 1000;
+}
+
+.admin-flashsale-config-step.is-done {
+  border-color: rgba(16, 185, 129, 0.24);
+  background: rgba(16, 185, 129, 0.055);
+}
+
+.admin-flashsale-config-step.is-done > span {
+  border-color: rgba(16, 185, 129, 0.32);
+  background: rgba(16, 185, 129, 0.10);
+  color: #047857;
+}
+
+.admin-flashsale-config-step strong {
+  display: block;
+  color: var(--admin-text);
+  font-size: 13px;
+  font-weight: 950;
+  line-height: 1.35;
+}
+
+.admin-flashsale-config-step small {
+  display: block;
+  margin-top: 4px;
+  color: var(--admin-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.admin-flashsale-side-btn {
+  width: 100%;
+  margin-top: 14px;
+  justify-content: center;
+}
+
+.admin-flashsale-side-empty,
+.admin-flashsale-form-empty {
+  min-height: 128px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 18px;
+  border: 1px dashed rgba(236, 72, 153, 0.30);
+  border-radius: 18px;
+  background: rgba(236, 72, 153, 0.035);
+  color: var(--admin-muted);
+  text-align: center;
+}
+
+.admin-flashsale-side-empty span,
+.admin-flashsale-form-empty span {
+  font-size: 28px;
+}
+
+.admin-flashsale-side-empty strong,
+.admin-flashsale-form-empty strong {
+  color: var(--admin-text);
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.admin-flashsale-side-empty small,
+.admin-flashsale-form-empty small {
+  max-width: 340px;
+  color: var(--admin-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.admin-flashsale-form-actions,
+.admin-flashsale-items-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--admin-border);
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: var(--admin-shadow-sm);
+}
+
+.admin-flashsale-form-items-card {
+  margin-top: 18px;
+}
+
+.admin-flashsale-form-items-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.07);
+}
+
+.admin-flashsale-form-table-wrap,
+.admin-flashsale-items-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid rgba(15, 23, 42, 0.07);
+  border-radius: 16px;
+  background: #ffffff;
+}
+
+.admin-flashsale-form-table,
+.admin-flashsale-items-table {
+  width: 100%;
+  min-width: 980px;
+  table-layout: fixed;
+  border-left: 0;
+  border-right: 0;
+  border-radius: 0;
+}
+
+.admin-flashsale-items-table {
+  min-width: 1240px;
+}
+
+.admin-flashsale-form-table th,
+.admin-flashsale-form-table td,
+.admin-flashsale-items-table th,
+.admin-flashsale-items-table td {
+  padding: 12px 10px;
+  vertical-align: top;
+}
+
+.admin-flashsale-form-table tbody tr + tr td,
+.admin-flashsale-items-table tbody tr + tr td {
+  border-top: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.admin-flashsale-form-table th,
+.admin-flashsale-items-table th {
+  color: rgba(15, 23, 42, 0.66);
+  font-size: 12px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: .025em;
+}
+
+.admin-flashsale-form-product-cell,
+.admin-flashsale-product-cell {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.admin-flashsale-form-product-cell strong,
+.admin-flashsale-product-cell strong {
+  color: var(--admin-text);
+  font-size: 13px;
+  line-height: 1.35;
+  font-weight: 950;
+  overflow-wrap: anywhere;
+}
+
+.admin-flashsale-form-product-cell span,
+.admin-flashsale-product-cell span {
+  color: var(--admin-muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.admin-flashsale-form-price-cell,
+.admin-flashsale-price-cell {
+  color: #be185d;
+  font-size: 13px;
+  font-weight: 1000;
+  white-space: nowrap;
+}
+
+.admin-flashsale-limit-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.10);
+  color: #92400e;
+  font-size: 12px;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.admin-flashsale-form-progress-cell,
+.admin-flashsale-progress-cell {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.admin-flashsale-form-progress-cell small,
+.admin-flashsale-progress-cell small {
+  color: var(--admin-muted);
+  font-size: 12px;
+  line-height: 1.35;
+  font-weight: 850;
+}
+
+.admin-flashsale-admin-progress {
+  width: 100%;
+  height: 10px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.08);
+  appearance: none;
+}
+
+.admin-flashsale-admin-progress::-webkit-progress-bar {
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.08);
+}
+
+.admin-flashsale-admin-progress::-webkit-progress-value {
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ec4899, #f97316);
+}
+
+.admin-flashsale-admin-progress::-moz-progress-bar {
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ec4899, #f97316);
+}
+
+.admin-flashsale-items-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.admin-flashsale-items-stat {
+  position: relative;
+  overflow: hidden;
+  padding: 16px;
+  border: 1px solid var(--admin-border);
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: var(--admin-shadow-sm);
+}
+
+.admin-flashsale-items-stat::after {
+  content: "";
+  position: absolute;
+  right: -28px;
+  top: -28px;
+  width: 82px;
+  height: 82px;
+  border-radius: 999px;
+  background: rgba(236, 72, 153, 0.08);
+}
+
+.admin-flashsale-items-stat--qty::after {
+  background: rgba(59, 130, 246, 0.10);
+}
+
+.admin-flashsale-items-stat--sold::after {
+  background: rgba(245, 158, 11, 0.12);
+}
+
+.admin-flashsale-items-stat--soldout::after {
+  background: rgba(220, 38, 38, 0.10);
+}
+
+.admin-flashsale-items-stat__icon {
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  border-radius: 14px;
+  background: rgba(236, 72, 153, 0.10);
+  font-size: 18px;
+  position: relative;
+  z-index: 1;
+}
+
+.admin-flashsale-items-stat__label,
+.admin-flashsale-items-stat__note {
+  display: block;
+  color: var(--admin-muted);
+  font-size: 12px;
+  line-height: 1.35;
+  font-weight: 850;
+  position: relative;
+  z-index: 1;
+}
+
+.admin-flashsale-items-stat__note {
+  margin-top: 8px;
+  line-height: 1.4;
+  font-weight: 750;
+}
+
+.admin-flashsale-items-stat__value {
+  display: block;
+  margin-top: 7px;
+  color: var(--admin-text);
+  font-size: 28px;
+  line-height: 1;
+  font-weight: 1000;
+  letter-spacing: -0.035em;
+  position: relative;
+  z-index: 1;
+}
+
+.admin-flashsale-item-form-card {
+  margin-bottom: 18px;
+}
+
+.admin-flashsale-item-form-grid {
+  display: grid;
+  grid-template-columns: minmax(300px, 1.4fr) minmax(150px, .7fr) minmax(150px, .7fr) minmax(180px, .8fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.admin-flashsale-product-field {
+  min-width: 0;
+}
+
+.admin-flashsale-limit-field .admin-help {
+  line-height: 1.45;
+}
+
+.admin-flashsale-items-empty {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  padding: 22px;
+  border: 1px dashed var(--admin-border);
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.018);
+}
+
+.admin-flashsale-items-empty__icon {
+  width: 58px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18px;
+  background: rgba(236, 72, 153, 0.10);
+  font-size: 26px;
+}
+
+.admin-flashsale-items-empty h3 {
+  margin: 0 0 5px;
+  color: var(--admin-text);
+  font-size: 16px;
+  font-weight: 950;
+}
+
+.admin-flashsale-items-empty p {
+  margin: 0;
+  color: var(--admin-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.admin-flashsale-items-row--soldout {
+  background: rgba(220, 38, 38, 0.025);
+}
+
+.admin-flashsale-items-col-product { width: 260px; }
+.admin-flashsale-items-col-price { width: 128px; }
+.admin-flashsale-items-col-qty { width: 92px; }
+.admin-flashsale-items-col-remain { width: 110px; }
+.admin-flashsale-items-col-limit { width: 180px; }
+.admin-flashsale-items-col-progress { width: 170px; }
+.admin-flashsale-items-col-actions { width: 112px; }
+
+.admin-flashsale-items-action-cell {
+  white-space: nowrap;
+}
+
+.admin-flashsale-delete-form {
+  display: block;
+  margin: 0;
+}
+
+.admin-flashsale-items-action-btn {
+  width: 100%;
+  min-height: 34px;
+  padding: 0 12px;
+  justify-content: center;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.choices {
+  margin-bottom: 0;
+}
+
+.choices__inner {
+  min-height: 40px;
+  border-color: var(--admin-border);
+  border-radius: 12px;
+  background: #ffffff;
+  color: var(--admin-text);
+  font-size: 13px;
+}
+
+.choices.is-focused .choices__inner,
+.choices.is-open .choices__inner {
+  border-color: rgba(236, 72, 153, 0.45);
+  box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.08);
+}
+
+.choices__list--dropdown,
+.choices__list[aria-expanded] {
+  border-color: rgba(236, 72, 153, 0.22);
+  border-radius: 14px;
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.10);
+}
+
+@media (max-width: 1280px) {
+  .admin-flashsale-form-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-flashsale-item-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-flashsale-product-field {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 1180px) {
+  .admin-flashsale-form-hero,
+  .admin-flashsale-items-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-flashsale-form-hero__actions,
+  .admin-flashsale-items-hero__actions {
+    justify-content: flex-start;
+  }
+
+  .admin-flashsale-items-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .admin-flashsale-form-hero,
+  .admin-flashsale-items-hero {
+    padding: 15px;
+    border-radius: 18px;
+  }
+
+  .admin-flashsale-time-grid,
+  .admin-flashsale-items-summary,
+  .admin-flashsale-item-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-flashsale-product-field {
+    grid-column: auto;
+  }
+
+  .admin-flashsale-form-hero__actions,
+  .admin-flashsale-items-hero__actions,
+  .admin-flashsale-form-actions,
+  .admin-flashsale-items-form-actions {
+    width: 100%;
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-flashsale-form-hero__actions .admin-btn,
+  .admin-flashsale-items-hero__actions .admin-btn,
+  .admin-flashsale-form-actions .admin-btn,
+  .admin-flashsale-form-actions button,
+  .admin-flashsale-items-form-actions .admin-btn,
+  .admin-flashsale-items-form-actions button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .admin-flashsale-form-note,
+  .admin-flashsale-limit-note,
+  .admin-flashsale-items-empty {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-flashsale-items-empty {
+    text-align: center;
+    justify-items: center;
+  }
+}
