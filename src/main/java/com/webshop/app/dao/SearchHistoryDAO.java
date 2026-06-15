@@ -138,10 +138,40 @@ public class SearchHistoryDAO {
     }
 
     /**
-     * Lấy tất cả lịch sử của user, dùng cho trang quản lý riêng nếu sau này cần.
+     * Lấy toàn bộ lịch sử tìm kiếm của user.
+     *
+     * Dùng cho trang /search-history, không giới hạn 8/10 dòng như dropdown ở header.
      */
     public List<UserSearchHistory> findAllByUserId(int userId) {
-        return findRecentByUserId(userId, 100);
+        List<UserSearchHistory> histories = new ArrayList<>();
+
+        if (userId <= 0) {
+            return histories;
+        }
+
+        String sql =
+                "SELECT id, user_id, keyword, normalized_keyword, result_count, search_url, " +
+                        "search_count, created_at, updated_at, last_searched_at " +
+                        "FROM user_search_history " +
+                        "WHERE user_id = ? " +
+                        "ORDER BY last_searched_at DESC, updated_at DESC, id DESC";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, userId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    histories.add(mapRow(rs));
+                }
+            }
+
+            return histories;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("SearchHistoryDAO.findAllByUserId error", e);
+        }
     }
 
     /**
