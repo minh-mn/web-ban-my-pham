@@ -46,7 +46,7 @@
 
 	<!-- GLOBAL CSS -->
 	<link rel="stylesheet"
-	      href="${pageContext.request.contextPath}/assets/css/base.css?v=20260531">
+	      href="${pageContext.request.contextPath}/assets/css/base.css?v=20260615_search_short">
 
 	<!-- PAGE CSS -->
 	<c:if test="${not empty pageCss}">
@@ -54,33 +54,29 @@
 			<%-- Trường hợp servlet truyền: /assets/css/home.css --%>
 			<c:when test="${fn:startsWith(pageCss, '/assets/')}">
 				<link rel="stylesheet"
-				      href="${pageContext.request.contextPath}${pageCss}?v=20260531">
+				      href="${pageContext.request.contextPath}${pageCss}?v=20260615_search_short">
 			</c:when>
 
 			<%-- Trường hợp servlet truyền: assets/css/home.css --%>
 			<c:when test="${fn:startsWith(pageCss, 'assets/')}">
 				<link rel="stylesheet"
-				      href="${pageContext.request.contextPath}/${pageCss}?v=20260531">
+				      href="${pageContext.request.contextPath}/${pageCss}?v=20260615_search_short">
 			</c:when>
 
 			<%-- Trường hợp servlet truyền: /home.css --%>
 			<c:when test="${fn:startsWith(pageCss, '/')}">
 				<link rel="stylesheet"
-				      href="${pageContext.request.contextPath}/assets/css${pageCss}?v=20260531">
+				      href="${pageContext.request.contextPath}/assets/css${pageCss}?v=20260615_search_short">
 			</c:when>
 
 			<%-- Trường hợp servlet truyền: home.css hoặc admin/admin-list.css --%>
 			<c:otherwise>
 				<link rel="stylesheet"
-				      href="${pageContext.request.contextPath}/assets/css/${pageCss}?v=20260531">
+				      href="${pageContext.request.contextPath}/assets/css/${pageCss}?v=20260615_search_short">
 			</c:otherwise>
 		</c:choose>
 	</c:if>
 
-
-	<!-- RED BUTTON THEME: load sau page CSS de dong bo mau nut -->
-	<link rel="stylesheet"
-	      href="${pageContext.request.contextPath}/assets/css/theme-red-buttons.css?v=20260613_8">
 
 	<script>
 		window.APP_CTX = "${pageContext.request.contextPath}";
@@ -105,13 +101,23 @@
 				      method="get"
 				      class="search-form"
 				      autocomplete="off">
-					<span class="search-icon">⌕</span>
+					<span class="search-icon" aria-hidden="true">
+						<svg viewBox="0 0 24 24" focusable="false">
+							<circle cx="11" cy="11" r="6.5"></circle>
+							<path d="M16 16l4 4"></path>
+						</svg>
+					</span>
 					<input id="search-input"
 					       name="q"
 					       placeholder="Tìm sản phẩm..."
 					       autocomplete="off"
 					       value="${fn:escapeXml(param.q)}">
-					<button class="search-submit-btn" type="submit" aria-label="Tìm kiếm">⌕</button>
+					<button class="search-submit-btn" type="submit" aria-label="Tìm kiếm">
+						<svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+							<circle cx="11" cy="11" r="6.5"></circle>
+							<path d="M16 16l4 4"></path>
+						</svg>
+					</button>
 				</form>
 
 				<div id="search-results" class="search-results"></div>
@@ -133,7 +139,9 @@
 					<c:when test="${not empty sessionScope.user}">
 						<div class="user-dropdown">
 							<button class="user-btn" type="button" aria-haspopup="menu" aria-expanded="false">
-								<span class="user-icon">👤</span>
+								<span class="user-icon" aria-hidden="true">
+									<svg viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="8" r="4"></circle><path d="M4.5 20c1.6-4 4.2-6 7.5-6s5.9 2 7.5 6"></path></svg>
+								</span>
 								<span class="user-name">
 										<c:out value="${sessionScope.user.username}" />
 									</span>
@@ -157,8 +165,18 @@
 
 					<c:otherwise>
 						<div class="auth-buttons">
-							<a href="${pageContext.request.contextPath}/login" class="btn-login">Đăng nhập</a>
-							<a href="${pageContext.request.contextPath}/register" class="btn-register">Đăng ký</a>
+							<a href="${pageContext.request.contextPath}/login" class="btn-login">
+								<span class="mc-action-icon" aria-hidden="true">
+									<svg viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="8" r="4"></circle><path d="M4.5 20c1.6-4 4.2-6 7.5-6s5.9 2 7.5 6"></path></svg>
+								</span>
+								<span>Đăng nhập</span>
+							</a>
+							<a href="${pageContext.request.contextPath}/register" class="btn-register">
+								<span class="mc-action-icon" aria-hidden="true">
+									<svg viewBox="0 0 24 24" focusable="false"><path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0 0-3L17.5 5.5a2.1 2.1 0 0 0-3 0L4 16v4z"></path><path d="M13.5 7.5l3 3"></path></svg>
+								</span>
+								<span>Đăng ký</span>
+							</a>
 						</div>
 					</c:otherwise>
 				</c:choose>
@@ -168,7 +186,9 @@
 			<a href="${pageContext.request.contextPath}/cart"
 			   class="cart-icon"
 			   aria-label="Giỏ hàng">
-				<span class="cart-icon__symbol">🛒</span>
+				<span class="cart-icon__symbol" aria-hidden="true">
+				<svg viewBox="0 0 24 24" focusable="false"><path d="M4 5h2l2.3 10.5h8.9l2-7.5H7.2"></path><circle cx="10" cy="19" r="1.6"></circle><circle cx="17" cy="19" r="1.6"></circle></svg>
+			</span>
 
 				<c:if test="${not empty sessionScope.CART}">
 					<c:set var="cartQty" value="0" />
@@ -188,13 +208,15 @@
 			<c:set var="unreadCount" value="${sessionScope.user.admin ? adminUnreadCount : unreadNotificationCount}" />
 
 			<button id="notifBellBtn" class="notification-bell" type="button" aria-haspopup="true" aria-expanded="false">
-				<span class="notification-bell__icon">🔔</span>
+				<span class="notification-bell__icon" aria-hidden="true">
+				<svg viewBox="0 0 24 24" focusable="false"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path><path d="M10 21a2.2 2.2 0 0 0 4 0"></path></svg>
+			</span>
 
-				<%-- Hiển thị số lượng thông báo chưa đọc màu đỏ nếu > 0 --%>
+				<%-- Hiển thị số lượng thông báo chưa đọc nếu > 0 --%>
 				<c:if test="${unreadCount > 0}">
-        <span class="notif-badge" style="background: red; color: white; padding: 2px 6px; border-radius: 50%; font-size: 11px; position: absolute; top: -5px; right: -5px;">
-            <c:out value="${unreadCount > 99 ? '99+' : unreadCount}" />
-        </span>
+						<span class="notif-badge">
+							<c:out value="${unreadCount > 99 ? '99+' : unreadCount}" />
+						</span>
 				</c:if>
 			</button>
 
@@ -283,7 +305,7 @@
 <jsp:include page="/jsp/common/footer.jsp" />
 
 <!-- GLOBAL JS: chỉ load 1 lần -->
-<script defer src="${pageContext.request.contextPath}/assets/js/main.js?v=20260531"></script>
+<script defer src="${pageContext.request.contextPath}/assets/js/main.js?v=20260615_search_short"></script>
 
 
 <script>
