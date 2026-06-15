@@ -8,54 +8,63 @@
 <jsp:include page="/jsp/admin/layout/header.jsp"/>
 <jsp:include page="/jsp/admin/layout/sidebar.jsp"/>
 
-<main class="admin-main">
-  <div class="admin-container">
+<c:set var="ctx" value="${ctx}" />
 
-    <!-- TOPBAR -->
-    <div class="admin-topbar admin-promotion-topbar">
-      <div>
-        <h1 class="admin-h1">
+<main class="admin-main admin-promo-form-page">
+  <div class="admin-container admin-promo-form-container">
+
+    <section class="admin-promo-form-hero">
+      <div class="admin-promo-form-hero__content">
+        <span class="admin-promo-form-eyebrow">KHUYẾN MÃI &amp; TĂNG TRƯỞNG</span>
+        <h1 class="admin-promo-form-title">
           <c:choose>
             <c:when test="${mode == 'edit'}">Sửa khuyến mãi</c:when>
             <c:otherwise>Tạo khuyến mãi</c:otherwise>
           </c:choose>
         </h1>
-
-        <p class="admin-subtext">
+        <p class="admin-promo-form-subtitle">
           Quản lý tập trung mã giảm giá, giảm giá thương hiệu, giảm theo giá trị đơn hàng
-          và chương trình khuyến mãi cửa hàng.
+          và chương trình khuyến mãi cửa hàng trong cùng một giao diện.
         </p>
       </div>
 
-      <div class="admin-promotion-create">
+      <div class="admin-promo-form-hero__actions">
         <a class="admin-btn"
-           href="${pageContext.request.contextPath}/admin/promotions?type=${promotionType}">
+           href="${ctx}/admin/promotions?type=${promotionType}">
+          ← Quay lại danh sách
+        </a>
+      </div>
+    </section>
+
+<div class="admin-promotion-create">
+        <a class="admin-btn"
+           href="${ctx}/admin/promotions?type=${promotionType}">
           ← Quay lại danh sách
         </a>
       </div>
     </div>
 
     <!-- TYPE TABS -->
-    <div class="admin-card admin-promo-type-card">
+    <div class="admin-card admin-promo-type-card admin-promo-form-type-card">
       <div class="admin-card__body">
         <div class="admin-promo-tabs">
           <a class="admin-promo-tab ${promotionType == 'COUPON' ? 'is-active' : ''}"
-             href="${pageContext.request.contextPath}/admin/promotions?action=new&type=COUPON">
+             href="${ctx}/admin/promotions?action=new&type=COUPON">
             Mã giảm giá
           </a>
 
           <a class="admin-promo-tab ${promotionType == 'BRAND' ? 'is-active' : ''}"
-             href="${pageContext.request.contextPath}/admin/promotions?action=new&type=BRAND">
+             href="${ctx}/admin/promotions?action=new&type=BRAND">
             Giảm giá thương hiệu
           </a>
 
           <a class="admin-promo-tab ${promotionType == 'ORDER' ? 'is-active' : ''}"
-             href="${pageContext.request.contextPath}/admin/promotions?action=new&type=ORDER">
+             href="${ctx}/admin/promotions?action=new&type=ORDER">
             Giảm theo đơn hàng
           </a>
 
           <a class="admin-promo-tab ${promotionType == 'EVENT' ? 'is-active' : ''}"
-             href="${pageContext.request.contextPath}/admin/promotions?action=new&type=EVENT">
+             href="${ctx}/admin/promotions?action=new&type=EVENT">
             Chương trình khuyến mãi
           </a>
         </div>
@@ -91,11 +100,11 @@
     </c:if>
 
     <!-- FORM CARD -->
-    <div class="admin-card">
+    <div class="admin-card admin-promo-form-card">
       <div class="admin-card__body">
 
         <form method="post"
-              action="${pageContext.request.contextPath}/admin/promotions"
+              action="${ctx}/admin/promotions"
               class="admin-form admin-promo-form">
 
           <%@ include file="/jsp/common/csrf.jspf" %>
@@ -663,7 +672,7 @@
           <!-- SUBMIT -->
           <div class="admin-form-actions admin-promo-form-actions">
             <a class="admin-btn"
-               href="${pageContext.request.contextPath}/admin/promotions?type=${promotionType}">
+               href="${ctx}/admin/promotions?type=${promotionType}">
               Hủy
             </a>
 
@@ -702,7 +711,7 @@
         return;
       }
 
-      element.style.display = visible ? "" : "none";
+      element.classList.toggle("admin-promo-hidden", !visible);
     }
 
     function updateCouponScope() {
@@ -782,7 +791,7 @@
 
       productCards.forEach(function (card) {
         const searchable = normalizeText(card.getAttribute("data-product-key"));
-        card.style.display = searchable.includes(keyword) ? "" : "none";
+        card.classList.toggle("admin-promo-hidden", !searchable.includes(keyword));
       });
     }
 
