@@ -2,7 +2,7 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
-<c:set var="pageTitle" value="ADMIN | Form Banner" scope="request" />
+<c:set var="pageTitle" value="${not empty banner ? 'ADMIN | Sửa banner' : 'ADMIN | Thêm banner'}" scope="request" />
 <c:set var="activeMenu" value="banners" scope="request" />
 <c:set var="pageCss" value="/assets/css/admin/admin-form.css" scope="request" />
 
@@ -12,98 +12,98 @@
 <c:set var="ctx" value="${pageContext.request.contextPath}" />
 
 <main class="admin-main">
-  <div class="admin-container">
+  <div class="admin-container admin-banner-form-page">
 
-    <div class="admin-topbar">
-      <div>
-        <h1 class="admin-h1">
+    <section class="admin-banner-form-hero">
+      <div class="admin-banner-form-hero__content">
+        <span class="admin-banner-form-eyebrow">TRANG CHỦ &amp; HIỂN THỊ</span>
+        <h1 class="admin-banner-form-title">
           <c:choose>
             <c:when test="${not empty banner}">Sửa banner</c:when>
             <c:otherwise>Thêm banner</c:otherwise>
           </c:choose>
         </h1>
-
-        <p class="admin-subtext">
+        <p class="admin-banner-form-subtitle">
           Quản lý thông tin banner trang chủ. Ảnh upload sẽ được lưu trong
           <strong>MyCosmeticShopUploads/banner/</strong> và database lưu đường dẫn
           <strong>/uploads/banner/</strong>.
         </p>
       </div>
 
-      <a class="admin-btn" href="${ctx}/admin/banners">
-        Quay lại
-      </a>
-    </div>
+      <div class="admin-banner-form-hero__actions">
+        <a class="admin-btn" href="${ctx}/admin/banners">
+          ← Quay lại danh sách
+        </a>
+      </div>
+    </section>
 
-    <div class="admin-card">
-      <div class="admin-card__body">
+    <c:if test="${not empty error}">
+      <div class="admin-alert admin-alert--danger">
+        <c:out value="${error}" />
+      </div>
+    </c:if>
 
-        <c:if test="${not empty error}">
-          <div class="admin-alert admin-alert--danger">
-            <c:out value="${error}" />
-          </div>
-        </c:if>
+    <c:if test="${not empty success}">
+      <div class="admin-alert admin-alert--success">
+        <c:out value="${success}" />
+      </div>
+    </c:if>
 
-        <c:if test="${not empty success}">
-          <div class="admin-alert admin-alert--success">
-            <c:out value="${success}" />
-          </div>
-        </c:if>
+    <form
+            method="post"
+            action="${ctx}/admin/banners"
+            enctype="multipart/form-data"
+            class="admin-form admin-banner-form">
 
-        <form
-                method="post"
-                action="${ctx}/admin/banners"
-                enctype="multipart/form-data"
-                class="admin-form">
+      <%@ include file="/jsp/common/csrf.jspf" %>
 
-          <%@ include file="/jsp/common/csrf.jspf" %>
+      <input
+              type="hidden"
+              name="action"
+              value="${not empty banner ? 'update' : 'create'}">
 
-          <input
-                  type="hidden"
-                  name="action"
-                  value="${not empty banner ? 'update' : 'create'}">
+      <c:if test="${not empty banner}">
+        <input type="hidden" name="id" value="${banner.id}">
+        <input type="hidden" name="existingImage" value="${banner.imageUrl}">
+      </c:if>
 
-          <c:if test="${not empty banner}">
-            <input type="hidden" name="id" value="${banner.id}">
-            <input type="hidden" name="existingImage" value="${banner.imageUrl}">
-          </c:if>
+      <div class="admin-banner-form-layout">
 
-          <div class="admin-row">
-            <div>
-              <h2 class="admin-h2">Thông tin banner</h2>
-              <p class="admin-subtext">
-                Nhập tiêu đề, trạng thái, ảnh hiển thị và liên kết điều hướng nếu có.
-              </p>
+        <section class="admin-card admin-banner-form-card">
+          <div class="admin-card__body">
+            <div class="admin-banner-form-section-head">
+              <div>
+                <h2 class="admin-banner-form-section-title">Thông tin banner</h2>
+                <p class="admin-banner-form-section-desc">
+                  Nhập tiêu đề, trạng thái, liên kết điều hướng và ảnh hiển thị trên trang chủ.
+                </p>
+              </div>
+
+              <c:choose>
+                <c:when test="${not empty banner && banner.active}">
+                  <span class="admin-chip admin-chip--success">Đang hiển thị</span>
+                </c:when>
+                <c:when test="${not empty banner && !banner.active}">
+                  <span class="admin-chip admin-chip--warning">Tạm ẩn</span>
+                </c:when>
+                <c:otherwise>
+                  <span class="admin-chip admin-chip--brand">Banner mới</span>
+                </c:otherwise>
+              </c:choose>
             </div>
 
-            <c:choose>
-              <c:when test="${not empty banner && banner.active}">
-                <span class="admin-chip">ACTIVE</span>
-              </c:when>
-              <c:when test="${not empty banner && !banner.active}">
-                <span class="admin-chip">INACTIVE</span>
-              </c:when>
-              <c:otherwise>
-                <span class="admin-chip">NEW BANNER</span>
-              </c:otherwise>
-            </c:choose>
-          </div>
-
-          <hr class="admin-divider" />
-
-          <div class="admin-grid-2">
-
-            <div class="admin-stack">
-
+            <div class="admin-banner-form-grid">
               <div class="admin-field">
-                <label class="admin-label" for="bannerTitle">Tiêu đề banner</label>
+                <label class="admin-label" for="bannerTitle">
+                  Tiêu đề banner <span class="admin-required">*</span>
+                </label>
                 <input
                         id="bannerTitle"
                         class="admin-input"
                         type="text"
                         name="title"
                         value="${not empty banner ? banner.title : ''}"
-                        placeholder="VD: New Collection, Sale 50%, Bộ sưu tập mới..."
+                        placeholder="VD: Bộ sưu tập mới, Sale 50%, Ưu đãi cuối tuần..."
                         maxlength="200"
                         required>
 
@@ -113,7 +113,7 @@
               </div>
 
               <div class="admin-field">
-                <label class="admin-label" for="bannerLink">Link tùy chọn</label>
+                <label class="admin-label" for="bannerLink">Link điều hướng</label>
                 <input
                         id="bannerLink"
                         class="admin-input"
@@ -128,18 +128,18 @@
               </div>
 
               <div class="admin-field">
-                <label class="admin-label" for="bannerActive">Trạng thái</label>
+                <label class="admin-label" for="bannerActive">Trạng thái hiển thị</label>
                 <select id="bannerActive" class="admin-select" name="active">
                   <option value="1" ${empty banner || banner.active ? 'selected' : ''}>
-                    ACTIVE - Hiển thị trên trang chủ
+                    Đang hiển thị trên trang chủ
                   </option>
                   <option value="0" ${not empty banner && !banner.active ? 'selected' : ''}>
-                    INACTIVE - Tạm ẩn
+                    Tạm ẩn khỏi trang chủ
                   </option>
                 </select>
 
                 <div class="admin-help">
-                  Banner ở trạng thái INACTIVE sẽ không hiển thị ngoài trang chủ.
+                  Banner tạm ẩn sẽ được lưu trong admin nhưng không hiển thị ngoài trang chủ.
                 </div>
               </div>
 
@@ -157,33 +157,57 @@
                   hệ thống sẽ giữ lại ảnh hiện tại.
                 </div>
               </div>
-
             </div>
 
-            <div class="admin-preview">
-
+            <div class="admin-banner-form-note">
+              <span class="admin-banner-form-note__icon">💡</span>
               <div>
-                <h2 class="admin-h2">Xem trước ảnh</h2>
-                <p class="admin-subtext">
-                  Khu vực này hiển thị ảnh hiện tại hoặc ảnh mới vừa chọn.
+                <strong>Gợi ý hình ảnh</strong>
+                <span>
+                  Nên dùng ảnh ngang, rõ chủ thể, dung lượng vừa phải để trang chủ tải nhanh và không bị méo layout.
+                </span>
+              </div>
+            </div>
+
+            <div class="admin-banner-form-actions">
+              <a class="admin-btn" href="${ctx}/admin/banners">
+                Hủy
+              </a>
+
+              <button class="admin-btn admin-btn--primary" type="submit">
+                Lưu banner
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <aside class="admin-card admin-banner-preview-card">
+          <div class="admin-card__body">
+            <div class="admin-banner-form-section-head admin-banner-form-section-head--preview">
+              <div>
+                <h2 class="admin-banner-form-section-title">Xem trước ảnh</h2>
+                <p class="admin-banner-form-section-desc">
+                  Kiểm tra ảnh hiện tại hoặc ảnh mới vừa chọn trước khi lưu.
                 </p>
               </div>
+            </div>
 
+            <div class="admin-banner-preview">
               <c:choose>
                 <c:when test="${not empty banner && not empty banner.imageUrl}">
                   <img
                           id="bannerPreviewImage"
-                          class="admin-preview__img"
+                          class="admin-banner-preview__img"
                           src="${ctx}${banner.imageUrl}"
                           alt="${not empty banner.title ? banner.title : 'banner'}">
 
-                  <div id="bannerPreviewEmpty" class="admin-empty" style="display:none;">
+                  <div id="bannerPreviewEmpty" class="admin-banner-preview__empty admin-banner-preview__empty--hidden">
                     Chưa có ảnh xem trước.
                   </div>
 
                   <div class="admin-help admin-break">
                     Đường dẫn hiện tại:
-                    <c:out value="${banner.imageUrl}" />
+                    <strong><c:out value="${banner.imageUrl}" /></strong>
                   </div>
 
                   <c:choose>
@@ -193,7 +217,7 @@
                       </div>
                     </c:when>
                     <c:otherwise>
-                      <div class="admin-alert" style="color:#b45309;">
+                      <div class="admin-alert admin-alert--warning">
                         Ảnh hiện tại có thể đang dùng đường dẫn cũ. Khi upload ảnh mới,
                         hệ thống nên lưu theo dạng /uploads/banner/.
                       </div>
@@ -204,37 +228,23 @@
                 <c:otherwise>
                   <img
                           id="bannerPreviewImage"
-                          class="admin-preview__img"
+                          class="admin-banner-preview__img admin-banner-preview__img--hidden"
                           src=""
-                          alt="Banner preview"
-                          style="display:none;">
+                          alt="Banner preview">
 
-                  <div id="bannerPreviewEmpty" class="admin-empty">
-                    Chưa có ảnh xem trước. Vui lòng chọn ảnh banner để kiểm tra trước khi lưu.
+                  <div id="bannerPreviewEmpty" class="admin-banner-preview__empty">
+                    <span>🖼️</span>
+                    <strong>Chưa có ảnh xem trước</strong>
+                    <small>Vui lòng chọn ảnh banner để kiểm tra trước khi lưu.</small>
                   </div>
                 </c:otherwise>
               </c:choose>
-
             </div>
-
           </div>
-
-          <hr class="admin-divider" />
-
-          <div class="admin-actions">
-            <a class="admin-btn" href="${ctx}/admin/banners">
-              Hủy
-            </a>
-
-            <button class="admin-btn admin-btn--primary" type="submit">
-              Lưu banner
-            </button>
-          </div>
-
-        </form>
+        </aside>
 
       </div>
-    </div>
+    </form>
 
   </div>
 </main>
@@ -267,10 +277,10 @@
       const previewUrl = URL.createObjectURL(file);
 
       previewImage.src = previewUrl;
-      previewImage.style.display = 'block';
+      previewImage.classList.remove('admin-banner-preview__img--hidden');
 
       if (previewEmpty) {
-        previewEmpty.style.display = 'none';
+        previewEmpty.classList.add('admin-banner-preview__empty--hidden');
       }
     });
   })();
