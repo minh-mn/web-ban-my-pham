@@ -5,6 +5,7 @@ import com.webshop.app.model.User;
 import com.webshop.app.model.UserSearchHistory;
 
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -16,6 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 
+@WebServlet({"/search-history", "/account/search-history"})
 public class SearchHistoryPageServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
@@ -32,7 +34,10 @@ public class SearchHistoryPageServlet extends HttpServlet {
         User currentUser = getCurrentUser(req.getSession(false));
 
         if (currentUser == null || currentUser.getId() <= 0) {
-            String redirectTarget = URLEncoder.encode("/search-history", StandardCharsets.UTF_8);
+            String currentPath = req.getServletPath() == null || req.getServletPath().isBlank()
+                    ? "/search-history"
+                    : req.getServletPath();
+            String redirectTarget = URLEncoder.encode(currentPath, StandardCharsets.UTF_8);
             resp.sendRedirect(req.getContextPath() + "/login?redirect=" + redirectTarget);
             return;
         }
