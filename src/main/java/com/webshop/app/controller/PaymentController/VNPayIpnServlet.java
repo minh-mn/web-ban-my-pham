@@ -9,6 +9,7 @@ import java.util.Map;
 import com.webshop.app.dao.OrderDAO;
 import com.webshop.app.model.Order;
 import com.webshop.app.service.CheckoutService;
+import com.webshop.app.utils.VNPayConfig;
 import com.webshop.app.utils.VNPayUtil;
 
 import jakarta.servlet.annotation.WebServlet;
@@ -16,7 +17,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-@WebServlet("/payment/vnpay-ipn")
+@WebServlet({"/payment/vnpay-ipn", "/vnpay-ipn"})
 public class VNPayIpnServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
@@ -37,6 +38,15 @@ public class VNPayIpnServlet extends HttpServlet {
         String responseCode = req.getParameter("vnp_ResponseCode");
         String transactionStatus = req.getParameter("vnp_TransactionStatus");
         String amountStr = req.getParameter("vnp_Amount");
+
+        if (VNPayConfig.DEBUG) {
+            System.out.println("===== VNPAY IPN DEBUG =====");
+            System.out.println("txnRef=" + txnRef);
+            System.out.println("responseCode=" + responseCode);
+            System.out.println("transactionStatus=" + transactionStatus);
+            System.out.println("amount=" + amountStr);
+            System.out.println("secureHash=" + secureHash);
+        }
 
         if (VNPayUtil.isBlank(secureHash)
                 || VNPayUtil.isBlank(txnRef)
@@ -122,6 +132,10 @@ public class VNPayIpnServlet extends HttpServlet {
         }
 
         String body = txnRef.substring(2).trim();
+        if (body.isEmpty()) {
+            return null;
+        }
+
         int separatorIndex = body.indexOf('T');
         String orderIdText;
 
@@ -160,6 +174,8 @@ public class VNPayIpnServlet extends HttpServlet {
     }
 
     private void writeJson(HttpServletResponse resp, String code, String message) throws IOException {
-        resp.getWriter().write("{\"RspCode\":\"" + code + "\",\"Message\":\"" + message + "\"}");
+        String safeCode = code == null ? "99" : code.replace("\"", "");
+        String safeMessage = message == null ? "Unknown" : message.replace("\"", "'");
+        resp.getWriter().write("{\"RspCode\":\"" + safeCode + "\",\"Message\":\"" + safeMessage + "\"}");
     }
 }

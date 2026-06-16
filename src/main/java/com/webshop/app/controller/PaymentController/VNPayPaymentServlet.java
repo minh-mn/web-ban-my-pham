@@ -126,9 +126,12 @@ public class VNPayPaymentServlet extends HttpServlet {
         vnpParams.put("vnp_IpAddr", clientIp);
         vnpParams.put("vnp_CreateDate", VNPayUtil.nowVnp());
 
-        if (!VNPayUtil.isBlank(ipnUrl)) {
-            vnpParams.put("vnp_IpnUrl", ipnUrl);
-        }
+        /*
+         * Không đưa vnp_IpnUrl vào URL thanh toán.
+         * VNPay xử lý IPN theo URL đã khai báo/cấu hình merchant, còn danh sách
+         * tham số tạo payment URL không có vnp_IpnUrl. Nếu ký kèm tham số này,
+         * Sandbox có thể trả code=70 - Sai chữ ký.
+         */
 
         if (VNPayConfig.SEND_EXPIRE_DATE) {
             vnpParams.put("vnp_ExpireDate", VNPayUtil.plusMinutesVnp(VNPayConfig.EXPIRE_MINUTES));

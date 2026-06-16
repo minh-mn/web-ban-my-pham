@@ -22,7 +22,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
-@WebServlet("/payment/vnpay-return")
+@WebServlet({"/payment/vnpay-return", "/vnpay-return"})
 public class VNPayReturnServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
@@ -86,7 +86,6 @@ public class VNPayReturnServlet extends HttpServlet {
             return;
         }
 
-        // Đồng bộ lại txnRef vào đơn nếu trước đó DB chưa lưu được.
         orderDAO.setVnpTxnRef(orderId, txnRef);
 
         if (!isAmountMatched(orderId, amountStr)) {
@@ -106,7 +105,6 @@ public class VNPayReturnServlet extends HttpServlet {
                 "VNPay payment failed. responseCode=" + responseCode
                         + ", transactionStatus=" + transactionStatus);
         cleanupVnpayOnly(req.getSession(false));
-
         redirectFail(req, resp, orderId, "vnpay_failed");
     }
 
@@ -143,7 +141,6 @@ public class VNPayReturnServlet extends HttpServlet {
         }
 
         orderId = parseOrderIdFromTxnRef(txnRef);
-
         if (orderId != null && orderId > 0 && orderDAO.findById(orderId) != null) {
             return orderId;
         }
@@ -168,10 +165,6 @@ public class VNPayReturnServlet extends HttpServlet {
         }
     }
 
-    /**
-     * Hỗ trợ cả định dạng mới MC{orderId}T{timestamp}
-     * và định dạng cũ MC{orderId}{13-digit timestamp}.
-     */
     private Integer parseOrderIdFromTxnRef(String txnRef) {
         if (VNPayUtil.isBlank(txnRef) || !txnRef.startsWith("MC")) {
             return null;
@@ -226,7 +219,6 @@ public class VNPayReturnServlet extends HttpServlet {
 
         HttpSession session = req.getSession(false);
         User currentUser = getCurrentUser(session);
-
         Order order = orderDAO.findById(orderId);
 
         if (order != null
@@ -318,7 +310,7 @@ public class VNPayReturnServlet extends HttpServlet {
             sent = tryInvokeEmailMethod(serviceClass, emailService, "sendOrderSuccessEmail", orderId, email)
                     || tryInvokeEmailMethod(serviceClass, emailService, "sendOrderConfirmationEmail", orderId, email);
         } catch (ClassNotFoundException ignored) {
-            // Chưa có OrderEmailService thì bỏ qua, không làm hỏng luồng thanh toán.
+            // Nếu chưa có OrderEmailService thì bỏ qua để không làm hỏng luồng thanh toán.
         } catch (Exception e) {
             e.printStackTrace();
         }
