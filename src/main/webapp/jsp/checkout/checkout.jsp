@@ -3,7 +3,7 @@
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
-<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/checkout.css?v=20260614_5">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/checkout.css?v=20260616_map_modal_v32">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/theme-red-buttons.css?v=20260613_10">
 
 
@@ -67,6 +67,229 @@
     content: none !important;
     background: transparent !important;
     box-shadow: none !important;
+  }
+</style>
+
+<style id="addressMapModalNoOverlapV31">
+  /*
+    V31: Khi mở bản đồ, ẩn header fixed và đưa modal ra tầng cao nhất.
+    Fix trực tiếp trong JSP để tránh cache CSS cũ.
+  */
+  html body.address-map-open .site-header,
+  html body.address-map-open header.site-header {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
+  html body.address-map-open #addressMapModal.address-map-modal.show {
+    position: fixed !important;
+    inset: 0 !important;
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: center !important;
+    padding: 18px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    z-index: 2147483646 !important;
+  }
+
+  html body.address-map-open #addressMapModal.address-map-modal.show .address-map-backdrop {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 2147483645 !important;
+  }
+
+  html body.address-map-open #addressMapModal.address-map-modal.show .address-map-dialog {
+    position: relative !important;
+    z-index: 2147483647 !important;
+    width: min(1080px, calc(100vw - 36px)) !important;
+    max-height: calc(100vh - 36px) !important;
+    margin: 0 auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+
+  html body.address-map-open #addressMapModal.address-map-modal.show .address-map-header {
+    flex: 0 0 auto !important;
+    position: relative !important;
+    min-height: 96px !important;
+    padding: 22px 78px 18px 28px !important;
+    overflow: visible !important;
+    z-index: 5 !important;
+  }
+
+  html body.address-map-open #addressMapModal.address-map-modal.show .address-map-body {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+
+  html body.address-map-open #addressMapModal.address-map-modal.show .address-map-footer {
+    flex: 0 0 auto !important;
+    position: relative !important;
+    z-index: 5 !important;
+  }
+
+  html body.address-map-open #addressMapModal.address-map-modal.show .address-map-close {
+    position: absolute !important;
+    top: 18px !important;
+    right: 22px !important;
+    z-index: 2147483647 !important;
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    min-height: 42px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 999px !important;
+    background: #fff1f7 !important;
+    color: #111827 !important;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.10) !important;
+    font-size: 30px !important;
+    line-height: 1 !important;
+    font-weight: 950 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    cursor: pointer !important;
+  }
+
+  html body.address-map-open #addressMapModal.address-map-modal.show .address-map-close:hover {
+    background: #ffe3ef !important;
+    color: #d9154f !important;
+    transform: none !important;
+  }
+
+  @media (max-width: 768px) {
+    html body.address-map-open #addressMapModal.address-map-modal.show {
+      padding: 10px 8px !important;
+    }
+
+    html body.address-map-open #addressMapModal.address-map-modal.show .address-map-dialog {
+      width: calc(100vw - 16px) !important;
+      max-height: calc(100vh - 20px) !important;
+      border-radius: 22px !important;
+    }
+
+    html body.address-map-open #addressMapModal.address-map-modal.show .address-map-header {
+      min-height: auto !important;
+      padding: 16px 60px 14px 18px !important;
+    }
+
+    html body.address-map-open #addressMapModal.address-map-modal.show .address-map-close {
+      top: 12px !important;
+      right: 14px !important;
+      width: 38px !important;
+      height: 38px !important;
+      min-width: 38px !important;
+      min-height: 38px !important;
+      font-size: 27px !important;
+    }
+  }
+</style>
+
+<style id="addressMapModalSizeAndCloseFixV32">
+  /*
+    V32: sửa nút X bấm không ăn + chỉnh kích thước popup bản đồ gọn hơn.
+  */
+  html body.address-map-open #addressMapModal.address-map-modal.show {
+    padding: 22px !important;
+  }
+
+  html body.address-map-open #addressMapModal.address-map-modal.show .address-map-dialog {
+    width: min(980px, calc(100vw - 44px)) !important;
+    max-height: calc(100vh - 44px) !important;
+    border-radius: 24px !important;
+  }
+
+  html body.address-map-open #addressMapModal.address-map-modal.show .address-map-header {
+    min-height: auto !important;
+    padding: 18px 70px 14px 24px !important;
+  }
+
+  html body.address-map-open #addressMapModal.address-map-modal.show .address-map-header h3 {
+    margin: 0 0 6px !important;
+    font-size: 26px !important;
+    line-height: 1.2 !important;
+  }
+
+  html body.address-map-open #addressMapModal.address-map-modal.show .address-map-header p {
+    margin: 0 !important;
+    font-size: 13.5px !important;
+    line-height: 1.55 !important;
+  }
+
+  html body.address-map-open #addressMapModal.address-map-modal.show .address-map-body {
+    padding: 16px 20px 0 !important;
+  }
+
+  html body.address-map-open #addressMapModal.address-map-modal.show .address-map-layout {
+    gap: 16px !important;
+  }
+
+  html body.address-map-open #addressMapModal.address-map-modal.show .address-map-canvas {
+    min-height: 410px !important;
+    height: 410px !important;
+  }
+
+  html body.address-map-open #addressMapModal.address-map-modal.show .address-map-frame,
+  html body.address-map-open #addressMapModal.address-map-modal.show iframe#addressMapFrame {
+    min-height: 410px !important;
+    height: 410px !important;
+  }
+
+  html body.address-map-open #addressMapModal.address-map-modal.show .address-map-footer {
+    padding: 14px 20px !important;
+  }
+
+  html body.address-map-open #addressMapModal.address-map-modal.show .address-map-close {
+    top: 14px !important;
+    right: 18px !important;
+    z-index: 2147483647 !important;
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    min-height: 42px !important;
+    border-radius: 999px !important;
+    background: #fff1f7 !important;
+    color: #111827 !important;
+    border: 1px solid rgba(225, 29, 72, 0.10) !important;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    pointer-events: auto !important;
+    cursor: pointer !important;
+  }
+
+  html body.address-map-open #addressMapModal.address-map-modal.show .address-map-close:hover {
+    background: #ffe3ef !important;
+    color: #d9154f !important;
+  }
+
+  @media (max-width: 768px) {
+    html body.address-map-open #addressMapModal.address-map-modal.show {
+      padding: 10px 8px !important;
+    }
+
+    html body.address-map-open #addressMapModal.address-map-modal.show .address-map-dialog {
+      width: calc(100vw - 16px) !important;
+      max-height: calc(100vh - 20px) !important;
+    }
+
+    html body.address-map-open #addressMapModal.address-map-modal.show .address-map-canvas,
+    html body.address-map-open #addressMapModal.address-map-modal.show .address-map-frame,
+    html body.address-map-open #addressMapModal.address-map-modal.show iframe#addressMapFrame {
+      min-height: 340px !important;
+      height: 340px !important;
+    }
   }
 </style>
 
@@ -3170,7 +3393,7 @@
     <div class="address-map-header">
       <h3 id="addressMapTitle">Xác nhận vị trí giao hàng</h3>
       <p>Kéo ghim màu đỏ đến đúng vị trí giao hàng. Kiểm tra địa chỉ gợi ý, chọn dùng địa chỉ gợi ý nếu phù hợp, rồi bấm xác nhận vị trí.</p>
-      <button type="button" class="address-map-close" data-close-address-map aria-label="Đóng">×</button>
+      <button type="button" class="address-map-close" data-close-address-map aria-label="Đóng" onclick="window.closeAddressMapModal && window.closeAddressMapModal(event)">×</button>
     </div>
 
     <div class="address-map-body">
@@ -3213,7 +3436,7 @@
 
     <div class="address-map-footer">
       <div class="address-map-footer-actions">
-        <button type="button" class="address-map-btn" data-close-address-map>Hủy</button>
+        <button type="button" class="address-map-btn" data-close-address-map onclick="window.closeAddressMapModal && window.closeAddressMapModal(event)">Hủy</button>
         <button type="button" class="address-map-btn primary" id="confirmMapLocationBtn" disabled>
           Xác nhận vị trí
         </button>
@@ -3855,6 +4078,52 @@
     const detectedAddressHint = document.getElementById("detectedAddressHint");
 
     const modal = document.getElementById("addressMapModal");
+
+    function moveMapModalToBody() {
+      if (modal && modal.parentElement !== document.body) {
+        document.body.appendChild(modal);
+      }
+    }
+
+    function setSiteHeaderHidden(hidden) {
+      document.querySelectorAll(".site-header, header.site-header").forEach(function (header) {
+        if (hidden) {
+          header.dataset.mapPrevDisplay = header.style.display || "";
+          header.style.setProperty("display", "none", "important");
+          header.style.setProperty("visibility", "hidden", "important");
+          header.style.setProperty("pointer-events", "none", "important");
+        } else {
+          header.style.removeProperty("display");
+          header.style.removeProperty("visibility");
+          header.style.removeProperty("pointer-events");
+
+          if (header.dataset.mapPrevDisplay) {
+            header.style.display = header.dataset.mapPrevDisplay;
+            delete header.dataset.mapPrevDisplay;
+          }
+        }
+      });
+    }
+
+    function forceMapModalTopLayer() {
+      if (!modal) return;
+
+      modal.style.setProperty("position", "fixed", "important");
+      modal.style.setProperty("inset", "0", "important");
+      modal.style.setProperty("z-index", "2147483646", "important");
+      modal.style.setProperty("display", "flex", "important");
+      modal.style.setProperty("align-items", "flex-start", "important");
+      modal.style.setProperty("justify-content", "center", "important");
+      modal.style.setProperty("padding", "18px", "important");
+      modal.style.setProperty("overflow-y", "auto", "important");
+
+      const dialog = modal.querySelector(".address-map-dialog");
+      if (dialog) {
+        dialog.style.setProperty("z-index", "2147483647", "important");
+        dialog.style.setProperty("max-height", "calc(100vh - 36px)", "important");
+      }
+    }
+
     const mapEl = document.getElementById("addressMapFrame");
     const mapStatus = document.getElementById("addressMapStatus");
     const mapDetected = document.getElementById("addressMapDetected");
@@ -4434,9 +4703,14 @@
     }
 
     async function openMapModal() {
+      moveMapModalToBody();
+      setSiteHeaderHidden(true);
+
       modal.classList.add("show");
       modal.setAttribute("aria-hidden", "false");
       document.body.classList.add("address-map-open");
+      document.documentElement.classList.add("address-map-open");
+      forceMapModalTopLayer();
 
       await waitForVisibleMapFrame();
 
@@ -4450,11 +4724,23 @@
       refreshMapSize(currentLat, currentLon);
     }
 
-    function closeMapModal() {
+    function closeMapModal(event) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+
+      if (!modal) return;
+
       modal.classList.remove("show");
       modal.setAttribute("aria-hidden", "true");
+      modal.style.removeProperty("display");
       document.body.classList.remove("address-map-open");
+      document.documentElement.classList.remove("address-map-open");
+      setSiteHeaderHidden(false);
     }
+
+    window.closeAddressMapModal = closeMapModal;
 
     function resetDetectedLocation() {
       if (latitudeInput) latitudeInput.value = "";
@@ -4702,9 +4988,16 @@
       el.addEventListener("click", closeMapModal);
     });
 
+    document.addEventListener("click", function (event) {
+      const closeTarget = event.target.closest("[data-close-address-map]");
+      if (closeTarget && modal && modal.classList.contains("show")) {
+        closeMapModal(event);
+      }
+    }, true);
+
     document.addEventListener("keydown", function (event) {
       if (event.key === "Escape" && modal.classList.contains("show")) {
-        closeMapModal();
+        closeMapModal(event);
       }
     });
 
