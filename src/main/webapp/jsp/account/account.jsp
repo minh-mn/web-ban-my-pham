@@ -54,10 +54,11 @@
                                 </div>
                             </div>
 
-                            <div class="mc-compact-actions">
-                                <a href="${pageContext.request.contextPath}/admin" class="mc-compact-btn is-primary">🛠 Vào Admin</a>
-                                <button type="button" class="mc-compact-btn" data-account-target="profile">Sửa hồ sơ</button>
-                                <a href="${pageContext.request.contextPath}/account/change-password" class="mc-compact-btn">Đổi mật khẩu</a>
+                            <div class="mc-compact-actions mc-admin-hero-actions">
+                                <a href="${pageContext.request.contextPath}/admin" class="mc-compact-btn is-primary mc-admin-entry-btn">
+                                    <span class="mc-admin-entry-icon">⚒</span>
+                                    <span>Vào trang Admin</span>
+                                </a>
                             </div>
                         </section>
 
@@ -641,7 +642,11 @@
                                         </div>
                                     </div>
 
-                                    <!-- Đã bỏ cụm nút nhanh: Đơn mua / Sửa hồ sơ / Đổi mật khẩu ở phần đầu tài khoản -->
+                                    <div class="mc-compact-actions">
+                                        <button type="button" class="mc-compact-btn is-primary" data-account-target="orders">Đơn mua</button>
+                                        <button type="button" class="mc-compact-btn" data-account-target="profile">Sửa hồ sơ</button>
+                                        <a href="${pageContext.request.contextPath}/account/change-password" class="mc-compact-btn">Đổi mật khẩu</a>
+                                    </div>
                                 </section>
 
                                 <!-- Layout menu + nội dung -->
