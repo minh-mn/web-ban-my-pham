@@ -1428,6 +1428,8 @@ public class OrderDAO {
             return false;
         }
 
+        String finalNote = defaultIfBlank(note, "Khách hàng đã xác nhận nhận hàng thành công.");
+
         String sql = """
                 UPDATE store_order
                 SET customer_received_confirmed = 1,
@@ -1443,12 +1445,13 @@ public class OrderDAO {
                 WHERE id = ?
                   AND user_id = ?
                   AND UPPER(COALESCE(shipping_status, '')) = 'DELIVERED'
-                  AND customer_received_confirmed = 0
+                  AND COALESCE(customer_received_confirmed, 0) = 0
+                  AND LOWER(COALESCE(status, '')) NOT IN ('cancelled', 'canceled')
                 """;
 
         try (Connection connection = DBConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, trimToNull(note));
+            statement.setString(1, trimToNull(finalNote));
             statement.setInt(2, orderId);
             statement.setInt(3, userId);
 
@@ -1459,7 +1462,7 @@ public class OrderDAO {
                         connection,
                         orderId,
                         ShippingStatus.DELIVERED.getCode(),
-                        defaultIfBlank(note, "Khách hàng đã xác nhận nhận hàng thành công."),
+                        finalNote,
                         null
                 );
             }
