@@ -768,6 +768,22 @@ public class ProductDAO {
 		}
 	}
 
+	public boolean updateActiveStatus(int productId, boolean active) {
+		String sql = "UPDATE store_product SET is_active = ? WHERE id = ?";
+
+		try (Connection c = DBConnection.getConnection();
+			 PreparedStatement ps = c.prepareStatement(sql)) {
+
+			ps.setBoolean(1, active);
+			ps.setInt(2, productId);
+
+			return ps.executeUpdate() > 0;
+
+		} catch (SQLException e) {
+			throw new RuntimeException("ProductDAO.updateActiveStatus error", e);
+		}
+	}
+
 	/*
 	 * Xóa sản phẩm an toàn:
 	 * - Nếu sản phẩm đã có trong store_orderitem: chỉ ẩn sản phẩm bằng is_active = 0.
