@@ -2482,3 +2482,232 @@ html body .order-action-cancel {
     width: calc(100% - 32px) !important;
   }
 }
+
+/* =========================================================
+   ORDER LIST WIDE DESKTOP PATCH
+   Mục tiêu:
+   - Kéo rộng trang lịch sử đơn hàng trên màn hình desktop.
+   - Bỏ nhu cầu kéo ngang trong bảng đơn hàng.
+   - Thu gọn nhẹ cột và nút để vẫn giữ đủ: mã đơn, ngày, tổng tiền,
+     trạng thái, vận chuyển, tracking, xem đơn, thao tác.
+========================================================= */
+
+html body main.site-main .container.order-page,
+html body .site-main .container.order-page,
+html body .container.order-page,
+html body .order-page {
+  width: min(1520px, calc(100vw - 36px)) !important;
+  max-width: none !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+html body .order-page .order-orders {
+  width: 100% !important;
+  max-width: none !important;
+  padding: 20px !important;
+  box-sizing: border-box !important;
+}
+
+html body .order-page .order-section-head,
+html body .order-page .order-section-head-filter {
+  margin: 0 !important;
+  padding: 22px 26px 18px !important;
+}
+
+html body .order-page .order-filter-tabs {
+  margin: 14px 20px 16px !important;
+}
+
+html body .order-page .order-table-wrap {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: visible !important;
+  padding: 0 !important;
+  border-radius: 20px !important;
+}
+
+html body .order-page .order-table,
+html body .order-page table.order-table,
+html body table.order-table {
+  width: calc(100% - 40px) !important;
+  min-width: 0 !important;
+  max-width: calc(100% - 40px) !important;
+  margin: 0 20px 20px !important;
+  table-layout: fixed !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+}
+
+html body .order-page .order-table th,
+html body .order-page .order-table td {
+  padding-left: 10px !important;
+  padding-right: 10px !important;
+  box-sizing: border-box !important;
+}
+
+html body .order-page .order-col-id {
+  width: 70px !important;
+}
+
+html body .order-page .order-col-date {
+  width: 118px !important;
+}
+
+html body .order-page .order-col-total {
+  width: 132px !important;
+}
+
+html body .order-page .order-col-status {
+  width: 152px !important;
+}
+
+html body .order-page .order-col-shipping {
+  width: 174px !important;
+}
+
+html body .order-page .order-col-tracking {
+  width: 220px !important;
+}
+
+html body .order-page .order-col-view {
+  width: 130px !important;
+}
+
+html body .order-page .order-col-actions {
+  width: 150px !important;
+}
+
+html body .order-page .status-badge {
+  width: 132px !important;
+  padding-left: 10px !important;
+  padding-right: 10px !important;
+  font-size: 12.8px !important;
+}
+
+html body .order-page .status-subtext {
+  max-width: 150px !important;
+  font-size: 12px !important;
+}
+
+html body .order-page .tracking-link {
+  padding: 10px 9px !important;
+}
+
+html body .order-page .tracking-labels {
+  font-size: 10.8px !important;
+  gap: 4px !important;
+}
+
+html body .order-page .tracking-action {
+  font-size: 12px !important;
+}
+
+html body .order-page .order-action-stack {
+  width: 124px !important;
+  max-width: 124px !important;
+}
+
+html body .order-page .btn-order-view,
+html body .order-page .btn-detail,
+html body .order-page .btn-retry-payment,
+html body .order-page .btn-cancel-order,
+html body .order-page .btn-return-order {
+  width: 124px !important;
+  min-width: 124px !important;
+  max-width: 124px !important;
+  min-height: 36px !important;
+  padding-left: 10px !important;
+  padding-right: 10px !important;
+  font-size: 12.2px !important;
+}
+
+@media (max-width: 1280px) {
+  html body main.site-main .container.order-page,
+  html body .site-main .container.order-page,
+  html body .container.order-page,
+  html body .order-page {
+    width: calc(100vw - 20px) !important;
+  }
+
+  html body .order-page .order-orders {
+    padding: 14px !important;
+  }
+
+  html body .order-page .order-table,
+  html body .order-page table.order-table,
+  html body table.order-table {
+    width: calc(100% - 24px) !important;
+    max-width: calc(100% - 24px) !important;
+    margin: 0 12px 16px !important;
+  }
+
+  html body .order-page .order-table th,
+  html body .order-page .order-table td {
+    padding-left: 7px !important;
+    padding-right: 7px !important;
+  }
+
+  html body .order-page .order-col-id {
+    width: 64px !important;
+  }
+
+  html body .order-page .order-col-date {
+    width: 108px !important;
+  }
+
+  html body .order-page .order-col-total {
+    width: 120px !important;
+  }
+
+  html body .order-page .order-col-status {
+    width: 142px !important;
+  }
+
+  html body .order-page .order-col-shipping {
+    width: 160px !important;
+  }
+
+  html body .order-page .order-col-tracking {
+    width: 200px !important;
+  }
+
+  html body .order-page .order-col-view {
+    width: 116px !important;
+  }
+
+  html body .order-page .order-col-actions {
+    width: 132px !important;
+  }
+
+  html body .order-page .status-badge {
+    width: 122px !important;
+    font-size: 12.2px !important;
+  }
+
+  html body .order-page .order-action-stack,
+  html body .order-page .btn-order-view,
+  html body .order-page .btn-detail,
+  html body .order-page .btn-retry-payment,
+  html body .order-page .btn-cancel-order,
+  html body .order-page .btn-return-order {
+    width: 110px !important;
+    min-width: 110px !important;
+    max-width: 110px !important;
+    font-size: 11.5px !important;
+  }
+}
+
+@media (max-width: 992px) {
+  html body .order-page .order-table-wrap {
+    overflow-x: auto !important;
+  }
+
+  html body .order-page .order-table,
+  html body .order-page table.order-table,
+  html body table.order-table {
+    min-width: 980px !important;
+  }
+}
