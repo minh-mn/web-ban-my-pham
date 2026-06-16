@@ -3,47 +3,65 @@
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
 <c:set var="ctx" value="${pageContext.request.contextPath}" />
-<link rel="stylesheet" href="${ctx}/assets/css/brand-grid.css?v=20260615_brand_clean_1" />
+<link rel="stylesheet" href="${ctx}/assets/css/brand-grid.css?v=20260616_brand_news_sync_2" />
 
-<section class="brand-hero-section">
-  <div class="brand-hero-shell">
-    <span class="brand-hero-badge">Đối tác phân phối chính hãng</span>
-    <h2 class="brand-hero-title">Thương Hiệu Chính Hãng</h2>
-    <p class="brand-hero-description">
-      MyCosmetic là đối tác phân phối chiến lược của nhiều thương hiệu mỹ phẩm và chăm sóc da nổi tiếng toàn cầu.
-      Chúng tôi cam kết 100% sản phẩm phân phối đạt chuẩn chính ngạch, an toàn và uy tín.
-    </p>
-  </div>
-</section>
+<section class="brand-page" id="brandDirectory">
+  <div class="brand-shell">
+    <section class="brand-news-hero" aria-labelledby="brandHeroTitle">
+      <span class="brand-news-kicker">DANH MỤC</span>
+      <h1 id="brandHeroTitle">Thương hiệu chính hãng</h1>
+      <p>
+        Khám phá các thương hiệu mỹ phẩm, trang điểm và chăm sóc da được MyCosmetic chọn lọc,
+        phân phối chính ngạch và đồng bộ sản phẩm liên quan cho từng thương hiệu.
+      </p>
 
-<section class="brand-directory-section" id="brandDirectory">
-  <div class="brand-directory-shell">
-    <div class="brand-directory-toolbar">
-      <div class="brand-directory-heading">
-        <h3>Khám phá thương hiệu</h3>
-        <p>Chọn chữ cái hoặc nhấn trực tiếp vào thương hiệu để xem sản phẩm liên quan.</p>
-      </div>
+      <span class="brand-hero-shape brand-hero-shape--left" aria-hidden="true"></span>
+      <span class="brand-hero-shape brand-hero-shape--right" aria-hidden="true"></span>
+      <span class="brand-hero-dots" aria-hidden="true"></span>
+    </section>
 
-      <div class="brand-filter-wrap">
-        <div class="brand-filter-chips" id="brandLetterFilters" aria-label="Bộ lọc chữ cái thương hiệu">
+    <section class="brand-discovery-panel" aria-label="Khám phá và lọc thương hiệu">
+      <div class="brand-toolbar" aria-label="Bộ lọc thương hiệu">
+        <div class="brand-filter-chips" id="brandLetterFilters" aria-label="Lọc thương hiệu theo chữ cái">
           <button type="button" class="brand-filter-chip is-active" data-letter="ALL">Tất cả</button>
         </div>
+
+        <div class="brand-search-box">
+          <input id="brandSearchInput"
+                 type="search"
+                 autocomplete="off"
+                 placeholder="Tìm thương hiệu..."
+                 aria-label="Tìm thương hiệu" />
+          <button id="brandSearchButton" type="button">Tìm</button>
+        </div>
       </div>
-    </div>
+
+      <div class="brand-section-head">
+        <div class="brand-section-title-block">
+          <span class="brand-section-label">Đối tác phân phối</span>
+          <h2>Khám phá thương hiệu</h2>
+          <p>Chọn chữ cái hoặc nhập tên thương hiệu để xem nhanh các sản phẩm liên quan.</p>
+        </div>
+        <span class="brand-section-count" id="brandVisibleCount">
+          <c:out value="${fn:length(brands)}" /> thương hiệu
+        </span>
+      </div>
+    </section>
 
     <div class="brand-grid" id="brandGrid">
       <c:forEach var="b" items="${brands}">
-        <c:set var="firstLetter" value="${fn:toUpperCase(fn:substring(b.name, 0, 1))}" />
+        <c:set var="brandName" value="${empty b.name ? 'Thương hiệu' : b.name}" />
+        <c:set var="firstLetter" value="${fn:toUpperCase(fn:substring(brandName, 0, 1))}" />
+
         <a class="brand-card"
            data-letter="${firstLetter}"
-           href="${ctx}/products?brandId=${b.id}&brand=${fn:escapeXml(b.name)}"
-           aria-label="Xem sản phẩm của thương hiệu ${b.name}">
+           data-name="${fn:toLowerCase(brandName)}"
+           href="${ctx}/products?brandId=${b.id}&brand=${fn:escapeXml(brandName)}"
+           aria-label="Xem sản phẩm của thương hiệu ${brandName}">
           <div class="brand-card-media">
             <c:choose>
               <c:when test="${not empty b.image}">
-                <img src="${ctx}${b.image}"
-                     alt="${b.name}"
-                     loading="lazy" />
+                <img src="${ctx}${b.image}" alt="${brandName}" loading="lazy" />
               </c:when>
               <c:otherwise>
                 <div class="brand-card-fallback">${firstLetter}</div>
@@ -53,7 +71,7 @@
 
           <div class="brand-card-body">
             <span class="brand-card-letter">${firstLetter}</span>
-            <h4 class="brand-card-name"><c:out value="${b.name}" /></h4>
+            <h3 class="brand-card-name"><c:out value="${brandName}" /></h3>
             <span class="brand-card-link">Xem sản phẩm</span>
           </div>
         </a>
@@ -61,7 +79,9 @@
     </div>
 
     <div class="brand-grid-empty" id="brandGridEmpty" hidden>
-      Không tìm thấy thương hiệu phù hợp với bộ lọc đã chọn.
+      <h3>Không tìm thấy thương hiệu</h3>
+      <p>Hãy thử đổi chữ cái hoặc nhập từ khóa ngắn hơn để tìm thương hiệu phù hợp.</p>
+      <button type="button" id="brandResetFilter">Xem tất cả thương hiệu</button>
     </div>
   </div>
 </section>
@@ -70,12 +90,17 @@
   (function () {
     const grid = document.getElementById('brandGrid');
     const filterRoot = document.getElementById('brandLetterFilters');
+    const searchInput = document.getElementById('brandSearchInput');
+    const searchButton = document.getElementById('brandSearchButton');
+    const resetButton = document.getElementById('brandResetFilter');
     const emptyState = document.getElementById('brandGridEmpty');
+    const visibleCount = document.getElementById('brandVisibleCount');
 
     if (!grid || !filterRoot) return;
 
     const cards = Array.from(grid.querySelectorAll('.brand-card'));
     const letters = Array.from(new Set(cards.map(card => card.dataset.letter).filter(Boolean))).sort();
+    let currentLetter = 'ALL';
 
     letters.forEach(function (letter) {
       const button = document.createElement('button');
@@ -86,11 +111,26 @@
       filterRoot.appendChild(button);
     });
 
-    function applyFilter(letter) {
+    function normalizeText(value) {
+      return (value || '')
+              .toString()
+              .toLowerCase()
+              .normalize('NFD')
+              .replace(/[\u0300-\u036f]/g, '')
+              .replace(/đ/g, 'd')
+              .trim();
+    }
+
+    function applyFilter() {
+      const keyword = normalizeText(searchInput ? searchInput.value : '');
       let visible = 0;
 
       cards.forEach(function (card) {
-        const matched = letter === 'ALL' || card.dataset.letter === letter;
+        const letterMatched = currentLetter === 'ALL' || card.dataset.letter === currentLetter;
+        const name = normalizeText(card.dataset.name || card.textContent);
+        const keywordMatched = !keyword || name.indexOf(keyword) >= 0;
+        const matched = letterMatched && keywordMatched;
+
         card.hidden = !matched;
         card.style.display = matched ? '' : 'none';
 
@@ -100,9 +140,12 @@
       });
 
       if (emptyState) {
-        const showEmpty = visible === 0;
-        emptyState.hidden = !showEmpty;
-        emptyState.style.display = showEmpty ? 'grid' : 'none';
+        emptyState.hidden = visible !== 0;
+        emptyState.style.display = visible === 0 ? 'grid' : 'none';
+      }
+
+      if (visibleCount) {
+        visibleCount.textContent = visible + ' thương hiệu';
       }
     }
 
@@ -115,9 +158,37 @@
       });
 
       target.classList.add('is-active');
-      applyFilter(target.dataset.letter || 'ALL');
+      currentLetter = target.dataset.letter || 'ALL';
+      applyFilter();
     });
 
-    applyFilter('ALL');
+    if (searchInput) {
+      searchInput.addEventListener('input', applyFilter);
+      searchInput.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          applyFilter();
+        }
+      });
+    }
+
+    if (searchButton) {
+      searchButton.addEventListener('click', applyFilter);
+    }
+
+    if (resetButton) {
+      resetButton.addEventListener('click', function () {
+        currentLetter = 'ALL';
+        if (searchInput) searchInput.value = '';
+
+        filterRoot.querySelectorAll('.brand-filter-chip').forEach(function (button) {
+          button.classList.toggle('is-active', button.dataset.letter === 'ALL');
+        });
+
+        applyFilter();
+      });
+    }
+
+    applyFilter();
   })();
 </script>
