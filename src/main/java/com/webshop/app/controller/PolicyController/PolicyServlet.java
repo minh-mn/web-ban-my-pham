@@ -66,6 +66,10 @@ public class PolicyServlet extends HttpServlet {
                 view = "/jsp/policy/vnpay-guide.jsp";
                 break;
 
+            case "/shipping":
+                view = "/jsp/policy/shipping-policy.jsp";
+                break;
+
             default:
                 response.sendError(HttpServletResponse.SC_NOT_FOUND);
                 return;
