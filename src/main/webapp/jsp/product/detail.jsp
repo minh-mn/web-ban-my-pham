@@ -441,6 +441,12 @@
                   </div>
                 </c:forEach>
               </div>
+
+              <div class="pd-review-load-more" id="pdReviewLoadMore" style="display:none; text-align:center; margin-top:20px;">
+                <button type="button" class="pd-btn-load-more" style="padding: 8px 24px; border: 1px solid #ccc; background-color: #fff; border-radius: 4px; cursor: pointer; font-weight: 500;">
+                  Xem thêm bình luận
+                </button>
+              </div>
             </c:otherwise>
           </c:choose>
         </div>
@@ -732,5 +738,128 @@
                 });
       });
     });
+
+    // Khai báo thêm biến cho nút Load More
+    const reviewFilterButtons = document.querySelectorAll('.pd-review-filter');
+    const reviewItems = document.querySelectorAll('.pd-review-item');
+    const reviewEmpty = document.getElementById('pdReviewEmpty');
+    const reviewVisibleCount = document.getElementById('pdReviewVisibleCount');
+    const reviewActiveName = document.getElementById('pdReviewActiveName');
+    const reviewResetButton = document.querySelector('[data-review-reset]');
+
+    // THÊM MỚI: Các biến xử lý logic xem thêm
+    const loadMoreContainer = document.getElementById('pdReviewLoadMore');
+    const loadMoreBtn = loadMoreContainer ? loadMoreContainer.querySelector('button') : null;
+    let currentLimit = 10; // Giới hạn mặc định
+    let currentFilter = 'all';
+    let currentFilterLabel = 'Tất cả đánh giá';
+
+    function setActiveReviewButton(activeButton) {
+      reviewFilterButtons.forEach(function (btn) {
+        const isActive = btn === activeButton;
+        btn.classList.toggle('is-active', isActive);
+        btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      });
+    }
+
+    // ĐÃ SỬA: Hàm applyReviewFilter thêm tham số resetLimit
+    function applyReviewFilter(filter, label, resetLimit = true) {
+      if (resetLimit) {
+        currentLimit = 10; // Đặt lại giới hạn về 10 khi chuyển đổi bộ lọc
+      }
+      currentFilter = filter;
+      currentFilterLabel = label;
+
+      let visibleCount = 0; // Tổng số bình luận khớp điều kiện lọc
+      let displayedCount = 0; // Số bình luận thực tế được hiển thị trên màn hình
+
+      reviewItems.forEach(function (item) {
+        const rating = item.getAttribute('data-rating');
+        const hasImage = item.getAttribute('data-has-image') === 'true';
+        const isVerified = item.getAttribute('data-verified') === 'true';
+        let matched = false;
+
+        if (filter === 'all') {
+          matched = true;
+        } else if (filter === 'image') {
+          matched = hasImage;
+        } else if (filter === 'verified') {
+          matched = isVerified;
+        } else {
+          matched = rating === filter;
+        }
+
+        // Xử lý logic hiển thị/ẩn dựa trên limit
+        if (matched) {
+          visibleCount += 1;
+          if (displayedCount < currentLimit) {
+            item.hidden = false;
+            item.style.display = '';
+            displayedCount += 1;
+          } else {
+            item.hidden = true;
+            item.style.display = 'none'; // Ẩn đi vì vượt quá limit
+          }
+        } else {
+          item.hidden = true;
+          item.style.display = 'none'; // Ẩn đi vì không khớp bộ lọc
+        }
+      });
+
+      if (reviewVisibleCount) {
+        reviewVisibleCount.textContent = String(visibleCount);
+      }
+
+      if (reviewActiveName) {
+        reviewActiveName.textContent = label || 'Tất cả đánh giá';
+      }
+
+      if (reviewEmpty) {
+        const shouldShowEmpty = visibleCount === 0 && reviewItems.length > 0;
+        reviewEmpty.hidden = !shouldShowEmpty;
+        reviewEmpty.style.display = shouldShowEmpty ? 'grid' : 'none';
+      }
+
+      // THÊM MỚI: Kiểm tra xem có cần hiện nút Xem thêm hay không
+      if (loadMoreContainer) {
+        if (visibleCount > currentLimit) {
+          loadMoreContainer.style.display = 'block'; // Còn bình luận bị ẩn -> Hiện nút
+        } else {
+          loadMoreContainer.style.display = 'none'; // Đã hiển thị hết -> Ẩn nút
+        }
+      }
+    }
+
+    // THÊM MỚI: Bắt sự kiện click cho nút Xem thêm
+    if (loadMoreBtn) {
+      loadMoreBtn.addEventListener('click', function() {
+        currentLimit += 10; // Mỗi lần bấm hiển thị thêm 10 bình luận nữa
+        applyReviewFilter(currentFilter, currentFilterLabel, false); // Chạy lại bộ lọc nhưng KHÔNG reset limit
+      });
+    }
+
+    reviewFilterButtons.forEach(function (button) {
+      button.addEventListener('click', function () {
+        setActiveReviewButton(button);
+        applyReviewFilter(
+                button.getAttribute('data-filter') || 'all',
+                button.getAttribute('data-label') || 'Tất cả đánh giá',
+                true // Reset lại limit về 10 khi bấm sang tab lọc khác (vd từ "Tất cả" sang "5 sao")
+        );
+      });
+    });
+
+    if (reviewResetButton) {
+      reviewResetButton.addEventListener('click', function () {
+        const allButton = document.querySelector('.pd-review-filter[data-filter="all"]');
+        if (allButton) {
+          setActiveReviewButton(allButton);
+        }
+        applyReviewFilter('all', 'Tất cả đánh giá', true);
+      });
+    }
+
+    // Khởi tạo lần đầu tiên
+    applyReviewFilter('all', 'Tất cả đánh giá', true);
   </script>
 </c:if>
