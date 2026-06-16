@@ -10,7 +10,7 @@
 <c:set var="discountPercent" value="${p.discountPercent}" />
 <c:set var="mainImage" value="${p.image}" />
 
-<link rel="stylesheet" href="${ctx}/assets/css/product-detail.css?v=20260615_pd_ui_v7" />
+<link rel="stylesheet" href="${ctx}/assets/css/product-detail.css?v=20260616_pd_ui_v8" />
 
 <c:if test="${empty p}">
   <section class="pd-page pd-page-v5">
@@ -45,6 +45,14 @@
 
           <aside class="pd-gallery-wrap">
             <div class="pd-gallery-shell">
+              <div class="pd-gallery-head">
+                <div>
+                  <span class="pd-gallery-eyebrow">Hình ảnh sản phẩm</span>
+                  <strong>Xem rõ ảnh chính và gallery</strong>
+                </div>
+                <span class="pd-gallery-count">${1 + fn:length(p.images)} ảnh</span>
+              </div>
+
               <div class="pd-main-image-box" id="pdMainImageBox">
                 <c:choose>
                   <c:when test="${empty mainImage}">
@@ -71,7 +79,7 @@
 
               <div class="pd-thumb-list" aria-label="Ảnh sản phẩm">
                 <c:if test="${not empty mainImage}">
-                  <button type="button" class="pd-thumb is-active" data-image="${fn:escapeXml(mainImage)}">
+                  <button type="button" class="pd-thumb is-active" data-image-role="main" data-image="${fn:escapeXml(mainImage)}">
                     <c:choose>
                       <c:when test="${fn:startsWith(mainImage, 'http://') || fn:startsWith(mainImage, 'https://')}">
                         <img src="${mainImage}" alt="Ảnh chính" />
@@ -91,7 +99,7 @@
 
                 <c:forEach var="img" items="${p.images}" varStatus="st">
                   <c:if test="${not empty img.image}">
-                    <button type="button" class="pd-thumb" data-image="${fn:escapeXml(img.image)}">
+                    <button type="button" class="pd-thumb" data-image-role="gallery" data-image="${fn:escapeXml(img.image)}">
                       <c:choose>
                         <c:when test="${fn:startsWith(img.image, 'http://') || fn:startsWith(img.image, 'https://')}">
                           <img src="${img.image}" alt="Ảnh phụ ${st.index + 1}" />
@@ -156,16 +164,17 @@
             </div>
 
             <div class="pd-short-desc">
-              <h2><c:out value="${p.title}" /></h2>
-              <p>
+              <div class="pd-short-desc-label">Mô tả nhanh</div>
+              <div class="pd-short-desc-content">
                 <c:choose>
                   <c:when test="${not empty p.description}">
-                    <c:out value="${fn:substring(p.description, 0, fn:length(p.description) > 260 ? 260 : fn:length(p.description))}" />
-                    <c:if test="${fn:length(p.description) > 260}">...</c:if>
+                    ${p.description}
                   </c:when>
-                  <c:otherwise>Sản phẩm chính hãng được chọn lọc tại MyCosmetic, cam kết chất lượng và an toàn cho làn da của bạn.</c:otherwise>
+                  <c:otherwise>
+                    Sản phẩm chính hãng được chọn lọc tại MyCosmetic, cam kết chất lượng và an toàn cho làn da của bạn.
+                  </c:otherwise>
                 </c:choose>
-              </p>
+              </div>
             </div>
 
             <div class="pd-product-meta-grid" aria-label="Thông tin nhanh sản phẩm">
@@ -248,22 +257,108 @@
       </div>
 
       <c:set var="comboProducts" value="${not empty boughtTogetherProducts ? boughtTogetherProducts : frequentlyBoughtProducts}" />
-      <section class="pd-section pd-section-compact pd-detail-section" id="pd-description">
-        <div class="pd-section-head">
-          <h2>Mô tả chi tiết</h2>
-          <p>Thông tin đầy đủ về sản phẩm, công dụng và cách sử dụng.</p>
+      <section class="pd-section pd-section-compact pd-detail-section pd-description-section" id="pd-description">
+        <div class="pd-section-head pd-section-head--rich">
+          <div>
+            <span class="pd-section-eyebrow">Thông tin sản phẩm</span>
+            <h2>Mô tả chi tiết</h2>
+          </div>
         </div>
-        <div class="pd-desc-content">
-          <c:choose>
-            <c:when test="${not empty p.description}">
-              <p><c:out value="${p.description}" /></p>
-            </c:when>
-            <c:otherwise>
-              <p>Thông tin chi tiết đang được cập nhật. Bạn có thể liên hệ tổng đài viên để được hỗ trợ thêm về sản phẩm này.</p>
-            </c:otherwise>
-          </c:choose>
+
+        <div class="pd-desc-layout">
+          <aside class="pd-desc-side-card" aria-label="Tóm tắt sản phẩm">
+            <div class="pd-desc-side-icon">✦</div>
+            <h3>MyCosmetic gợi ý</h3>
+            <p>Đọc kỹ phần mô tả trước khi chọn mua để nắm rõ công dụng, phân loại và cách sử dụng phù hợp.</p>
+            <div class="pd-desc-fact-list">
+              <div class="pd-desc-fact">
+                <span>Thương hiệu</span>
+                <strong><c:out value="${empty p.brandName ? 'MyCosmetic' : p.brandName}" /></strong>
+              </div>
+              <div class="pd-desc-fact">
+                <span>Danh mục</span>
+                <strong><c:out value="${empty p.categoryName ? 'Chính hãng' : p.categoryName}" /></strong>
+              </div>
+              <div class="pd-desc-fact">
+                <span>Tình trạng</span>
+                <strong><c:choose><c:when test="${p.stock > 0}">Còn hàng</c:when><c:otherwise>Tạm hết hàng</c:otherwise></c:choose></strong>
+              </div>
+            </div>
+          </aside>
+
+          <article class="pd-desc-main-card">
+            <div class="pd-desc-content pd-desc-rich">
+              <c:choose>
+                <c:when test="${not empty p.description}">
+                  ${p.description}
+                </c:when>
+                <c:otherwise>
+                  <p>Thông tin chi tiết đang được cập nhật. Bạn có thể liên hệ tổng đài viên để được hỗ trợ thêm về sản phẩm này.</p>
+                </c:otherwise>
+              </c:choose>
+            </div>
+          </article>
         </div>
       </section>
+
+      <c:if test="${not empty productMediaList}">
+        <section class="pd-section pd-section-compact pd-media-section" id="pd-media">
+          <div class="pd-section-head pd-section-head--rich">
+            <div>
+              <span class="pd-section-eyebrow">Thư viện mô tả</span>
+              <h2>Ảnh & video chi tiết</h2>
+            </div>
+          </div>
+
+          <div class="pd-media-grid">
+            <c:forEach var="media" items="${productMediaList}" varStatus="ms">
+              <c:set var="mediaUrl" value="${media.mediaUrl}" />
+              <article class="pd-media-card ${media.video ? 'is-video' : 'is-image'}">
+                <div class="pd-media-frame">
+                  <c:choose>
+                    <c:when test="${media.video}">
+                      <c:choose>
+                        <c:when test="${fn:startsWith(mediaUrl, 'http://') || fn:startsWith(mediaUrl, 'https://')}">
+                          <video controls preload="metadata" src="${mediaUrl}"></video>
+                        </c:when>
+                        <c:when test="${fn:startsWith(mediaUrl, '/')}">
+                          <video controls preload="metadata" src="${ctx}${mediaUrl}"></video>
+                        </c:when>
+                        <c:when test="${fn:startsWith(mediaUrl, 'assets/') || fn:startsWith(mediaUrl, 'uploads/')}">
+                          <video controls preload="metadata" src="${ctx}/${mediaUrl}"></video>
+                        </c:when>
+                        <c:otherwise>
+                          <video controls preload="metadata" src="${ctx}/uploads/product/media/${mediaUrl}"></video>
+                        </c:otherwise>
+                      </c:choose>
+                    </c:when>
+                    <c:otherwise>
+                      <c:choose>
+                        <c:when test="${fn:startsWith(mediaUrl, 'http://') || fn:startsWith(mediaUrl, 'https://')}">
+                          <img src="${mediaUrl}" alt="Media sản phẩm ${ms.index + 1}" loading="lazy" />
+                        </c:when>
+                        <c:when test="${fn:startsWith(mediaUrl, '/')}">
+                          <img src="${ctx}${mediaUrl}" alt="Media sản phẩm ${ms.index + 1}" loading="lazy" />
+                        </c:when>
+                        <c:when test="${fn:startsWith(mediaUrl, 'assets/') || fn:startsWith(mediaUrl, 'uploads/')}">
+                          <img src="${ctx}/${mediaUrl}" alt="Media sản phẩm ${ms.index + 1}" loading="lazy" />
+                        </c:when>
+                        <c:otherwise>
+                          <img src="${ctx}/uploads/product/media/${mediaUrl}" alt="Media sản phẩm ${ms.index + 1}" loading="lazy" />
+                        </c:otherwise>
+                      </c:choose>
+                    </c:otherwise>
+                  </c:choose>
+                </div>
+                <div class="pd-media-card-body">
+                  <span>${media.video ? 'Video' : 'Hình ảnh'}</span>
+                  <strong>Media mô tả #${ms.index + 1}</strong>
+                </div>
+              </article>
+            </c:forEach>
+          </div>
+        </section>
+      </c:if>
 
       <section class="pd-section pd-section-compact pd-reviews-section" id="pd-reviews">
         <div class="pd-section-head">
@@ -447,19 +542,21 @@
       const mainImage = document.getElementById('pdMainImage');
       const thumbs = document.querySelectorAll('.pd-thumb');
 
-      function normalizeImageUrl(raw) {
+      function normalizeImageUrl(raw, role) {
         if (!raw) return '';
         if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
         if (raw.startsWith('/')) return ctx + raw;
         if (raw.startsWith('assets/') || raw.startsWith('uploads/')) return ctx + '/' + raw;
+        if (role === 'main') return ctx + '/uploads/product/' + raw;
         return ctx + '/uploads/product/gallery/' + raw;
       }
 
       thumbs.forEach(function (btn) {
         btn.addEventListener('click', function () {
           const raw = btn.getAttribute('data-image');
+          const role = btn.getAttribute('data-image-role') || 'gallery';
           if (mainImage && raw) {
-            mainImage.src = normalizeImageUrl(raw);
+            mainImage.src = normalizeImageUrl(raw, role);
           }
           thumbs.forEach(function (item) { item.classList.remove('is-active'); });
           btn.classList.add('is-active');
