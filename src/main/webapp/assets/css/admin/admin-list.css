@@ -11564,7 +11564,7 @@ td.product-actions {
 
 .admin-product-table {
   width: 100%;
-  min-width: 1160px;
+  min-width: 1200px;
   table-layout: fixed;
   border-left: 0;
   border-right: 0;
@@ -11611,7 +11611,7 @@ td.product-actions {
 .admin-product-col-stock { width: 140px; }
 .admin-product-col-review { width: 120px; }
 .admin-product-col-status { width: 150px; }
-.admin-product-col-actions { width: 150px; }
+.admin-product-col-actions { width: 184px; }
 
 .admin-product-id-cell {
   color: var(--admin-text);
@@ -11725,33 +11725,46 @@ td.product-actions {
 }
 
 .admin-product-action-cell {
+  width: 184px;
+  min-width: 184px;
   white-space: nowrap;
+  vertical-align: middle !important;
 }
 
 .admin-product-actions {
   display: grid;
-  grid-template-columns: repeat(2, minmax(64px, 1fr));
+  grid-template-columns: repeat(2, minmax(78px, 1fr));
   gap: 8px;
-  align-items: stretch;
-  width: 100%;
-  max-width: 142px;
+  align-items: center;
+  justify-content: start;
+  width: 174px;
+  max-width: 174px;
+  white-space: nowrap;
 }
 
 .admin-product-actions form,
 .admin-product-actions .admin-inline {
   display: block;
   width: 100%;
+  min-width: 0;
   margin: 0;
 }
 
+.admin-product-actions .admin-btn,
 .admin-product-action-btn {
   width: 100%;
+  min-width: 0;
   min-height: 34px;
   padding: 0 10px;
   justify-content: center;
   border-radius: 999px;
   font-size: 12px;
   font-weight: 950;
+  line-height: 1;
+  white-space: nowrap;
+  word-break: keep-all;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .admin-chip--brand {
@@ -11784,7 +11797,7 @@ td.product-actions {
 
 @media (max-width: 900px) {
   .admin-product-table {
-    min-width: 1120px;
+    min-width: 1200px;
   }
 }
 
