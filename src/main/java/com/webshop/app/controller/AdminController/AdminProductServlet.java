@@ -372,6 +372,74 @@ public class AdminProductServlet extends HttpServlet {
 					return;
 				}
 
+				case "hide": {
+					int id = parseInt(req.getParameter("id"), -1);
+
+					if (id <= 0) {
+						resp.sendRedirect(req.getContextPath() + "/admin/products");
+						return;
+					}
+
+					Product oldProduct = productDAO.findByIdAdmin(id);
+
+					if (oldProduct == null) {
+						resp.sendRedirect(req.getContextPath() + "/admin/products?status=not_found");
+						return;
+					}
+
+					boolean updated = productDAO.updateActiveStatus(id, false);
+
+					if (updated) {
+						AuditLogService.logSoftDelete(
+								req,
+								"PRODUCT",
+								"Product",
+								id,
+								oldProduct.getTitle(),
+								"Đã ẩn sản phẩm từ danh sách quản trị.",
+								"Trạng thái: " + (oldProduct.isActive() ? "Đang bán" : "Ẩn"),
+								"Trạng thái: Ẩn"
+						);
+					}
+
+					resp.sendRedirect(req.getContextPath() + "/admin/products?status=hidden");
+					return;
+				}
+
+				case "show": {
+					int id = parseInt(req.getParameter("id"), -1);
+
+					if (id <= 0) {
+						resp.sendRedirect(req.getContextPath() + "/admin/products");
+						return;
+					}
+
+					Product oldProduct = productDAO.findByIdAdmin(id);
+
+					if (oldProduct == null) {
+						resp.sendRedirect(req.getContextPath() + "/admin/products?status=not_found");
+						return;
+					}
+
+					boolean updated = productDAO.updateActiveStatus(id, true);
+
+					if (updated) {
+						AuditLogService.logStatusChange(
+								req,
+								"PRODUCT",
+								"Product",
+								id,
+								oldProduct.getTitle(),
+								"Đã mở khóa sản phẩm và cho phép hiển thị lại.",
+								"Trạng thái: " + (oldProduct.isActive() ? "Đang bán" : "Ẩn"),
+								"Trạng thái: Đang bán"
+						);
+					}
+
+					resp.sendRedirect(req.getContextPath() + "/admin/products?status=shown");
+					return;
+				}
+
 				case "delete": {
 					int id = parseInt(req.getParameter("id"), -1);
 
