@@ -48,7 +48,6 @@
               <div class="pd-gallery-head">
                 <div>
                   <span class="pd-gallery-eyebrow">Hình ảnh sản phẩm</span>
-                  <strong>Xem rõ ảnh chính và gallery</strong>
                 </div>
                 <span class="pd-gallery-count">${1 + fn:length(p.images)} ảnh</span>
               </div>
