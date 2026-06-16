@@ -314,18 +314,37 @@
                           Sửa
                         </a>
 
-                        <form method="post"
-                              action="${ctx}/admin/products"
-                              class="admin-inline"
-                              onsubmit="return confirm('Xóa sản phẩm #${p.id}? Sản phẩm sẽ chuyển sang INACTIVE.');">
-                          <%@ include file="/jsp/common/csrf.jspf" %>
+                        <c:choose>
+                          <c:when test="${p.active}">
+                            <form method="post"
+                                  action="${ctx}/admin/products"
+                                  class="admin-inline"
+                                  onsubmit="return confirm('Ẩn sản phẩm #${p.id}? Sản phẩm sẽ không hiển thị cho khách hàng.');">
+                              <%@ include file="/jsp/common/csrf.jspf" %>
 
-                          <input type="hidden" name="action" value="delete"/>
-                          <input type="hidden" name="id" value="${p.id}"/>
-                          <button class="admin-btn admin-btn--danger admin-product-action-btn" type="submit">
-                            Xóa
-                          </button>
-                        </form>
+                              <input type="hidden" name="action" value="hide"/>
+                              <input type="hidden" name="id" value="${p.id}"/>
+                              <button class="admin-btn admin-btn--danger admin-product-action-btn" type="submit">
+                                Ẩn
+                              </button>
+                            </form>
+                          </c:when>
+
+                          <c:otherwise>
+                            <form method="post"
+                                  action="${ctx}/admin/products"
+                                  class="admin-inline"
+                                  onsubmit="return confirm('Mở khóa sản phẩm #${p.id} và hiển thị lại cho khách hàng?');">
+                              <%@ include file="/jsp/common/csrf.jspf" %>
+
+                              <input type="hidden" name="action" value="show"/>
+                              <input type="hidden" name="id" value="${p.id}"/>
+                              <button class="admin-btn admin-btn--primary admin-product-action-btn" type="submit">
+                                Mở khóa
+                              </button>
+                            </form>
+                          </c:otherwise>
+                        </c:choose>
                       </div>
                     </td>
                   </tr>
