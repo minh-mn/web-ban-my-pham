@@ -5109,7 +5109,12 @@
                           <c:otherwise>${product.reviewCount} đánh giá</c:otherwise>
                         </c:choose>
                       </div>
-                      <a href="${productUrl}" class="collection-card__heart" aria-label="Xem chi tiết sản phẩm">♡</a>
+                      <form method="post" action="${ctx}/wishlist/toggle" class="wishlist-form">
+                        <input type="hidden" name="productId" value="${product.id}">
+                        <button type="submit" class="collection-card__heart" aria-label="Yêu thích">
+                          <i class="fa-regular fa-heart"></i>
+                        </button>
+                      </form> 
                     </div>
                   </div>
                 </article>
@@ -5267,5 +5272,46 @@
       restoreScroll();
     }
   })();
+
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".wishlist-form").forEach(form => {
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const btn = this.querySelector(".collection-card__heart");
+        const icon = this.querySelector("i");
+        const formData = new URLSearchParams(new FormData(this));
+
+        fetch(this.action, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+          },
+          body: formData
+        })
+                .then(async response => {
+                  const text = await response.text();
+                  try {
+                    return JSON.parse(text);
+                  } catch (err) {
+                    return { status: text.trim() };
+                  }
+                })
+                .then(data => {
+                  const wishlisted = data.wishlisted === true || data.status === "ADDED";
+
+                  if (btn) btn.classList.toggle("active", wishlisted);
+
+                  if (icon) {
+                    icon.className = wishlisted
+                            ? "fa-solid fa-heart"
+                            : "fa-regular fa-heart";
+                  }
+                })
+                .catch(err => console.error("Lỗi Wishlist:", err));
+      });
+    });
+  });
 </script>
 
