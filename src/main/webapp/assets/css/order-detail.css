@@ -1454,3 +1454,184 @@
         padding: 18px !important;
     }
 }
+/* =========================================================
+   CONFIRM RECEIVED CARD - ORDER DETAIL
+   Thiết kế lại phần Xác nhận đã nhận hàng
+========================================================= */
+
+.order-receive-anchor-btn {
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important;
+    border-color: #16a34a !important;
+    color: #ffffff !important;
+    box-shadow: 0 14px 24px rgba(22, 163, 74, .16) !important;
+}
+
+.order-receive-card {
+    grid-column: 1 / -1;
+    border: 1px solid #bbf7d0 !important;
+    background:
+            radial-gradient(circle at top right, rgba(34, 197, 94, .10), transparent 34%),
+            linear-gradient(180deg, #f0fdf4 0%, #ffffff 72%) !important;
+    box-shadow: 0 20px 46px rgba(22, 163, 74, .10) !important;
+}
+
+.order-receive-card.is-highlight {
+    border-color: #86efac !important;
+}
+
+.order-receive-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.order-receive-subtitle {
+    margin: 4px 0 0 !important;
+    color: #64748b !important;
+    font-size: 13.5px !important;
+    line-height: 1.5 !important;
+}
+
+.order-receive-steps {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+}
+
+.order-receive-step {
+    min-height: 104px;
+    padding: 15px;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, .78);
+}
+
+.order-receive-step span {
+    width: 30px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: #f1f5f9;
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 950;
+    margin-bottom: 10px;
+}
+
+.order-receive-step strong {
+    display: block;
+    color: var(--mc-navy);
+    font-size: 14px;
+    font-weight: 950;
+    margin-bottom: 5px;
+}
+
+.order-receive-step small {
+    display: block;
+    color: #64748b;
+    font-size: 12.5px;
+    font-weight: 750;
+    line-height: 1.45;
+}
+
+.order-receive-step.active {
+    border-color: #f9a8d4;
+    background: #fff1f7;
+}
+
+.order-receive-step.active span {
+    background: #fce7f3;
+    color: var(--mc-pink);
+}
+
+.order-receive-step.done {
+    border-color: #bbf7d0;
+    background: #ecfdf5;
+}
+
+.order-receive-step.done span {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.order-receive-warning {
+    padding: 14px 16px;
+    border: 1px solid #fed7aa;
+    border-radius: 16px;
+    background: #fff7ed;
+    color: #9a3412;
+    margin: 14px 0;
+}
+
+.order-receive-warning strong {
+    display: block;
+    font-size: 13.5px;
+    font-weight: 950;
+    margin-bottom: 4px;
+}
+
+.order-receive-warning p {
+    margin: 0 !important;
+    color: #9a3412 !important;
+    font-size: 13.2px !important;
+}
+
+.order-confirm-received-form-modern {
+    display: grid;
+    gap: 10px;
+    margin-top: 14px !important;
+}
+
+.order-receive-label {
+    color: var(--mc-navy);
+    font-size: 13px;
+    font-weight: 950;
+}
+
+.order-receive-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    border: 1px solid #bbf7d0;
+    border-radius: 16px;
+    background: #f0fdf4;
+    color: #065f46;
+    font-size: 13.3px;
+    font-weight: 850;
+    line-height: 1.5;
+}
+
+.order-receive-check input {
+    width: 17px;
+    height: 17px;
+    margin-top: 2px;
+    accent-color: #16a34a;
+    flex: 0 0 auto;
+}
+
+.order-receive-main-btn {
+    min-height: 52px !important;
+    font-size: 15px !important;
+}
+
+.receive-summary-success {
+    border-style: solid !important;
+    border-color: #86efac !important;
+    background: #ecfdf5 !important;
+}
+
+@media (max-width: 768px) {
+    .order-receive-head {
+        flex-direction: column;
+    }
+
+    .order-receive-steps {
+        grid-template-columns: 1fr;
+    }
+}
