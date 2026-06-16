@@ -5963,3 +5963,93 @@ html body .order-page {
     padding-top: var(--mc-sticky-header-height) !important;
   }
 }
+
+/* =========================================================
+   NOTIFICATION COUNT BADGE FIX - SHOW UNREAD COUNT CLEARLY
+   Sửa badge hiển thị số lượng thông báo mới trong dropdown
+========================================================= */
+
+.site-header .notif-dropdown__head {
+  align-items: flex-start !important;
+}
+
+.site-header .notif-dropdown__title-group {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  padding-right: 8px !important;
+}
+
+.site-header .notif-dropdown__counter {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: 128px !important;
+  min-height: 34px !important;
+  padding: 7px 12px !important;
+
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 5px !important;
+
+  border-radius: 999px !important;
+  background: #fff0f6 !important;
+  color: #d61a67 !important;
+
+  font-size: 12px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  text-align: center !important;
+}
+
+.site-header .notif-dropdown__counter.has-new {
+  background: linear-gradient(135deg, #fff0f6, #ffe4ef) !important;
+  border: 1px solid rgba(225, 29, 72, 0.12) !important;
+  box-shadow: 0 8px 18px rgba(219, 39, 119, 0.10) !important;
+}
+
+.site-header .notif-dropdown__counter.is-empty {
+  min-width: 154px !important;
+  background: #f8fafc !important;
+  color: #64748b !important;
+  border: 1px solid #e5e7eb !important;
+  box-shadow: none !important;
+}
+
+.site-header .notif-dropdown__counter-number {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #e11d48 !important;
+  font-size: 14px !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+}
+
+.site-header .notif-dropdown__counter-text {
+  display: inline-flex !important;
+  align-items: center !important;
+  color: inherit !important;
+  font-size: 11.5px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+}
+
+@media (max-width: 520px) {
+  .site-header .notif-dropdown__head {
+    gap: 10px !important;
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+
+  .site-header .notif-dropdown__counter {
+    min-width: 112px !important;
+    padding-left: 9px !important;
+    padding-right: 9px !important;
+  }
+
+  .site-header .notif-dropdown__counter-text {
+    font-size: 10.5px !important;
+  }
+}
