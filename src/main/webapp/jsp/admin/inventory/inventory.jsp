@@ -7,9 +7,15 @@
 <c:set var="activeMenu" value="inventory" scope="request"/>
 <c:set var="pageCss" value="/assets/css/admin/admin-list.css" scope="request"/>
 
-<c:set var="csrfValue" value="${csrfToken}" />
+<c:set var="csrfValue" value="${requestScope.csrfToken}" />
 <c:if test="${empty csrfValue}">
-    <c:set var="csrfValue" value="${csrf_token}" />
+    <c:set var="csrfValue" value="${requestScope.csrf_token}" />
+</c:if>
+<c:if test="${empty csrfValue}">
+    <c:set var="csrfValue" value="${requestScope.CSRF_TOKEN}" />
+</c:if>
+<c:if test="${empty csrfValue}">
+    <c:set var="csrfValue" value="${sessionScope.CSRF_TOKEN}" />
 </c:if>
 <c:if test="${empty csrfValue}">
     <c:set var="csrfValue" value="${sessionScope.csrfToken}" />
@@ -85,41 +91,41 @@
             </div>
 
             <div class="inventory-summary-grid">
-            <div class="admin-card inventory-stat-card inventory-stat-card--product">
-                <span class="inventory-card-icon">🧴</span>
-                <div class="inventory-card-label">Tổng sản phẩm active</div>
-                <div class="inventory-card-value">
-                    <fmt:formatNumber value="${summary.productCount}" type="number"/>
+                <div class="admin-card inventory-stat-card inventory-stat-card--product">
+                    <span class="inventory-card-icon">🧴</span>
+                    <div class="inventory-card-label">Tổng sản phẩm active</div>
+                    <div class="inventory-card-value">
+                        <fmt:formatNumber value="${summary.productCount}" type="number"/>
+                    </div>
+                    <div class="inventory-card-note">Sản phẩm đang kinh doanh</div>
                 </div>
-                <div class="inventory-card-note">Sản phẩm đang kinh doanh</div>
-            </div>
 
-            <div class="admin-card inventory-stat-card inventory-stat-card--success">
-                <span class="inventory-card-icon">📦</span>
-                <div class="inventory-card-label">Tổng tồn kho</div>
-                <div class="inventory-card-value">
-                    <fmt:formatNumber value="${summary.totalStock}" type="number"/>
+                <div class="admin-card inventory-stat-card inventory-stat-card--success">
+                    <span class="inventory-card-icon">📦</span>
+                    <div class="inventory-card-label">Tổng tồn kho</div>
+                    <div class="inventory-card-value">
+                        <fmt:formatNumber value="${summary.totalStock}" type="number"/>
+                    </div>
+                    <div class="inventory-card-note">Tổng số lượng còn lại</div>
                 </div>
-                <div class="inventory-card-note">Tổng số lượng còn lại</div>
-            </div>
 
-            <div class="admin-card inventory-stat-card inventory-stat-card--warning">
-                <span class="inventory-card-icon">⚠️</span>
-                <div class="inventory-card-label">Sắp hết hàng</div>
-                <div class="inventory-card-value">
-                    <fmt:formatNumber value="${summary.lowStockCount}" type="number"/>
+                <div class="admin-card inventory-stat-card inventory-stat-card--warning">
+                    <span class="inventory-card-icon">⚠️</span>
+                    <div class="inventory-card-label">Sắp hết hàng</div>
+                    <div class="inventory-card-value">
+                        <fmt:formatNumber value="${summary.lowStockCount}" type="number"/>
+                    </div>
+                    <div class="inventory-card-note">Tồn kho lớn hơn 0 và nhỏ hơn 10</div>
                 </div>
-                <div class="inventory-card-note">Tồn kho lớn hơn 0 và nhỏ hơn 10</div>
-            </div>
 
-            <div class="admin-card inventory-stat-card inventory-stat-card--danger">
-                <span class="inventory-card-icon">⛔</span>
-                <div class="inventory-card-label">Hết hàng</div>
-                <div class="inventory-card-value">
-                    <fmt:formatNumber value="${summary.outOfStockCount}" type="number"/>
+                <div class="admin-card inventory-stat-card inventory-stat-card--danger">
+                    <span class="inventory-card-icon">⛔</span>
+                    <div class="inventory-card-label">Hết hàng</div>
+                    <div class="inventory-card-value">
+                        <fmt:formatNumber value="${summary.outOfStockCount}" type="number"/>
+                    </div>
+                    <div class="inventory-card-note">Cần nhập hàng ngay</div>
                 </div>
-                <div class="inventory-card-note">Cần nhập hàng ngay</div>
-            </div>
             </div>
         </section>
 
@@ -133,41 +139,41 @@
             </div>
 
             <div class="inventory-summary-grid inventory-variant-summary-grid">
-            <div class="admin-card inventory-stat-card inventory-stat-card--variant">
-                <span class="inventory-card-icon">🏷️</span>
-                <div class="inventory-card-label">Tổng biến thể active</div>
-                <div class="inventory-card-value">
-                    <fmt:formatNumber value="${variantSummary.variantCount}" type="number"/>
+                <div class="admin-card inventory-stat-card inventory-stat-card--variant">
+                    <span class="inventory-card-icon">🏷️</span>
+                    <div class="inventory-card-label">Tổng biến thể active</div>
+                    <div class="inventory-card-value">
+                        <fmt:formatNumber value="${variantSummary.variantCount}" type="number"/>
+                    </div>
+                    <div class="inventory-card-note">SKU/Size/Màu đang kinh doanh</div>
                 </div>
-                <div class="inventory-card-note">SKU/Size/Màu đang kinh doanh</div>
-            </div>
 
-            <div class="admin-card inventory-stat-card inventory-stat-card--success">
-                <span class="inventory-card-icon">📦</span>
-                <div class="inventory-card-label">Tổng tồn biến thể</div>
-                <div class="inventory-card-value">
-                    <fmt:formatNumber value="${variantSummary.totalStock}" type="number"/>
+                <div class="admin-card inventory-stat-card inventory-stat-card--success">
+                    <span class="inventory-card-icon">📦</span>
+                    <div class="inventory-card-label">Tổng tồn biến thể</div>
+                    <div class="inventory-card-value">
+                        <fmt:formatNumber value="${variantSummary.totalStock}" type="number"/>
+                    </div>
+                    <div class="inventory-card-note">Tổng số lượng theo từng SKU</div>
                 </div>
-                <div class="inventory-card-note">Tổng số lượng theo từng SKU</div>
-            </div>
 
-            <div class="admin-card inventory-stat-card inventory-stat-card--warning">
-                <span class="inventory-card-icon">⚠️</span>
-                <div class="inventory-card-label">Biến thể sắp hết</div>
-                <div class="inventory-card-value">
-                    <fmt:formatNumber value="${variantSummary.lowStockCount}" type="number"/>
+                <div class="admin-card inventory-stat-card inventory-stat-card--warning">
+                    <span class="inventory-card-icon">⚠️</span>
+                    <div class="inventory-card-label">Biến thể sắp hết</div>
+                    <div class="inventory-card-value">
+                        <fmt:formatNumber value="${variantSummary.lowStockCount}" type="number"/>
+                    </div>
+                    <div class="inventory-card-note">Tồn kho thấp hơn mức tối thiểu</div>
                 </div>
-                <div class="inventory-card-note">Tồn kho thấp hơn mức tối thiểu</div>
-            </div>
 
-            <div class="admin-card inventory-stat-card inventory-stat-card--danger">
-                <span class="inventory-card-icon">⛔</span>
-                <div class="inventory-card-label">Biến thể hết hàng</div>
-                <div class="inventory-card-value">
-                    <fmt:formatNumber value="${variantSummary.outOfStockCount}" type="number"/>
+                <div class="admin-card inventory-stat-card inventory-stat-card--danger">
+                    <span class="inventory-card-icon">⛔</span>
+                    <div class="inventory-card-label">Biến thể hết hàng</div>
+                    <div class="inventory-card-value">
+                        <fmt:formatNumber value="${variantSummary.outOfStockCount}" type="number"/>
+                    </div>
+                    <div class="inventory-card-note">Cần nhập hàng theo SKU</div>
                 </div>
-                <div class="inventory-card-note">Cần nhập hàng theo SKU</div>
-            </div>
             </div>
         </section>
 
