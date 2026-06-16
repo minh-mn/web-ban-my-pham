@@ -26,6 +26,9 @@ import com.webshop.app.model.CartItem;
 import com.webshop.app.model.Coupon;
 import com.webshop.app.model.User;
 import com.webshop.app.service.CheckoutService;
+import com.webshop.app.service.ShippingService;
+import com.webshop.app.service.ShippingService.ShippingQuote;
+import com.webshop.app.utils.GHNConfig;
 import com.webshop.app.utils.CartUtil;
 import com.webshop.app.utils.DBConnection;
 
@@ -46,12 +49,8 @@ public class CheckoutServlet extends HttpServlet {
     private static final String SHIPPING_FAST = "FAST";
     private static final String SHIPPING_EXPRESS = "EXPRESS";
 
-    private static final BigDecimal FREE_SHIP_THRESHOLD = new BigDecimal("500000");
-    private static final BigDecimal HCM_ECONOMY_FEE = new BigDecimal("20000");
-    private static final BigDecimal HCM_FAST_FEE = new BigDecimal("35000");
-    private static final BigDecimal HCM_EXPRESS_FEE = new BigDecimal("50000");
-    private static final BigDecimal OTHER_ECONOMY_FEE = new BigDecimal("35000");
-    private static final BigDecimal OTHER_FAST_FEE = new BigDecimal("50000");
+    private static final BigDecimal FREE_SHIP_THRESHOLD = ShippingService.FREE_SHIP_THRESHOLD;
+    private static final String DEFAULT_SHIPPING_PROVIDER = ShippingService.PROVIDER_GHTK;
 
     private static final String DEFAULT_RANK_CODE = "MEMBER";
 
@@ -96,6 +95,7 @@ public class CheckoutServlet extends HttpServlet {
 
 
     private final CheckoutService checkoutService = new CheckoutService();
+    private final ShippingService shippingService = new ShippingService();
     private final CouponDAO couponDAO = new CouponDAO();
     private final UserCouponDAO userCouponDAO = new UserCouponDAO();
     private final NotificationDAO notificationDAO = new NotificationDAO();
@@ -126,19 +126,13 @@ public class CheckoutServlet extends HttpServlet {
     }
 
     private String normalizeShippingMethod(String shippingMethod) {
-        String method = trim(shippingMethod).toUpperCase();
+        return shippingService.normalizeMethod(shippingMethod);
+    }
 
-        Set<String> validShippingMethods = Set.of(
-                SHIPPING_ECONOMY,
-                SHIPPING_FAST,
-                SHIPPING_EXPRESS
-        );
+    private String normalizeShippingProvider(String shippingProvider) {
+        String normalized = shippingService.normalizeProvider(shippingProvider);
 
-        if (validShippingMethods.contains(method)) {
-            return method;
-        }
-
-        return DEFAULT_SHIPPING_METHOD;
+        return normalized.isBlank() ? DEFAULT_SHIPPING_PROVIDER : normalized;
     }
 
     private BigDecimal parseShippingFee(String shippingFeeRaw) {
@@ -160,67 +154,75 @@ public class CheckoutServlet extends HttpServlet {
         }
     }
 
+
+    private int parsePositiveInt(String value) {
+        if (isBlank(value)) {
+            return 0;
+        }
+
+        try {
+            int number = Integer.parseInt(value.trim());
+            return Math.max(number, 0);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
     /**
      * Chuẩn hóa cách nhận diện TP.HCM để tính phí nội thành.
      */
     private boolean isHcmCity(String province) {
-        if (province == null || province.trim().isEmpty()) {
-            return false;
-        }
-
-        String value = province.trim().toLowerCase();
-
-        return value.contains("hồ chí minh")
-                || value.contains("ho chi minh")
-                || value.contains("tp. hcm")
-                || value.contains("tp hcm")
-                || value.contains("tphcm")
-                || value.contains("thành phố hồ chí minh");
+        return shippingService.isHcmCity(province);
     }
 
     private boolean isExpressSupported(String province) {
-        return isHcmCity(province);
+        return shippingService.isSupported(
+                ShippingService.PROVIDER_INTERNAL,
+                ShippingService.METHOD_EXPRESS,
+                province
+        );
     }
 
     /**
-     * Tính phí ship ở backend, không tin hoàn toàn vào input hidden từ trình duyệt.
-     *
-     * Quy tắc cuối cùng:
-     * - Freeship áp dụng toàn quốc nếu tổng sau voucher >= 500.000đ.
-     * - Nếu chưa đạt freeship:
-     *   + TP.HCM: ECONOMY 20k, FAST 35k, EXPRESS 50k.
-     *   + Ngoại tỉnh: ECONOMY 35k, FAST 50k, EXPRESS không hỗ trợ.
-     * - Nếu client cố gửi EXPRESS cho ngoại tỉnh, backend không cho phí = 0 sai;
-     *   hệ thống fallback về phí ECONOMY ngoại tỉnh để tránh gian lận hidden input.
+     * Backend tự tính lại phí ship, không tin dữ liệu hidden input từ trình duyệt.
      */
+    private ShippingQuote calculateServerShippingQuote(String shippingProvider,
+                                                       String shippingMethod,
+                                                       String province,
+                                                       BigDecimal amountAfterCoupon,
+                                                       int ghnToDistrictId,
+                                                       String ghnToWardCode) {
+        if ("GHN".equalsIgnoreCase(shippingProvider)
+                && ghnToDistrictId > 0
+                && !isBlank(ghnToWardCode)) {
+            return shippingService.quoteGhnReal(
+                    province,
+                    shippingMethod,
+                    amountAfterCoupon,
+                    ghnToDistrictId,
+                    ghnToWardCode
+            );
+        }
+
+        return shippingService.quote(
+                province,
+                shippingProvider,
+                shippingMethod,
+                amountAfterCoupon
+        );
+    }
+
     private BigDecimal calculateServerShippingFee(String shippingMethod,
                                                   String province,
                                                   BigDecimal amountAfterCoupon) {
-        BigDecimal safeAmountAfterCoupon = amountAfterCoupon != null
-                ? amountAfterCoupon.setScale(0, RoundingMode.HALF_UP)
-                : BigDecimal.ZERO;
-
-        if (safeAmountAfterCoupon.compareTo(FREE_SHIP_THRESHOLD) >= 0) {
-            return BigDecimal.ZERO;
-        }
-
-        String method = normalizeShippingMethod(shippingMethod);
-        boolean hcm = isHcmCity(province);
-
-        if (hcm) {
-            return switch (method) {
-                case SHIPPING_FAST -> HCM_FAST_FEE;
-                case SHIPPING_EXPRESS -> HCM_EXPRESS_FEE;
-                case SHIPPING_ECONOMY -> HCM_ECONOMY_FEE;
-                default -> HCM_ECONOMY_FEE;
-            };
-        }
-
-        return switch (method) {
-            case SHIPPING_FAST -> OTHER_FAST_FEE;
-            case SHIPPING_EXPRESS, SHIPPING_ECONOMY -> OTHER_ECONOMY_FEE;
-            default -> OTHER_ECONOMY_FEE;
-        };
+        return calculateServerShippingQuote(
+                null,
+                shippingMethod,
+                province,
+                amountAfterCoupon,
+                0,
+                ""
+        ).getFee();
     }
 
     /**
@@ -827,7 +829,7 @@ public class CheckoutServlet extends HttpServlet {
         }
 
         if (user != null && user.getId() > 0 && userCouponDAO.hasUserUsedCoupon(user.getId(), coupon.getId())) {
-            return "Mã ưu đãi này đã hết lượt sử dụng. Vui lòng chọn mã khác.";
+            return "Bạn đã sử dụng mã khuyến mãi này rồi.";
         }
 
         String userRankCode = getUserRankCode(user);
@@ -1088,6 +1090,11 @@ public class CheckoutServlet extends HttpServlet {
         req.setAttribute("formProvinceCode", trim(req.getParameter("provinceCode")));
         req.setAttribute("formWardName", trim(req.getParameter("wardName")));
         req.setAttribute("formWardCode", trim(req.getParameter("wardCode")));
+        req.setAttribute("formGhnToDistrictId", trim(req.getParameter("ghnToDistrictId")));
+        req.setAttribute("formGhnToWardCode", trim(req.getParameter("ghnToWardCode")));
+        req.setAttribute("formGhnProvinceName", trim(req.getParameter("ghnProvinceName")));
+        req.setAttribute("formGhnDistrictName", trim(req.getParameter("ghnDistrictName")));
+        req.setAttribute("formGhnWardName", trim(req.getParameter("ghnWardName")));
         req.setAttribute("formShippingAddress", trim(req.getParameter("shippingAddress")));
         req.setAttribute("formLatitude", trim(req.getParameter("latitude")));
         req.setAttribute("formLongitude", trim(req.getParameter("longitude")));
@@ -1097,6 +1104,8 @@ public class CheckoutServlet extends HttpServlet {
 
         req.setAttribute("formShippingMethod",
                 normalizeShippingMethod(req.getParameter("shippingMethod")));
+        req.setAttribute("formShippingProvider",
+                normalizeShippingProvider(req.getParameter("shippingProvider")));
 
         req.setAttribute("formShippingFee",
                 parseShippingFee(req.getParameter("shippingFee")));
@@ -1468,6 +1477,9 @@ public class CheckoutServlet extends HttpServlet {
 
         String paymentMethod = trim(req.getParameter("paymentMethod"));
         String shippingMethod = normalizeShippingMethod(req.getParameter("shippingMethod"));
+        String shippingProvider = normalizeShippingProvider(req.getParameter("shippingProvider"));
+        int ghnToDistrictId = parsePositiveInt(req.getParameter("ghnToDistrictId"));
+        String ghnToWardCode = trim(req.getParameter("ghnToWardCode"));
 
         if (checkoutCart == null || checkoutCart.isEmpty()) {
             errors.put("general", "Không có sản phẩm nào để thanh toán.");
@@ -1538,8 +1550,30 @@ public class CheckoutServlet extends HttpServlet {
             errors.put("shippingMethod", "Phương thức vận chuyển không hợp lệ.");
         }
 
+        if (!shippingService.isSupported(shippingProvider, shippingMethod, province)) {
+            errors.put(
+                    "shippingMethod",
+                    "Đơn vị vận chuyển hoặc phương thức giao hàng không hỗ trợ khu vực đã chọn."
+            );
+        }
+
         if (SHIPPING_EXPRESS.equals(shippingMethod) && !isBlank(province) && !isExpressSupported(province)) {
-            errors.put("shippingMethod", "Hỏa tốc chỉ hỗ trợ khu vực TP.HCM. Vui lòng chọn Giao hàng tiết kiệm hoặc Giao hàng nhanh.");
+            errors.put("shippingMethod", "Hỏa tốc chỉ hỗ trợ khu vực TP.HCM. Vui lòng chọn GHTK hoặc GHN.");
+        }
+
+        if ("GHN".equalsIgnoreCase(shippingProvider)) {
+            if (!GHNConfig.hasApiToken()) {
+                errors.put("shippingMethod", "GHN chưa cấu hình token API nên chưa thể tính phí ship theo địa chỉ.");
+            } else if (GHNConfig.GHN_SHOP_ID <= 0) {
+                errors.put("shippingMethod", "GHN chưa cấu hình shopId nên chưa thể tính phí ship theo địa chỉ.");
+            } else if (!GHNConfig.hasPickupAddressCode()) {
+                errors.put("shippingMethod", "Thiếu mã Quận/Huyện hoặc Phường/Xã lấy hàng của shop trong ghn.properties.");
+            } else if (ghnToDistrictId <= 0 || isBlank(ghnToWardCode)) {
+                errors.put(
+                        "shippingMethod",
+                        "Hệ thống chưa xác định được phí GHN từ địa chỉ đã chọn. Vui lòng chọn lại Tỉnh/TP, Phường/Xã hoặc chờ hệ thống tính phí xong."
+                );
+            }
         }
 
         validateElectronicInvoiceRequest(buildElectronicInvoiceRequest(req), errors);
@@ -1550,6 +1584,7 @@ public class CheckoutServlet extends HttpServlet {
     private String buildFinalShippingAddress(HttpServletRequest req) {
         String address = trim(req.getParameter("address"));
         String wardName = trim(req.getParameter("wardName"));
+        String districtName = trim(req.getParameter("ghnDistrictName"));
         String province = trim(req.getParameter("province"));
         String shippingAddress = trim(req.getParameter("shippingAddress"));
 
@@ -1569,6 +1604,14 @@ public class CheckoutServlet extends HttpServlet {
             }
 
             builder.append(wardName);
+        }
+
+        if (!isBlank(districtName)) {
+            if (builder.length() > 0) {
+                builder.append(", ");
+            }
+
+            builder.append(districtName);
         }
 
         if (!isBlank(province)) {
@@ -1984,6 +2027,9 @@ public class CheckoutServlet extends HttpServlet {
         String province = trim(req.getParameter("province"));
 
         String shippingMethod = normalizeShippingMethod(req.getParameter("shippingMethod"));
+        String shippingProvider = normalizeShippingProvider(req.getParameter("shippingProvider"));
+        int ghnToDistrictId = parsePositiveInt(req.getParameter("ghnToDistrictId"));
+        String ghnToWardCode = trim(req.getParameter("ghnToWardCode"));
 
         /*
          * Chỉ dùng mã đã được áp dụng thành công trong session.
@@ -2008,11 +2054,29 @@ public class CheckoutServlet extends HttpServlet {
         }
 
         BigDecimal amountAfterCoupon = calcTotal(checkoutSubTotal, checkoutDiscount);
-        BigDecimal serverShippingFee = calculateServerShippingFee(
-                shippingMethod,
-                province,
-                amountAfterCoupon
-        );
+        ShippingQuote serverShippingQuote;
+
+        try {
+            serverShippingQuote = calculateServerShippingQuote(
+                    shippingProvider,
+                    shippingMethod,
+                    province,
+                    amountAfterCoupon,
+                    ghnToDistrictId,
+                    ghnToWardCode
+            );
+        } catch (IllegalArgumentException e) {
+            Map<String, String> checkoutErrors = new HashMap<>();
+            checkoutErrors.put("shippingMethod", e.getMessage());
+            req.setAttribute("errors", checkoutErrors);
+
+            keepFormValues(req);
+            prepareCheckoutView(req, session, cart, user);
+            req.getRequestDispatcher("/jsp/common/base.jsp").forward(req, resp);
+            return;
+        }
+
+        BigDecimal serverShippingFee = serverShippingQuote.getFee();
 
         ElectronicInvoiceRequest electronicInvoiceRequest = buildElectronicInvoiceRequest(req);
 
@@ -2025,9 +2089,12 @@ public class CheckoutServlet extends HttpServlet {
                     finalAddress,
                     paymentMethod,
                     couponCode,
-                    shippingMethod,
+                    serverShippingQuote.getMethodCode(),
+                    serverShippingQuote.getProviderCode(),
                     serverShippingFee,
-                    province
+                    province,
+                    ghnToDistrictId,
+                    ghnToWardCode
             );
 
             if (orderId <= 0) {
