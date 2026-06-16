@@ -24,6 +24,7 @@ public class OrderListServlet extends HttpServlet {
     private static final String FILTER_PROCESSING = "processing";
     private static final String FILTER_CONFIRMED = "confirmed";
     private static final String FILTER_SHIPPING = "shipping";
+    private static final String FILTER_RECEIVE_CONFIRM = "receive_confirm";
     private static final String FILTER_COMPLETED = "completed";
     private static final String FILTER_CANCELLED = "cancelled";
     private static final String FILTER_PAYMENT_FAILED = "payment_failed";
@@ -99,6 +100,9 @@ public class OrderListServlet extends HttpServlet {
             case "shipping", "delivering", "dang_giao" ->
                     FILTER_SHIPPING;
 
+            case "receive_confirm", "received", "confirm_received", "cho_nhan_hang", "da_giao_chua_xac_nhan" ->
+                    FILTER_RECEIVE_CONFIRM;
+
             case "completed", "delivered", "done", "danh_gia", "hoan_hang", "return", "review" ->
                     FILTER_COMPLETED;
 
@@ -149,9 +153,15 @@ public class OrderListServlet extends HttpServlet {
                     "shipping".equals(orderStatus)
                             || "DELIVERING".equals(shippingStatus);
 
+            case FILTER_RECEIVE_CONFIRM ->
+                    "DELIVERED".equals(shippingStatus)
+                            && !order.isCustomerReceivedConfirmed()
+                            && !"cancelled".equals(orderStatus)
+                            && !"canceled".equals(orderStatus);
+
             case FILTER_COMPLETED ->
-                    "completed".equals(orderStatus)
-                            || "DELIVERED".equals(shippingStatus);
+                    ("completed".equals(orderStatus) || "DELIVERED".equals(shippingStatus))
+                            && order.isCustomerReceivedConfirmed();
 
             case FILTER_CANCELLED ->
                     "cancelled".equals(orderStatus)
@@ -172,6 +182,7 @@ public class OrderListServlet extends HttpServlet {
             case FILTER_PROCESSING -> "Chờ xác nhận";
             case FILTER_CONFIRMED -> "Chờ lấy hàng";
             case FILTER_SHIPPING -> "Đang giao";
+            case FILTER_RECEIVE_CONFIRM -> "Chờ nhận hàng";
             case FILTER_COMPLETED -> "Đánh giá / Hoàn hàng";
             case FILTER_CANCELLED -> "Đã hủy";
             case FILTER_PAYMENT_FAILED -> "Thanh toán lại";
@@ -184,7 +195,8 @@ public class OrderListServlet extends HttpServlet {
             case FILTER_PROCESSING -> "Các đơn mới tạo, đang chờ shop xác nhận.";
             case FILTER_CONFIRMED -> "Các đơn đã được xác nhận và đang chờ shop/đơn vị vận chuyển lấy hàng.";
             case FILTER_SHIPPING -> "Các đơn đang được vận chuyển tới địa chỉ nhận hàng.";
-            case FILTER_COMPLETED -> "Các đơn đã giao thành công, có thể xem chi tiết, đánh giá hoặc gửi yêu cầu hoàn hàng nếu đủ điều kiện.";
+            case FILTER_RECEIVE_CONFIRM -> "Các đơn đã giao thành công và đang chờ bạn bấm xác nhận đã nhận hàng.";
+            case FILTER_COMPLETED -> "Các đơn bạn đã xác nhận nhận hàng, có thể xem chi tiết, đánh giá hoặc gửi yêu cầu hoàn hàng nếu đủ điều kiện.";
             case FILTER_CANCELLED -> "Các đơn đã bị hủy hoặc vận chuyển đã hủy.";
             case FILTER_PAYMENT_FAILED -> "Các đơn cần thanh toán lại do thanh toán thất bại hoặc đã hủy giao dịch.";
             default -> "Theo dõi trạng thái đơn hàng, vận chuyển và xem chi tiết tracking.";
