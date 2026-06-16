@@ -1,94 +1,352 @@
 /* =========================================================
-   WISHLIST DESIGN SYSTEM (Đồng bộ theo hệ màu :root mới)
+   WISHLIST PAGE - SYNC CONTACT DESIGN SYSTEM
 ========================================================= */
 
-.wishlist-section {
-  background-color: var(--background, #f5f7fb);
-  padding: 50px 0;
-  min-height: 85vh;
+:root {
+  --contact-pink: #e91662;
+  --contact-pink-dark: #b01239;
+  --contact-pink-soft: #fff0f6;
+  --contact-ink: #171b2d;
+  --contact-muted: #6d7486;
+  --contact-line: rgba(217, 44, 116, .16);
+  --contact-shadow: 0 24px 60px rgba(176, 18, 57, .10);
 }
 
-.wishlist-page-header h2 {
-  color: var(--text-main, #111827);
-  font-size: 30px;
+.wishlist-page {
+  position: relative;
+  padding: 28px 0 86px;
+  background:
+          radial-gradient(circle at 8% 16%, rgba(255, 199, 219, .34), transparent 28%),
+          radial-gradient(circle at 88% 24%, rgba(255, 228, 237, .50), transparent 30%),
+          linear-gradient(180deg, #fff 0%, #fff8fb 48%, #fff 100%);
+  color: var(--contact-ink);
+  overflow: hidden;
+}
+
+.wishlist-main {
+  margin-top: 26px;
+}
+
+/* =========================================================
+   HERO UPGRADE
+========================================================= */
+
+.wishlist-page .contact-hero {
+  position: relative;
+  padding: 42px 0 30px;
+  isolation: isolate;
+}
+
+.wishlist-page .contact-hero__glow {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(18px);
+  pointer-events: none;
+  opacity: .85;
+  z-index: 0;
+}
+
+.wishlist-page .contact-hero__glow--left {
+  width: 260px;
+  height: 260px;
+  left: -80px;
+  top: -30px;
+  background: radial-gradient(circle, rgba(255, 92, 151, .24) 0%, rgba(255, 92, 151, 0) 70%);
+}
+
+.wishlist-page .contact-hero__glow--right {
+  width: 320px;
+  height: 320px;
+  right: -120px;
+  bottom: -120px;
+  background: radial-gradient(circle, rgba(233, 22, 98, .18) 0%, rgba(233, 22, 98, 0) 70%);
+}
+
+.wishlist-page .contact-hero__inner {
+  position: relative;
+  z-index: 1;
+  padding: 54px 56px 46px;
+  border: 1px solid rgba(217, 44, 116, .12);
+  border-radius: 36px;
+  background:
+          linear-gradient(145deg, rgba(255,255,255,.96) 0%, rgba(255,247,251,.92) 100%);
+  box-shadow:
+          0 30px 80px rgba(176, 18, 57, .10),
+          inset 0 1px 0 rgba(255,255,255,.8);
+  text-align: center;
+  overflow: hidden;
+}
+
+.wishlist-page .contact-hero__inner::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  background:
+          radial-gradient(circle at 15% 20%, rgba(255, 123, 170, .18), transparent 28%),
+          radial-gradient(circle at 85% 15%, rgba(233, 22, 98, .14), transparent 26%),
+          radial-gradient(circle at 75% 90%, rgba(255, 184, 210, .16), transparent 30%);
+  pointer-events: none;
+}
+
+.wishlist-page .contact-hero__inner::after {
+  content: "";
+  position: absolute;
+  width: 320px;
+  height: 320px;
+  left: 50%;
+  top: -170px;
+  transform: translateX(-50%);
+  background: radial-gradient(circle, rgba(233, 22, 98, .10) 0%, rgba(233, 22, 98, 0) 68%);
+  pointer-events: none;
+}
+
+.wishlist-page .contact-kicker {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 16px;
+  border: 1px solid rgba(217, 44, 116, .12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .78);
+  color: var(--contact-pink-dark);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  box-shadow: 0 10px 24px rgba(176, 18, 57, .05);
+  backdrop-filter: blur(10px);
+}
+
+.wishlist-page .contact-kicker span {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--contact-pink);
+  box-shadow: 0 0 0 6px rgba(233, 22, 98, .10);
+}
+
+.wishlist-page .contact-hero h1 {
+  position: relative;
+  z-index: 1;
+  max-width: 860px;
+  margin: 18px auto 14px;
+  color: var(--contact-pink-dark);
+  font-family: 'Playfair Display', 'Be Vietnam Pro', serif;
+  font-size: clamp(40px, 5vw, 74px);
+  font-weight: 900;
+  line-height: .96;
+  letter-spacing: -.05em;
+  text-wrap: balance;
+}
+
+.wishlist-page .contact-hero p {
+  position: relative;
+  z-index: 1;
+  max-width: 760px;
+  margin: 0 auto;
+  color: var(--contact-muted);
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.9;
+}
+
+.wishlist-page .contact-hero__stats {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  max-width: 820px;
+  margin: 34px auto 0;
+}
+
+.wishlist-page .contact-hero__stats div {
+  position: relative;
+  padding: 18px 18px 17px;
+  border: 1px solid rgba(217, 44, 116, .12);
+  border-radius: 22px;
+  background:
+          linear-gradient(180deg, rgba(255,255,255,.90), rgba(255,247,251,.82));
+  box-shadow: 0 18px 42px rgba(176, 18, 57, .07);
+  backdrop-filter: blur(10px);
+  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+}
+
+.wishlist-page .contact-hero__stats div:hover {
+  transform: translateY(-4px);
+  border-color: rgba(233, 22, 98, .22);
+  box-shadow: 0 22px 54px rgba(176, 18, 57, .12);
+}
+
+.wishlist-page .contact-hero__stats strong {
+  display: block;
+  color: var(--contact-ink);
+  font-size: 20px;
+  font-weight: 950;
+  letter-spacing: -.02em;
+}
+
+.wishlist-page .contact-hero__stats span {
+  display: block;
+  margin-top: 6px;
+  color: var(--contact-muted);
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.5;
+}
+
+/* =========================================================
+   PANEL
+========================================================= */
+
+.wishlist-panel {
+  width: 100%;
+  border: 1px solid var(--contact-line);
+  border-radius: 30px;
+  background: rgba(255, 255, 255, .94);
+  box-shadow: var(--contact-shadow);
+  padding: 36px;
+}
+
+.contact-form-head {
+  margin-bottom: 22px;
+}
+
+.contact-form-head p {
+  max-width: 680px;
+  margin: 10px 0 0;
+  color: var(--contact-muted);
+  font-size: 13.5px;
+  font-weight: 650;
+  line-height: 1.9;
+}
+
+.contact-form-tag {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--contact-pink);
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.contact-form-head h2 {
+  margin: 0;
+  color: var(--contact-ink);
+  font-size: 22px;
+  font-weight: 950;
+  line-height: 1.35;
+  letter-spacing: -.015em;
+}
+
+/* =========================================================
+   TITLE BAR
+========================================================= */
+
+.wishlist-title-bar {
+  margin-bottom: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 18px;
+  border: 1px solid rgba(217, 44, 116, .14);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, .78);
+  box-shadow: 0 18px 40px rgba(176, 18, 57, .06);
+}
+
+.wishlist-title-bar__left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--contact-pink-dark);
+  font-weight: 900;
+  font-size: 13px;
+  letter-spacing: .02em;
+}
+
+.wishlist-title-bar__left i {
+  color: var(--contact-pink);
+  font-size: 14px;
+}
+
+.wishlist-title-bar__right {
+  font-size: 12px;
   font-weight: 800;
-  margin-bottom: 10px;
+  color: var(--contact-muted);
 }
 
-.wishlist-page-header p {
-  color: var(--text-muted, #6b7280);
-  font-size: 16px;
-}
+/* =========================================================
+   GRID
+========================================================= */
 
-/* Khung lưới Grid chuẩn hiển thị danh sách */
-.product-grid.collection-grid {
+.product-grid.collection-grid.wishlist-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 24px;
-  margin-top: 30px;
+  gap: 26px;
+  width: 100%;
+  margin-top: 0;
 }
 
-/* Thẻ sản phẩm nổi bật, chống chìm trên nền trắng */
+/* =========================================================
+   CARD
+========================================================= */
+
 .product-card.collection-card {
-  background: var(--surface, #ffffff);
-  border: 1px solid var(--border-color, #dbe3ee);
-  border-radius: var(--radius-md, 12px);
-  box-shadow: var(--shadow-sm, 0 1px 2px 0 rgb(15 23 42 / 0.05));
   position: relative;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-  box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-  border-color 0.3s ease;
+  background: rgba(255, 255, 255, .94);
+  border: 1px solid rgba(217, 44, 116, .14);
+  border-radius: 30px;
+  box-shadow: 0 24px 60px rgba(176, 18, 57, .10);
+  overflow: hidden;
+  transition: all .22s ease;
 }
 
-/* Hiệu ứng nhấc nhẹ thẻ khi rê chuột */
 .product-card.collection-card:hover {
   transform: translateY(-6px);
-  box-shadow: var(--shadow-lg, 0 18px 40px -18px rgb(15 23 42 / 0.22));
-  border-color: var(--primary, #e11d48);
+  border-color: rgba(233, 22, 98, .35);
+  box-shadow: 0 28px 70px rgba(176, 18, 57, .16);
 }
 
-/* Khung ảnh vuông tỉ lệ 1:1 */
 .card-image-wrap {
   position: relative;
   width: 100%;
   aspect-ratio: 1 / 1;
-  background-color: var(--surface-soft, #f8fafc);
+  background: linear-gradient(135deg, #fff 0%, #fff0f6 100%);
   overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .card-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.5s ease;
+  transition: transform .55s ease;
 }
 
-.product-card.collection-card:hover .card-img {
-  transform: scale(1.06);
+.product-card:hover .card-img {
+  transform: scale(1.08);
 }
 
-/* Khối text giữ chỗ khi ảnh gốc bị lỗi */
 .no-image-placeholder {
   display: none;
   position: absolute;
-  top: 0; left: 0; width: 100%; height: 100%;
-  background-color: var(--surface-soft, #f8fafc);
-  color: var(--text-muted, #6b7280);
+  inset: 0;
   align-items: center;
   justify-content: center;
+  background: linear-gradient(135deg, #fff 0%, #fff0f6 100%);
+  color: var(--contact-muted);
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 700;
 }
 
-/* Vùng thông tin nội dung */
 .card-content {
-  padding: 16px;
+  padding: 16px 16px 18px;
   display: flex;
   flex-direction: column;
   flex-grow: 1;
@@ -96,29 +354,33 @@
 
 .product-title {
   font-size: 15px;
-  font-weight: 600;
-  margin: 0 0 8px 0;
+  font-weight: 800;
   line-height: 1.4;
+  margin: 0 0 10px;
 }
 
 .product-title a {
-  color: var(--text-main, #111827);
+  color: var(--contact-ink);
   text-decoration: none;
-  transition: color 0.2s ease;
+  transition: color .2s ease;
 }
 
 .product-title a:hover {
-  color: var(--primary, #e11d48);
+  color: var(--contact-pink-dark);
 }
 
 .product-price {
-  color: var(--primary, #e11d48);
-  font-weight: 700;
+  margin-top: auto;
   font-size: 16px;
-  margin-top: auto; /* Giúp giá tiền luôn thẳng hàng đáy */
+  font-weight: 950;
+  color: var(--contact-pink);
+  letter-spacing: .01em;
 }
 
-/* Form đặt vị trí nút Tim */
+/* =========================================================
+   WISHLIST BUTTON
+========================================================= */
+
 .wishlist-form {
   position: absolute;
   top: 12px;
@@ -126,80 +388,239 @@
   z-index: 5;
 }
 
-/* Nút trái tim tròn nổi trên ảnh */
 .wishlist-btn {
-  background: var(--surface, #ffffff);
-  border: none;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
+  width: 38px;
+  height: 38px;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 999px;
+  border: 1px solid rgba(217, 44, 116, .16);
+  background: rgba(255, 255, 255, .92);
+  box-shadow: 0 16px 34px rgba(176, 18, 57, .12);
   cursor: pointer;
-  box-shadow: var(--shadow-md, 0 8px 24px -12px rgb(15 23 42 / 0.14));
-  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.2s ease;
-}
-
-.wishlist-btn:hover {
-  transform: scale(1.15);
-  background-color: var(--primary-soft, #fff1f5);
+  transition: all .2s ease;
 }
 
 .wishlist-btn i {
-  color: #ffffff;
   font-size: 18px;
+  color: var(--contact-pink);
 }
 
-/* Giao diện danh sách trống */
+.wishlist-btn:hover {
+  transform: translateY(-2px) scale(1.08);
+  background: var(--contact-pink-soft);
+  border-color: rgba(233, 22, 98, .35);
+}
+
+/* =========================================================
+   EMPTY STATE
+========================================================= */
+
 .wishlist-empty {
   grid-column: 1 / -1;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 400px;
-  background: var(--surface, #ffffff);
-  border-radius: var(--radius-lg, 18px);
-  border: 2px dashed var(--border-color, #dbe3ee);
+  min-height: 420px;
+  background: rgba(255, 255, 255, .94);
+  border: 1px dashed rgba(217, 44, 116, .25);
+  border-radius: 28px;
+  box-shadow: 0 24px 60px rgba(176, 18, 57, .08);
+  text-align: center;
   padding: 40px;
-  box-shadow: var(--shadow-sm, 0 1px 2px 0 rgb(15 23 42 / 0.05));
 }
 
 .wishlist-empty-icon {
-  color: var(--primary, #e11d48);
   font-size: 64px;
+  color: var(--contact-pink);
   margin-bottom: 18px;
 }
 
 .wishlist-empty-title {
-  color: var(--text-main, #111827);
-  font-size: 24px;
-  font-weight: 700;
-  margin: 0 0 8px 0;
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--contact-ink);
+  margin-bottom: 8px;
 }
 
 .wishlist-empty p {
-  color: var(--text-muted, #6b7280);
-  margin: 0 0 24px 0;
-  font-size: 15px;
+  color: var(--contact-muted);
+  font-size: 14px;
+  line-height: 1.7;
+  margin-bottom: 22px;
 }
 
-/* Nút quay lại mua sắm */
 .btn-continue-shopping {
-  display: inline-block;
-  padding: 12px 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 28px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #ff5b9d 0%, #d4144f 70%);
+  color: #fff;
+  font-weight: 900;
+  font-size: 14px;
   text-decoration: none;
-  border-radius: var(--radius-md, 12px);
-  background: var(--primary, #e11d48);
-  color: #ffffff;
-  font-weight: 600;
-  font-size: 15px;
-  box-shadow: var(--shadow-sm);
-  transition: all 0.2s ease;
+  box-shadow: 0 18px 40px rgba(212, 20, 79, .22);
+  transition: all .2s ease;
 }
 
 .btn-continue-shopping:hover {
-  background: var(--primary-hover, #be123c);
   transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 24px 50px rgba(212, 20, 79, .28);
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 980px) {
+  .wishlist-page .contact-hero__stats {
+    grid-template-columns: 1fr;
+    max-width: 540px;
+  }
+}
+
+@media (max-width: 720px) {
+  .wishlist-page {
+    padding-top: 10px !important;
+  }
+
+  .wishlist-page .contact-container {
+    width: min(100% - 28px, 1220px);
+  }
+
+  .wishlist-page .contact-hero {
+    padding: 20px 0 24px;
+  }
+
+  .wishlist-page .contact-hero__inner {
+    padding: 32px 20px 28px;
+    border-radius: 26px;
+  }
+
+  .wishlist-page .contact-hero h1 {
+    font-size: clamp(34px, 10vw, 52px);
+  }
+
+  .wishlist-page .contact-hero p {
+    font-size: 14px;
+    line-height: 1.8;
+  }
+
+  .wishlist-panel {
+    padding: 24px;
+    border-radius: 24px;
+  }
+
+  .wishlist-title-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .product-grid.collection-grid.wishlist-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 18px;
+  }
+
+  .wishlist-empty {
+    padding: 28px;
+  }
+}
+
+/* =========================================================
+   WISHLIST HERO - BRAND STYLE ENHANCEMENT LAYER
+   (ADD-ON ONLY - DO NOT MODIFY EXISTING CSS)
+========================================================= */
+
+.wishlist-page .contact-hero {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Soft animated glow like brand hero */
+.wishlist-page .contact-hero::before {
+  content: "";
+  position: absolute;
+  inset: -40%;
+  background:
+          radial-gradient(circle at 20% 20%, rgba(255, 95, 151, .18), transparent 45%),
+          radial-gradient(circle at 80% 30%, rgba(212, 20, 79, .12), transparent 50%),
+          radial-gradient(circle at 50% 90%, rgba(255, 182, 210, .16), transparent 55%);
+  filter: blur(30px);
+  animation: wishlistHeroFloat 14s ease-in-out infinite alternate;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* subtle noise-like overlay for premium feel */
+.wishlist-page .contact-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg,
+  rgba(255,255,255,.55),
+  rgba(255,245,250,.35),
+  rgba(255,255,255,.6));
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ensure content above glow */
+.wishlist-page .contact-hero__inner {
+  position: relative;
+  z-index: 2;
+}
+
+@keyframes wishlistHeroFloat {
+  0% {
+    transform: translate3d(-2%, -1%, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(2%, 1%, 0) scale(1.03);
+  }
+  100% {
+    transform: translate3d(-1%, 2%, 0) scale(1.01);
+  }
+}
+
+.wishlist-page .contact-hero__inner {
+  transition: transform .35s ease, box-shadow .35s ease;
+}
+
+.wishlist-page .contact-hero__inner:hover {
+  transform: translateY(-3px);
+  box-shadow:
+          0 38px 90px rgba(176, 18, 57, .14),
+          inset 0 1px 0 rgba(255,255,255,.85);
+}
+
+.wishlist-page .contact-hero h1::after {
+  content: "";
+  display: block;
+  width: 120px;
+  height: 4px;
+  margin: 18px auto 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg,
+  transparent,
+  #ff5f97,
+  #d4144f,
+  transparent);
+  opacity: .65;
+}
+
+/* Giảm khoảng cách dưới wishlist */
+.wishlist-page {
+  padding-bottom: 0px !important;
+  background-color: #ffffff; /* Thay #ffffff bằng mã màu nền bạn mong muốn */
+}
+
+/* Điều chỉnh cho Footer */
+.site-footer-v2 {
+  margin-top: 30px !important;
+  background-color: #ffffff; /* PHẢI khớp chính xác với màu ở trên */
 }
