@@ -7,9 +7,9 @@
 <c:set var="activeMenu" value="inventory" scope="request"/>
 <c:set var="pageCss" value="/assets/css/admin/admin-list.css" scope="request"/>
 
-<c:set var="csrfValue" value="${requestScope.csrfToken}" />
+<c:set var="csrfValue" value="${csrfToken}" />
 <c:if test="${empty csrfValue}">
-    <c:set var="csrfValue" value="${requestScope.csrf_token}" />
+    <c:set var="csrfValue" value="${csrf_token}" />
 </c:if>
 <c:if test="${empty csrfValue}">
     <c:set var="csrfValue" value="${requestScope.CSRF_TOKEN}" />
@@ -52,7 +52,7 @@
             <div>
                 <strong>Cảnh báo tồn kho</strong>
                 <span>
-                    Có <fmt:formatNumber value="${summary.alertCount}" type="number"/> sản phẩm cần kiểm tra hoặc nhập thêm.
+                    Có <span data-inventory-summary-value="alertCount"><fmt:formatNumber value="${summary.alertCount}" type="number"/></span> sản phẩm cần kiểm tra hoặc nhập thêm.
                 </span>
             </div>
         </section>
@@ -81,6 +81,8 @@
             </div>
         </c:if>
 
+        <div id="inventoryAjaxMessage" class="admin-alert inventory-ajax-message" style="display:none"></div>
+
         <section class="admin-inventory-group">
             <div class="admin-inventory-group__head">
                 <div>
@@ -91,41 +93,41 @@
             </div>
 
             <div class="inventory-summary-grid">
-                <div class="admin-card inventory-stat-card inventory-stat-card--product">
-                    <span class="inventory-card-icon">🧴</span>
-                    <div class="inventory-card-label">Tổng sản phẩm active</div>
-                    <div class="inventory-card-value">
-                        <fmt:formatNumber value="${summary.productCount}" type="number"/>
-                    </div>
-                    <div class="inventory-card-note">Sản phẩm đang kinh doanh</div>
+            <div class="admin-card inventory-stat-card inventory-stat-card--product">
+                <span class="inventory-card-icon">🧴</span>
+                <div class="inventory-card-label">Tổng sản phẩm active</div>
+                <div class="inventory-card-value" data-inventory-summary-value="productCount">
+                    <fmt:formatNumber value="${summary.productCount}" type="number"/>
                 </div>
+                <div class="inventory-card-note">Sản phẩm đang kinh doanh</div>
+            </div>
 
-                <div class="admin-card inventory-stat-card inventory-stat-card--success">
-                    <span class="inventory-card-icon">📦</span>
-                    <div class="inventory-card-label">Tổng tồn kho</div>
-                    <div class="inventory-card-value">
-                        <fmt:formatNumber value="${summary.totalStock}" type="number"/>
-                    </div>
-                    <div class="inventory-card-note">Tổng số lượng còn lại</div>
+            <div class="admin-card inventory-stat-card inventory-stat-card--success">
+                <span class="inventory-card-icon">📦</span>
+                <div class="inventory-card-label">Tổng tồn kho</div>
+                <div class="inventory-card-value" data-inventory-summary-value="totalStock">
+                    <fmt:formatNumber value="${summary.totalStock}" type="number"/>
                 </div>
+                <div class="inventory-card-note">Tổng số lượng còn lại</div>
+            </div>
 
-                <div class="admin-card inventory-stat-card inventory-stat-card--warning">
-                    <span class="inventory-card-icon">⚠️</span>
-                    <div class="inventory-card-label">Sắp hết hàng</div>
-                    <div class="inventory-card-value">
-                        <fmt:formatNumber value="${summary.lowStockCount}" type="number"/>
-                    </div>
-                    <div class="inventory-card-note">Tồn kho lớn hơn 0 và nhỏ hơn 10</div>
+            <div class="admin-card inventory-stat-card inventory-stat-card--warning">
+                <span class="inventory-card-icon">⚠️</span>
+                <div class="inventory-card-label">Sắp hết hàng</div>
+                <div class="inventory-card-value" data-inventory-summary-value="lowStockCount">
+                    <fmt:formatNumber value="${summary.lowStockCount}" type="number"/>
                 </div>
+                <div class="inventory-card-note">Tồn kho lớn hơn 0 và nhỏ hơn 10</div>
+            </div>
 
-                <div class="admin-card inventory-stat-card inventory-stat-card--danger">
-                    <span class="inventory-card-icon">⛔</span>
-                    <div class="inventory-card-label">Hết hàng</div>
-                    <div class="inventory-card-value">
-                        <fmt:formatNumber value="${summary.outOfStockCount}" type="number"/>
-                    </div>
-                    <div class="inventory-card-note">Cần nhập hàng ngay</div>
+            <div class="admin-card inventory-stat-card inventory-stat-card--danger">
+                <span class="inventory-card-icon">⛔</span>
+                <div class="inventory-card-label">Hết hàng</div>
+                <div class="inventory-card-value" data-inventory-summary-value="outOfStockCount">
+                    <fmt:formatNumber value="${summary.outOfStockCount}" type="number"/>
                 </div>
+                <div class="inventory-card-note">Cần nhập hàng ngay</div>
+            </div>
             </div>
         </section>
 
@@ -139,41 +141,41 @@
             </div>
 
             <div class="inventory-summary-grid inventory-variant-summary-grid">
-                <div class="admin-card inventory-stat-card inventory-stat-card--variant">
-                    <span class="inventory-card-icon">🏷️</span>
-                    <div class="inventory-card-label">Tổng biến thể active</div>
-                    <div class="inventory-card-value">
-                        <fmt:formatNumber value="${variantSummary.variantCount}" type="number"/>
-                    </div>
-                    <div class="inventory-card-note">SKU/Size/Màu đang kinh doanh</div>
+            <div class="admin-card inventory-stat-card inventory-stat-card--variant">
+                <span class="inventory-card-icon">🏷️</span>
+                <div class="inventory-card-label">Tổng biến thể active</div>
+                <div class="inventory-card-value">
+                    <fmt:formatNumber value="${variantSummary.variantCount}" type="number"/>
                 </div>
+                <div class="inventory-card-note">SKU/Size/Màu đang kinh doanh</div>
+            </div>
 
-                <div class="admin-card inventory-stat-card inventory-stat-card--success">
-                    <span class="inventory-card-icon">📦</span>
-                    <div class="inventory-card-label">Tổng tồn biến thể</div>
-                    <div class="inventory-card-value">
-                        <fmt:formatNumber value="${variantSummary.totalStock}" type="number"/>
-                    </div>
-                    <div class="inventory-card-note">Tổng số lượng theo từng SKU</div>
+            <div class="admin-card inventory-stat-card inventory-stat-card--success">
+                <span class="inventory-card-icon">📦</span>
+                <div class="inventory-card-label">Tổng tồn biến thể</div>
+                <div class="inventory-card-value">
+                    <fmt:formatNumber value="${variantSummary.totalStock}" type="number"/>
                 </div>
+                <div class="inventory-card-note">Tổng số lượng theo từng SKU</div>
+            </div>
 
-                <div class="admin-card inventory-stat-card inventory-stat-card--warning">
-                    <span class="inventory-card-icon">⚠️</span>
-                    <div class="inventory-card-label">Biến thể sắp hết</div>
-                    <div class="inventory-card-value">
-                        <fmt:formatNumber value="${variantSummary.lowStockCount}" type="number"/>
-                    </div>
-                    <div class="inventory-card-note">Tồn kho thấp hơn mức tối thiểu</div>
+            <div class="admin-card inventory-stat-card inventory-stat-card--warning">
+                <span class="inventory-card-icon">⚠️</span>
+                <div class="inventory-card-label">Biến thể sắp hết</div>
+                <div class="inventory-card-value">
+                    <fmt:formatNumber value="${variantSummary.lowStockCount}" type="number"/>
                 </div>
+                <div class="inventory-card-note">Tồn kho thấp hơn mức tối thiểu</div>
+            </div>
 
-                <div class="admin-card inventory-stat-card inventory-stat-card--danger">
-                    <span class="inventory-card-icon">⛔</span>
-                    <div class="inventory-card-label">Biến thể hết hàng</div>
-                    <div class="inventory-card-value">
-                        <fmt:formatNumber value="${variantSummary.outOfStockCount}" type="number"/>
-                    </div>
-                    <div class="inventory-card-note">Cần nhập hàng theo SKU</div>
+            <div class="admin-card inventory-stat-card inventory-stat-card--danger">
+                <span class="inventory-card-icon">⛔</span>
+                <div class="inventory-card-label">Biến thể hết hàng</div>
+                <div class="inventory-card-value">
+                    <fmt:formatNumber value="${variantSummary.outOfStockCount}" type="number"/>
                 </div>
+                <div class="inventory-card-note">Cần nhập hàng theo SKU</div>
+            </div>
             </div>
         </section>
 
@@ -341,14 +343,16 @@
                         <div class="inventory-excel-title">2. Nhập kho từ file Excel</div>
                         <div class="inventory-excel-desc">
                             Upload file Excel đã cập nhật số lượng nhập thực tế.
-                            Sau khi xử lý, hệ thống sẽ tự tải về file kết quả nhập kho.
+                            Sau khi xử lý, hệ thống sẽ cập nhật tồn kho ngay trên trang, không cần tải lại.
                         </div>
 
                         <form class="inventory-import-excel-form"
+                              data-ajax-import="true"
                               method="post"
                               enctype="multipart/form-data"
                               action="${pageContext.request.contextPath}/admin/inventory">
                             <input type="hidden" name="action" value="importRestockExcel">
+                            <input type="hidden" name="ajax" value="true">
                             <input type="hidden" name="csrf_token" value="${csrfValue}">
                             <input type="hidden" name="csrfToken" value="${csrfValue}">
 
@@ -432,7 +436,7 @@
                     <c:choose>
                         <c:when test="${not empty products}">
                             <c:forEach var="product" items="${products}">
-                                <tr>
+                                <tr data-inventory-product-row="${product.id}">
                                     <td class="inventory-select-cell">
                                         <label class="inventory-check-label">
                                             <input
@@ -460,13 +464,13 @@
                                     </td>
 
                                     <td>
-                                        <span class="stock-number">
+                                        <span class="stock-number" data-inventory-stock="${product.id}">
                                             <fmt:formatNumber value="${product.stock}" type="number"/>
                                         </span>
                                     </td>
 
                                     <td>
-                                        <span class="admin-pill ${product.stockStatusClass}">
+                                        <span class="admin-pill ${product.stockStatusClass}" data-inventory-status="${product.id}">
                                             <c:out value="${product.stockStatusLabel}"/>
                                         </span>
                                     </td>
@@ -794,7 +798,7 @@
                 <div class="inventory-import-summary-grid">
                     <div class="export-box inventory-import-stat">
                         <span class="export-box__icon">📥</span>
-                        <strong>
+                        <strong data-inventory-import-summary-value="monthlyImportQuantity">
                             <fmt:formatNumber value="${importSummary.monthlyImportQuantity}" type="number"/>
                         </strong>
                         <span>SL nhập tháng ${selectedImportMonth}/${selectedImportYear}</span>
@@ -802,7 +806,7 @@
 
                     <div class="export-box inventory-import-stat">
                         <span class="export-box__icon">🔁</span>
-                        <strong>
+                        <strong data-inventory-import-summary-value="monthlyImportCount">
                             <fmt:formatNumber value="${importSummary.monthlyImportCount}" type="number"/>
                         </strong>
                         <span>Lượt nhập trong tháng</span>
@@ -810,7 +814,7 @@
 
                     <div class="export-box inventory-import-stat">
                         <span class="export-box__icon">🧴</span>
-                        <strong>
+                        <strong data-inventory-import-summary-value="monthlyProductCount">
                             <fmt:formatNumber value="${importSummary.monthlyProductCount}" type="number"/>
                         </strong>
                         <span>Sản phẩm đã nhập trong tháng</span>
@@ -818,7 +822,7 @@
 
                     <div class="export-box inventory-import-stat">
                         <span class="export-box__icon">📊</span>
-                        <strong>
+                        <strong data-inventory-import-summary-value="yearlyImportQuantity">
                             <fmt:formatNumber value="${importSummary.yearlyImportQuantity}" type="number"/>
                         </strong>
                         <span>SL nhập năm ${selectedImportYear}</span>
@@ -846,7 +850,7 @@
                     </tr>
                     </thead>
 
-                    <tbody>
+                    <tbody id="inventoryImportHistoryBody">
                     <c:choose>
                         <c:when test="${not empty importHistory}">
                             <c:forEach var="item" items="${importHistory}">
@@ -989,6 +993,190 @@
 
         drawInventoryBarChart("inventoryExportChart", exportLabels, exportValues);
         drawInventoryBarChart("inventoryImportChart", importLabels, importValues);
+        bindInventoryExcelImport();
+
+        function bindInventoryExcelImport() {
+            const form = document.querySelector(".inventory-import-excel-form[data-ajax-import='true']");
+
+            if (!form || !window.FormData || !window.fetch) {
+                return;
+            }
+
+            form.addEventListener("submit", async function (event) {
+                event.preventDefault();
+
+                const fileInput = form.querySelector("input[type='file'][name='restockFile']");
+
+                if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+                    showInventoryAjaxMessage("Vui lòng chọn file Excel nhập hàng.", "danger");
+                    return;
+                }
+
+                const button = form.querySelector("button[type='submit']");
+                const originalText = button ? button.textContent : "";
+
+                if (button) {
+                    button.disabled = true;
+                    button.textContent = "Đang nhập kho...";
+                }
+
+                try {
+                    const formData = new FormData(form);
+                    formData.set("ajax", "true");
+
+                    const response = await fetch(form.action, {
+                        method: "POST",
+                        body: formData,
+                        headers: {
+                            "X-Requested-With": "XMLHttpRequest",
+                            "Accept": "application/json"
+                        },
+                        credentials: "same-origin"
+                    });
+
+                    const payload = await response.json();
+
+                    if (!response.ok || !payload.ok) {
+                        showInventoryAjaxMessage(payload.message || "Nhập kho từ Excel không thành công.", "danger");
+                        return;
+                    }
+
+                    applyInventoryImportResult(payload);
+                    form.reset();
+                    showInventoryAjaxMessage(payload.message || "Đã nhập kho từ Excel thành công.", "success");
+
+                } catch (error) {
+                    showInventoryAjaxMessage("Không thể nhập kho từ Excel. Vui lòng kiểm tra kết nối hoặc file nhập.", "danger");
+                } finally {
+                    if (button) {
+                        button.disabled = false;
+                        button.textContent = originalText;
+                    }
+                }
+            });
+        }
+
+        function applyInventoryImportResult(payload) {
+            const updates = Array.isArray(payload.productUpdates) ? payload.productUpdates : [];
+
+            updates.forEach(function (item) {
+                updateInventoryProductRow(item);
+                prependInventoryImportHistoryRow(item);
+            });
+
+            updateSummaryValues(payload.summary || {}, "data-inventory-summary-value");
+            updateSummaryValues(payload.importSummary || {}, "data-inventory-import-summary-value");
+        }
+
+        function updateInventoryProductRow(item) {
+            if (!item || !item.productId) {
+                return;
+            }
+
+            const stockElement = document.querySelector("[data-inventory-stock='" + item.productId + "']");
+            const statusElement = document.querySelector("[data-inventory-status='" + item.productId + "']");
+            const row = document.querySelector("[data-inventory-product-row='" + item.productId + "']");
+
+            if (stockElement) {
+                stockElement.textContent = formatInventoryNumber(item.afterStock || 0);
+            }
+
+            if (statusElement) {
+                statusElement.classList.remove("stock-normal", "stock-low", "stock-out");
+                statusElement.classList.add(item.stockStatusClass || "stock-normal");
+                statusElement.textContent = item.stockStatusLabel || "Còn hàng";
+            }
+
+            if (row) {
+                row.classList.remove("inventory-row-updated");
+                void row.offsetWidth;
+                row.classList.add("inventory-row-updated");
+            }
+        }
+
+        function updateSummaryValues(values, dataAttributeName) {
+            Object.keys(values).forEach(function (key) {
+                const selector = "[" + dataAttributeName + "='" + key + "']";
+                document.querySelectorAll(selector).forEach(function (element) {
+                    element.textContent = formatInventoryNumber(values[key] || 0);
+                });
+            });
+        }
+
+        function prependInventoryImportHistoryRow(item) {
+            const tbody = document.getElementById("inventoryImportHistoryBody");
+
+            if (!tbody || !item || !item.productId) {
+                return;
+            }
+
+            const emptyRow = tbody.querySelector(".inventory-empty");
+
+            if (emptyRow) {
+                const parentRow = emptyRow.closest("tr");
+
+                if (parentRow) {
+                    parentRow.remove();
+                }
+            }
+
+            const row = document.createElement("tr");
+            row.className = "inventory-import-history-row inventory-import-history-row--new";
+
+            row.innerHTML = ""
+                + "<td>" + escapeInventoryHtml(formatInventoryDateTime(new Date())) + "</td>"
+                + "<td>"
+                + "<div class='product-name'>" + escapeInventoryHtml(item.title || ("Sản phẩm #" + item.productId)) + "</div>"
+                + "<div class='product-meta'>Cập nhật tức thì từ Excel</div>"
+                + "</td>"
+                + "<td><span class='inventory-import-qty'>+" + formatInventoryNumber(item.quantity || 0) + "</span></td>"
+                + "<td>" + formatInventoryNumber(item.beforeStock || 0) + "</td>"
+                + "<td>" + formatInventoryNumber(item.afterStock || 0) + "</td>"
+                + "<td><span class='inventory-stock-change'>" + formatInventoryNumber(item.beforeStock || 0) + " → " + formatInventoryNumber(item.afterStock || 0) + "</span></td>"
+                + "<td><span class='admin-pill import-method-excel'>Nhập từ Excel</span></td>"
+                + "<td>Admin</td>"
+                + "<td><div class='inventory-history-note'>Vừa nhập kho, chưa cần tải lại trang.</div></td>";
+
+            tbody.insertBefore(row, tbody.firstChild);
+        }
+
+        function showInventoryAjaxMessage(message, type) {
+            const messageBox = document.getElementById("inventoryAjaxMessage");
+
+            if (!messageBox) {
+                return;
+            }
+
+            messageBox.className = "admin-alert inventory-ajax-message "
+                + (type === "danger" ? "admin-alert--danger" : "admin-alert--success");
+            messageBox.textContent = message || "Đã xử lý nhập kho từ Excel.";
+            messageBox.style.display = "block";
+            messageBox.scrollIntoView({behavior: "smooth", block: "nearest"});
+        }
+
+        function formatInventoryNumber(value) {
+            const number = Number(value) || 0;
+            return number.toLocaleString("vi-VN");
+        }
+
+        function formatInventoryDateTime(date) {
+            return date.toLocaleString("vi-VN", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit"
+            });
+        }
+
+        function escapeInventoryHtml(value) {
+            return String(value == null ? "" : value)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#39;");
+        }
 
         function drawInventoryBarChart(canvasId, labels, values) {
             const canvas = document.getElementById(canvasId);
