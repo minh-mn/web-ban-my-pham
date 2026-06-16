@@ -1,6 +1,7 @@
 package com.webshop.app.controller.AdminController;
 
 import com.webshop.app.dao.InventoryDAO;
+import com.webshop.app.model.InventorySummary;
 import com.webshop.app.model.User;
 import com.webshop.app.service.AuditLogService;
 import com.webshop.app.utils.DBConnection;
@@ -366,9 +367,15 @@ public class AdminInventoryServlet extends HttpServlet {
     private void handleImportRestockExcel(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
+        boolean ajaxRequest = isAjaxRequest(req);
         Part filePart = req.getPart("restockFile");
 
         if (filePart == null || filePart.getSize() <= 0) {
+            if (ajaxRequest) {
+                writeInventoryAjaxError(resp, "Vui lòng chọn file Excel nhập hàng.");
+                return;
+            }
+
             redirectInventoryError(req, resp, "Vui lòng chọn file Excel nhập hàng.");
             return;
         }
@@ -376,6 +383,11 @@ public class AdminInventoryServlet extends HttpServlet {
         String submittedFileName = filePart.getSubmittedFileName();
 
         if (submittedFileName == null || !submittedFileName.toLowerCase(Locale.ROOT).endsWith(".xlsx")) {
+            if (ajaxRequest) {
+                writeInventoryAjaxError(resp, "File nhập hàng phải có định dạng .xlsx.");
+                return;
+            }
+
             redirectInventoryError(req, resp, "File nhập hàng phải có định dạng .xlsx.");
             return;
         }
@@ -389,7 +401,17 @@ public class AdminInventoryServlet extends HttpServlet {
             logRestockImport(req, resultRows, submittedFileName);
 
         } catch (Exception e) {
+            if (ajaxRequest) {
+                writeInventoryAjaxError(resp, "Không thể đọc file Excel. Vui lòng kiểm tra lại mẫu file nhập hàng.");
+                return;
+            }
+
             throw new ServletException("AdminInventoryServlet.importRestockExcel read error", e);
+        }
+
+        if (ajaxRequest) {
+            writeRestockImportJsonResponse(req, resp, resultRows, submittedFileName);
+            return;
         }
 
         String fileName = "inventory_restock_result_"
@@ -403,6 +425,177 @@ public class AdminInventoryServlet extends HttpServlet {
         } catch (Exception e) {
             throw new ServletException("AdminInventoryServlet.importRestockExcel result error", e);
         }
+    }
+
+    private boolean isAjaxRequest(HttpServletRequest req) {
+        String requestedWith = req.getHeader("X-Requested-With");
+        String accept = req.getHeader("Accept");
+        String ajax = req.getParameter("ajax");
+
+        return "XMLHttpRequest".equalsIgnoreCase(requestedWith)
+                || "true".equalsIgnoreCase(ajax)
+                || (accept != null && accept.toLowerCase(Locale.ROOT).contains("application/json"));
+    }
+
+    private void writeInventoryAjaxError(HttpServletResponse resp, String message) throws IOException {
+        resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+        writeJsonResponse(resp, "{\"ok\":false,\"message\":" + jsonString(message) + "}");
+    }
+
+    private void writeRestockImportJsonResponse(
+            HttpServletRequest req,
+            HttpServletResponse resp,
+            List<RestockImportResultRow> resultRows,
+            String submittedFileName
+    ) throws IOException {
+
+        int successCount = 0;
+        int errorCount = 0;
+        int totalQuantity = 0;
+
+        StringBuilder updatesJson = new StringBuilder("[");
+        StringBuilder errorsJson = new StringBuilder("[");
+
+        if (resultRows != null) {
+            boolean firstUpdate = true;
+            boolean firstError = true;
+
+            for (RestockImportResultRow row : resultRows) {
+                if (row == null) {
+                    continue;
+                }
+
+                boolean success = "Thành công".equalsIgnoreCase(row.status());
+
+                if (success) {
+                    successCount++;
+                    totalQuantity += Math.max(row.quantity(), 0);
+
+                    if (!firstUpdate) {
+                        updatesJson.append(',');
+                    }
+
+                    int afterStock = row.afterStock() == null ? 0 : Math.max(row.afterStock(), 0);
+
+                    updatesJson.append('{')
+                            .append("\"productId\":").append(Math.max(row.productId(), 0)).append(',')
+                            .append("\"title\":").append(jsonString(row.title())).append(',')
+                            .append("\"beforeStock\":").append(row.beforeStock() == null ? "null" : Math.max(row.beforeStock(), 0)).append(',')
+                            .append("\"quantity\":").append(Math.max(row.quantity(), 0)).append(',')
+                            .append("\"afterStock\":").append(afterStock).append(',')
+                            .append("\"stockStatusLabel\":").append(jsonString(stockStatusLabel(afterStock))).append(',')
+                            .append("\"stockStatusClass\":").append(jsonString(stockStatusClass(afterStock))).append(',')
+                            .append("\"status\":").append(jsonString(row.status()))
+                            .append('}');
+
+                    firstUpdate = false;
+
+                } else {
+                    errorCount++;
+
+                    if (!firstError) {
+                        errorsJson.append(',');
+                    }
+
+                    errorsJson.append('{')
+                            .append("\"productId\":").append(Math.max(row.productId(), 0)).append(',')
+                            .append("\"title\":").append(jsonString(row.title())).append(',')
+                            .append("\"quantity\":").append(Math.max(row.quantity(), 0)).append(',')
+                            .append("\"status\":").append(jsonString(row.status()))
+                            .append('}');
+
+                    firstError = false;
+                }
+            }
+        }
+
+        updatesJson.append(']');
+        errorsJson.append(']');
+
+        InventorySummary summary = inventoryDAO.getSummary();
+        LocalDate today = LocalDate.now();
+        InventoryDAO.ImportSummary importSummary = inventoryDAO.getImportSummary(
+                today.getMonthValue(),
+                today.getYear()
+        );
+
+        String message;
+
+        if (successCount > 0) {
+            message = "Đã nhập kho từ Excel: " + successCount
+                    + " dòng thành công, tổng +" + totalQuantity + " sản phẩm.";
+
+            if (errorCount > 0) {
+                message += " Có " + errorCount + " dòng cần kiểm tra.";
+            }
+        } else {
+            message = "File Excel chưa có dòng nhập kho thành công. Vui lòng kiểm tra dữ liệu trong file.";
+        }
+
+        String json = "{"
+                + "\"ok\":" + (successCount > 0) + ","
+                + "\"message\":" + jsonString(message) + ","
+                + "\"fileName\":" + jsonString(submittedFileName) + ","
+                + "\"successCount\":" + successCount + ","
+                + "\"errorCount\":" + errorCount + ","
+                + "\"totalQuantity\":" + totalQuantity + ","
+                + "\"productUpdates\":" + updatesJson + ","
+                + "\"errors\":" + errorsJson + ","
+                + "\"summary\":{"
+                + "\"productCount\":" + summary.getProductCount() + ","
+                + "\"totalStock\":" + summary.getTotalStock() + ","
+                + "\"lowStockCount\":" + summary.getLowStockCount() + ","
+                + "\"outOfStockCount\":" + summary.getOutOfStockCount() + ","
+                + "\"normalStockCount\":" + summary.getNormalStockCount() + ","
+                + "\"alertCount\":" + summary.getAlertCount()
+                + "},"
+                + "\"importSummary\":{"
+                + "\"monthlyImportQuantity\":" + importSummary.getMonthlyImportQuantity() + ","
+                + "\"monthlyImportCount\":" + importSummary.getMonthlyImportCount() + ","
+                + "\"monthlyProductCount\":" + importSummary.getMonthlyProductCount() + ","
+                + "\"yearlyImportQuantity\":" + importSummary.getYearlyImportQuantity() + ","
+                + "\"yearlyImportCount\":" + importSummary.getYearlyImportCount() + ","
+                + "\"yearlyProductCount\":" + importSummary.getYearlyProductCount()
+                + "}"
+                + "}";
+
+        writeJsonResponse(resp, json);
+    }
+
+    private void writeJsonResponse(HttpServletResponse resp, String json) throws IOException {
+        resp.reset();
+        resp.setCharacterEncoding("UTF-8");
+        resp.setContentType("application/json; charset=UTF-8");
+        resp.getWriter().write(json == null ? "{}" : json);
+        resp.flushBuffer();
+    }
+
+    private String jsonString(String value) {
+        return "\"" + escapeJson(value == null ? "" : value) + "\"";
+    }
+
+    private String stockStatusLabel(int stock) {
+        if (stock <= 0) {
+            return "Hết hàng";
+        }
+
+        if (stock < 10) {
+            return "Sắp hết hàng";
+        }
+
+        return "Còn hàng";
+    }
+
+    private String stockStatusClass(int stock) {
+        if (stock <= 0) {
+            return "stock-out";
+        }
+
+        if (stock < 10) {
+            return "stock-low";
+        }
+
+        return "stock-normal";
     }
 
     private List<RestockImportResultRow> processRestockWorkbook(
