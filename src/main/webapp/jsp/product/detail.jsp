@@ -10,7 +10,7 @@
 <c:set var="discountPercent" value="${p.discountPercent}" />
 <c:set var="mainImage" value="${p.image}" />
 
-<link rel="stylesheet" href="${ctx}/assets/css/product-detail.css?v=20260616_pd_ui_v8" />
+<link rel="stylesheet" href="${ctx}/assets/css/product-detail.css?v=20260616_review_filter_v2" />
 
 <c:if test="${empty p}">
   <section class="pd-page pd-page-v5">
@@ -45,13 +45,6 @@
 
           <aside class="pd-gallery-wrap">
             <div class="pd-gallery-shell">
-              <div class="pd-gallery-head">
-                <div>
-                  <span class="pd-gallery-eyebrow">Hình ảnh sản phẩm</span>
-                </div>
-                <span class="pd-gallery-count">${1 + fn:length(p.images)} ảnh</span>
-              </div>
-
               <div class="pd-main-image-box" id="pdMainImageBox">
                 <c:choose>
                   <c:when test="${empty mainImage}">
@@ -78,7 +71,7 @@
 
               <div class="pd-thumb-list" aria-label="Ảnh sản phẩm">
                 <c:if test="${not empty mainImage}">
-                  <button type="button" class="pd-thumb is-active" data-image-role="main" data-image="${fn:escapeXml(mainImage)}">
+                  <button type="button" class="pd-thumb is-active" data-image="${fn:escapeXml(mainImage)}">
                     <c:choose>
                       <c:when test="${fn:startsWith(mainImage, 'http://') || fn:startsWith(mainImage, 'https://')}">
                         <img src="${mainImage}" alt="Ảnh chính" />
@@ -98,7 +91,7 @@
 
                 <c:forEach var="img" items="${p.images}" varStatus="st">
                   <c:if test="${not empty img.image}">
-                    <button type="button" class="pd-thumb" data-image-role="gallery" data-image="${fn:escapeXml(img.image)}">
+                    <button type="button" class="pd-thumb" data-image="${fn:escapeXml(img.image)}">
                       <c:choose>
                         <c:when test="${fn:startsWith(img.image, 'http://') || fn:startsWith(img.image, 'https://')}">
                           <img src="${img.image}" alt="Ảnh phụ ${st.index + 1}" />
@@ -131,7 +124,7 @@
               <form method="post" action="${ctx}/wishlist/toggle" class="wishlist-form">
                 <input type="hidden" name="productId" value="${p.id}">
                 <button type="submit" class="wishlist-btn ${isWishlisted ? 'active' : ''}">
-                  <i class="${isWishlisted ? 'fa-solid fa-heart' : 'fa-regular fa-heart'}"></i>
+                  <i class="${isWishlisted ? 'fa-solid' : 'fa-regular'} fa-heart"></i>
                 </button>
               </form>
             </div>
@@ -163,17 +156,16 @@
             </div>
 
             <div class="pd-short-desc">
-              <div class="pd-short-desc-label">Mô tả nhanh</div>
-              <div class="pd-short-desc-content">
+              <h2><c:out value="${p.title}" /></h2>
+              <p>
                 <c:choose>
                   <c:when test="${not empty p.description}">
-                    ${p.description}
+                    <c:out value="${fn:substring(p.description, 0, fn:length(p.description) > 260 ? 260 : fn:length(p.description))}" />
+                    <c:if test="${fn:length(p.description) > 260}">...</c:if>
                   </c:when>
-                  <c:otherwise>
-                    Sản phẩm chính hãng được chọn lọc tại MyCosmetic, cam kết chất lượng và an toàn cho làn da của bạn.
-                  </c:otherwise>
+                  <c:otherwise>Sản phẩm chính hãng được chọn lọc tại MyCosmetic, cam kết chất lượng và an toàn cho làn da của bạn.</c:otherwise>
                 </c:choose>
-              </div>
+              </p>
             </div>
 
             <div class="pd-product-meta-grid" aria-label="Thông tin nhanh sản phẩm">
@@ -256,108 +248,22 @@
       </div>
 
       <c:set var="comboProducts" value="${not empty boughtTogetherProducts ? boughtTogetherProducts : frequentlyBoughtProducts}" />
-      <section class="pd-section pd-section-compact pd-detail-section pd-description-section" id="pd-description">
-        <div class="pd-section-head pd-section-head--rich">
-          <div>
-            <span class="pd-section-eyebrow">Thông tin sản phẩm</span>
-            <h2>Mô tả chi tiết</h2>
-          </div>
+      <section class="pd-section pd-section-compact pd-detail-section" id="pd-description">
+        <div class="pd-section-head">
+          <h2>Mô tả chi tiết</h2>
+          <p>Thông tin đầy đủ về sản phẩm, công dụng và cách sử dụng.</p>
         </div>
-
-        <div class="pd-desc-layout">
-          <aside class="pd-desc-side-card" aria-label="Tóm tắt sản phẩm">
-            <div class="pd-desc-side-icon">✦</div>
-            <h3>MyCosmetic gợi ý</h3>
-            <p>Đọc kỹ phần mô tả trước khi chọn mua để nắm rõ công dụng, phân loại và cách sử dụng phù hợp.</p>
-            <div class="pd-desc-fact-list">
-              <div class="pd-desc-fact">
-                <span>Thương hiệu</span>
-                <strong><c:out value="${empty p.brandName ? 'MyCosmetic' : p.brandName}" /></strong>
-              </div>
-              <div class="pd-desc-fact">
-                <span>Danh mục</span>
-                <strong><c:out value="${empty p.categoryName ? 'Chính hãng' : p.categoryName}" /></strong>
-              </div>
-              <div class="pd-desc-fact">
-                <span>Tình trạng</span>
-                <strong><c:choose><c:when test="${p.stock > 0}">Còn hàng</c:when><c:otherwise>Tạm hết hàng</c:otherwise></c:choose></strong>
-              </div>
-            </div>
-          </aside>
-
-          <article class="pd-desc-main-card">
-            <div class="pd-desc-content pd-desc-rich">
-              <c:choose>
-                <c:when test="${not empty p.description}">
-                  ${p.description}
-                </c:when>
-                <c:otherwise>
-                  <p>Thông tin chi tiết đang được cập nhật. Bạn có thể liên hệ tổng đài viên để được hỗ trợ thêm về sản phẩm này.</p>
-                </c:otherwise>
-              </c:choose>
-            </div>
-          </article>
+        <div class="pd-desc-content">
+          <c:choose>
+            <c:when test="${not empty p.description}">
+              <p><c:out value="${p.description}" /></p>
+            </c:when>
+            <c:otherwise>
+              <p>Thông tin chi tiết đang được cập nhật. Bạn có thể liên hệ tổng đài viên để được hỗ trợ thêm về sản phẩm này.</p>
+            </c:otherwise>
+          </c:choose>
         </div>
       </section>
-
-      <c:if test="${not empty productMediaList}">
-        <section class="pd-section pd-section-compact pd-media-section" id="pd-media">
-          <div class="pd-section-head pd-section-head--rich">
-            <div>
-              <span class="pd-section-eyebrow">Thư viện mô tả</span>
-              <h2>Ảnh & video chi tiết</h2>
-            </div>
-          </div>
-
-          <div class="pd-media-grid">
-            <c:forEach var="media" items="${productMediaList}" varStatus="ms">
-              <c:set var="mediaUrl" value="${media.mediaUrl}" />
-              <article class="pd-media-card ${media.video ? 'is-video' : 'is-image'}">
-                <div class="pd-media-frame">
-                  <c:choose>
-                    <c:when test="${media.video}">
-                      <c:choose>
-                        <c:when test="${fn:startsWith(mediaUrl, 'http://') || fn:startsWith(mediaUrl, 'https://')}">
-                          <video controls preload="metadata" src="${mediaUrl}"></video>
-                        </c:when>
-                        <c:when test="${fn:startsWith(mediaUrl, '/')}">
-                          <video controls preload="metadata" src="${ctx}${mediaUrl}"></video>
-                        </c:when>
-                        <c:when test="${fn:startsWith(mediaUrl, 'assets/') || fn:startsWith(mediaUrl, 'uploads/')}">
-                          <video controls preload="metadata" src="${ctx}/${mediaUrl}"></video>
-                        </c:when>
-                        <c:otherwise>
-                          <video controls preload="metadata" src="${ctx}/uploads/product/media/${mediaUrl}"></video>
-                        </c:otherwise>
-                      </c:choose>
-                    </c:when>
-                    <c:otherwise>
-                      <c:choose>
-                        <c:when test="${fn:startsWith(mediaUrl, 'http://') || fn:startsWith(mediaUrl, 'https://')}">
-                          <img src="${mediaUrl}" alt="Media sản phẩm ${ms.index + 1}" loading="lazy" />
-                        </c:when>
-                        <c:when test="${fn:startsWith(mediaUrl, '/')}">
-                          <img src="${ctx}${mediaUrl}" alt="Media sản phẩm ${ms.index + 1}" loading="lazy" />
-                        </c:when>
-                        <c:when test="${fn:startsWith(mediaUrl, 'assets/') || fn:startsWith(mediaUrl, 'uploads/')}">
-                          <img src="${ctx}/${mediaUrl}" alt="Media sản phẩm ${ms.index + 1}" loading="lazy" />
-                        </c:when>
-                        <c:otherwise>
-                          <img src="${ctx}/uploads/product/media/${mediaUrl}" alt="Media sản phẩm ${ms.index + 1}" loading="lazy" />
-                        </c:otherwise>
-                      </c:choose>
-                    </c:otherwise>
-                  </c:choose>
-                </div>
-                <div class="pd-media-card-body">
-                  <span>${media.video ? 'Video' : 'Hình ảnh'}</span>
-                  <strong>Media mô tả #${ms.index + 1}</strong>
-                </div>
-              </article>
-            </c:forEach>
-          </div>
-        </section>
-      </c:if>
 
       <section class="pd-section pd-section-compact pd-reviews-section" id="pd-reviews">
         <div class="pd-section-head">
@@ -384,21 +290,106 @@
           <c:if test="${not empty rv.orderId && rv.orderId > 0}"><c:set var="reviewVerifiedCount" value="${reviewVerifiedCount + 1}" /></c:if>
         </c:forEach>
 
-        <div class="pd-review-toolbar">
-          <div class="pd-review-summary-card">
-            <div class="pd-review-summary-score">
-              <fmt:formatNumber value="${empty p.avgRating ? 0 : p.avgRating}" minFractionDigits="1" maxFractionDigits="1" />
+        <c:set var="reviewTotal" value="${empty reviews ? 0 : fn:length(reviews)}" />
+        <div class="pd-review-toolbar pd-review-toolbar-redesign">
+          <div class="pd-review-overview-card">
+            <div class="pd-review-overview-left">
+              <span class="pd-review-kicker">Bộ lọc đánh giá sản phẩm</span>
+              <div class="pd-review-score-row">
+                <strong class="pd-review-score">
+                  <fmt:formatNumber value="${empty p.avgRating ? 0 : p.avgRating}" minFractionDigits="1" maxFractionDigits="1" />
+                </strong>
+                <div class="pd-review-score-copy">
+                  <div class="pd-review-summary-stars" aria-label="Điểm đánh giá trung bình">★★★★★</div>
+                  <span>Dựa trên <b><c:out value="${reviewTotal}" /></b> đánh giá thực tế</span>
+                </div>
+              </div>
+              <div class="pd-review-trust-row">
+                <span>✓ <c:out value="${reviewVerifiedCount}" /> đánh giá từ khách đã mua</span>
+                <span>•</span>
+                <span>📷 <c:out value="${reviewImageCount}" /> đánh giá có ảnh</span>
+              </div>
             </div>
-            <div class="pd-review-summary-stars">★★★★★</div>
-            <div class="pd-review-summary-note"><c:out value="${empty p.reviewCount ? 0 : p.reviewCount}" /> đánh giá</div>
+
+            <div class="pd-review-bars" aria-label="Thống kê số sao đánh giá">
+              <div class="pd-review-bar-row">
+                <span>5 sao</span>
+                <div class="pd-review-bar-track"><i style="width:${reviewTotal > 0 ? (reviewCount5 * 100 / reviewTotal) : 0}%;"></i></div>
+                <b><c:out value="${reviewCount5}" /></b>
+              </div>
+              <div class="pd-review-bar-row">
+                <span>4 sao</span>
+                <div class="pd-review-bar-track"><i style="width:${reviewTotal > 0 ? (reviewCount4 * 100 / reviewTotal) : 0}%;"></i></div>
+                <b><c:out value="${reviewCount4}" /></b>
+              </div>
+              <div class="pd-review-bar-row">
+                <span>3 sao</span>
+                <div class="pd-review-bar-track"><i style="width:${reviewTotal > 0 ? (reviewCount3 * 100 / reviewTotal) : 0}%;"></i></div>
+                <b><c:out value="${reviewCount3}" /></b>
+              </div>
+              <div class="pd-review-bar-row">
+                <span>2 sao</span>
+                <div class="pd-review-bar-track"><i style="width:${reviewTotal > 0 ? (reviewCount2 * 100 / reviewTotal) : 0}%;"></i></div>
+                <b><c:out value="${reviewCount2}" /></b>
+              </div>
+              <div class="pd-review-bar-row">
+                <span>1 sao</span>
+                <div class="pd-review-bar-track"><i style="width:${reviewTotal > 0 ? (reviewCount1 * 100 / reviewTotal) : 0}%;"></i></div>
+                <b><c:out value="${reviewCount1}" /></b>
+              </div>
+            </div>
           </div>
-          <div class="pd-review-filters" id="pdReviewFilters">
-            <button type="button" class="pd-review-filter is-active" data-filter="all">Tất cả (<c:out value="${empty p.reviewCount ? 0 : p.reviewCount}" />)</button>
-            <button type="button" class="pd-review-filter" data-filter="5">5 sao (<c:out value="${reviewCount5}" />)</button>
-            <button type="button" class="pd-review-filter" data-filter="4">4 sao (<c:out value="${reviewCount4}" />)</button>
-            <button type="button" class="pd-review-filter" data-filter="3">3 sao (<c:out value="${reviewCount3}" />)</button>
-            <button type="button" class="pd-review-filter" data-filter="image">Có ảnh (<c:out value="${reviewImageCount}" />)</button>
-            <button type="button" class="pd-review-filter" data-filter="verified">Đã mua (<c:out value="${reviewVerifiedCount}" />)</button>
+
+          <div class="pd-review-filter-panel">
+            <div class="pd-review-filter-head">
+              <div>
+                <span class="pd-review-filter-label">Chọn tiêu chí lọc</span>
+                <p><span id="pdReviewActiveName">Tất cả đánh giá</span> · <b id="pdReviewVisibleCount"><c:out value="${reviewTotal}" /></b> kết quả</p>
+              </div>
+              <button type="button" class="pd-review-reset" data-review-reset>Đặt lại</button>
+            </div>
+            <div class="pd-review-filters" id="pdReviewFilters" role="group" aria-label="Bộ lọc đánh giá sản phẩm">
+              <button type="button" class="pd-review-filter is-active" data-filter="all" data-label="Tất cả đánh giá" aria-pressed="true">
+                <span class="pd-review-filter-icon">✨</span>
+                <span class="pd-review-filter-text">Tất cả</span>
+                <b><c:out value="${reviewTotal}" /></b>
+              </button>
+              <button type="button" class="pd-review-filter" data-filter="5" data-label="Đánh giá 5 sao" aria-pressed="false">
+                <span class="pd-review-filter-icon">★★★★★</span>
+                <span class="pd-review-filter-text">5 sao</span>
+                <b><c:out value="${reviewCount5}" /></b>
+              </button>
+              <button type="button" class="pd-review-filter" data-filter="4" data-label="Đánh giá 4 sao" aria-pressed="false">
+                <span class="pd-review-filter-icon">★★★★</span>
+                <span class="pd-review-filter-text">4 sao</span>
+                <b><c:out value="${reviewCount4}" /></b>
+              </button>
+              <button type="button" class="pd-review-filter" data-filter="3" data-label="Đánh giá 3 sao" aria-pressed="false">
+                <span class="pd-review-filter-icon">★★★</span>
+                <span class="pd-review-filter-text">3 sao</span>
+                <b><c:out value="${reviewCount3}" /></b>
+              </button>
+              <button type="button" class="pd-review-filter" data-filter="2" data-label="Đánh giá 2 sao" aria-pressed="false">
+                <span class="pd-review-filter-icon">★★</span>
+                <span class="pd-review-filter-text">2 sao</span>
+                <b><c:out value="${reviewCount2}" /></b>
+              </button>
+              <button type="button" class="pd-review-filter" data-filter="1" data-label="Đánh giá 1 sao" aria-pressed="false">
+                <span class="pd-review-filter-icon">★</span>
+                <span class="pd-review-filter-text">1 sao</span>
+                <b><c:out value="${reviewCount1}" /></b>
+              </button>
+              <button type="button" class="pd-review-filter" data-filter="image" data-label="Đánh giá có ảnh" aria-pressed="false">
+                <span class="pd-review-filter-icon">📷</span>
+                <span class="pd-review-filter-text">Có ảnh</span>
+                <b><c:out value="${reviewImageCount}" /></b>
+              </button>
+              <button type="button" class="pd-review-filter" data-filter="verified" data-label="Khách đã mua" aria-pressed="false">
+                <span class="pd-review-filter-icon">✓</span>
+                <span class="pd-review-filter-text">Đã mua</span>
+                <b><c:out value="${reviewVerifiedCount}" /></b>
+              </button>
+            </div>
           </div>
         </div>
         <div class="pd-reviews-container">
@@ -541,21 +532,19 @@
       const mainImage = document.getElementById('pdMainImage');
       const thumbs = document.querySelectorAll('.pd-thumb');
 
-      function normalizeImageUrl(raw, role) {
+      function normalizeImageUrl(raw) {
         if (!raw) return '';
         if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
         if (raw.startsWith('/')) return ctx + raw;
         if (raw.startsWith('assets/') || raw.startsWith('uploads/')) return ctx + '/' + raw;
-        if (role === 'main') return ctx + '/uploads/product/' + raw;
         return ctx + '/uploads/product/gallery/' + raw;
       }
 
       thumbs.forEach(function (btn) {
         btn.addEventListener('click', function () {
           const raw = btn.getAttribute('data-image');
-          const role = btn.getAttribute('data-image-role') || 'gallery';
           if (mainImage && raw) {
-            mainImage.src = normalizeImageUrl(raw, role);
+            mainImage.src = normalizeImageUrl(raw);
           }
           thumbs.forEach(function (item) { item.classList.remove('is-active'); });
           btn.classList.add('is-active');
@@ -583,8 +572,19 @@
       const reviewFilterButtons = document.querySelectorAll('.pd-review-filter');
       const reviewItems = document.querySelectorAll('.pd-review-item');
       const reviewEmpty = document.getElementById('pdReviewEmpty');
+      const reviewVisibleCount = document.getElementById('pdReviewVisibleCount');
+      const reviewActiveName = document.getElementById('pdReviewActiveName');
+      const reviewResetButton = document.querySelector('[data-review-reset]');
 
-      function applyReviewFilter(filter) {
+      function setActiveReviewButton(activeButton) {
+        reviewFilterButtons.forEach(function (btn) {
+          const isActive = btn === activeButton;
+          btn.classList.toggle('is-active', isActive);
+          btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
+      }
+
+      function applyReviewFilter(filter, label) {
         let visibleCount = 0;
 
         reviewItems.forEach(function (item) {
@@ -611,6 +611,14 @@
           }
         });
 
+        if (reviewVisibleCount) {
+          reviewVisibleCount.textContent = String(visibleCount);
+        }
+
+        if (reviewActiveName) {
+          reviewActiveName.textContent = label || 'Tất cả đánh giá';
+        }
+
         if (reviewEmpty) {
           const shouldShowEmpty = visibleCount === 0 && reviewItems.length > 0;
           reviewEmpty.hidden = !shouldShowEmpty;
@@ -620,16 +628,25 @@
 
       reviewFilterButtons.forEach(function (button) {
         button.addEventListener('click', function () {
-          reviewFilterButtons.forEach(function (btn) {
-            btn.classList.remove('is-active');
-          });
-
-          button.classList.add('is-active');
-          applyReviewFilter(button.getAttribute('data-filter') || 'all');
+          setActiveReviewButton(button);
+          applyReviewFilter(
+                  button.getAttribute('data-filter') || 'all',
+                  button.getAttribute('data-label') || 'Tất cả đánh giá'
+          );
         });
       });
 
-      applyReviewFilter('all');
+      if (reviewResetButton) {
+        reviewResetButton.addEventListener('click', function () {
+          const allButton = document.querySelector('.pd-review-filter[data-filter="all"]');
+          if (allButton) {
+            setActiveReviewButton(allButton);
+          }
+          applyReviewFilter('all', 'Tất cả đánh giá');
+        });
+      }
+
+      applyReviewFilter('all', 'Tất cả đánh giá');
 
     })();
 
@@ -702,80 +719,6 @@
                 })
                 .catch(err => {
                   if (err.message !== "LOGIN_REQUIRED") console.error("Lỗi Wishlist:", err);
-                });
-      });
-    });
-
-document.addEventListener("DOMContentLoaded", function () {
-      const modal = document.getElementById("loginModal");
-      const confirmBtn = document.getElementById("confirmLogin");
-      const cancelBtn = document.getElementById("cancelLogin");
-      const detailWishlistForm = document.querySelector(".wishlist-form");
-
-      function openModal() {
-        if (modal) modal.classList.remove("hidden");
-      }
-
-      function closeModal() {
-        if (modal) modal.classList.add("hidden");
-      }
-
-      cancelBtn?.addEventListener("click", closeModal);
-      modal?.addEventListener("click", (e) => {
-        if (e.target === modal) closeModal();
-      });
-
-      if (confirmBtn) {
-        confirmBtn.addEventListener("click", () => {
-          window.location.href = "${ctx}/login?redirect=" + encodeURIComponent(window.location.href);
-        });
-      }
-
-      if (!detailWishlistForm) return;
-
-      detailWishlistForm.addEventListener("submit", function (e) {
-        e.preventDefault();
-
-        const btn = this.querySelector(".wishlist-btn");
-        const icon = this.querySelector("i");
-        const formData = new URLSearchParams(new FormData(this));
-
-        fetch(this.action, {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: formData
-        })
-                .then(async response => {
-                  if (response.status === 401) {
-                    openModal();
-                    throw new Error("LOGIN_REQUIRED");
-                  }
-
-                  const text = await response.text();
-
-                  try {
-                    return JSON.parse(text);
-                  } catch (e) {
-                    return { status: text };
-                  }
-                })
-                .then(data => {
-                  const wishlisted =
-                          data.wishlisted === true ||
-                          data.status === "ADDED";
-
-                  if (btn) btn.classList.toggle("active", wishlisted);
-
-                  if (icon) {
-                    icon.className = wishlisted
-                            ? "fa-solid fa-heart"
-                            : "fa-regular fa-heart";
-                  }
-                })
-                .catch(err => {
-                  if (err.message !== "LOGIN_REQUIRED") {
-                    console.error("Lỗi Wishlist:", err);
-                  }
                 });
       });
     });
