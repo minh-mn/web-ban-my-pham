@@ -20,621 +20,734 @@ import com.webshop.app.model.Coupon;
 import com.webshop.app.model.Order;
 import com.webshop.app.model.OrderItem;
 import com.webshop.app.utils.DBConnection;
+import com.webshop.app.service.ShippingService.ShippingQuote;
 
 public class CheckoutService {
 
-	private static final BigDecimal FREE_SHIP_THRESHOLD = new BigDecimal("500000");
-
-	private static final String DEFAULT_RANK_CODE = "MEMBER";
-
-	private static final String SHIPPING_ECONOMY = "ECONOMY";
-	private static final String SHIPPING_FAST = "FAST";
-	private static final String SHIPPING_EXPRESS = "EXPRESS";
-
-	private final OrderDAO orderDAO = new OrderDAO();
-	private final OrderItemDAO itemDAO = new OrderItemDAO();
-	private final CouponDAO couponDAO = new CouponDAO();
-	private final UserCouponDAO userCouponDAO = new UserCouponDAO();
-	private final CouponService couponService = new CouponService();
-
-	/*
-	 * Issue 139:
-	 * Kiểm tra giới hạn mua Flash Sale và cập nhật sold_quantity khi đơn hàng
-	 * đã được trừ kho thành công.
-	 */
-	private final FlashSaleLimitService flashSaleLimitService = new FlashSaleLimitService();
-	private final FlashSaleItemDAO flashSaleItemDAO = new FlashSaleItemDAO();
-
-	/*
-	 * Giữ method cũ để các chỗ khác đang gọi checkout 7 tham số không bị lỗi.
-	 */
-	public int checkout(int userId,
-	                    Map<String, CartItem> cart,
-	                    String fullName,
-	                    String phone,
-	                    String address,
-	                    String paymentMethod,
-	                    String couponCode) {
-
-		return checkout(
-				userId,
-				cart,
-				fullName,
-				phone,
-				address,
-				paymentMethod,
-				couponCode,
-				SHIPPING_ECONOMY,
-				BigDecimal.ZERO,
-				null
-		);
-	}
-
-	/*
-	 * Method mới dùng cho checkout có phương thức vận chuyển, phí ship và freeship.
-	 */
-	public int checkout(int userId,
-	                    Map<String, CartItem> cart,
-	                    String fullName,
-	                    String phone,
-	                    String address,
-	                    String paymentMethod,
-	                    String couponCode,
-	                    String shippingMethod,
-	                    BigDecimal submittedShippingFee,
-	                    String province) {
-
-		if (userId <= 0) {
-			throw new IllegalArgumentException("Invalid userId");
-		}
-
-		if (cart == null || cart.isEmpty()) {
-			throw new IllegalArgumentException("Cart is empty");
-		}
-
-		if (paymentMethod == null || paymentMethod.isBlank()) {
-			paymentMethod = "COD";
-		}
-
-		shippingMethod = normalizeShippingMethod(shippingMethod);
-
-		boolean isCod = "COD".equalsIgnoreCase(paymentMethod);
-		boolean isVnp = "VNPAY".equalsIgnoreCase(paymentMethod);
-
-		BigDecimal subtotal = calculateCartSubtotal(cart);
-
-		/*
-		 * Rank hiện tại của user.
-		 * Ưu tiên users.manual_rank_code nếu admin đã gán thủ công.
-		 * Nếu không có manual rank thì tự tính theo tổng chi tiêu.
-		 */
-		String userRankCode = resolveUserRankCode(userId);
-
-		/*
-		 * =========================
-		 * COUPON DISCOUNT
-		 * =========================
-		 * Coupon được validate theo:
-		 * - active / ngày hiệu lực / lượt dùng
-		 * - min_order_amount
-		 * - min_rank_code
-		 */
-		Coupon coupon = null;
-		BigDecimal couponDiscount = BigDecimal.ZERO;
-
-		if (couponCode != null && !couponCode.isBlank()) {
-			coupon = validateCouponForCheckoutOrThrow(userId, couponCode, subtotal, userRankCode);
-			couponDiscount = couponService.calculateDiscount(coupon, subtotal);
-		}
-
-		couponDiscount = money0(couponDiscount);
-
-		/*
-		 * =========================
-		 * AMOUNT AFTER COUPON
-		 * =========================
-		 * Freeship được xét theo tổng sau voucher/coupon.
-		 */
-		BigDecimal amountAfterCoupon = subtotal.subtract(couponDiscount);
-
-		if (amountAfterCoupon.compareTo(BigDecimal.ZERO) < 0) {
-			amountAfterCoupon = BigDecimal.ZERO;
-		}
-
-		/*
-		 * =========================
-		 * RANK DISCOUNT
-		 * =========================
-		 * Rank discount được tính sau coupon.
-		 * Quan trọng: tính theo userRankCode đã xét manual_rank_code.
-		 */
-		BigDecimal rankDiscount = calculateRankDiscountByRankCode(userRankCode, amountAfterCoupon);
-
-		BigDecimal amountAfterAllDiscounts = amountAfterCoupon.subtract(rankDiscount);
-
-		if (amountAfterAllDiscounts.compareTo(BigDecimal.ZERO) < 0) {
-			amountAfterAllDiscounts = BigDecimal.ZERO;
-		}
-
-		/*
-		 * =========================
-		 * SHIPPING FEE + FREESHIP
-		 * =========================
-		 * Backend tự tính lại phí ship, không tin hoàn toàn dữ liệu từ client.
-		 */
-		BigDecimal shippingFee = calculateShippingFee(
-				shippingMethod,
-				province,
-				amountAfterCoupon,
-				submittedShippingFee
-		);
-
-		BigDecimal total = amountAfterAllDiscounts.add(shippingFee);
-		total = money0(total);
-
-		try (Connection conn = DBConnection.getConnection()) {
-			conn.setAutoCommit(false);
-
-			if (!existsUsersId(conn, userId)) {
-				conn.rollback();
-				throw new IllegalStateException("Invalid session userId (not found in users): " + userId);
-			}
-
-			if (coupon != null && userCouponDAO.hasUserUsedCoupon(conn, userId, coupon.getId())) {
-				conn.rollback();
-				throw new IllegalArgumentException("Mã ưu đãi này đã hết lượt sử dụng. Vui lòng chọn mã khác.");
-			}
-
-			/*
-			 * =========================
-			 * FLASH SALE PURCHASE LIMIT
-			 * =========================
-			 * Issue 139:
-			 * Kiểm tra lại giới hạn mua Flash Sale ngay trong transaction checkout.
-			 *
-			 * Đây là tầng bảo vệ cuối cùng để user không thể bypass bằng cách:
-			 * - sửa request thủ công;
-			 * - gọi thẳng checkout;
-			 * - thay đổi session cart trước khi đặt hàng.
-			 */
-			flashSaleLimitService.validateCartOrThrow(conn, userId, cart);
-
-			/*
-			 * =========================
-			 * LOCK & CHECK STOCK
-			 * =========================
-			 * Nếu item có variantId:
-			 * - khóa store_product_variant
-			 * - kiểm tra stock của variant
-			 *
-			 * Nếu item không có variantId:
-			 * - khóa store_product
-			 * - kiểm tra stock của product
-			 */
-			lockAndValidateStock(conn, cart);
-
-			/*
-			 * =========================
-			 * CREATE ORDER
-			 * =========================
-			 */
-			Order order = new Order();
-			order.setUserId(userId);
-			order.setFullName(fullName);
-			order.setPhone(phone);
-			order.setAddress(address);
-			order.setTotal(total);
-			order.setCouponDiscount(couponDiscount);
-			if (coupon != null) {
-				order.setCouponId(coupon.getId());
-			}
-			order.setStockDeducted(isCod);
-			order.setPaymentMethod(paymentMethod);
-
-			/*
-			 * =========================
-			 * SAVE SHIPPING INFO
-			 * =========================
-			 */
-			order.setShippingMethod(shippingMethod);
-			order.setShippingProvider(resolveShippingProvider(shippingMethod));
-			order.setShippingFee(shippingFee);
-			order.setShippingCode(null);
-			order.setShippingStatus("PENDING");
-
-			if (isCod) {
-				order.setPaymentStatus("PENDING");
-				order.setStatus("confirmed");
-			} else if (isVnp) {
-				order.setPaymentStatus("PENDING");
-				order.setStatus("processing");
-			} else {
-				order.setPaymentStatus("PENDING");
-				order.setStatus("processing");
-			}
-
-			int orderId = orderDAO.create(conn, order);
-
-			/*
-			 * =========================
-			 * COD FINALIZE IMMEDIATELY
-			 * =========================
-			 */
-			if (isCod) {
-				createOrderItemsAndUpdateStock(conn, orderId, cart);
-
-				if (coupon != null) {
-					if (!couponDAO.increaseUsedCountIfAvailable(conn, coupon.getId())) {
-						conn.rollback();
-						throw new IllegalArgumentException("Mã giảm giá đã hết lượt sử dụng hoặc không còn hiệu lực.");
-					}
-
-					userCouponDAO.markCouponUsed(conn, userId, coupon.getId(), orderId);
-				}
-			} else if (isVnp) {
-				/*
-				 * VNPay phải lưu order item ngay khi tạo đơn để có thể thanh toán lại
-				 * từ lịch sử đơn hàng dù session/cart cũ đã mất. Chưa trừ kho ở bước này.
-				 */
-				createOrderItemsOnly(conn, orderId, cart);
-			}
-
-			conn.commit();
-			return orderId;
-
-		} catch (Exception e) {
-			throw new RuntimeException("Checkout failed", e);
-		}
-	}
-
-	public void finalizeVnpayPaid(int orderId) {
-		finalizeVnpayPaid(orderId, null, null);
-	}
-
-	public void finalizeVnpayPaid(int orderId, Map<String, CartItem> cart, String couponCode) {
-
-		if (orderId <= 0) {
-			throw new IllegalArgumentException("Invalid orderId");
-		}
-
-		try (Connection conn = DBConnection.getConnection()) {
-			conn.setAutoCommit(false);
-
-			Order order = orderDAO.findById(conn, orderId);
-
-			if (order == null) {
-				conn.rollback();
-				throw new RuntimeException("Order not found: " + orderId);
-			}
-
-			if (!"VNPAY".equalsIgnoreCase(order.getPaymentMethod())) {
-				conn.rollback();
-				throw new IllegalStateException("Đơn hàng này không phải đơn thanh toán VNPay.");
-			}
-
-			if ("cancelled".equalsIgnoreCase(order.getStatus()) || "canceled".equalsIgnoreCase(order.getStatus())) {
-				conn.rollback();
-				throw new IllegalStateException("Đơn hàng đã hủy nên không thể xác nhận thanh toán.");
-			}
-
-			if ("PAID".equalsIgnoreCase(order.getPaymentStatus()) && order.isStockDeducted()) {
-				conn.commit();
-				return;
-			}
-
-			List<OrderItem> orderItems = itemDAO.findByOrderId(conn, orderId);
-
-			if (orderItems.isEmpty()) {
-				if (cart == null || cart.isEmpty()) {
-					conn.rollback();
-					throw new IllegalStateException("Không tìm thấy chi tiết đơn hàng để hoàn tất thanh toán.");
-				}
-
-				/*
-				 * Issue 139:
-				 * Nếu vì lý do nào đó đơn VNPay chưa có order item và phải tạo lại từ cart,
-				 * vẫn kiểm tra giới hạn Flash Sale trước khi lưu chi tiết đơn.
-				 */
-				flashSaleLimitService.validateCartOrThrow(conn, order.getUserId(), cart);
-
-				lockAndValidateStock(conn, cart);
-				createOrderItemsOnly(conn, orderId, cart);
-				orderItems = itemDAO.findByOrderId(conn, orderId);
-			}
-
-			if (!order.isStockDeducted()) {
-				deductStockForOrderItems(conn, orderItems);
-				orderDAO.markStockDeducted(conn, orderId);
-			}
-
-			Integer couponId = order.getCouponId();
-
-			if ((couponId == null || couponId <= 0) && couponCode != null && !couponCode.isBlank()) {
-				Coupon coupon = couponDAO.findByCode(couponCode.trim());
-
-				if (coupon != null) {
-					couponId = coupon.getId();
-				}
-			}
-
-			if (couponId != null && couponId > 0) {
-				if (userCouponDAO.hasUserUsedCoupon(conn, order.getUserId(), couponId)) {
-					conn.rollback();
-					throw new IllegalArgumentException("Mã ưu đãi này đã hết lượt sử dụng. Vui lòng chọn mã khác.");
-				}
-
-				if (!couponDAO.increaseUsedCountIfAvailable(conn, couponId)) {
-					conn.rollback();
-					throw new IllegalArgumentException("Mã giảm giá đã hết lượt sử dụng hoặc không còn hiệu lực.");
-				}
-
-				userCouponDAO.markCouponUsed(conn, order.getUserId(), couponId, orderId);
-			}
-
-			updatePaidStatus(conn, orderId, order.getVnpTxnRef());
-
-			conn.commit();
-
-		} catch (Exception e) {
-			throw new RuntimeException("Finalize VNPAY failed", e);
-		}
-	}
-
-	/*
-	 * =========================
-	 * DISCOUNT PREVIEW METHODS
-	 * =========================
-	 */
-
-	/*
-	 * Method cũ: giữ lại để tránh lỗi các file khác đang gọi.
-	 * Vì không có userId nên mặc định rank là MEMBER.
-	 */
-	public BigDecimal calculateCouponDiscount(String couponCode, BigDecimal subTotal) {
-		return calculateCouponDiscountByRank(couponCode, subTotal, DEFAULT_RANK_CODE);
-	}
-
-	/*
-	 * Method mới: preview coupon discount theo userId.
-	 * Dùng cho CheckoutServlet hoặc AjaxApplyCouponServlet để tính đúng theo rank user.
-	 */
-	public BigDecimal calculateCouponDiscount(int userId, String couponCode, BigDecimal subTotal) {
-
-		if (userId <= 0) {
-			return BigDecimal.ZERO;
-		}
-
-		BigDecimal safeSubTotal = money0(subTotal);
-
-		if (couponCode == null || couponCode.isBlank() || safeSubTotal.compareTo(BigDecimal.ZERO) <= 0) {
-			return BigDecimal.ZERO;
-		}
-
-		String userRankCode = resolveUserRankCode(userId);
-		Coupon coupon = couponService.validateCoupon(userId, couponCode, safeSubTotal, userRankCode);
-
-		if (coupon == null) {
-			return BigDecimal.ZERO;
-		}
-
-		return money0(couponService.calculateDiscount(coupon, safeSubTotal));
-	}
-
-	public BigDecimal calculateCouponDiscountByRank(
-			String couponCode,
-			BigDecimal subTotal,
-			String userRankCode
-	) {
-
-		BigDecimal safeSubTotal = money0(subTotal);
-
-		if (couponCode == null || couponCode.isBlank()) {
-			return BigDecimal.ZERO;
-		}
-
-		if (safeSubTotal.compareTo(BigDecimal.ZERO) <= 0) {
-			return BigDecimal.ZERO;
-		}
-
-		Coupon coupon = couponService.validateCoupon(couponCode, safeSubTotal, userRankCode);
-
-		if (coupon == null) {
-			return BigDecimal.ZERO;
-		}
-
-		BigDecimal discount = couponService.calculateDiscount(coupon, safeSubTotal);
-
-		if (discount.compareTo(BigDecimal.ZERO) <= 0) {
-			return BigDecimal.ZERO;
-		}
-
-		return money0(discount);
-	}
-
-	/*
-	 * Method public cũ: giữ lại để các file khác đang gọi không lỗi.
-	 * Nay đã tính discount theo manual_rank_code nếu admin có gán.
-	 */
-	public BigDecimal calculateRankDiscount(int userId, BigDecimal amountAfterCoupon) {
-
-		if (userId <= 0) {
-			return BigDecimal.ZERO;
-		}
-
-		String userRankCode = resolveUserRankCode(userId);
-
-		return calculateRankDiscountByRankCode(userRankCode, amountAfterCoupon);
-	}
-
-	public BigDecimal calculateTotalAfterCouponAndRank(int userId,
-	                                                   BigDecimal subTotal,
-	                                                   String couponCode) {
-
-		BigDecimal safeSubTotal = money0(subTotal);
-		String userRankCode = resolveUserRankCode(userId);
-
-		BigDecimal couponDiscount = calculateCouponDiscount(userId, couponCode, safeSubTotal);
-		BigDecimal amountAfterCoupon = safeSubTotal.subtract(couponDiscount);
-
-		if (amountAfterCoupon.compareTo(BigDecimal.ZERO) < 0) {
-			amountAfterCoupon = BigDecimal.ZERO;
-		}
-
-		BigDecimal rankDiscount = calculateRankDiscountByRankCode(userRankCode, amountAfterCoupon);
-		BigDecimal total = amountAfterCoupon.subtract(rankDiscount);
-
-		if (total.compareTo(BigDecimal.ZERO) < 0) {
-			total = BigDecimal.ZERO;
-		}
-
-		return money0(total);
-	}
-
-	public BigDecimal calculateTotalAfterDiscountsAndShipping(int userId,
-	                                                          BigDecimal subTotal,
-	                                                          String couponCode,
-	                                                          String shippingMethod,
-	                                                          String province) {
-
-		BigDecimal safeSubTotal = money0(subTotal);
-		String userRankCode = resolveUserRankCode(userId);
-
-		BigDecimal couponDiscount = calculateCouponDiscount(userId, couponCode, safeSubTotal);
-		BigDecimal amountAfterCoupon = safeSubTotal.subtract(couponDiscount);
-
-		if (amountAfterCoupon.compareTo(BigDecimal.ZERO) < 0) {
-			amountAfterCoupon = BigDecimal.ZERO;
-		}
-
-		BigDecimal rankDiscount = calculateRankDiscountByRankCode(userRankCode, amountAfterCoupon);
-		BigDecimal amountAfterAllDiscounts = amountAfterCoupon.subtract(rankDiscount);
-
-		if (amountAfterAllDiscounts.compareTo(BigDecimal.ZERO) < 0) {
-			amountAfterAllDiscounts = BigDecimal.ZERO;
-		}
-
-		BigDecimal shippingFee = calculateShippingFee(
-				shippingMethod,
-				province,
-				amountAfterCoupon,
-				BigDecimal.ZERO
-		);
-
-		return money0(amountAfterAllDiscounts.add(shippingFee));
-	}
-
-	/*
-	 * =========================
-	 * COUPON VALIDATION HELPERS
-	 * =========================
-	 */
-
-	private Coupon validateCouponForCheckoutOrThrow(
-			int userId,
-			String couponCode,
-			BigDecimal subtotal,
-			String userRankCode
-	) {
-
-		Coupon coupon = couponService.validateCoupon(userId, couponCode, subtotal, userRankCode);
-
-		if (coupon != null) {
-			return coupon;
-		}
-
-		Coupon existingCoupon = couponDAO.findByCode(couponCode.trim());
-		String message = couponService.buildCouponErrorMessage(
-				userId,
-				existingCoupon,
-				subtotal,
-				userRankCode
-		);
-
-		if (message == null || message.isBlank()) {
-			message = "Mã giảm giá không hợp lệ hoặc không đủ điều kiện áp dụng.";
-		}
-
-		throw new IllegalArgumentException(message);
-	}
-
-	/*
-	 * =========================
-	 * USER RANK HELPERS
-	 * =========================
-	 */
-
-	public String resolveEffectiveRankCode(int userId) {
-		return resolveUserRankCode(userId);
-	}
-
-	private String resolveUserRankCode(int userId) {
-
-		if (userId <= 0) {
-			return DEFAULT_RANK_CODE;
-		}
-
-		try (Connection conn = DBConnection.getConnection()) {
-			return resolveUserRankCode(conn, userId);
-		} catch (Exception e) {
-			e.printStackTrace();
-			return DEFAULT_RANK_CODE;
-		}
-	}
-
-	private String resolveUserRankCode(Connection conn, int userId) {
-
-		/*
-		 * Ưu tiên 1:
-		 * Rank admin gán thủ công trong users.manual_rank_code.
-		 */
-		String manualRankCode = findManualRankCode(conn, userId);
-
-		if (manualRankCode != null && !manualRankCode.isBlank()) {
-			return normalizeRankCode(manualRankCode);
-		}
-
-		/*
-		 * Ưu tiên 2:
-		 * Nếu không có manual rank thì tự tính theo tổng chi tiêu.
-		 */
-		BigDecimal totalSpent = findCompletedOrderTotal(conn, userId);
-		String rankBySpent = findRankCodeByTotalSpent(conn, totalSpent);
-
-		return normalizeRankCode(rankBySpent);
-	}
-
-	private String findManualRankCode(Connection conn, int userId) {
-
-		String sql = """
+    private static final BigDecimal FREE_SHIP_THRESHOLD = ShippingService.FREE_SHIP_THRESHOLD;
+
+    private static final String DEFAULT_RANK_CODE = "MEMBER";
+
+    private static final String SHIPPING_ECONOMY = ShippingService.METHOD_ECONOMY;
+    private static final String SHIPPING_FAST = ShippingService.METHOD_FAST;
+    private static final String SHIPPING_EXPRESS = ShippingService.METHOD_EXPRESS;
+
+    private final OrderDAO orderDAO = new OrderDAO();
+    private final OrderItemDAO itemDAO = new OrderItemDAO();
+    private final CouponDAO couponDAO = new CouponDAO();
+    private final UserCouponDAO userCouponDAO = new UserCouponDAO();
+    private final CouponService couponService = new CouponService();
+    private final ShippingService shippingService = new ShippingService();
+    private final GHNShippingService ghnShippingService = new GHNShippingService();
+
+    /*
+     * Issue 139:
+     * Kiểm tra giới hạn mua Flash Sale và cập nhật sold_quantity khi đơn hàng
+     * đã được trừ kho thành công.
+     */
+    private final FlashSaleLimitService flashSaleLimitService = new FlashSaleLimitService();
+    private final FlashSaleItemDAO flashSaleItemDAO = new FlashSaleItemDAO();
+
+    /*
+     * Giữ method cũ để các chỗ khác đang gọi checkout 7 tham số không bị lỗi.
+     */
+    public int checkout(int userId,
+                        Map<String, CartItem> cart,
+                        String fullName,
+                        String phone,
+                        String address,
+                        String paymentMethod,
+                        String couponCode) {
+
+        return checkout(
+                userId,
+                cart,
+                fullName,
+                phone,
+                address,
+                paymentMethod,
+                couponCode,
+                SHIPPING_ECONOMY,
+                BigDecimal.ZERO,
+                null
+        );
+    }
+
+    /*
+     * Method mới dùng cho checkout có phương thức vận chuyển, phí ship và freeship.
+     */
+    public int checkout(int userId,
+                        Map<String, CartItem> cart,
+                        String fullName,
+                        String phone,
+                        String address,
+                        String paymentMethod,
+                        String couponCode,
+                        String shippingMethod,
+                        BigDecimal submittedShippingFee,
+                        String province) {
+
+        return checkout(
+                userId,
+                cart,
+                fullName,
+                phone,
+                address,
+                paymentMethod,
+                couponCode,
+                shippingMethod,
+                null,
+                submittedShippingFee,
+                province
+        );
+    }
+
+    public int checkout(int userId,
+                        Map<String, CartItem> cart,
+                        String fullName,
+                        String phone,
+                        String address,
+                        String paymentMethod,
+                        String couponCode,
+                        String shippingMethod,
+                        String shippingProvider,
+                        BigDecimal submittedShippingFee,
+                        String province) {
+
+        return checkout(
+                userId,
+                cart,
+                fullName,
+                phone,
+                address,
+                paymentMethod,
+                couponCode,
+                shippingMethod,
+                shippingProvider,
+                submittedShippingFee,
+                province,
+                0,
+                ""
+        );
+    }
+
+    public int checkout(int userId,
+                        Map<String, CartItem> cart,
+                        String fullName,
+                        String phone,
+                        String address,
+                        String paymentMethod,
+                        String couponCode,
+                        String shippingMethod,
+                        String shippingProvider,
+                        BigDecimal submittedShippingFee,
+                        String province,
+                        int ghnToDistrictId,
+                        String ghnToWardCode) {
+
+        if (userId <= 0) {
+            throw new IllegalArgumentException("Invalid userId");
+        }
+
+        if (cart == null || cart.isEmpty()) {
+            throw new IllegalArgumentException("Cart is empty");
+        }
+
+        if (paymentMethod == null || paymentMethod.isBlank()) {
+            paymentMethod = "COD";
+        }
+
+        shippingMethod = normalizeShippingMethod(shippingMethod);
+
+        boolean isCod = "COD".equalsIgnoreCase(paymentMethod);
+        boolean isVnp = "VNPAY".equalsIgnoreCase(paymentMethod);
+
+        BigDecimal subtotal = calculateCartSubtotal(cart);
+
+        /*
+         * Rank hiện tại của user.
+         * Ưu tiên users.manual_rank_code nếu admin đã gán thủ công.
+         * Nếu không có manual rank thì tự tính theo tổng chi tiêu.
+         */
+        String userRankCode = resolveUserRankCode(userId);
+
+        /*
+         * =========================
+         * COUPON DISCOUNT
+         * =========================
+         * Coupon được validate theo:
+         * - active / ngày hiệu lực / lượt dùng
+         * - min_order_amount
+         * - min_rank_code
+         */
+        Coupon coupon = null;
+        BigDecimal couponDiscount = BigDecimal.ZERO;
+
+        if (couponCode != null && !couponCode.isBlank()) {
+            coupon = validateCouponForCheckoutOrThrow(userId, couponCode, subtotal, userRankCode);
+            couponDiscount = couponService.calculateDiscount(coupon, subtotal);
+        }
+
+        couponDiscount = money0(couponDiscount);
+
+        /*
+         * =========================
+         * AMOUNT AFTER COUPON
+         * =========================
+         * Freeship được xét theo tổng sau voucher/coupon.
+         */
+        BigDecimal amountAfterCoupon = subtotal.subtract(couponDiscount);
+
+        if (amountAfterCoupon.compareTo(BigDecimal.ZERO) < 0) {
+            amountAfterCoupon = BigDecimal.ZERO;
+        }
+
+        /*
+         * =========================
+         * RANK DISCOUNT
+         * =========================
+         * Rank discount được tính sau coupon.
+         * Quan trọng: tính theo userRankCode đã xét manual_rank_code.
+         */
+        BigDecimal rankDiscount = calculateRankDiscountByRankCode(userRankCode, amountAfterCoupon);
+
+        BigDecimal amountAfterAllDiscounts = amountAfterCoupon.subtract(rankDiscount);
+
+        if (amountAfterAllDiscounts.compareTo(BigDecimal.ZERO) < 0) {
+            amountAfterAllDiscounts = BigDecimal.ZERO;
+        }
+
+        /*
+         * =========================
+         * SHIPPING FEE + FREESHIP
+         * =========================
+         * Backend tự tính lại phí ship, không tin hoàn toàn dữ liệu từ client.
+         */
+        ShippingQuote shippingQuote;
+
+        if ("GHN".equalsIgnoreCase(shippingProvider)
+                && ghnToDistrictId > 0
+                && ghnToWardCode != null
+                && !ghnToWardCode.isBlank()) {
+            shippingQuote = shippingService.quoteGhnReal(
+                    province,
+                    shippingMethod,
+                    amountAfterCoupon,
+                    ghnToDistrictId,
+                    ghnToWardCode
+            );
+        } else {
+            shippingQuote = shippingService.quote(
+                    province,
+                    shippingProvider,
+                    shippingMethod,
+                    amountAfterCoupon
+            );
+        }
+
+        BigDecimal shippingFee = money0(shippingQuote.getFee());
+
+        BigDecimal total = amountAfterAllDiscounts.add(shippingFee);
+        total = money0(total);
+
+        try (Connection conn = DBConnection.getConnection()) {
+            conn.setAutoCommit(false);
+
+            if (!existsUsersId(conn, userId)) {
+                conn.rollback();
+                throw new IllegalStateException("Invalid session userId (not found in users): " + userId);
+            }
+
+            if (coupon != null && userCouponDAO.hasUserUsedCoupon(conn, userId, coupon.getId())) {
+                conn.rollback();
+                throw new IllegalArgumentException("Bạn đã sử dụng mã khuyến mãi này rồi.");
+            }
+
+            /*
+             * =========================
+             * FLASH SALE PURCHASE LIMIT
+             * =========================
+             * Issue 139:
+             * Kiểm tra lại giới hạn mua Flash Sale ngay trong transaction checkout.
+             *
+             * Đây là tầng bảo vệ cuối cùng để user không thể bypass bằng cách:
+             * - sửa request thủ công;
+             * - gọi thẳng checkout;
+             * - thay đổi session cart trước khi đặt hàng.
+             */
+            flashSaleLimitService.validateCartOrThrow(conn, userId, cart);
+
+            /*
+             * =========================
+             * LOCK & CHECK STOCK
+             * =========================
+             * Nếu item có variantId:
+             * - khóa store_product_variant
+             * - kiểm tra stock của variant
+             *
+             * Nếu item không có variantId:
+             * - khóa store_product
+             * - kiểm tra stock của product
+             */
+            lockAndValidateStock(conn, cart);
+
+            /*
+             * =========================
+             * CREATE ORDER
+             * =========================
+             */
+            Order order = new Order();
+            order.setUserId(userId);
+            order.setFullName(fullName);
+            order.setPhone(phone);
+            order.setAddress(address);
+            order.setTotal(total);
+            order.setCouponDiscount(couponDiscount);
+            if (coupon != null) {
+                order.setCouponId(coupon.getId());
+            }
+            order.setStockDeducted(isCod);
+            order.setPaymentMethod(paymentMethod);
+
+            /*
+             * =========================
+             * SAVE SHIPPING INFO
+             * =========================
+             */
+            order.setShippingMethod(shippingQuote.getMethodCode());
+            order.setShippingProvider(shippingQuote.getProviderCode());
+            order.setShippingFee(shippingFee);
+            order.setShippingCode(null);
+            order.setShippingStatus("PENDING");
+
+            if (isCod) {
+                order.setPaymentStatus("PENDING");
+                order.setStatus("confirmed");
+            } else if (isVnp) {
+                order.setPaymentStatus("PENDING");
+                order.setStatus("processing");
+            } else {
+                order.setPaymentStatus("PENDING");
+                order.setStatus("processing");
+            }
+
+            int orderId = orderDAO.create(conn, order);
+
+            /*
+             * =========================
+             * COD FINALIZE IMMEDIATELY
+             * =========================
+             */
+            if (isCod) {
+                createOrderItemsAndUpdateStock(conn, orderId, cart);
+
+                if (coupon != null) {
+                    if (!couponDAO.increaseUsedCountIfAvailable(conn, coupon.getId())) {
+                        conn.rollback();
+                        throw new IllegalArgumentException("Mã giảm giá đã hết lượt sử dụng hoặc không còn hiệu lực.");
+                    }
+
+                    userCouponDAO.markCouponUsed(conn, userId, coupon.getId(), orderId);
+                }
+            } else if (isVnp) {
+                /*
+                 * VNPay phải lưu order item ngay khi tạo đơn để có thể thanh toán lại
+                 * từ lịch sử đơn hàng dù session/cart cũ đã mất. Chưa trừ kho ở bước này.
+                 */
+                createOrderItemsOnly(conn, orderId, cart);
+            }
+
+
+            /*
+             * =========================
+             * GHN STAGING CREATE ORDER
+             * =========================
+             * Khi provider là GHN và đã cấu hình đủ token/shopId/from/to trong ghn.properties,
+             * hệ thống tạo đơn GHN thật rồi lưu order_code vào shipping_code.
+             * Nếu thiếu cấu hình hoặc GHN lỗi, đơn web vẫn được tạo bình thường
+             * và giữ mã tracking nội bộ để không làm hỏng checkout.
+             */
+            if ("GHN".equalsIgnoreCase(shippingQuote.getProviderCode())) {
+                try {
+                    GHNShippingService.CreateOrderResult ghnResult = ghnShippingService.createOrder(
+                            order,
+                            new java.util.ArrayList<>(cart.values()),
+                            ghnToDistrictId,
+                            ghnToWardCode
+                    );
+
+                    if (ghnResult.isSuccess()) {
+                        orderDAO.updateShippingCreated(
+                                conn,
+                                orderId,
+                                "GHN",
+                                ghnResult.getOrderCode()
+                        );
+                    }
+                } catch (Exception ignored) {
+                    /*
+                     * Không rollback checkout vì GHN là tích hợp ngoài.
+                     * Admin vẫn có thể tạo lại vận đơn hoặc kiểm tra cấu hình sau.
+                     */
+                }
+            }
+
+            conn.commit();
+            return orderId;
+
+        } catch (Exception e) {
+            throw new RuntimeException("Checkout failed", e);
+        }
+    }
+
+    public void finalizeVnpayPaid(int orderId) {
+        finalizeVnpayPaid(orderId, null, null);
+    }
+
+    public void finalizeVnpayPaid(int orderId, Map<String, CartItem> cart, String couponCode) {
+
+        if (orderId <= 0) {
+            throw new IllegalArgumentException("Invalid orderId");
+        }
+
+        try (Connection conn = DBConnection.getConnection()) {
+            conn.setAutoCommit(false);
+
+            Order order = orderDAO.findById(conn, orderId);
+
+            if (order == null) {
+                conn.rollback();
+                throw new RuntimeException("Order not found: " + orderId);
+            }
+
+            if (!"VNPAY".equalsIgnoreCase(order.getPaymentMethod())) {
+                conn.rollback();
+                throw new IllegalStateException("Đơn hàng này không phải đơn thanh toán VNPay.");
+            }
+
+            if ("cancelled".equalsIgnoreCase(order.getStatus()) || "canceled".equalsIgnoreCase(order.getStatus())) {
+                conn.rollback();
+                throw new IllegalStateException("Đơn hàng đã hủy nên không thể xác nhận thanh toán.");
+            }
+
+            if ("PAID".equalsIgnoreCase(order.getPaymentStatus()) && order.isStockDeducted()) {
+                conn.commit();
+                return;
+            }
+
+            List<OrderItem> orderItems = itemDAO.findByOrderId(conn, orderId);
+
+            if (orderItems.isEmpty()) {
+                if (cart == null || cart.isEmpty()) {
+                    conn.rollback();
+                    throw new IllegalStateException("Không tìm thấy chi tiết đơn hàng để hoàn tất thanh toán.");
+                }
+
+                /*
+                 * Issue 139:
+                 * Nếu vì lý do nào đó đơn VNPay chưa có order item và phải tạo lại từ cart,
+                 * vẫn kiểm tra giới hạn Flash Sale trước khi lưu chi tiết đơn.
+                 */
+                flashSaleLimitService.validateCartOrThrow(conn, order.getUserId(), cart);
+
+                lockAndValidateStock(conn, cart);
+                createOrderItemsOnly(conn, orderId, cart);
+                orderItems = itemDAO.findByOrderId(conn, orderId);
+            }
+
+            if (!order.isStockDeducted()) {
+                deductStockForOrderItems(conn, orderItems);
+                orderDAO.markStockDeducted(conn, orderId);
+            }
+
+            Integer couponId = order.getCouponId();
+
+            if ((couponId == null || couponId <= 0) && couponCode != null && !couponCode.isBlank()) {
+                Coupon coupon = couponDAO.findByCode(couponCode.trim());
+
+                if (coupon != null) {
+                    couponId = coupon.getId();
+                }
+            }
+
+            if (couponId != null && couponId > 0) {
+                if (userCouponDAO.hasUserUsedCoupon(conn, order.getUserId(), couponId)) {
+                    conn.rollback();
+                    throw new IllegalArgumentException("Bạn đã sử dụng mã khuyến mãi này rồi.");
+                }
+
+                if (!couponDAO.increaseUsedCountIfAvailable(conn, couponId)) {
+                    conn.rollback();
+                    throw new IllegalArgumentException("Mã giảm giá đã hết lượt sử dụng hoặc không còn hiệu lực.");
+                }
+
+                userCouponDAO.markCouponUsed(conn, order.getUserId(), couponId, orderId);
+            }
+
+            updatePaidStatus(conn, orderId, order.getVnpTxnRef());
+
+            conn.commit();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Finalize VNPAY failed", e);
+        }
+    }
+
+    /*
+     * =========================
+     * DISCOUNT PREVIEW METHODS
+     * =========================
+     */
+
+    /*
+     * Method cũ: giữ lại để tránh lỗi các file khác đang gọi.
+     * Vì không có userId nên mặc định rank là MEMBER.
+     */
+    public BigDecimal calculateCouponDiscount(String couponCode, BigDecimal subTotal) {
+        return calculateCouponDiscountByRank(couponCode, subTotal, DEFAULT_RANK_CODE);
+    }
+
+    /*
+     * Method mới: preview coupon discount theo userId.
+     * Dùng cho CheckoutServlet hoặc AjaxApplyCouponServlet để tính đúng theo rank user.
+     */
+    public BigDecimal calculateCouponDiscount(int userId, String couponCode, BigDecimal subTotal) {
+
+        if (userId <= 0) {
+            return BigDecimal.ZERO;
+        }
+
+        BigDecimal safeSubTotal = money0(subTotal);
+
+        if (couponCode == null || couponCode.isBlank() || safeSubTotal.compareTo(BigDecimal.ZERO) <= 0) {
+            return BigDecimal.ZERO;
+        }
+
+        String userRankCode = resolveUserRankCode(userId);
+        Coupon coupon = couponService.validateCoupon(userId, couponCode, safeSubTotal, userRankCode);
+
+        if (coupon == null) {
+            return BigDecimal.ZERO;
+        }
+
+        return money0(couponService.calculateDiscount(coupon, safeSubTotal));
+    }
+
+    public BigDecimal calculateCouponDiscountByRank(
+            String couponCode,
+            BigDecimal subTotal,
+            String userRankCode
+    ) {
+
+        BigDecimal safeSubTotal = money0(subTotal);
+
+        if (couponCode == null || couponCode.isBlank()) {
+            return BigDecimal.ZERO;
+        }
+
+        if (safeSubTotal.compareTo(BigDecimal.ZERO) <= 0) {
+            return BigDecimal.ZERO;
+        }
+
+        Coupon coupon = couponService.validateCoupon(couponCode, safeSubTotal, userRankCode);
+
+        if (coupon == null) {
+            return BigDecimal.ZERO;
+        }
+
+        BigDecimal discount = couponService.calculateDiscount(coupon, safeSubTotal);
+
+        if (discount.compareTo(BigDecimal.ZERO) <= 0) {
+            return BigDecimal.ZERO;
+        }
+
+        return money0(discount);
+    }
+
+    /*
+     * Method public cũ: giữ lại để các file khác đang gọi không lỗi.
+     * Nay đã tính discount theo manual_rank_code nếu admin có gán.
+     */
+    public BigDecimal calculateRankDiscount(int userId, BigDecimal amountAfterCoupon) {
+
+        if (userId <= 0) {
+            return BigDecimal.ZERO;
+        }
+
+        String userRankCode = resolveUserRankCode(userId);
+
+        return calculateRankDiscountByRankCode(userRankCode, amountAfterCoupon);
+    }
+
+    public BigDecimal calculateTotalAfterCouponAndRank(int userId,
+                                                       BigDecimal subTotal,
+                                                       String couponCode) {
+
+        BigDecimal safeSubTotal = money0(subTotal);
+        String userRankCode = resolveUserRankCode(userId);
+
+        BigDecimal couponDiscount = calculateCouponDiscount(userId, couponCode, safeSubTotal);
+        BigDecimal amountAfterCoupon = safeSubTotal.subtract(couponDiscount);
+
+        if (amountAfterCoupon.compareTo(BigDecimal.ZERO) < 0) {
+            amountAfterCoupon = BigDecimal.ZERO;
+        }
+
+        BigDecimal rankDiscount = calculateRankDiscountByRankCode(userRankCode, amountAfterCoupon);
+        BigDecimal total = amountAfterCoupon.subtract(rankDiscount);
+
+        if (total.compareTo(BigDecimal.ZERO) < 0) {
+            total = BigDecimal.ZERO;
+        }
+
+        return money0(total);
+    }
+
+    public BigDecimal calculateTotalAfterDiscountsAndShipping(int userId,
+                                                              BigDecimal subTotal,
+                                                              String couponCode,
+                                                              String shippingMethod,
+                                                              String province) {
+
+        BigDecimal safeSubTotal = money0(subTotal);
+        String userRankCode = resolveUserRankCode(userId);
+
+        BigDecimal couponDiscount = calculateCouponDiscount(userId, couponCode, safeSubTotal);
+        BigDecimal amountAfterCoupon = safeSubTotal.subtract(couponDiscount);
+
+        if (amountAfterCoupon.compareTo(BigDecimal.ZERO) < 0) {
+            amountAfterCoupon = BigDecimal.ZERO;
+        }
+
+        BigDecimal rankDiscount = calculateRankDiscountByRankCode(userRankCode, amountAfterCoupon);
+        BigDecimal amountAfterAllDiscounts = amountAfterCoupon.subtract(rankDiscount);
+
+        if (amountAfterAllDiscounts.compareTo(BigDecimal.ZERO) < 0) {
+            amountAfterAllDiscounts = BigDecimal.ZERO;
+        }
+
+        ShippingQuote shippingQuote = shippingService.quote(
+                province,
+                null,
+                shippingMethod,
+                amountAfterCoupon
+        );
+
+        return money0(amountAfterAllDiscounts.add(shippingQuote.getFee()));
+    }
+
+    /*
+     * =========================
+     * COUPON VALIDATION HELPERS
+     * =========================
+     */
+
+    private Coupon validateCouponForCheckoutOrThrow(
+            int userId,
+            String couponCode,
+            BigDecimal subtotal,
+            String userRankCode
+    ) {
+
+        Coupon coupon = couponService.validateCoupon(userId, couponCode, subtotal, userRankCode);
+
+        if (coupon != null) {
+            return coupon;
+        }
+
+        Coupon existingCoupon = couponDAO.findByCode(couponCode.trim());
+        String message = couponService.buildCouponErrorMessage(
+                userId,
+                existingCoupon,
+                subtotal,
+                userRankCode
+        );
+
+        if (message == null || message.isBlank()) {
+            message = "Mã giảm giá không hợp lệ hoặc không đủ điều kiện áp dụng.";
+        }
+
+        throw new IllegalArgumentException(message);
+    }
+
+    /*
+     * =========================
+     * USER RANK HELPERS
+     * =========================
+     */
+
+    public String resolveEffectiveRankCode(int userId) {
+        return resolveUserRankCode(userId);
+    }
+
+    private String resolveUserRankCode(int userId) {
+
+        if (userId <= 0) {
+            return DEFAULT_RANK_CODE;
+        }
+
+        try (Connection conn = DBConnection.getConnection()) {
+            return resolveUserRankCode(conn, userId);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return DEFAULT_RANK_CODE;
+        }
+    }
+
+    private String resolveUserRankCode(Connection conn, int userId) {
+
+        /*
+         * Ưu tiên 1:
+         * Rank admin gán thủ công trong users.manual_rank_code.
+         */
+        String manualRankCode = findManualRankCode(conn, userId);
+
+        if (manualRankCode != null && !manualRankCode.isBlank()) {
+            return normalizeRankCode(manualRankCode);
+        }
+
+        /*
+         * Ưu tiên 2:
+         * Nếu không có manual rank thì tự tính theo tổng chi tiêu.
+         */
+        BigDecimal totalSpent = findCompletedOrderTotal(conn, userId);
+        String rankBySpent = findRankCodeByTotalSpent(conn, totalSpent);
+
+        return normalizeRankCode(rankBySpent);
+    }
+
+    private String findManualRankCode(Connection conn, int userId) {
+
+        String sql = """
                 SELECT manual_rank_code
                 FROM users
                 WHERE id = ?
                 LIMIT 1
                 """;
 
-		try (PreparedStatement ps = conn.prepareStatement(sql)) {
-			ps.setInt(1, userId);
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
 
-			try (ResultSet rs = ps.executeQuery()) {
-				if (rs.next()) {
-					return rs.getString("manual_rank_code");
-				}
-			}
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("manual_rank_code");
+                }
+            }
 
-		} catch (Exception e) {
-			/*
-			 * Nếu database cũ chưa có manual_rank_code
-			 * thì fallback về rank theo chi tiêu.
-			 */
-			return null;
-		}
+        } catch (Exception e) {
+            /*
+             * Nếu database cũ chưa có manual_rank_code
+             * thì fallback về rank theo chi tiêu.
+             */
+            return null;
+        }
 
-		return null;
-	}
+        return null;
+    }
 
-	private BigDecimal findCompletedOrderTotal(Connection conn, int userId) {
+    private BigDecimal findCompletedOrderTotal(Connection conn, int userId) {
 
-		String sql = """
+        String sql = """
                 SELECT COALESCE(SUM(total), 0) AS total_spent
                 FROM store_order
                 WHERE user_id = ?
@@ -645,26 +758,26 @@ public class CheckoutService {
                   )
                 """;
 
-		try (PreparedStatement ps = conn.prepareStatement(sql)) {
-			ps.setInt(1, userId);
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
 
-			try (ResultSet rs = ps.executeQuery()) {
-				if (rs.next()) {
-					BigDecimal totalSpent = rs.getBigDecimal("total_spent");
-					return totalSpent == null ? BigDecimal.ZERO : totalSpent;
-				}
-			}
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    BigDecimal totalSpent = rs.getBigDecimal("total_spent");
+                    return totalSpent == null ? BigDecimal.ZERO : totalSpent;
+                }
+            }
 
-		} catch (Exception e) {
-			return BigDecimal.ZERO;
-		}
+        } catch (Exception e) {
+            return BigDecimal.ZERO;
+        }
 
-		return BigDecimal.ZERO;
-	}
+        return BigDecimal.ZERO;
+    }
 
-	private String findRankCodeByTotalSpent(Connection conn, BigDecimal totalSpent) {
+    private String findRankCodeByTotalSpent(Connection conn, BigDecimal totalSpent) {
 
-		String sql = """
+        String sql = """
                 SELECT code
                 FROM store_rank
                 WHERE is_active = 1
@@ -673,25 +786,25 @@ public class CheckoutService {
                 LIMIT 1
                 """;
 
-		try (PreparedStatement ps = conn.prepareStatement(sql)) {
-			ps.setBigDecimal(1, money0(totalSpent));
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setBigDecimal(1, money0(totalSpent));
 
-			try (ResultSet rs = ps.executeQuery()) {
-				if (rs.next()) {
-					return rs.getString("code");
-				}
-			}
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("code");
+                }
+            }
 
-		} catch (Exception e) {
-			return DEFAULT_RANK_CODE;
-		}
+        } catch (Exception e) {
+            return DEFAULT_RANK_CODE;
+        }
 
-		return DEFAULT_RANK_CODE;
-	}
+        return DEFAULT_RANK_CODE;
+    }
 
-	private BigDecimal findRankDiscountPercentByCode(String rankCode) {
+    private BigDecimal findRankDiscountPercentByCode(String rankCode) {
 
-		String sql = """
+        String sql = """
                 SELECT discount_percent
                 FROM store_rank
                 WHERE code = ?
@@ -699,346 +812,292 @@ public class CheckoutService {
                 LIMIT 1
                 """;
 
-		try (Connection conn = DBConnection.getConnection();
-		     PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, normalizeRankCode(rankCode));
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    BigDecimal percent = rs.getBigDecimal("discount_percent");
+                    return percent == null ? BigDecimal.ZERO : percent;
+                }
+            }
+
+        } catch (Exception e) {
+            return BigDecimal.ZERO;
+        }
 
-			ps.setString(1, normalizeRankCode(rankCode));
+        return BigDecimal.ZERO;
+    }
+
+    private BigDecimal calculateRankDiscountByRankCode(String rankCode, BigDecimal amountAfterCoupon) {
 
-			try (ResultSet rs = ps.executeQuery()) {
-				if (rs.next()) {
-					BigDecimal percent = rs.getBigDecimal("discount_percent");
-					return percent == null ? BigDecimal.ZERO : percent;
-				}
-			}
+        BigDecimal safeAmount = money0(amountAfterCoupon);
 
-		} catch (Exception e) {
-			return BigDecimal.ZERO;
-		}
+        if (safeAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            return BigDecimal.ZERO;
+        }
+
+        BigDecimal discountPercent = findRankDiscountPercentByCode(rankCode);
+
+        if (discountPercent.compareTo(BigDecimal.ZERO) <= 0) {
+            return BigDecimal.ZERO;
+        }
+
+        BigDecimal discount = safeAmount
+                .multiply(discountPercent)
+                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+
+        if (discount.compareTo(BigDecimal.ZERO) < 0) {
+            return BigDecimal.ZERO;
+        }
 
-		return BigDecimal.ZERO;
-	}
+        if (discount.compareTo(safeAmount) > 0) {
+            return safeAmount;
+        }
 
-	private BigDecimal calculateRankDiscountByRankCode(String rankCode, BigDecimal amountAfterCoupon) {
+        return money0(discount);
+    }
 
-		BigDecimal safeAmount = money0(amountAfterCoupon);
-
-		if (safeAmount.compareTo(BigDecimal.ZERO) <= 0) {
-			return BigDecimal.ZERO;
-		}
-
-		BigDecimal discountPercent = findRankDiscountPercentByCode(rankCode);
-
-		if (discountPercent.compareTo(BigDecimal.ZERO) <= 0) {
-			return BigDecimal.ZERO;
-		}
-
-		BigDecimal discount = safeAmount
-				.multiply(discountPercent)
-				.divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-
-		if (discount.compareTo(BigDecimal.ZERO) < 0) {
-			return BigDecimal.ZERO;
-		}
-
-		if (discount.compareTo(safeAmount) > 0) {
-			return safeAmount;
-		}
-
-		return money0(discount);
-	}
-
-	private String normalizeRankCode(String rankCode) {
-
-		if (rankCode == null || rankCode.isBlank()) {
-			return DEFAULT_RANK_CODE;
-		}
-
-		String normalized = rankCode.trim().toUpperCase();
-
-		return switch (normalized) {
-			case "MEMBER", "SILVER", "GOLD", "DIAMOND", "VIP" -> normalized;
-			default -> DEFAULT_RANK_CODE;
-		};
-	}
-
-	/*
-	 * =========================
-	 * SHIPPING HELPERS
-	 * =========================
-	 */
-
-	private String normalizeShippingMethod(String shippingMethod) {
-
-		if (shippingMethod == null || shippingMethod.isBlank()) {
-			return SHIPPING_ECONOMY;
-		}
-
-		String method = shippingMethod.trim().toUpperCase();
-
-		if (SHIPPING_FAST.equals(method)
-				|| SHIPPING_EXPRESS.equals(method)
-				|| SHIPPING_ECONOMY.equals(method)) {
-			return method;
-		}
-
-		return SHIPPING_ECONOMY;
-	}
-
-	private String resolveShippingProvider(String shippingMethod) {
-		String method = normalizeShippingMethod(shippingMethod);
-
-		if (SHIPPING_FAST.equals(method)) {
-			return "GHN";
-		}
-
-		if (SHIPPING_EXPRESS.equals(method)) {
-			return "INTERNAL";
-		}
-
-		return "GHTK";
-	}
-
-	private BigDecimal calculateShippingFee(String shippingMethod,
-	                                        String province,
-	                                        BigDecimal amountAfterCoupon,
-	                                        BigDecimal submittedShippingFee) {
-
-		BigDecimal safeAmountAfterCoupon = money0(amountAfterCoupon);
-
-		if (safeAmountAfterCoupon.compareTo(FREE_SHIP_THRESHOLD) >= 0) {
-			return BigDecimal.ZERO;
-		}
-
-		String method = normalizeShippingMethod(shippingMethod);
-
-		if (province == null || province.isBlank()) {
-			return money0(submittedShippingFee);
-		}
-
-		BigDecimal baseFee;
-
-		switch (method) {
-			case SHIPPING_FAST:
-				baseFee = new BigDecimal("35000");
-				break;
-			case SHIPPING_EXPRESS:
-				baseFee = new BigDecimal("50000");
-				break;
-			case SHIPPING_ECONOMY:
-			default:
-				baseFee = new BigDecimal("20000");
-				break;
-		}
-
-		BigDecimal areaExtraFee = isHcmCity(province)
-				? BigDecimal.ZERO
-				: new BigDecimal("15000");
-
-		return money0(baseFee.add(areaExtraFee));
-	}
-
-	private boolean isHcmCity(String province) {
-
-		if (province == null || province.isBlank()) {
-			return false;
-		}
-
-		String value = province.trim().toLowerCase();
-
-		return value.contains("hồ chí minh")
-				|| value.contains("ho chi minh")
-				|| value.contains("tp. hcm")
-				|| value.contains("tphcm")
-				|| value.contains("thành phố hồ chí minh");
-	}
-
-	/*
-	 * =========================
-	 * ORDER ITEM / STOCK HELPERS
-	 * =========================
-	 */
-
-	private void lockAndValidateStock(Connection conn,
-	                                  Map<String, CartItem> cart) throws Exception {
-
-		for (CartItem item : cart.values()) {
-			if (item == null) {
-				continue;
-			}
-
-			int quantity = Math.max(item.getQuantity(), 0);
-
-			if (quantity <= 0) {
-				throw new RuntimeException("Số lượng sản phẩm không hợp lệ.");
-			}
-
-			Integer variantId = getCartItemVariantId(item);
-
-			if (variantId != null && variantId > 0) {
-				lockVariantAndValidateStock(conn, item, variantId, quantity);
-			} else {
-				lockProductAndValidateStock(conn, item.getProductId(), quantity);
-			}
-		}
-	}
-
-	private void createOrderItemsAndUpdateStock(Connection conn,
-	                                            int orderId,
-	                                            Map<String, CartItem> cart) throws Exception {
-
-		for (CartItem item : cart.values()) {
-			if (item == null) {
-				continue;
-			}
-
-			int quantity = Math.max(item.getQuantity(), 0);
-
-			if (quantity <= 0) {
-				throw new RuntimeException("Số lượng sản phẩm không hợp lệ.");
-			}
-
-			Integer variantId = getCartItemVariantId(item);
-			VariantSnapshot variantSnapshot = null;
-
-			if (variantId != null && variantId > 0) {
-				variantSnapshot = lockVariantAndValidateStock(conn, item, variantId, quantity);
-			}
-
-			OrderItem orderItem = new OrderItem();
-			orderItem.setOrderId(orderId);
-			orderItem.setProductId(item.getProductId());
-			orderItem.setPrice(item.getPrice());
-			orderItem.setQuantity(quantity);
-
-			if (variantSnapshot != null) {
-				orderItem.setVariantId(variantSnapshot.variantId);
-				orderItem.setVariantName(variantSnapshot.variantName);
-				orderItem.setVariantSize(variantSnapshot.variantSize);
-				orderItem.setVariantType(variantSnapshot.variantType);
-			}
-
-			itemDAO.create(conn, orderItem);
-
-			if (variantSnapshot != null) {
-				updateVariantStock(conn, item.getProductId(), variantSnapshot.variantId, quantity);
-				updateProductStockAfterVariantSold(conn, item.getProductId(), quantity);
-			} else {
-				updateProductStock(conn, item.getProductId(), quantity);
-			}
-
-			/*
-			 * Issue 139:
-			 * COD trừ kho ngay khi tạo đơn, nên cập nhật sold_quantity của Flash Sale ngay tại đây.
-			 */
-			increaseFlashSaleSoldQuantityIfRunning(conn, item.getProductId(), quantity);
-		}
-	}
-
-	private void createOrderItemsOnly(Connection conn,
-	                                  int orderId,
-	                                  Map<String, CartItem> cart) throws Exception {
-
-		for (CartItem item : cart.values()) {
-			if (item == null) {
-				continue;
-			}
-
-			int quantity = Math.max(item.getQuantity(), 0);
-
-			if (quantity <= 0) {
-				throw new RuntimeException("Số lượng sản phẩm không hợp lệ.");
-			}
-
-			Integer variantId = getCartItemVariantId(item);
-			VariantSnapshot variantSnapshot = null;
-
-			if (variantId != null && variantId > 0) {
-				variantSnapshot = lockVariantAndValidateStock(conn, item, variantId, quantity);
-			}
-
-			OrderItem orderItem = new OrderItem();
-			orderItem.setOrderId(orderId);
-			orderItem.setProductId(item.getProductId());
-			orderItem.setPrice(item.getPrice());
-			orderItem.setQuantity(quantity);
-
-			if (variantSnapshot != null) {
-				orderItem.setVariantId(variantSnapshot.variantId);
-				orderItem.setVariantName(variantSnapshot.variantName);
-				orderItem.setVariantSize(variantSnapshot.variantSize);
-				orderItem.setVariantType(variantSnapshot.variantType);
-			}
-
-			itemDAO.create(conn, orderItem);
-		}
-	}
-
-	private void deductStockForOrderItems(Connection conn,
-	                                      List<OrderItem> orderItems) throws Exception {
-
-		if (orderItems == null || orderItems.isEmpty()) {
-			throw new RuntimeException("Đơn hàng chưa có sản phẩm để trừ tồn kho.");
-		}
-
-		for (OrderItem item : orderItems) {
-			if (item == null || item.getProductId() <= 0 || item.getQuantity() <= 0) {
-				throw new RuntimeException("Chi tiết đơn hàng không hợp lệ.");
-			}
-
-			Integer variantId = item.getVariantId();
-			int quantity = item.getQuantity();
-
-			if (variantId != null && variantId > 0) {
-				lockVariantAndValidateStock(conn, item.getProductId(), variantId, quantity);
-				updateVariantStock(conn, item.getProductId(), variantId, quantity);
-				updateProductStockAfterVariantSold(conn, item.getProductId(), quantity);
-			} else {
-				lockProductAndValidateStock(conn, item.getProductId(), quantity);
-				updateProductStock(conn, item.getProductId(), quantity);
-			}
-
-			/*
-			 * Issue 139:
-			 * VNPay chỉ cập nhật sold_quantity khi thanh toán thành công và stock thật sự bị trừ.
-			 */
-			increaseFlashSaleSoldQuantityIfRunning(conn, item.getProductId(), quantity);
-		}
-	}
-
-	private void lockProductAndValidateStock(Connection conn,
-	                                         int productId,
-	                                         int quantity) throws Exception {
-
-		String sql = """
+    private String normalizeRankCode(String rankCode) {
+
+        if (rankCode == null || rankCode.isBlank()) {
+            return DEFAULT_RANK_CODE;
+        }
+
+        String normalized = rankCode.trim().toUpperCase();
+
+        return switch (normalized) {
+            case "MEMBER", "SILVER", "GOLD", "DIAMOND", "VIP" -> normalized;
+            default -> DEFAULT_RANK_CODE;
+        };
+    }
+
+    /*
+     * =========================
+     * SHIPPING HELPERS
+     * =========================
+     */
+
+    private String normalizeShippingMethod(String shippingMethod) {
+        return shippingService.normalizeMethod(shippingMethod);
+    }
+
+    private String resolveShippingProvider(String shippingMethod) {
+        return shippingService.defaultProviderForMethod(shippingMethod);
+    }
+
+    private BigDecimal calculateShippingFee(String shippingMethod,
+                                            String province,
+                                            BigDecimal amountAfterCoupon,
+                                            BigDecimal submittedShippingFee) {
+
+        try {
+            ShippingQuote quote = shippingService.quote(
+                    province,
+                    null,
+                    shippingMethod,
+                    amountAfterCoupon
+            );
+
+            return money0(quote.getFee());
+        } catch (IllegalArgumentException e) {
+            return money0(submittedShippingFee);
+        }
+    }
+
+    private boolean isHcmCity(String province) {
+        return shippingService.isHcmCity(province);
+    }
+
+    /*
+     * =========================
+     * ORDER ITEM / STOCK HELPERS
+     * =========================
+     */
+
+    private void lockAndValidateStock(Connection conn,
+                                      Map<String, CartItem> cart) throws Exception {
+
+        for (CartItem item : cart.values()) {
+            if (item == null) {
+                continue;
+            }
+
+            int quantity = Math.max(item.getQuantity(), 0);
+
+            if (quantity <= 0) {
+                throw new RuntimeException("Số lượng sản phẩm không hợp lệ.");
+            }
+
+            Integer variantId = getCartItemVariantId(item);
+
+            if (variantId != null && variantId > 0) {
+                lockVariantAndValidateStock(conn, item, variantId, quantity);
+            } else {
+                lockProductAndValidateStock(conn, item.getProductId(), quantity);
+            }
+        }
+    }
+
+    private void createOrderItemsAndUpdateStock(Connection conn,
+                                                int orderId,
+                                                Map<String, CartItem> cart) throws Exception {
+
+        for (CartItem item : cart.values()) {
+            if (item == null) {
+                continue;
+            }
+
+            int quantity = Math.max(item.getQuantity(), 0);
+
+            if (quantity <= 0) {
+                throw new RuntimeException("Số lượng sản phẩm không hợp lệ.");
+            }
+
+            Integer variantId = getCartItemVariantId(item);
+            VariantSnapshot variantSnapshot = null;
+
+            if (variantId != null && variantId > 0) {
+                variantSnapshot = lockVariantAndValidateStock(conn, item, variantId, quantity);
+            }
+
+            OrderItem orderItem = new OrderItem();
+            orderItem.setOrderId(orderId);
+            orderItem.setProductId(item.getProductId());
+            orderItem.setPrice(item.getPrice());
+            orderItem.setQuantity(quantity);
+
+            if (variantSnapshot != null) {
+                orderItem.setVariantId(variantSnapshot.variantId);
+                orderItem.setVariantName(variantSnapshot.variantName);
+                orderItem.setVariantSize(variantSnapshot.variantSize);
+                orderItem.setVariantType(variantSnapshot.variantType);
+            }
+
+            itemDAO.create(conn, orderItem);
+
+            if (variantSnapshot != null) {
+                updateVariantStock(conn, item.getProductId(), variantSnapshot.variantId, quantity);
+                updateProductStockAfterVariantSold(conn, item.getProductId(), quantity);
+            } else {
+                updateProductStock(conn, item.getProductId(), quantity);
+            }
+
+            /*
+             * Issue 139:
+             * COD trừ kho ngay khi tạo đơn, nên cập nhật sold_quantity của Flash Sale ngay tại đây.
+             */
+            increaseFlashSaleSoldQuantityIfRunning(conn, item.getProductId(), quantity);
+        }
+    }
+
+    private void createOrderItemsOnly(Connection conn,
+                                      int orderId,
+                                      Map<String, CartItem> cart) throws Exception {
+
+        for (CartItem item : cart.values()) {
+            if (item == null) {
+                continue;
+            }
+
+            int quantity = Math.max(item.getQuantity(), 0);
+
+            if (quantity <= 0) {
+                throw new RuntimeException("Số lượng sản phẩm không hợp lệ.");
+            }
+
+            Integer variantId = getCartItemVariantId(item);
+            VariantSnapshot variantSnapshot = null;
+
+            if (variantId != null && variantId > 0) {
+                variantSnapshot = lockVariantAndValidateStock(conn, item, variantId, quantity);
+            }
+
+            OrderItem orderItem = new OrderItem();
+            orderItem.setOrderId(orderId);
+            orderItem.setProductId(item.getProductId());
+            orderItem.setPrice(item.getPrice());
+            orderItem.setQuantity(quantity);
+
+            if (variantSnapshot != null) {
+                orderItem.setVariantId(variantSnapshot.variantId);
+                orderItem.setVariantName(variantSnapshot.variantName);
+                orderItem.setVariantSize(variantSnapshot.variantSize);
+                orderItem.setVariantType(variantSnapshot.variantType);
+            }
+
+            itemDAO.create(conn, orderItem);
+        }
+    }
+
+    private void deductStockForOrderItems(Connection conn,
+                                          List<OrderItem> orderItems) throws Exception {
+
+        if (orderItems == null || orderItems.isEmpty()) {
+            throw new RuntimeException("Đơn hàng chưa có sản phẩm để trừ tồn kho.");
+        }
+
+        for (OrderItem item : orderItems) {
+            if (item == null || item.getProductId() <= 0 || item.getQuantity() <= 0) {
+                throw new RuntimeException("Chi tiết đơn hàng không hợp lệ.");
+            }
+
+            Integer variantId = item.getVariantId();
+            int quantity = item.getQuantity();
+
+            if (variantId != null && variantId > 0) {
+                lockVariantAndValidateStock(conn, item.getProductId(), variantId, quantity);
+                updateVariantStock(conn, item.getProductId(), variantId, quantity);
+                updateProductStockAfterVariantSold(conn, item.getProductId(), quantity);
+            } else {
+                lockProductAndValidateStock(conn, item.getProductId(), quantity);
+                updateProductStock(conn, item.getProductId(), quantity);
+            }
+
+            /*
+             * Issue 139:
+             * VNPay chỉ cập nhật sold_quantity khi thanh toán thành công và stock thật sự bị trừ.
+             */
+            increaseFlashSaleSoldQuantityIfRunning(conn, item.getProductId(), quantity);
+        }
+    }
+
+    private void lockProductAndValidateStock(Connection conn,
+                                             int productId,
+                                             int quantity) throws Exception {
+
+        String sql = """
                 SELECT stock
                 FROM store_product
                 WHERE id = ?
                 FOR UPDATE
                 """;
 
-		try (PreparedStatement ps = conn.prepareStatement(sql)) {
-			ps.setInt(1, productId);
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, productId);
 
-			try (ResultSet rs = ps.executeQuery()) {
-				if (!rs.next()) {
-					throw new RuntimeException("Không tìm thấy sản phẩm ID " + productId);
-				}
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    throw new RuntimeException("Không tìm thấy sản phẩm ID " + productId);
+                }
 
-				int stock = rs.getInt("stock");
+                int stock = rs.getInt("stock");
 
-				if (stock < quantity) {
-					throw new RuntimeException("Không đủ tồn kho cho sản phẩm ID " + productId);
-				}
-			}
-		}
-	}
+                if (stock < quantity) {
+                    throw new RuntimeException("Không đủ tồn kho cho sản phẩm ID " + productId);
+                }
+            }
+        }
+    }
 
-	private void lockVariantAndValidateStock(Connection conn,
-	                                         int productId,
-	                                         int variantId,
-	                                         int quantity) throws Exception {
+    private void lockVariantAndValidateStock(Connection conn,
+                                             int productId,
+                                             int variantId,
+                                             int quantity) throws Exception {
 
-		String sql = """
+        String sql = """
                 SELECT stock
                 FROM store_product_variant
                 WHERE id = ?
@@ -1046,34 +1105,34 @@ public class CheckoutService {
                 FOR UPDATE
                 """;
 
-		try (PreparedStatement ps = conn.prepareStatement(sql)) {
-			ps.setInt(1, variantId);
-			ps.setInt(2, productId);
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, variantId);
+            ps.setInt(2, productId);
 
-			try (ResultSet rs = ps.executeQuery()) {
-				if (!rs.next()) {
-					throw new RuntimeException("Không tìm thấy biến thể ID " + variantId + " của sản phẩm ID " + productId);
-				}
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    throw new RuntimeException("Không tìm thấy biến thể ID " + variantId + " của sản phẩm ID " + productId);
+                }
 
-				Integer stock = getIntegerByColumns(rs, "stock", "quantity");
+                Integer stock = getIntegerByColumns(rs, "stock", "quantity");
 
-				if (stock == null) {
-					throw new RuntimeException("Bảng store_product_variant thiếu cột stock hoặc quantity.");
-				}
+                if (stock == null) {
+                    throw new RuntimeException("Bảng store_product_variant thiếu cột stock hoặc quantity.");
+                }
 
-				if (stock < quantity) {
-					throw new RuntimeException("Không đủ tồn kho cho biến thể ID " + variantId + " của sản phẩm ID " + productId);
-				}
-			}
-		}
-	}
+                if (stock < quantity) {
+                    throw new RuntimeException("Không đủ tồn kho cho biến thể ID " + variantId + " của sản phẩm ID " + productId);
+                }
+            }
+        }
+    }
 
-	private VariantSnapshot lockVariantAndValidateStock(Connection conn,
-	                                                    CartItem item,
-	                                                    int variantId,
-	                                                    int quantity) throws Exception {
+    private VariantSnapshot lockVariantAndValidateStock(Connection conn,
+                                                        CartItem item,
+                                                        int variantId,
+                                                        int quantity) throws Exception {
 
-		String sql = """
+        String sql = """
                 SELECT *
                 FROM store_product_variant
                 WHERE id = ?
@@ -1081,66 +1140,66 @@ public class CheckoutService {
                 FOR UPDATE
                 """;
 
-		try (PreparedStatement ps = conn.prepareStatement(sql)) {
-			ps.setInt(1, variantId);
-			ps.setInt(2, item.getProductId());
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, variantId);
+            ps.setInt(2, item.getProductId());
 
-			try (ResultSet rs = ps.executeQuery()) {
-				if (!rs.next()) {
-					throw new RuntimeException(
-							"Không tìm thấy biến thể ID " + variantId
-									+ " của sản phẩm ID " + item.getProductId()
-					);
-				}
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    throw new RuntimeException(
+                            "Không tìm thấy biến thể ID " + variantId
+                                    + " của sản phẩm ID " + item.getProductId()
+                    );
+                }
 
-				Integer stock = getIntegerByColumns(rs, "stock", "quantity");
+                Integer stock = getIntegerByColumns(rs, "stock", "quantity");
 
-				if (stock == null) {
-					throw new RuntimeException(
-							"Bảng store_product_variant thiếu cột stock hoặc quantity."
-					);
-				}
+                if (stock == null) {
+                    throw new RuntimeException(
+                            "Bảng store_product_variant thiếu cột stock hoặc quantity."
+                    );
+                }
 
-				if (stock < quantity) {
-					throw new RuntimeException(
-							"Không đủ tồn kho cho biến thể ID " + variantId
-									+ " của sản phẩm ID " + item.getProductId()
-					);
-				}
+                if (stock < quantity) {
+                    throw new RuntimeException(
+                            "Không đủ tồn kho cho biến thể ID " + variantId
+                                    + " của sản phẩm ID " + item.getProductId()
+                    );
+                }
 
-				VariantSnapshot snapshot = new VariantSnapshot();
-				snapshot.variantId = variantId;
+                VariantSnapshot snapshot = new VariantSnapshot();
+                snapshot.variantId = variantId;
 
-				/*
-				 * Ưu tiên thông tin từ CartItem vì đó là thông tin user đã chọn.
-				 * Nếu CartItem không có getter variant thì fallback sang database.
-				 */
-				snapshot.variantName = firstNotBlank(
-						getCartItemString(item, "getVariantName"),
-						getStringByColumns(rs, "variant_name", "name", "title")
-				);
+                /*
+                 * Ưu tiên thông tin từ CartItem vì đó là thông tin user đã chọn.
+                 * Nếu CartItem không có getter variant thì fallback sang database.
+                 */
+                snapshot.variantName = firstNotBlank(
+                        getCartItemString(item, "getVariantName"),
+                        getStringByColumns(rs, "variant_name", "name", "title")
+                );
 
-				snapshot.variantSize = firstNotBlank(
-						getCartItemString(item, "getVariantSize"),
-						getStringByColumns(rs, "variant_size", "size")
-				);
+                snapshot.variantSize = firstNotBlank(
+                        getCartItemString(item, "getVariantSize"),
+                        getStringByColumns(rs, "variant_size", "size")
+                );
 
-				snapshot.variantType = firstNotBlank(
-						getCartItemString(item, "getVariantType"),
-						getStringByColumns(rs, "variant_type", "type")
-				);
+                snapshot.variantType = firstNotBlank(
+                        getCartItemString(item, "getVariantType"),
+                        getStringByColumns(rs, "variant_type", "type")
+                );
 
-				return snapshot;
-			}
-		}
-	}
+                return snapshot;
+            }
+        }
+    }
 
-	private void updateVariantStock(Connection conn,
-	                                int productId,
-	                                int variantId,
-	                                int quantity) throws Exception {
+    private void updateVariantStock(Connection conn,
+                                    int productId,
+                                    int variantId,
+                                    int quantity) throws Exception {
 
-		String sql = """
+        String sql = """
                 UPDATE store_product_variant
                 SET stock = stock - ?
                 WHERE id = ?
@@ -1148,57 +1207,57 @@ public class CheckoutService {
                   AND stock >= ?
                 """;
 
-		try (PreparedStatement ps = conn.prepareStatement(sql)) {
-			ps.setInt(1, quantity);
-			ps.setInt(2, variantId);
-			ps.setInt(3, productId);
-			ps.setInt(4, quantity);
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, quantity);
+            ps.setInt(2, variantId);
+            ps.setInt(3, productId);
+            ps.setInt(4, quantity);
 
-			int updated = ps.executeUpdate();
+            int updated = ps.executeUpdate();
 
-			if (updated <= 0) {
-				throw new RuntimeException(
-						"Không thể trừ tồn kho biến thể ID " + variantId
-								+ " của sản phẩm ID " + productId
-				);
-			}
-		}
-	}
+            if (updated <= 0) {
+                throw new RuntimeException(
+                        "Không thể trừ tồn kho biến thể ID " + variantId
+                                + " của sản phẩm ID " + productId
+                );
+            }
+        }
+    }
 
-	private void updateProductStock(Connection conn,
-	                                int productId,
-	                                int quantity) throws Exception {
+    private void updateProductStock(Connection conn,
+                                    int productId,
+                                    int quantity) throws Exception {
 
-		String sql = """
+        String sql = """
                 UPDATE store_product
                 SET stock = stock - ?
                 WHERE id = ?
                   AND stock >= ?
                 """;
 
-		try (PreparedStatement ps = conn.prepareStatement(sql)) {
-			ps.setInt(1, quantity);
-			ps.setInt(2, productId);
-			ps.setInt(3, quantity);
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, quantity);
+            ps.setInt(2, productId);
+            ps.setInt(3, quantity);
 
-			int updated = ps.executeUpdate();
+            int updated = ps.executeUpdate();
 
-			if (updated <= 0) {
-				throw new RuntimeException("Không thể trừ tồn kho sản phẩm ID " + productId);
-			}
-		}
-	}
+            if (updated <= 0) {
+                throw new RuntimeException("Không thể trừ tồn kho sản phẩm ID " + productId);
+            }
+        }
+    }
 
-	/*
-	 * Khi bán variant, vẫn cập nhật stock tổng ở store_product để trang danh sách sản phẩm
-	 * không bị lệch tồn kho tổng. Không dùng điều kiện stock >= quantity vì tồn kho tổng
-	 * đôi khi không đồng bộ chính xác với tổng variant.
-	 */
-	private void updateProductStockAfterVariantSold(Connection conn,
-	                                                int productId,
-	                                                int quantity) throws Exception {
+    /*
+     * Khi bán variant, vẫn cập nhật stock tổng ở store_product để trang danh sách sản phẩm
+     * không bị lệch tồn kho tổng. Không dùng điều kiện stock >= quantity vì tồn kho tổng
+     * đôi khi không đồng bộ chính xác với tổng variant.
+     */
+    private void updateProductStockAfterVariantSold(Connection conn,
+                                                    int productId,
+                                                    int quantity) throws Exception {
 
-		String sql = """
+        String sql = """
                 UPDATE store_product
                 SET stock = CASE
                     WHEN stock >= ? THEN stock - ?
@@ -1207,213 +1266,213 @@ public class CheckoutService {
                 WHERE id = ?
                 """;
 
-		try (PreparedStatement ps = conn.prepareStatement(sql)) {
-			ps.setInt(1, quantity);
-			ps.setInt(2, quantity);
-			ps.setInt(3, productId);
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, quantity);
+            ps.setInt(2, quantity);
+            ps.setInt(3, productId);
 
-			int updated = ps.executeUpdate();
+            int updated = ps.executeUpdate();
 
-			if (updated <= 0) {
-				throw new RuntimeException("Không thể cập nhật tồn kho tổng của sản phẩm ID " + productId);
-			}
-		}
-	}
+            if (updated <= 0) {
+                throw new RuntimeException("Không thể cập nhật tồn kho tổng của sản phẩm ID " + productId);
+            }
+        }
+    }
 
-	/*
-	 * Issue 139:
-	 * Cập nhật số lượng đã bán của Flash Sale sau khi stock đã được trừ thành công.
-	 *
-	 * Hàm này không throw nếu sản phẩm không thuộc Flash Sale đang chạy.
-	 * Nếu productId đang không nằm trong Flash Sale active, DAO sẽ trả về updated = 0.
-	 */
-	private void increaseFlashSaleSoldQuantityIfRunning(Connection conn,
-	                                                    int productId,
-	                                                    int quantity) throws Exception {
+    /*
+     * Issue 139:
+     * Cập nhật số lượng đã bán của Flash Sale sau khi stock đã được trừ thành công.
+     *
+     * Hàm này không throw nếu sản phẩm không thuộc Flash Sale đang chạy.
+     * Nếu productId đang không nằm trong Flash Sale active, DAO sẽ trả về updated = 0.
+     */
+    private void increaseFlashSaleSoldQuantityIfRunning(Connection conn,
+                                                        int productId,
+                                                        int quantity) throws Exception {
 
-		if (productId <= 0 || quantity <= 0) {
-			return;
-		}
+        if (productId <= 0 || quantity <= 0) {
+            return;
+        }
 
-		flashSaleItemDAO.increaseSoldQuantityIfRunning(conn, productId, quantity);
-	}
+        flashSaleItemDAO.increaseSoldQuantityIfRunning(conn, productId, quantity);
+    }
 
-	private Integer getCartItemVariantId(CartItem item) {
-		Object value = invokeGetter(item, "getVariantId");
+    private Integer getCartItemVariantId(CartItem item) {
+        Object value = invokeGetter(item, "getVariantId");
 
-		if (value == null) {
-			return null;
-		}
+        if (value == null) {
+            return null;
+        }
 
-		if (value instanceof Integer integerValue) {
-			return integerValue > 0 ? integerValue : null;
-		}
+        if (value instanceof Integer integerValue) {
+            return integerValue > 0 ? integerValue : null;
+        }
 
-		if (value instanceof Number numberValue) {
-			int intValue = numberValue.intValue();
-			return intValue > 0 ? intValue : null;
-		}
+        if (value instanceof Number numberValue) {
+            int intValue = numberValue.intValue();
+            return intValue > 0 ? intValue : null;
+        }
 
-		try {
-			int intValue = Integer.parseInt(value.toString().trim());
-			return intValue > 0 ? intValue : null;
-		} catch (Exception e) {
-			return null;
-		}
-	}
+        try {
+            int intValue = Integer.parseInt(value.toString().trim());
+            return intValue > 0 ? intValue : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
 
-	private String getCartItemString(CartItem item, String getterName) {
-		Object value = invokeGetter(item, getterName);
+    private String getCartItemString(CartItem item, String getterName) {
+        Object value = invokeGetter(item, getterName);
 
-		if (value == null) {
-			return null;
-		}
+        if (value == null) {
+            return null;
+        }
 
-		String text = value.toString().trim();
+        String text = value.toString().trim();
 
-		return text.isEmpty() ? null : text;
-	}
+        return text.isEmpty() ? null : text;
+    }
 
-	private Object invokeGetter(Object target, String getterName) {
-		if (target == null || getterName == null || getterName.isBlank()) {
-			return null;
-		}
+    private Object invokeGetter(Object target, String getterName) {
+        if (target == null || getterName == null || getterName.isBlank()) {
+            return null;
+        }
 
-		try {
-			Method method = target.getClass().getMethod(getterName);
-			return method.invoke(target);
-		} catch (Exception e) {
-			return null;
-		}
-	}
+        try {
+            Method method = target.getClass().getMethod(getterName);
+            return method.invoke(target);
+        } catch (Exception e) {
+            return null;
+        }
+    }
 
-	private String firstNotBlank(String first, String second) {
-		if (first != null && !first.trim().isEmpty()) {
-			return first.trim();
-		}
+    private String firstNotBlank(String first, String second) {
+        if (first != null && !first.trim().isEmpty()) {
+            return first.trim();
+        }
 
-		if (second != null && !second.trim().isEmpty()) {
-			return second.trim();
-		}
+        if (second != null && !second.trim().isEmpty()) {
+            return second.trim();
+        }
 
-		return null;
-	}
+        return null;
+    }
 
-	private Integer getIntegerByColumns(ResultSet rs, String... columnNames) {
-		for (String columnName : columnNames) {
-			try {
-				if (!hasColumn(rs, columnName)) {
-					continue;
-				}
+    private Integer getIntegerByColumns(ResultSet rs, String... columnNames) {
+        for (String columnName : columnNames) {
+            try {
+                if (!hasColumn(rs, columnName)) {
+                    continue;
+                }
 
-				int value = rs.getInt(columnName);
+                int value = rs.getInt(columnName);
 
-				if (rs.wasNull()) {
-					continue;
-				}
+                if (rs.wasNull()) {
+                    continue;
+                }
 
-				return value;
+                return value;
 
-			} catch (Exception ignored) {
-			}
-		}
+            } catch (Exception ignored) {
+            }
+        }
 
-		return null;
-	}
+        return null;
+    }
 
-	private String getStringByColumns(ResultSet rs, String... columnNames) {
-		for (String columnName : columnNames) {
-			try {
-				if (!hasColumn(rs, columnName)) {
-					continue;
-				}
+    private String getStringByColumns(ResultSet rs, String... columnNames) {
+        for (String columnName : columnNames) {
+            try {
+                if (!hasColumn(rs, columnName)) {
+                    continue;
+                }
 
-				String value = rs.getString(columnName);
+                String value = rs.getString(columnName);
 
-				if (value != null && !value.trim().isEmpty()) {
-					return value.trim();
-				}
+                if (value != null && !value.trim().isEmpty()) {
+                    return value.trim();
+                }
 
-			} catch (Exception ignored) {
-			}
-		}
+            } catch (Exception ignored) {
+            }
+        }
 
-		return null;
-	}
+        return null;
+    }
 
-	private boolean hasColumn(ResultSet rs, String columnName) {
-		try {
-			ResultSetMetaData metaData = rs.getMetaData();
+    private boolean hasColumn(ResultSet rs, String columnName) {
+        try {
+            ResultSetMetaData metaData = rs.getMetaData();
 
-			for (int i = 1; i <= metaData.getColumnCount(); i++) {
-				if (columnName.equalsIgnoreCase(metaData.getColumnLabel(i))
-						|| columnName.equalsIgnoreCase(metaData.getColumnName(i))) {
-					return true;
-				}
-			}
+            for (int i = 1; i <= metaData.getColumnCount(); i++) {
+                if (columnName.equalsIgnoreCase(metaData.getColumnLabel(i))
+                        || columnName.equalsIgnoreCase(metaData.getColumnName(i))) {
+                    return true;
+                }
+            }
 
-		} catch (Exception ignored) {
-		}
+        } catch (Exception ignored) {
+        }
 
-		return false;
-	}
+        return false;
+    }
 
-	private static class VariantSnapshot {
-		private int variantId;
-		private String variantName;
-		private String variantSize;
-		private String variantType;
-	}
+    private static class VariantSnapshot {
+        private int variantId;
+        private String variantName;
+        private String variantSize;
+        private String variantType;
+    }
 
-	private void updatePaidStatus(Connection conn, int orderId, String txnRef) {
+    private void updatePaidStatus(Connection conn, int orderId, String txnRef) {
 
-		try {
-			orderDAO.updatePaymentStatus(conn, orderId, "PAID", "confirmed", txnRef);
-		} catch (Exception ignore) {
-			orderDAO.updatePaymentStatus(orderId, "PAID", "confirmed", txnRef);
-		}
-	}
+        try {
+            orderDAO.updatePaymentStatus(conn, orderId, "PAID", "confirmed", txnRef);
+        } catch (Exception ignore) {
+            orderDAO.updatePaymentStatus(orderId, "PAID", "confirmed", txnRef);
+        }
+    }
 
-	private BigDecimal calculateCartSubtotal(Map<String, CartItem> cart) {
+    private BigDecimal calculateCartSubtotal(Map<String, CartItem> cart) {
 
-		if (cart == null || cart.isEmpty()) {
-			return BigDecimal.ZERO;
-		}
+        if (cart == null || cart.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
 
-		return cart.values()
-				.stream()
-				.map(CartItem::getSubtotal)
-				.filter(x -> x != null)
-				.reduce(BigDecimal.ZERO, BigDecimal::add)
-				.setScale(0, RoundingMode.HALF_UP);
-	}
+        return cart.values()
+                .stream()
+                .map(CartItem::getSubtotal)
+                .filter(x -> x != null)
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(0, RoundingMode.HALF_UP);
+    }
 
-	private BigDecimal money0(BigDecimal value) {
+    private BigDecimal money0(BigDecimal value) {
 
-		if (value == null) {
-			return BigDecimal.ZERO;
-		}
+        if (value == null) {
+            return BigDecimal.ZERO;
+        }
 
-		if (value.compareTo(BigDecimal.ZERO) < 0) {
-			return BigDecimal.ZERO;
-		}
+        if (value.compareTo(BigDecimal.ZERO) < 0) {
+            return BigDecimal.ZERO;
+        }
 
-		return value.setScale(0, RoundingMode.HALF_UP);
-	}
+        return value.setScale(0, RoundingMode.HALF_UP);
+    }
 
-	private boolean existsUsersId(Connection conn, int userId) {
+    private boolean existsUsersId(Connection conn, int userId) {
 
-		String sql = "SELECT 1 FROM users WHERE id = ?";
+        String sql = "SELECT 1 FROM users WHERE id = ?";
 
-		try (PreparedStatement ps = conn.prepareStatement(sql)) {
-			ps.setInt(1, userId);
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
 
-			try (ResultSet rs = ps.executeQuery()) {
-				return rs.next();
-			}
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
 
-		} catch (Exception e) {
-			throw new RuntimeException("Không thể kiểm tra user_id trong bảng users", e);
-		}
-	}
+        } catch (Exception e) {
+            throw new RuntimeException("Không thể kiểm tra user_id trong bảng users", e);
+        }
+    }
 }
