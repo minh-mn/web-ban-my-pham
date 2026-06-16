@@ -6125,3 +6125,129 @@ html body button.address-map-close::after {
 	background: #fff7ed !important;
 	color: #c2410c !important;
 }
+
+
+/* =========================================================
+   CHECKOUT SHIPPING CLEAN UI FIX V50
+   - Không hiển thị badge đỏ ở tiêu đề vận chuyển.
+   - Không hiển thị nhãn phụ GHTK / GHN API / NỘI BỘ cạnh tên đơn vị.
+   - Đẩy modal chọn bản đồ lên lớp cao nhất để không bị header / summary đè.
+========================================================= */
+html body .checkout-page .delivery-card .checkout-card-header h2::after,
+html body .delivery-card .checkout-card-header h2::after,
+html body .checkout-page .delivery-option .delivery-info strong::after,
+html body .delivery-option .delivery-info strong::after {
+	content: none !important;
+	display: none !important;
+	width: 0 !important;
+	height: 0 !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	background: transparent !important;
+	border: 0 !important;
+	box-shadow: none !important;
+}
+
+html body .checkout-page .delivery-card .checkout-card-header h2,
+html body .delivery-card .checkout-card-header h2 {
+	display: block !important;
+	gap: 0 !important;
+}
+
+html body .checkout-page .delivery-option .delivery-info,
+html body .delivery-option .delivery-info {
+	min-width: 0 !important;
+	padding-right: 12px !important;
+}
+
+html body .checkout-page .delivery-option .delivery-info strong,
+html body .delivery-option .delivery-info strong {
+	display: block !important;
+	color: #111827 !important;
+	font-size: 15px !important;
+	line-height: 1.35 !important;
+	font-weight: 950 !important;
+	letter-spacing: 0 !important;
+}
+
+html body .checkout-page .delivery-option .delivery-info small,
+html body .delivery-option .delivery-info small {
+	display: block !important;
+	margin-top: 6px !important;
+	color: #64748b !important;
+	font-size: 12.5px !important;
+	line-height: 1.45 !important;
+	font-weight: 750 !important;
+}
+
+html body .checkout-page .delivery-option .delivery-fee,
+html body .delivery-option .delivery-fee {
+	flex: 0 0 auto !important;
+	white-space: nowrap !important;
+	margin-left: auto !important;
+	text-align: right !important;
+}
+
+/* Modal bản đồ phải phủ lên toàn bộ trang, kể cả sticky header và khối tóm tắt bên phải. */
+html body .address-map-modal,
+html body .checkout-page .address-map-modal {
+	position: fixed !important;
+	inset: 0 !important;
+	z-index: 2147483000 !important;
+	padding: 24px !important;
+	align-items: center !important;
+	justify-content: center !important;
+}
+
+html body .address-map-modal.show,
+html body .checkout-page .address-map-modal.show {
+	display: flex !important;
+}
+
+html body .address-map-backdrop,
+html body .checkout-page .address-map-backdrop {
+	position: fixed !important;
+	inset: 0 !important;
+	z-index: 0 !important;
+	background: rgba(15, 23, 42, 0.62) !important;
+	backdrop-filter: blur(5px) !important;
+}
+
+html body .address-map-dialog,
+html body .checkout-page .address-map-dialog {
+	position: relative !important;
+	z-index: 2 !important;
+	width: min(1080px, calc(100vw - 48px)) !important;
+	max-height: min(88vh, 840px) !important;
+	margin: 0 auto !important;
+	overflow: hidden !important;
+}
+
+html body .address-map-header,
+html body .checkout-page .address-map-header {
+	padding-top: 20px !important;
+	padding-bottom: 16px !important;
+}
+
+html body .address-map-body,
+html body .checkout-page .address-map-body {
+	overflow-y: auto !important;
+}
+
+html body.address-map-open {
+	overflow: hidden !important;
+}
+
+@media (max-width: 900px) {
+	html body .address-map-modal,
+	html body .checkout-page .address-map-modal {
+		padding: 14px !important;
+		align-items: flex-start !important;
+	}
+
+	html body .address-map-dialog,
+	html body .checkout-page .address-map-dialog {
+		width: calc(100vw - 28px) !important;
+		max-height: calc(100vh - 28px) !important;
+	}
+}
