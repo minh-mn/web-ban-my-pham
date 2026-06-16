@@ -5776,242 +5776,352 @@ html body button.address-map-close::after {
 
 
 /* =========================================================
-   CHECKOUT ADDRESS MAP MODAL - OVERLAY FIX 2026-06-16
-   Sửa lỗi popup bản đồ bị header/menu đè lên hoặc bị lộ nền phía trên.
-   Chỉ ghi đè z-index, chiều cao và vùng scroll của modal bản đồ.
+   SHIPPING LOGIC REDESIGN V45
+   Làm rõ đơn vị vận chuyển, phương thức, phí khu vực và freeship
 ========================================================= */
 
-html body.address-map-open,
-html body.address-map-open > * {
-	scroll-behavior: auto !important;
+.delivery-card .checkout-card-header h2::after {
+	content: "GHTK / GHN / MyCosmetic Express";
+	display: inline-flex;
+	margin-left: 10px;
+	padding: 5px 10px;
+	border-radius: 999px;
+	background: #fff1f6;
+	color: #c81045;
+	font-size: 11px;
+	line-height: 1;
+	font-weight: 900;
+	vertical-align: middle;
 }
 
-html body.address-map-open {
-	overflow: hidden !important;
-	height: 100dvh !important;
+.delivery-option {
+	position: relative;
+	overflow: hidden;
 }
 
-html body .address-map-modal {
-	position: fixed !important;
-	inset: 0 !important;
-	z-index: 2147483000 !important;
-	display: none !important;
-	align-items: center !important;
-	justify-content: center !important;
-	width: 100vw !important;
-	height: 100dvh !important;
-	padding: 18px 22px !important;
-	isolation: isolate !important;
+.delivery-option::before {
+	content: "";
+	position: absolute;
+	inset: 0 auto 0 0;
+	width: 4px;
+	background: transparent;
+	transition: .18s ease;
 }
 
-html body .address-map-modal.show {
-	display: flex !important;
+.delivery-option:has(input:checked)::before {
+	background: linear-gradient(180deg, #ff4f97 0%, #d9154f 48%, #a4041b 100%);
 }
 
-html body .address-map-backdrop {
-	position: fixed !important;
-	inset: 0 !important;
-	z-index: 0 !important;
-	background: rgba(15, 23, 42, 0.62) !important;
-	backdrop-filter: blur(6px) !important;
+.delivery-info small {
+	display: block;
+	margin-top: 5px;
+	color: #64748b;
+	font-size: 12px;
+	line-height: 1.45;
+	font-weight: 750;
 }
 
-html body .address-map-dialog {
+.delivery-option:has(input[value="ECONOMY"]) .delivery-info strong::after {
+	content: "GHTK";
+	display: inline-flex;
+	margin-left: 8px;
+	padding: 3px 8px;
+	border-radius: 999px;
+	background: #f0fdf4;
+	color: #15803d;
+	font-size: 10px;
+	font-weight: 950;
+	letter-spacing: .03em;
+}
+
+.delivery-option:has(input[value="FAST"]) .delivery-info strong::after {
+	content: "GHN";
+	display: inline-flex;
+	margin-left: 8px;
+	padding: 3px 8px;
+	border-radius: 999px;
+	background: #eff6ff;
+	color: #1d4ed8;
+	font-size: 10px;
+	font-weight: 950;
+	letter-spacing: .03em;
+}
+
+.delivery-option:has(input[value="EXPRESS"]) .delivery-info strong::after {
+	content: "MYCOSMETIC";
+	display: inline-flex;
+	margin-left: 8px;
+	padding: 3px 8px;
+	border-radius: 999px;
+	background: #fff1f6;
+	color: #be123c;
+	font-size: 10px;
+	font-weight: 950;
+	letter-spacing: .03em;
+}
+
+.delivery-option.is-disabled {
+	opacity: .58;
+	cursor: not-allowed;
+	background: #f8fafc;
+}
+
+.delivery-option.is-disabled * {
+	cursor: not-allowed;
+}
+
+.freeship-note {
+	margin-top: 12px;
+	padding: 12px 14px;
+	border-radius: 16px;
+	border: 1px solid #bbf7d0;
+	background: #f0fdf4;
+	color: #166534;
+	font-size: 13px;
+	line-height: 1.45;
+	font-weight: 850;
+}
+
+@media (max-width: 680px) {
+	.delivery-card .checkout-card-header h2::after {
+		display: flex;
+		width: fit-content;
+		margin: 8px 0 0;
+	}
+}
+
+
+/* =========================================================
+   GHN CHECKOUT UI FORCE V48
+   Hiển thị rõ đơn vị vận chuyển GHTK/GHN/MyCosmetic trên checkout
+========================================================= */
+
+.delivery-card .checkout-card-header h2 {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 10px;
+}
+
+.delivery-card .checkout-card-header h2::after {
+	content: "GHTK · GHN Staging · MyCosmetic Express" !important;
+	display: inline-flex !important;
+	padding: 5px 10px !important;
+	border-radius: 999px !important;
+	background: #fff1f6 !important;
+	color: #be123c !important;
+	font-size: 11px !important;
+	line-height: 1 !important;
+	font-weight: 950 !important;
+	letter-spacing: .01em !important;
+}
+
+.delivery-option {
 	position: relative !important;
-	z-index: 1 !important;
-	width: min(1080px, calc(100vw - 44px)) !important;
-	max-height: calc(100dvh - 36px) !important;
-	margin: 0 auto !important;
+	border: 1px solid #ffd6df !important;
+	background: #fffafb !important;
+}
+
+.delivery-option:has(input:checked) {
+	border-color: #e11d48 !important;
+	background: #fff1f6 !important;
+	box-shadow: 0 12px 24px rgba(225, 29, 72, .10) !important;
+}
+
+.delivery-option .delivery-info strong {
+	display: flex !important;
+	align-items: center !important;
+	flex-wrap: wrap !important;
+	gap: 8px !important;
+	color: #111827 !important;
+	font-weight: 950 !important;
+}
+
+.delivery-option .delivery-info small {
+	display: block !important;
+	margin-top: 5px !important;
+	color: #64748b !important;
+	font-size: 12px !important;
+	line-height: 1.45 !important;
+	font-weight: 750 !important;
+}
+
+.delivery-option:has(input[value="ECONOMY"]) .delivery-info strong::after {
+	content: "GHTK" !important;
+	padding: 3px 8px !important;
+	border-radius: 999px !important;
+	background: #f0fdf4 !important;
+	color: #15803d !important;
+	font-size: 10px !important;
+	font-weight: 950 !important;
+}
+
+.delivery-option:has(input[value="FAST"]) .delivery-info strong::after {
+	content: "GHN API" !important;
+	padding: 3px 8px !important;
+	border-radius: 999px !important;
+	background: #eff6ff !important;
+	color: #1d4ed8 !important;
+	font-size: 10px !important;
+	font-weight: 950 !important;
+}
+
+.delivery-option:has(input[value="EXPRESS"]) .delivery-info strong::after {
+	content: "NỘI BỘ" !important;
+	padding: 3px 8px !important;
+	border-radius: 999px !important;
+	background: #fff7ed !important;
+	color: #c2410c !important;
+	font-size: 10px !important;
+	font-weight: 950 !important;
+}
+
+.delivery-api-note {
+	margin-top: 12px !important;
+	padding: 12px 14px !important;
+	border: 1px dashed #fecdd3 !important;
+	border-radius: 16px !important;
+	background: #fff7fb !important;
+	color: #475569 !important;
+	font-size: 12.5px !important;
+	line-height: 1.55 !important;
+	font-weight: 700 !important;
+}
+
+.delivery-api-note strong {
+	color: #be123c !important;
+	font-weight: 950 !important;
+}
+
+.delivery-api-note code {
+	padding: 2px 6px !important;
+	border-radius: 7px !important;
+	background: #ffffff !important;
+	color: #be123c !important;
+	font-size: 12px !important;
+	font-weight: 900 !important;
+}
+
+
+/* =========================================================
+   GHN REAL API CHECKOUT V49
+   Dùng select tỉnh/quận/phường của GHN để tính phí thật
+========================================================= */
+
+.ghn-real-address-card {
+	border: 1px solid #bfdbfe !important;
+	background:
+			radial-gradient(circle at 0 0, rgba(59, 130, 246, .08), transparent 260px),
+			#ffffff !important;
+}
+
+.ghn-real-address-card .checkout-card-header h2 {
+	color: #1d4ed8 !important;
+}
+
+.ghn-real-address-card .checkout-card-header p {
+	margin: 6px 0 0 !important;
+	color: #64748b !important;
+	font-size: 13px !important;
+	font-weight: 700 !important;
+}
+
+.ghn-real-grid {
+	display: grid !important;
+	grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+	gap: 14px !important;
+}
+
+.ghn-real-field {
 	display: flex !important;
 	flex-direction: column !important;
-	border-radius: 24px !important;
-	overflow: hidden !important;
-	background: #ffffff !important;
-	box-shadow: 0 34px 100px rgba(15, 23, 42, 0.36) !important;
+	gap: 7px !important;
 }
 
-html body .address-map-header {
-	flex: 0 0 auto !important;
-	min-height: auto !important;
-	padding: 18px 72px 14px 24px !important;
-}
-
-html body .address-map-header h3 {
-	font-size: 22px !important;
-	line-height: 1.25 !important;
-}
-
-html body .address-map-header p {
-	margin-top: 6px !important;
-	font-size: 14px !important;
-	line-height: 1.45 !important;
-}
-
-html body .address-map-close {
-	top: 14px !important;
-	right: 16px !important;
-	width: 42px !important;
-	height: 42px !important;
-	z-index: 2 !important;
-}
-
-html body .address-map-body {
-	flex: 1 1 auto !important;
-	min-height: 0 !important;
-	overflow-y: auto !important;
-	padding: 18px 18px 0 !important;
-	overscroll-behavior: contain !important;
-}
-
-html body .address-map-layout {
-	grid-template-columns: minmax(0, 1.48fr) minmax(286px, 0.72fr) !important;
-	gap: 16px !important;
-}
-
-html body .address-map-canvas,
-html body #addressMap,
-html body #deliveryMap,
-html body #shippingMap,
-html body #mapPicker,
-html body .location-map,
-html body .address-map-canvas.leaflet-container,
-html body #addressMap.leaflet-container,
-html body #deliveryMap.leaflet-container,
-html body #shippingMap.leaflet-container,
-html body #mapPicker.leaflet-container,
-html body .location-map.leaflet-container {
-	height: clamp(360px, 55dvh, 500px) !important;
-	min-height: clamp(360px, 55dvh, 500px) !important;
-	max-height: clamp(360px, 55dvh, 500px) !important;
-}
-
-html body .address-map-side {
-	gap: 10px !important;
-}
-
-html body .address-map-detected {
-	padding: 16px !important;
-	border-radius: 16px !important;
-}
-
-html body .address-map-detected-title {
-	margin-bottom: 10px !important;
-	font-size: 18px !important;
-}
-
-html body .address-map-detected strong {
-	margin-bottom: 7px !important;
-	font-size: 14px !important;
-	line-height: 1.5 !important;
-}
-
-html body .address-map-detected small,
-html body .address-map-note {
+.ghn-real-field span {
+	color: #0f172a !important;
 	font-size: 13px !important;
-	line-height: 1.55 !important;
+	font-weight: 900 !important;
 }
 
-html body .address-map-note {
-	padding: 14px 16px !important;
-	border-radius: 16px !important;
-}
-
-html body .address-map-footer {
-	flex: 0 0 auto !important;
-	padding: 12px 18px !important;
-	background: rgba(255, 255, 255, 0.96) !important;
-	border-top: 1px solid #eef2f7 !important;
-}
-
-html body .address-map-btn {
-	min-width: 136px !important;
-	height: 44px !important;
+.ghn-real-field select {
+	width: 100% !important;
+	min-height: 46px !important;
+	border: 1px solid #cbd5e1 !important;
 	border-radius: 14px !important;
+	background: #ffffff !important;
+	color: #0f172a !important;
 	font-size: 14px !important;
+	font-weight: 750 !important;
+	padding: 0 13px !important;
+	outline: none !important;
 }
 
-/* Đảm bảo mọi thành phần bản đồ nằm dưới modal, không vượt qua header/dialog */
-html body .address-map-modal .leaflet-container,
-html body .address-map-modal .leaflet-pane,
-html body .address-map-modal .leaflet-control-container,
-html body .address-map-modal .leaflet-popup-pane {
-	z-index: auto !important;
+.ghn-real-field select:focus {
+	border-color: #2563eb !important;
+	box-shadow: 0 0 0 4px rgba(37, 99, 235, .12) !important;
+}
+
+.ghn-real-field select:disabled {
+	background: #f8fafc !important;
+	color: #94a3b8 !important;
+	cursor: not-allowed !important;
+}
+
+.ghn-real-status {
+	margin-top: 14px !important;
+	padding: 12px 14px !important;
+	border-radius: 14px !important;
+	border: 1px solid #dbeafe !important;
+	background: #eff6ff !important;
+	color: #1d4ed8 !important;
+	font-size: 13px !important;
+	line-height: 1.5 !important;
+	font-weight: 800 !important;
+}
+
+.ghn-real-status.is-success {
+	border-color: #bbf7d0 !important;
+	background: #f0fdf4 !important;
+	color: #15803d !important;
+}
+
+.ghn-real-status.is-error {
+	border-color: #fecdd3 !important;
+	background: #fff1f2 !important;
+	color: #be123c !important;
+}
+
+.delivery-option:has(input[value="FAST"]:checked) {
+	border-color: #2563eb !important;
+	background: #eff6ff !important;
+	box-shadow: 0 12px 24px rgba(37, 99, 235, .12) !important;
+}
+
+.delivery-option:has(input[value="FAST"]:checked) .delivery-fee {
+	color: #1d4ed8 !important;
 }
 
 @media (max-width: 900px) {
-	html body .address-map-modal {
-		padding: 10px !important;
-		align-items: stretch !important;
-	}
-
-	html body .address-map-dialog {
-		width: 100% !important;
-		max-height: calc(100dvh - 20px) !important;
-		border-radius: 20px !important;
-	}
-
-	html body .address-map-layout {
+	.ghn-real-grid {
 		grid-template-columns: 1fr !important;
-	}
-
-	html body .address-map-canvas,
-	html body #addressMap,
-	html body #deliveryMap,
-	html body #shippingMap,
-	html body #mapPicker,
-	html body .location-map,
-	html body .address-map-canvas.leaflet-container,
-	html body #addressMap.leaflet-container,
-	html body #deliveryMap.leaflet-container,
-	html body #shippingMap.leaflet-container,
-	html body #mapPicker.leaflet-container,
-	html body .location-map.leaflet-container {
-		height: 380px !important;
-		min-height: 380px !important;
-		max-height: 380px !important;
 	}
 }
 
-@media (max-width: 640px) {
-	html body .address-map-header {
-		padding: 15px 58px 12px 16px !important;
-	}
+/* =========================================================
+   CHECKOUT AUTO SHIPPING FROM EXISTING ADDRESS
+   Không hiển thị khối nhập địa chỉ GHN riêng
+========================================================= */
 
-	html body .address-map-header h3 {
-		font-size: 18px !important;
-	}
+.checkout-auto-shipping-status {
+	margin-top: 10px !important;
+	border-color: #e0e7ff !important;
+	background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%) !important;
+	color: #1e3a8a !important;
+}
 
-	html body .address-map-header p {
-		font-size: 12.5px !important;
-	}
-
-	html body .address-map-body {
-		padding: 12px 12px 0 !important;
-	}
-
-	html body .address-map-canvas,
-	html body #addressMap,
-	html body #deliveryMap,
-	html body #shippingMap,
-	html body #mapPicker,
-	html body .location-map,
-	html body .address-map-canvas.leaflet-container,
-	html body #addressMap.leaflet-container,
-	html body #deliveryMap.leaflet-container,
-	html body #shippingMap.leaflet-container,
-	html body #mapPicker.leaflet-container,
-	html body .location-map.leaflet-container {
-		height: 320px !important;
-		min-height: 320px !important;
-		max-height: 320px !important;
-	}
-
-	html body .address-map-footer-actions {
-		flex-direction: column-reverse !important;
-		align-items: stretch !important;
-	}
-
-	html body .address-map-btn {
-		width: 100% !important;
-	}
+.checkout-auto-shipping-status.is-loading {
+	border-color: #fed7aa !important;
+	background: #fff7ed !important;
+	color: #c2410c !important;
 }
