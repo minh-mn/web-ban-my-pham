@@ -1,6 +1,5 @@
 package com.webshop.app.controller.AdminController;
 
-import com.webshop.app.config.UploadConfig;
 import com.webshop.app.dao.EventDAO;
 import com.webshop.app.model.Event;
 import jakarta.servlet.ServletException;
@@ -107,18 +106,27 @@ public class AdminEventServlet extends HttpServlet {
             // Xử lý đọc file ảnh trực tiếp từ máy tính
             Part filePart = request.getPart("imageFile");
             if (filePart != null && filePart.getSize() > 0) {
+                // Lấy tên file gốc bằng phương thức chuẩn của Jakarta Servlet
                 String originalName = filePart.getSubmittedFileName();
                 if (originalName == null || originalName.isEmpty()) {
-                    originalName = "event_image_" + System.currentTimeMillis() + ".jpg";
+                    originalName = "event_image.jpg";
                 }
 
-                // Ghi file sử dụng cấu hình mới
-                // UploadConfig.resolveEventFile trả về đường dẫn tuyệt đối chuẩn xác
-                String filePath = UploadConfig.resolveEventFile(originalName).toString();
-                filePart.write(filePath);
+                // KHÔNG rename nữa
+                String fileName = originalName;
 
-                // Lấy URL lưu vào database
-                imageUrl = UploadConfig.toEventUrl(originalName);
+                // Xác định đường dẫn vật lý để lưu ảnh vật lý vào assets/images/events
+                String uploadPath = getServletContext().getRealPath("") + File.separator + "assets" + File.separator + "images" + File.separator + "events";
+                File uploadDir = new File(uploadPath);
+                if (!uploadDir.exists()) {
+                    uploadDir.mkdirs();
+                }
+
+                // Ghi file ảnh vào ổ đĩa của server
+                filePart.write(uploadPath + File.separator + fileName);
+
+                // Đường dẫn tương đối lưu vào Database
+                imageUrl = "/assets/images/events/" + fileName;
             }
 
             boolean isSuccess = false;
