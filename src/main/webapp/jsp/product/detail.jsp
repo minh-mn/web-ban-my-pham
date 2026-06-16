@@ -131,7 +131,7 @@
               <form method="post" action="${ctx}/wishlist/toggle" class="wishlist-form">
                 <input type="hidden" name="productId" value="${p.id}">
                 <button type="submit" class="wishlist-btn ${isWishlisted ? 'active' : ''}">
-                  <i class="${isWishlisted ? 'fa-solid' : 'fa-regular'} fa-heart"></i>
+                  <i class="${isWishlisted ? 'fa-solid fa-heart' : 'fa-regular fa-heart'}"></i>
                 </button>
               </form>
             </div>
@@ -702,6 +702,80 @@
                 })
                 .catch(err => {
                   if (err.message !== "LOGIN_REQUIRED") console.error("Lỗi Wishlist:", err);
+                });
+      });
+    });
+
+document.addEventListener("DOMContentLoaded", function () {
+      const modal = document.getElementById("loginModal");
+      const confirmBtn = document.getElementById("confirmLogin");
+      const cancelBtn = document.getElementById("cancelLogin");
+      const detailWishlistForm = document.querySelector(".wishlist-form");
+
+      function openModal() {
+        if (modal) modal.classList.remove("hidden");
+      }
+
+      function closeModal() {
+        if (modal) modal.classList.add("hidden");
+      }
+
+      cancelBtn?.addEventListener("click", closeModal);
+      modal?.addEventListener("click", (e) => {
+        if (e.target === modal) closeModal();
+      });
+
+      if (confirmBtn) {
+        confirmBtn.addEventListener("click", () => {
+          window.location.href = "${ctx}/login?redirect=" + encodeURIComponent(window.location.href);
+        });
+      }
+
+      if (!detailWishlistForm) return;
+
+      detailWishlistForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+
+        const btn = this.querySelector(".wishlist-btn");
+        const icon = this.querySelector("i");
+        const formData = new URLSearchParams(new FormData(this));
+
+        fetch(this.action, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: formData
+        })
+                .then(async response => {
+                  if (response.status === 401) {
+                    openModal();
+                    throw new Error("LOGIN_REQUIRED");
+                  }
+
+                  const text = await response.text();
+
+                  try {
+                    return JSON.parse(text);
+                  } catch (e) {
+                    return { status: text };
+                  }
+                })
+                .then(data => {
+                  const wishlisted =
+                          data.wishlisted === true ||
+                          data.status === "ADDED";
+
+                  if (btn) btn.classList.toggle("active", wishlisted);
+
+                  if (icon) {
+                    icon.className = wishlisted
+                            ? "fa-solid fa-heart"
+                            : "fa-regular fa-heart";
+                  }
+                })
+                .catch(err => {
+                  if (err.message !== "LOGIN_REQUIRED") {
+                    console.error("Lỗi Wishlist:", err);
+                  }
                 });
       });
     });
