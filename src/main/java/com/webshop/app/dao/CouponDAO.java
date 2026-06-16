@@ -115,7 +115,7 @@ public class CouponDAO {
                   AND c.is_active = 1
                   AND (c.start_date IS NULL OR c.start_date <= CURDATE())
                   AND (c.end_date IS NULL OR c.end_date >= CURDATE())
-                  AND (c.max_uses <= 0 OR c.used_count < c.max_uses)
+                  AND (COALESCE(c.max_uses, 0) <= 0 OR COALESCE(c.used_count, 0) < c.max_uses)
                 LIMIT 1
                 """;
 
@@ -155,7 +155,7 @@ public class CouponDAO {
                 WHERE c.is_active = 1
                   AND (c.start_date IS NULL OR c.start_date <= CURDATE())
                   AND (c.end_date IS NULL OR c.end_date >= CURDATE())
-                  AND (c.max_uses <= 0 OR c.used_count < c.max_uses)
+                  AND (COALESCE(c.max_uses, 0) <= 0 OR COALESCE(c.used_count, 0) < c.max_uses)
                 ORDER BY
                   c.min_order_amount ASC,
                   c.discount_value DESC,
@@ -197,7 +197,7 @@ public class CouponDAO {
                 WHERE c.is_active = 1
                   AND (c.start_date IS NULL OR c.start_date <= CURDATE())
                   AND (c.end_date IS NULL OR c.end_date >= CURDATE())
-                  AND (c.max_uses <= 0 OR c.used_count < c.max_uses)
+                  AND (COALESCE(c.max_uses, 0) <= 0 OR COALESCE(c.used_count, 0) < c.max_uses)
                   AND (c.min_order_amount IS NULL OR c.min_order_amount <= ?)
                 ORDER BY
                   c.discount_value DESC,
@@ -372,16 +372,8 @@ public class CouponDAO {
      * Tăng used_count trong transaction, có kiểm tra còn lượt + còn hạn.
      */
     public void increaseUsedCount(Connection connection, int couponId) throws SQLException {
-        String sql = """
-                UPDATE store_coupon
-                SET used_count = used_count + 1,
-                    updated_at = NOW()
-                WHERE id = ?
-                """;
-
-        try (PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setInt(1, couponId);
-            statement.executeUpdate();
+        if (!increaseUsedCountIfAvailable(connection, couponId)) {
+            throw new SQLException("Coupon is not available or usage limit has been reached. couponId=" + couponId);
         }
     }
 
@@ -392,7 +384,7 @@ public class CouponDAO {
                     updated_at = NOW()
                 WHERE id = ?
                   AND is_active = 1
-                  AND (max_uses <= 0 OR used_count < max_uses)
+                  AND (COALESCE(max_uses, 0) <= 0 OR COALESCE(used_count, 0) < max_uses)
                   AND (start_date IS NULL OR start_date <= CURDATE())
                   AND (end_date IS NULL OR end_date >= CURDATE())
                 """;
@@ -419,7 +411,7 @@ public class CouponDAO {
             WHERE c.is_active = 1
               AND (c.start_date IS NULL OR c.start_date <= CURDATE())
               AND (c.end_date IS NULL OR c.end_date >= CURDATE())
-              AND (c.max_uses <= 0 OR c.used_count < c.max_uses)
+              AND (COALESCE(c.max_uses, 0) <= 0 OR COALESCE(c.used_count, 0) < c.max_uses)
             ORDER BY c.discount_percent DESC, c.id DESC
             LIMIT 6
             """;
@@ -831,7 +823,7 @@ public class CouponDAO {
                   AND is_active = 1
                   AND (start_date IS NULL OR start_date <= CURDATE())
                   AND (end_date IS NULL OR end_date >= CURDATE())
-                  AND (max_uses <= 0 OR used_count < max_uses)
+                  AND (COALESCE(max_uses, 0) <= 0 OR COALESCE(used_count, 0) < max_uses)
                 """;
 
         try (Connection conn = DBConnection.getConnection();
@@ -861,10 +853,11 @@ public class CouponDAO {
                 LEFT JOIN store_brand b ON c.brand_id = b.id
                 JOIN user_coupon uc ON c.id = uc.coupon_id
                 WHERE uc.user_id = ?
+                  AND COALESCE(uc.is_used, 0) = 0
                   AND c.is_active = 1
                   AND (c.start_date IS NULL OR c.start_date <= CURDATE())
                   AND (c.end_date IS NULL OR c.end_date >= CURDATE())
-                  AND (c.max_uses <= 0 OR c.used_count < c.max_uses)
+                  AND (COALESCE(c.max_uses, 0) <= 0 OR COALESCE(c.used_count, 0) < c.max_uses)
                 ORDER BY uc.saved_at DESC, c.discount_value DESC, c.discount_percent DESC, c.id DESC
                 """;
 
@@ -899,6 +892,7 @@ public class CouponDAO {
                 WHERE c.is_active = 1
                   AND (c.start_date IS NULL OR c.start_date <= CURDATE())
                   AND (c.end_date IS NULL OR c.end_date >= CURDATE())
+                  AND (COALESCE(c.max_uses, 0) <= 0 OR COALESCE(c.used_count, 0) < c.max_uses)
                 ORDER BY c.discount_value DESC, c.discount_percent DESC, c.id DESC
                 """;
 
