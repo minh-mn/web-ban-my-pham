@@ -119,7 +119,7 @@ public class AjaxApplyCouponServlet extends HttpServlet {
         String invalidReason = getCouponInvalidReason(coupon, subTotal);
 
         if (invalidReason == null && userCouponDAO.hasUserUsedCoupon(user.getId(), coupon.getId())) {
-            invalidReason = "Bạn đã sử dụng mã khuyến mãi này rồi.";
+            invalidReason = "Mã ưu đãi này đã hết lượt sử dụng. Vui lòng chọn mã khác.";
         }
 
         if (invalidReason != null) {
