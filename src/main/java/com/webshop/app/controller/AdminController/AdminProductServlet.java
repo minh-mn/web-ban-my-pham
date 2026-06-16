@@ -128,10 +128,26 @@ public class AdminProductServlet extends HttpServlet {
 				String keyword = req.getParameter("keyword");
 				Integer categoryId = parseIntObj(req.getParameter("categoryId"));
 				Integer brandId = parseIntObj(req.getParameter("brandId"));
+				String activeStatus = req.getParameter("activeStatus");
+				String stockStatus = req.getParameter("stockStatus");
 				String sort = req.getParameter("sort");
 
-				List<Product> products = productDAO.findProductsAdmin(keyword, categoryId, brandId, sort);
+				List<Product> products = productDAO.findProductsAdmin(
+						keyword,
+						categoryId,
+						brandId,
+						activeStatus,
+						stockStatus,
+						sort
+				);
+
 				req.setAttribute("products", products);
+				req.setAttribute("keyword", keyword);
+				req.setAttribute("categoryId", categoryId);
+				req.setAttribute("brandId", brandId);
+				req.setAttribute("activeStatus", activeStatus);
+				req.setAttribute("stockStatus", stockStatus);
+				req.setAttribute("sort", sort);
 
 				loadDropdowns(req);
 				req.getRequestDispatcher(JSP_LIST).forward(req, resp);
