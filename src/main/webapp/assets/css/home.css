@@ -6400,3 +6400,28 @@ main.site-main div[class*="home-main"] {
         height: 46px;
     }
 }
+
+/* FIX LỖI MẤT BO GÓC VOUCHER */
+.skin-voucher-left {
+    border-top-left-radius: 26px !important;
+    border-bottom-left-radius: 26px !important;
+}
+
+.skin-voucher-content {
+    border-top-right-radius: 26px !important;
+    border-bottom-right-radius: 26px !important;
+}
+
+/* Đảm bảo giao diện mobile (khi các block xếp chồng thành 1 cột) không bị lỗi bo góc */
+@media (max-width: 640px) {
+    .skin-voucher-left {
+        border-top-left-radius: 26px !important;
+        border-top-right-radius: 26px !important;
+        border-bottom-left-radius: 0 !important;
+    }
+    .skin-voucher-content {
+        border-top-right-radius: 0 !important;
+        border-bottom-left-radius: 26px !important;
+        border-bottom-right-radius: 26px !important;
+    }
+}
