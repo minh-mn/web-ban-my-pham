@@ -97,26 +97,76 @@
       </div>
     </section>
 
-    <section class="admin-card admin-product-filter-card">
+    <section class="admin-card admin-product-filter-card admin-product-filter-card--full">
       <div class="admin-card__body">
-        <div class="admin-product-section-head">
+        <div class="admin-product-section-head admin-product-section-head--filter">
           <div>
             <h2 class="admin-product-section-title">Bộ lọc sản phẩm</h2>
             <p class="admin-product-section-desc">
-              Tìm nhanh sản phẩm theo tên, mô tả và sắp xếp theo giá bán.
+              Lọc đầy đủ theo từ khóa, danh mục, thương hiệu, trạng thái hiển thị, tồn kho và kiểu sắp xếp.
             </p>
           </div>
 
-          <c:if test="${not empty param.keyword || not empty param.sort}">
+          <c:if test="${not empty param.keyword
+                      || not empty param.categoryId
+                      || not empty param.brandId
+                      || not empty param.activeStatus
+                      || not empty param.stockStatus
+                      || not empty param.sort}">
             <div class="admin-product-active-filters">
               <c:if test="${not empty param.keyword}">
                 <span class="admin-chip admin-chip--brand">
                   Từ khóa: <c:out value="${param.keyword}" />
                 </span>
               </c:if>
+
+              <c:if test="${not empty param.categoryId}">
+                <span class="admin-chip admin-chip--brand">
+                  Danh mục #<c:out value="${param.categoryId}" />
+                </span>
+              </c:if>
+
+              <c:if test="${not empty param.brandId}">
+                <span class="admin-chip admin-chip--brand">
+                  Thương hiệu #<c:out value="${param.brandId}" />
+                </span>
+              </c:if>
+
+              <c:if test="${not empty param.activeStatus}">
+                <span class="admin-chip admin-chip--brand">
+                  Hiển thị:
+                  <c:choose>
+                    <c:when test="${param.activeStatus == 'active'}">Đang hiển thị</c:when>
+                    <c:when test="${param.activeStatus == 'hidden'}">Tạm ẩn</c:when>
+                    <c:otherwise>Tất cả</c:otherwise>
+                  </c:choose>
+                </span>
+              </c:if>
+
+              <c:if test="${not empty param.stockStatus}">
+                <span class="admin-chip admin-chip--brand">
+                  Tồn kho:
+                  <c:choose>
+                    <c:when test="${param.stockStatus == 'in_stock'}">Còn hàng</c:when>
+                    <c:when test="${param.stockStatus == 'low_stock'}">Sắp hết</c:when>
+                    <c:when test="${param.stockStatus == 'out_stock'}">Hết hàng</c:when>
+                    <c:otherwise>Tất cả</c:otherwise>
+                  </c:choose>
+                </span>
+              </c:if>
+
               <c:if test="${not empty param.sort}">
                 <span class="admin-chip admin-chip--brand">
-                  Sắp xếp: <c:out value="${param.sort}" />
+                  Sắp xếp:
+                  <c:choose>
+                    <c:when test="${param.sort == 'price_asc'}">Giá tăng dần</c:when>
+                    <c:when test="${param.sort == 'price_desc'}">Giá giảm dần</c:when>
+                    <c:when test="${param.sort == 'stock_asc'}">Kho thấp trước</c:when>
+                    <c:when test="${param.sort == 'stock_desc'}">Kho cao trước</c:when>
+                    <c:when test="${param.sort == 'name_asc'}">Tên A-Z</c:when>
+                    <c:when test="${param.sort == 'name_desc'}">Tên Z-A</c:when>
+                    <c:otherwise>Mới nhất</c:otherwise>
+                  </c:choose>
                 </span>
               </c:if>
             </div>
@@ -125,14 +175,59 @@
 
         <form method="get"
               action="${ctx}/admin/products"
-              class="admin-product-filter-form">
+              class="admin-product-filter-form admin-product-filter-form--full">
           <label class="admin-product-filter-field admin-product-filter-field--keyword">
             <span>Từ khóa</span>
             <input class="admin-input"
                    type="text"
                    name="keyword"
-                   placeholder="Tìm theo tên/mô tả..."
+                   placeholder="Tìm theo tên, slug hoặc mô tả..."
                    value="${param.keyword}">
+          </label>
+
+          <label class="admin-product-filter-field">
+            <span>Danh mục</span>
+            <select class="admin-select" name="categoryId">
+              <option value="">Tất cả danh mục</option>
+              <c:forEach var="cat" items="${categories}">
+                <option value="${cat.id}" ${param.categoryId == cat.id ? "selected" : ""}>
+                  <c:if test="${cat.parentId != null}">↳ </c:if>
+                  <c:out value="${cat.name}" />
+                  <c:if test="${cat.parentId == null}"> (Cha)</c:if>
+                </option>
+              </c:forEach>
+            </select>
+          </label>
+
+          <label class="admin-product-filter-field">
+            <span>Thương hiệu</span>
+            <select class="admin-select" name="brandId">
+              <option value="">Tất cả thương hiệu</option>
+              <c:forEach var="b" items="${brands}">
+                <option value="${b.id}" ${param.brandId == b.id ? "selected" : ""}>
+                  <c:out value="${b.name}" />
+                </option>
+              </c:forEach>
+            </select>
+          </label>
+
+          <label class="admin-product-filter-field">
+            <span>Hiển thị</span>
+            <select class="admin-select" name="activeStatus">
+              <option value="" ${empty param.activeStatus ? "selected" : ""}>Tất cả trạng thái</option>
+              <option value="active" ${param.activeStatus == 'active' ? 'selected' : ''}>Đang hiển thị</option>
+              <option value="hidden" ${param.activeStatus == 'hidden' ? 'selected' : ''}>Tạm ẩn</option>
+            </select>
+          </label>
+
+          <label class="admin-product-filter-field">
+            <span>Tồn kho</span>
+            <select class="admin-select" name="stockStatus">
+              <option value="" ${empty param.stockStatus ? "selected" : ""}>Tất cả tồn kho</option>
+              <option value="in_stock" ${param.stockStatus == 'in_stock' ? 'selected' : ''}>Còn hàng (&gt; 10)</option>
+              <option value="low_stock" ${param.stockStatus == 'low_stock' ? 'selected' : ''}>Sắp hết (1 - 10)</option>
+              <option value="out_stock" ${param.stockStatus == 'out_stock' ? 'selected' : ''}>Hết hàng</option>
+            </select>
           </label>
 
           <label class="admin-product-filter-field">
@@ -141,15 +236,19 @@
               <option value="" ${empty param.sort ? "selected" : ""}>Mới nhất</option>
               <option value="price_asc" ${param.sort == 'price_asc' ? 'selected' : ''}>Giá tăng dần</option>
               <option value="price_desc" ${param.sort == 'price_desc' ? 'selected' : ''}>Giá giảm dần</option>
+              <option value="stock_asc" ${param.sort == 'stock_asc' ? 'selected' : ''}>Kho thấp trước</option>
+              <option value="stock_desc" ${param.sort == 'stock_desc' ? 'selected' : ''}>Kho cao trước</option>
+              <option value="name_asc" ${param.sort == 'name_asc' ? 'selected' : ''}>Tên A-Z</option>
+              <option value="name_desc" ${param.sort == 'name_desc' ? 'selected' : ''}>Tên Z-A</option>
             </select>
           </label>
 
           <div class="admin-product-filter-actions">
             <button class="admin-btn admin-btn--primary admin-product-filter-btn" type="submit">
-              Lọc
+              Lọc sản phẩm
             </button>
 
-            <a class="admin-btn admin-product-filter-btn"
+            <a class="admin-btn admin-product-filter-btn admin-product-filter-reset"
                href="${ctx}/admin/products">
               Xóa lọc
             </a>
