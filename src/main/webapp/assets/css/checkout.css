@@ -6126,3 +6126,63 @@ html body.address-map-open #addressMapModal.address-map-modal.show .address-map-
 	cursor: pointer !important;
 	z-index: 2147483647 !important;
 }
+
+
+/* =========================================================
+   CHECKOUT MAP MODAL FIX V33
+   Phóng to popup bản đồ và căn giữa trên màn hình.
+========================================================= */
+html body.address-map-open #addressMapModal.address-map-modal.show {
+	align-items: center !important;
+	justify-content: center !important;
+	padding: 24px !important;
+}
+
+html body.address-map-open #addressMapModal.address-map-modal.show .address-map-dialog {
+	width: min(1160px, calc(100vw - 48px)) !important;
+	max-width: 1160px !important;
+	max-height: calc(100vh - 48px) !important;
+	margin: auto !important;
+	border-radius: 26px !important;
+}
+
+html body.address-map-open #addressMapModal.address-map-modal.show .address-map-layout {
+	grid-template-columns: minmax(0, 1.45fr) minmax(300px, 0.8fr) !important;
+	gap: 18px !important;
+}
+
+html body.address-map-open #addressMapModal.address-map-modal.show .address-map-canvas,
+html body.address-map-open #addressMapModal.address-map-modal.show .address-map-frame,
+html body.address-map-open #addressMapModal.address-map-modal.show iframe#addressMapFrame {
+	min-height: 500px !important;
+	height: 500px !important;
+}
+
+@media (max-width: 1024px) {
+	html body.address-map-open #addressMapModal.address-map-modal.show {
+		padding: 16px !important;
+	}
+
+	html body.address-map-open #addressMapModal.address-map-modal.show .address-map-dialog {
+		width: min(1040px, calc(100vw - 32px)) !important;
+		max-height: calc(100vh - 32px) !important;
+	}
+
+	html body.address-map-open #addressMapModal.address-map-modal.show .address-map-canvas,
+	html body.address-map-open #addressMapModal.address-map-modal.show .address-map-frame,
+	html body.address-map-open #addressMapModal.address-map-modal.show iframe#addressMapFrame {
+		min-height: 440px !important;
+		height: 440px !important;
+	}
+}
+
+@media (max-width: 768px) {
+	html body.address-map-open #addressMapModal.address-map-modal.show {
+		align-items: flex-start !important;
+		padding: 10px 8px !important;
+	}
+
+	html body.address-map-open #addressMapModal.address-map-modal.show .address-map-layout {
+		grid-template-columns: 1fr !important;
+	}
+}
