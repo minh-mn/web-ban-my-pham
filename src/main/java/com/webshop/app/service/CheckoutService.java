@@ -49,12 +49,12 @@ public class CheckoutService {
 	 * Giữ method cũ để các chỗ khác đang gọi checkout 7 tham số không bị lỗi.
 	 */
 	public int checkout(int userId,
-						Map<String, CartItem> cart,
-						String fullName,
-						String phone,
-						String address,
-						String paymentMethod,
-						String couponCode) {
+	                    Map<String, CartItem> cart,
+	                    String fullName,
+	                    String phone,
+	                    String address,
+	                    String paymentMethod,
+	                    String couponCode) {
 
 		return checkout(
 				userId,
@@ -74,15 +74,15 @@ public class CheckoutService {
 	 * Method mới dùng cho checkout có phương thức vận chuyển, phí ship và freeship.
 	 */
 	public int checkout(int userId,
-						Map<String, CartItem> cart,
-						String fullName,
-						String phone,
-						String address,
-						String paymentMethod,
-						String couponCode,
-						String shippingMethod,
-						BigDecimal submittedShippingFee,
-						String province) {
+	                    Map<String, CartItem> cart,
+	                    String fullName,
+	                    String phone,
+	                    String address,
+	                    String paymentMethod,
+	                    String couponCode,
+	                    String shippingMethod,
+	                    BigDecimal submittedShippingFee,
+	                    String province) {
 
 		if (userId <= 0) {
 			throw new IllegalArgumentException("Invalid userId");
@@ -182,7 +182,7 @@ public class CheckoutService {
 
 			if (coupon != null && userCouponDAO.hasUserUsedCoupon(conn, userId, coupon.getId())) {
 				conn.rollback();
-				throw new IllegalArgumentException("Bạn đã sử dụng mã khuyến mãi này rồi.");
+				throw new IllegalArgumentException("Mã ưu đãi này đã hết lượt sử dụng. Vui lòng chọn mã khác.");
 			}
 
 			/*
@@ -360,7 +360,7 @@ public class CheckoutService {
 			if (couponId != null && couponId > 0) {
 				if (userCouponDAO.hasUserUsedCoupon(conn, order.getUserId(), couponId)) {
 					conn.rollback();
-					throw new IllegalArgumentException("Bạn đã sử dụng mã khuyến mãi này rồi.");
+					throw new IllegalArgumentException("Mã ưu đãi này đã hết lượt sử dụng. Vui lòng chọn mã khác.");
 				}
 
 				if (!couponDAO.increaseUsedCountIfAvailable(conn, couponId)) {
@@ -467,8 +467,8 @@ public class CheckoutService {
 	}
 
 	public BigDecimal calculateTotalAfterCouponAndRank(int userId,
-													   BigDecimal subTotal,
-													   String couponCode) {
+	                                                   BigDecimal subTotal,
+	                                                   String couponCode) {
 
 		BigDecimal safeSubTotal = money0(subTotal);
 		String userRankCode = resolveUserRankCode(userId);
@@ -491,10 +491,10 @@ public class CheckoutService {
 	}
 
 	public BigDecimal calculateTotalAfterDiscountsAndShipping(int userId,
-															  BigDecimal subTotal,
-															  String couponCode,
-															  String shippingMethod,
-															  String province) {
+	                                                          BigDecimal subTotal,
+	                                                          String couponCode,
+	                                                          String shippingMethod,
+	                                                          String province) {
 
 		BigDecimal safeSubTotal = money0(subTotal);
 		String userRankCode = resolveUserRankCode(userId);
@@ -700,7 +700,7 @@ public class CheckoutService {
                 """;
 
 		try (Connection conn = DBConnection.getConnection();
-			 PreparedStatement ps = conn.prepareStatement(sql)) {
+		     PreparedStatement ps = conn.prepareStatement(sql)) {
 
 			ps.setString(1, normalizeRankCode(rankCode));
 
@@ -799,9 +799,9 @@ public class CheckoutService {
 	}
 
 	private BigDecimal calculateShippingFee(String shippingMethod,
-											String province,
-											BigDecimal amountAfterCoupon,
-											BigDecimal submittedShippingFee) {
+	                                        String province,
+	                                        BigDecimal amountAfterCoupon,
+	                                        BigDecimal submittedShippingFee) {
 
 		BigDecimal safeAmountAfterCoupon = money0(amountAfterCoupon);
 
@@ -859,7 +859,7 @@ public class CheckoutService {
 	 */
 
 	private void lockAndValidateStock(Connection conn,
-									  Map<String, CartItem> cart) throws Exception {
+	                                  Map<String, CartItem> cart) throws Exception {
 
 		for (CartItem item : cart.values()) {
 			if (item == null) {
@@ -883,8 +883,8 @@ public class CheckoutService {
 	}
 
 	private void createOrderItemsAndUpdateStock(Connection conn,
-												int orderId,
-												Map<String, CartItem> cart) throws Exception {
+	                                            int orderId,
+	                                            Map<String, CartItem> cart) throws Exception {
 
 		for (CartItem item : cart.values()) {
 			if (item == null) {
@@ -935,8 +935,8 @@ public class CheckoutService {
 	}
 
 	private void createOrderItemsOnly(Connection conn,
-									  int orderId,
-									  Map<String, CartItem> cart) throws Exception {
+	                                  int orderId,
+	                                  Map<String, CartItem> cart) throws Exception {
 
 		for (CartItem item : cart.values()) {
 			if (item == null) {
@@ -974,7 +974,7 @@ public class CheckoutService {
 	}
 
 	private void deductStockForOrderItems(Connection conn,
-										  List<OrderItem> orderItems) throws Exception {
+	                                      List<OrderItem> orderItems) throws Exception {
 
 		if (orderItems == null || orderItems.isEmpty()) {
 			throw new RuntimeException("Đơn hàng chưa có sản phẩm để trừ tồn kho.");
@@ -1006,8 +1006,8 @@ public class CheckoutService {
 	}
 
 	private void lockProductAndValidateStock(Connection conn,
-											 int productId,
-											 int quantity) throws Exception {
+	                                         int productId,
+	                                         int quantity) throws Exception {
 
 		String sql = """
                 SELECT stock
@@ -1034,9 +1034,9 @@ public class CheckoutService {
 	}
 
 	private void lockVariantAndValidateStock(Connection conn,
-											 int productId,
-											 int variantId,
-											 int quantity) throws Exception {
+	                                         int productId,
+	                                         int variantId,
+	                                         int quantity) throws Exception {
 
 		String sql = """
                 SELECT stock
@@ -1069,9 +1069,9 @@ public class CheckoutService {
 	}
 
 	private VariantSnapshot lockVariantAndValidateStock(Connection conn,
-														CartItem item,
-														int variantId,
-														int quantity) throws Exception {
+	                                                    CartItem item,
+	                                                    int variantId,
+	                                                    int quantity) throws Exception {
 
 		String sql = """
                 SELECT *
@@ -1136,9 +1136,9 @@ public class CheckoutService {
 	}
 
 	private void updateVariantStock(Connection conn,
-									int productId,
-									int variantId,
-									int quantity) throws Exception {
+	                                int productId,
+	                                int variantId,
+	                                int quantity) throws Exception {
 
 		String sql = """
                 UPDATE store_product_variant
@@ -1166,8 +1166,8 @@ public class CheckoutService {
 	}
 
 	private void updateProductStock(Connection conn,
-									int productId,
-									int quantity) throws Exception {
+	                                int productId,
+	                                int quantity) throws Exception {
 
 		String sql = """
                 UPDATE store_product
@@ -1195,8 +1195,8 @@ public class CheckoutService {
 	 * đôi khi không đồng bộ chính xác với tổng variant.
 	 */
 	private void updateProductStockAfterVariantSold(Connection conn,
-													int productId,
-													int quantity) throws Exception {
+	                                                int productId,
+	                                                int quantity) throws Exception {
 
 		String sql = """
                 UPDATE store_product
@@ -1228,8 +1228,8 @@ public class CheckoutService {
 	 * Nếu productId đang không nằm trong Flash Sale active, DAO sẽ trả về updated = 0.
 	 */
 	private void increaseFlashSaleSoldQuantityIfRunning(Connection conn,
-											 int productId,
-											 int quantity) throws Exception {
+	                                                    int productId,
+	                                                    int quantity) throws Exception {
 
 		if (productId <= 0 || quantity <= 0) {
 			return;

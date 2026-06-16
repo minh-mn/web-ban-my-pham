@@ -3,6 +3,7 @@ package com.webshop.app.service;
 import com.webshop.app.dao.CouponDAO;
 import com.webshop.app.dao.UserCouponDAO;
 import com.webshop.app.model.Coupon;
+import com.webshop.app.model.DiscountType;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -111,19 +112,45 @@ public class CouponService {
             return BigDecimal.ZERO;
         }
 
-        BigDecimal discount = safeSubtotal
-                .multiply(BigDecimal.valueOf(coupon.getDiscountPercent()))
-                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        BigDecimal discountValue = normalizeMoney(coupon.getDiscountValue());
+        BigDecimal discount;
 
-        if (coupon.getMaxDiscountAmount() != null
-                && coupon.getMaxDiscountAmount().compareTo(BigDecimal.ZERO) > 0) {
-            discount = discount.min(coupon.getMaxDiscountAmount());
+        if (coupon.getDiscountType() == DiscountType.FIXED) {
+            /*
+             * Voucher giảm tiền cố định:
+             * - discount_value chính là số tiền giảm.
+             * - Không dùng discount_percent để tránh mã FIXED bị tính thành 0đ.
+             */
+            discount = discountValue;
+        } else {
+            /*
+             * Voucher giảm theo phần trăm:
+             * - ưu tiên discount_value nếu admin nhập ở form mới.
+             * - fallback discount_percent để tương thích dữ liệu cũ.
+             */
+            BigDecimal percent = discountValue.compareTo(BigDecimal.ZERO) > 0
+                    ? discountValue
+                    : BigDecimal.valueOf(Math.max(coupon.getDiscountPercent(), 0));
+
+            if (percent.compareTo(BigDecimal.ZERO) <= 0
+                    || percent.compareTo(new BigDecimal("100")) > 0) {
+                return BigDecimal.ZERO;
+            }
+
+            discount = safeSubtotal
+                    .multiply(percent)
+                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+
+            if (coupon.getMaxDiscountAmount() != null
+                    && coupon.getMaxDiscountAmount().compareTo(BigDecimal.ZERO) > 0) {
+                discount = discount.min(coupon.getMaxDiscountAmount());
+            }
         }
 
         // Không cho tiền giảm vượt quá tổng tiền hàng.
         discount = discount.min(safeSubtotal);
 
-        return discount.max(BigDecimal.ZERO);
+        return money0(discount.max(BigDecimal.ZERO));
     }
 
     public boolean isCouponActiveNow(Coupon coupon) {
@@ -151,9 +178,13 @@ public class CouponService {
             return false;
         }
 
-        int maxUses = coupon.getMaxUses();
-        int usedCount = coupon.getUsedCount();
+        int maxUses = Math.max(coupon.getMaxUses(), 0);
+        int usedCount = Math.max(coupon.getUsedCount(), 0);
 
+        /*
+         * max_uses = 0 nghĩa là không giới hạn lượt dùng.
+         * max_uses > 0 thì used_count phải nhỏ hơn max_uses.
+         */
         return maxUses <= 0 || usedCount < maxUses;
     }
 
@@ -206,6 +237,10 @@ public class CouponService {
             return "Hạng thành viên của bạn chưa đủ điều kiện để dùng mã này.";
         }
 
+        if (!hasValidDiscountValue(coupon)) {
+            return "Giá trị giảm của mã khuyến mãi không hợp lệ.";
+        }
+
         return "";
     }
 
@@ -222,7 +257,7 @@ public class CouponService {
         }
 
         if (coupon != null && userId > 0 && userCouponDAO.hasUserUsedCoupon(userId, coupon.getId())) {
-            return "Bạn đã sử dụng mã khuyến mãi này rồi.";
+            return "Mã ưu đãi này đã hết lượt sử dụng. Vui lòng chọn mã khác.";
         }
 
         return "";
@@ -244,6 +279,29 @@ public class CouponService {
         }
 
         return normalized;
+    }
+
+    private boolean hasValidDiscountValue(Coupon coupon) {
+        if (coupon == null) {
+            return false;
+        }
+
+        BigDecimal discountValue = normalizeMoney(coupon.getDiscountValue());
+
+        if (coupon.getDiscountType() == DiscountType.FIXED) {
+            return discountValue.compareTo(BigDecimal.ZERO) > 0;
+        }
+
+        BigDecimal percent = discountValue.compareTo(BigDecimal.ZERO) > 0
+                ? discountValue
+                : BigDecimal.valueOf(Math.max(coupon.getDiscountPercent(), 0));
+
+        return percent.compareTo(BigDecimal.ZERO) > 0
+                && percent.compareTo(new BigDecimal("100")) <= 0;
+    }
+
+    private BigDecimal money0(BigDecimal value) {
+        return normalizeMoney(value).setScale(0, RoundingMode.HALF_UP);
     }
 
     private BigDecimal normalizeMoney(BigDecimal value) {
