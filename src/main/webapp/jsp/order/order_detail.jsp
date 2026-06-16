@@ -27,7 +27,7 @@
 
 <c:set var="canRetryPayment" value="${paymentMethod eq 'VNPAY' and paymentStatus ne 'PAID' and not isCompleted and not isCancelled}" />
 <c:set var="canCancelOrder" value="${(isProcessing or isConfirmed) and (isPendingPickup or empty shippingStatus)}" />
-<c:set var="canReturnOrder" value="${isDelivered and paymentStatus eq 'PAID' and empty returnRequest}" />
+<c:set var="canReturnOrder" value="${isDelivered and customerReceivedConfirmed and paymentStatus eq 'PAID' and empty returnRequest}" />
 
 <section class="order-detail-page">
     <div class="order-detail-container">
@@ -50,6 +50,12 @@
                     </a>
                 </c:if>
 
+                <c:if test="${receiveConfirmable}">
+                    <a href="#receive-confirm-card" class="order-soft-btn order-soft-btn-primary order-receive-anchor-btn">
+                        ✓ Xác nhận đã nhận hàng
+                    </a>
+                </c:if>
+
                 <a href="${pageContext.request.contextPath}/orders" class="order-soft-btn order-soft-btn-light order-list-back-btn">
                     <span>📋</span>
                     Danh sách đơn hàng
@@ -67,6 +73,7 @@
                             <c:when test="${isProcessing}">Chờ xác nhận</c:when>
                             <c:when test="${isConfirmed}">Đã xác nhận</c:when>
                             <c:when test="${isOrderShipping}">Đang giao</c:when>
+                            <c:when test="${isDelivered and not customerReceivedConfirmed}">Chờ xác nhận nhận hàng</c:when>
                             <c:when test="${isCompleted}">Hoàn thành</c:when>
                             <c:when test="${isCancelled}">Đã hủy</c:when>
                             <c:otherwise><c:out value="${order.status}" /></c:otherwise>
@@ -125,7 +132,7 @@
 
         <section class="order-card order-action-panel">
             <div class="order-card-head">
-                <h2 class="order-card-title">Hủy đơn / Hoàn hàng / Xác nhận nhận hàng</h2>
+                <h2 class="order-card-title">Thao tác sau mua</h2>
             </div>
 
             <div class="order-action-grid">
@@ -230,49 +237,96 @@
                     </c:if>
                 </div>
 
-                <div class="order-action-box order-action-received ${customerReceivedConfirmed ? 'is-success' : ''}">
-                    <div class="order-action-title-row">
-                        <span class="order-action-icon">✓</span>
-                        <h3>Xác nhận đã nhận hàng</h3>
+                <div id="receive-confirm-card"
+                     class="order-action-box order-action-received order-receive-card ${receiveConfirmable ? 'is-highlight' : ''} ${customerReceivedConfirmed ? 'is-success' : ''}">
+                    <div class="order-receive-head">
+                        <div class="order-action-title-row">
+                            <span class="order-action-icon">✓</span>
+                            <div>
+                                <h3>Xác nhận đã nhận hàng</h3>
+                                <p class="order-receive-subtitle">Khách hàng cần chủ động bấm xác nhận sau khi đã nhận đủ sản phẩm.</p>
+                            </div>
+                        </div>
+
+                        <span class="order-pill ${customerReceivedConfirmed ? 'ok' : (receiveConfirmable ? 'warning' : 'muted')}">
+                            <c:out value="${receiveStatusLabel}" />
+                        </span>
+                    </div>
+
+                    <div class="order-receive-steps">
+                        <div class="order-receive-step ${isDelivered ? 'done' : 'active'}">
+                            <span>1</span>
+                            <strong>Shop giao thành công</strong>
+                            <small>Trạng thái vận chuyển đã được cập nhật.</small>
+                        </div>
+                        <div class="order-receive-step ${customerReceivedConfirmed ? 'done' : (receiveConfirmable ? 'active' : '')}">
+                            <span>2</span>
+                            <strong>Khách xác nhận</strong>
+                            <small>Bấm nút xác nhận sau khi đã nhận đủ hàng.</small>
+                        </div>
+                        <div class="order-receive-step ${customerReceivedConfirmed ? 'done' : ''}">
+                            <span>3</span>
+                            <strong>Hoàn thành đơn</strong>
+                            <small>Có thể đánh giá hoặc gửi yêu cầu hoàn hàng nếu đủ điều kiện.</small>
+                        </div>
                     </div>
 
                     <c:choose>
                         <c:when test="${customerReceivedConfirmed}">
-                            <p>Bạn đã xác nhận nhận hàng thành công.</p>
+                            <div class="return-request-summary receive-summary receive-summary-success">
+                                <p><strong>Trạng thái:</strong> Bạn đã xác nhận nhận hàng thành công.</p>
+
+                                <c:if test="${not empty customerReceivedAtDate}">
+                                    <p><strong>Thời gian xác nhận:</strong>
+                                        <fmt:formatDate value="${customerReceivedAtDate}" pattern="dd/MM/yyyy HH:mm" />
+                                    </p>
+                                </c:if>
+
+                                <c:if test="${not empty receiveConfirmNote}">
+                                    <p><strong>Ghi chú:</strong> <c:out value="${receiveConfirmNote}" /></p>
+                                </c:if>
+                            </div>
                         </c:when>
+
+                        <c:when test="${receiveConfirmable}">
+                            <div class="order-receive-warning">
+                                <strong>Lưu ý trước khi xác nhận</strong>
+                                <p>Chỉ bấm xác nhận khi bạn đã nhận đúng sản phẩm, đủ số lượng và không cần báo sự cố giao hàng ngay lúc này.</p>
+                            </div>
+
+                            <form method="post"
+                                  action="${pageContext.request.contextPath}/orders/confirm-received"
+                                  class="order-confirm-received-form order-confirm-received-form-modern">
+                                <input type="hidden" name="csrf_token" value="${sessionScope.CSRF_TOKEN}" />
+                                <input type="hidden" name="orderId" value="${order.id}" />
+                                <input type="hidden" name="returnUrl" value="/orders/detail?id=${order.id}#receive-confirm-card" />
+
+                                <label class="order-receive-label" for="receiveNoteDetail">Ghi chú xác nhận</label>
+                                <input id="receiveNoteDetail"
+                                       type="text"
+                                       name="note"
+                                       maxlength="500"
+                                       placeholder="Ví dụ: đã nhận đủ hàng, sản phẩm nguyên vẹn" />
+
+                                <label class="order-receive-check">
+                                    <input type="checkbox" required />
+                                    <span>Tôi xác nhận đã nhận được đơn hàng này.</span>
+                                </label>
+
+                                <button type="submit"
+                                        class="order-action-btn receive order-receive-main-btn"
+                                        onclick="return confirm('Xác nhận bạn đã nhận hàng thành công?');">
+                                    ✓ Xác nhận đã nhận hàng
+                                </button>
+                            </form>
+                        </c:when>
+
                         <c:otherwise>
-                            <p>Xác nhận khi bạn đã nhận đúng và đủ sản phẩm. Nếu sau 7 ngày kể từ khi giao thành công bạn chưa xác nhận, hệ thống sẽ tự động đánh dấu đã nhận.</p>
+                            <div class="return-request-summary receive-summary">
+                                <p class="order-muted">Đơn hàng chưa đủ điều kiện xác nhận nhận hàng. Nút xác nhận sẽ hiển thị khi đơn được cập nhật là giao thành công.</p>
+                            </div>
                         </c:otherwise>
                     </c:choose>
-
-                    <div class="return-request-summary receive-summary">
-                        <span class="order-pill ${customerReceivedConfirmed ? 'ok' : (isDelivered ? 'warning' : 'muted')}">
-                            <c:out value="${receiveStatusLabel}" />
-                        </span>
-
-                        <c:if test="${not empty customerReceivedAtDate}">
-                            <p><strong>Đã xác nhận:</strong>
-                                <fmt:formatDate value="${customerReceivedAtDate}" pattern="dd/MM/yyyy HH:mm" />
-                            </p>
-                        </c:if>
-
-                        <c:if test="${not empty receiveConfirmNote}">
-                            <p><strong>Ghi chú:</strong> <c:out value="${receiveConfirmNote}" /></p>
-                        </c:if>
-                    </div>
-
-                    <c:if test="${receiveConfirmable}">
-                        <form method="post" action="${pageContext.request.contextPath}/orders/confirm-received" class="order-confirm-received-form">
-                            <input type="hidden" name="csrf_token" value="${sessionScope.CSRF_TOKEN}" />
-                            <input type="hidden" name="orderId" value="${order.id}" />
-                            <input type="text" name="note" maxlength="500"
-                                   placeholder="Ghi chú nếu cần, ví dụ: đã nhận đủ hàng" />
-                            <button type="submit" class="order-action-btn receive"
-                                    onclick="return confirm('Xác nhận bạn đã nhận hàng thành công?');">
-                                Tôi đã nhận hàng
-                            </button>
-                        </form>
-                    </c:if>
                 </div>
             </div>
 

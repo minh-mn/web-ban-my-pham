@@ -46,6 +46,10 @@
            class="order-filter-tab ${orderFilter eq 'shipping' ? 'active' : ''}">
           Đang giao
         </a>
+        <a href="${pageContext.request.contextPath}/orders?filter=receive_confirm"
+           class="order-filter-tab ${orderFilter eq 'receive_confirm' ? 'active' : ''}">
+          Chờ nhận hàng
+        </a>
         <a href="${pageContext.request.contextPath}/orders?filter=completed"
            class="order-filter-tab ${orderFilter eq 'completed' ? 'active' : ''}">
           Đánh giá / Hoàn hàng
@@ -80,6 +84,7 @@
                 <c:set var="shippingStatus" value="${empty order.shippingStatus ? '' : fn:toUpperCase(order.shippingStatus)}" />
                 <c:set var="paymentStatus" value="${empty order.paymentStatus ? 'PENDING' : fn:toUpperCase(order.paymentStatus)}" />
                 <c:set var="paymentMethod" value="${empty order.paymentMethod ? 'COD' : fn:toUpperCase(order.paymentMethod)}" />
+                <c:set var="customerReceivedConfirmed" value="${order.customerReceivedConfirmed}" />
                 <c:set var="isProcessing" value="${orderStatus eq 'processing' or orderStatus eq 'pending'}" />
                 <c:set var="isConfirmed" value="${orderStatus eq 'confirmed'}" />
                 <c:set var="isOrderShipping" value="${orderStatus eq 'shipping'}" />
@@ -94,7 +99,8 @@
 
                 <c:set var="canRetryPayment" value="${paymentMethod eq 'VNPAY' and paymentStatus ne 'PAID' and not isCancelled and not isCompleted}" />
                 <c:set var="canCancel" value="${(isProcessing or isConfirmed) and isPendingPickup}" />
-                <c:set var="canReturn" value="${isCompleted and isDelivered}" />
+                <c:set var="canConfirmReceive" value="${isDelivered and not customerReceivedConfirmed and not isCancelled and not isShippingCanceled and not isDeliveryFailed}" />
+                <c:set var="canReturn" value="${isCompleted and isDelivered and customerReceivedConfirmed}" />
 
                 <tr id="order-${order.id}"
                     class="<c:if test='${isCancelled or isShippingCanceled}'>order-row-cancelled</c:if><c:if test='${isDeliveryFailed}'> order-row-failed</c:if>">
@@ -125,6 +131,9 @@
                   <td class="text-center order-status-td">
                     <div class="status-cell">
                       <c:choose>
+                        <c:when test="${isDelivered and not customerReceivedConfirmed}">
+                          <span class="status-badge status-info">Chờ nhận hàng</span>
+                        </c:when>
                         <c:when test="${isCompleted}">
                           <span class="status-badge status-ok">Hoàn thành</span>
                         </c:when>
@@ -240,7 +249,7 @@
                   <td class="action-cell">
                     <div class="order-action-stack order-action-stack--ops">
                       <c:choose>
-                        <c:when test="${canRetryPayment or canCancel or canReturn}">
+                        <c:when test="${canRetryPayment or canCancel or canConfirmReceive or canReturn}">
                           <c:if test="${canRetryPayment}">
                             <a href="${pageContext.request.contextPath}/vnpay/payment?orderId=${order.id}"
                                class="btn-retry-payment">
@@ -260,6 +269,23 @@
                                       class="btn-cancel-order"
                                       onclick="openCancelOrderModal(this.closest('form'))">
                                 Hủy đơn
+                              </button>
+                            </form>
+                          </c:if>
+
+                          <c:if test="${canConfirmReceive}">
+                            <form method="post"
+                                  action="${pageContext.request.contextPath}/orders/confirm-received"
+                                  class="order-inline-form"
+                                  data-order-id="${order.id}">
+                              <input type="hidden" name="csrf_token" value="${sessionScope.CSRF_TOKEN}" />
+                              <input type="hidden" name="orderId" value="${order.id}" />
+                              <input type="hidden" name="returnUrl" value="/orders?filter=completed" />
+                              <input type="hidden" name="note" value="Khách hàng xác nhận đã nhận hàng từ danh sách đơn hàng." />
+                              <button type="button"
+                                      class="btn-confirm-received"
+                                      onclick="openReceiveOrderModal(this.closest('form'))">
+                                Đã nhận hàng
                               </button>
                             </form>
                           </c:if>
@@ -476,10 +502,75 @@
   </div>
 </div>
 
+<div id="receiveOrderModal" class="order-modal-overlay" aria-hidden="true">
+  <div class="order-modal-card order-modal-card-receive" role="dialog" aria-modal="true" aria-labelledby="receiveOrderModalTitle">
+    <div class="order-modal-accent"></div>
+
+    <div class="order-modal-head">
+      <div class="order-modal-title-wrap">
+        <div class="order-modal-icon order-modal-icon-receive">✓</div>
+        <div>
+          <span class="order-modal-kicker">Xác nhận nhận hàng</span>
+          <h3 id="receiveOrderModalTitle">Xác nhận đơn <span id="receiveOrderCode">#</span></h3>
+          <p>Bấm xác nhận khi bạn đã nhận đủ sản phẩm và không có vấn đề cần báo ngay.</p>
+        </div>
+      </div>
+      <button type="button" class="order-modal-close" onclick="closeOrderActionModal('receive')" aria-label="Đóng">×</button>
+    </div>
+
+    <div class="order-modal-summary">
+      <div class="order-modal-summary-item">
+        <span>Mã đơn</span>
+        <strong id="receiveOrderCodeSummary">#</strong>
+      </div>
+      <div class="order-modal-summary-item">
+        <span>Trạng thái sau xác nhận</span>
+        <strong>Hoàn thành đơn hàng</strong>
+      </div>
+    </div>
+
+    <div class="order-modal-notice order-modal-notice-success">
+      <strong>Lưu ý:</strong> sau khi xác nhận đã nhận hàng, đơn hàng được chuyển sang hoàn thành. Bạn vẫn có thể gửi yêu cầu hoàn hàng nếu còn trong thời hạn hỗ trợ.
+    </div>
+
+    <div class="order-modal-grid">
+      <div class="order-modal-field order-modal-field-full">
+        <div class="order-modal-label-row">
+          <label for="receiveNote">Ghi chú xác nhận</label>
+          <small><span id="receiveNoteCount">0</span>/300</small>
+        </div>
+        <textarea id="receiveNote"
+                  class="order-modal-control order-modal-textarea"
+                  rows="4"
+                  maxlength="300"
+                  placeholder="Ví dụ: Đã nhận đủ hàng, sản phẩm nguyên vẹn..."></textarea>
+        <small>Có thể bỏ trống nếu không cần ghi chú.</small>
+      </div>
+    </div>
+
+    <label class="order-modal-check order-modal-check-receive">
+      <input type="checkbox" id="receivePolicyConfirm" />
+      <span>Tôi xác nhận đã nhận được đơn hàng này.</span>
+    </label>
+
+    <p id="receiveOrderError" class="order-modal-error" aria-live="polite"></p>
+
+    <div class="order-modal-actions">
+      <button type="button" class="order-modal-btn order-modal-btn-secondary" onclick="closeOrderActionModal('receive')">
+        Đóng
+      </button>
+      <button type="button" class="order-modal-btn order-modal-btn-receive" onclick="submitReceiveOrderModal()">
+        Xác nhận đã nhận hàng
+      </button>
+    </div>
+  </div>
+</div>
+
 <script>
   (function () {
     let activeCancelForm = null;
     let activeReturnForm = null;
+    let activeReceiveForm = null;
 
     function byId(id) {
       return document.getElementById(id);
@@ -575,6 +666,25 @@
       openModal("returnOrderModal");
     };
 
+    window.openReceiveOrderModal = function (form) {
+      if (!form) return;
+
+      activeReceiveForm = form;
+
+      const orderId = form.dataset.orderId || form.querySelector('input[name="orderId"]')?.value || "";
+      const orderCode = orderId ? "#" + orderId : "#";
+
+      byId("receiveOrderCode").textContent = orderCode;
+      byId("receiveOrderCodeSummary").textContent = orderCode;
+
+      byId("receiveNote").value = "";
+      byId("receivePolicyConfirm").checked = false;
+      byId("receiveOrderError").textContent = "";
+      updateCount("receiveNote", "receiveNoteCount");
+
+      openModal("receiveOrderModal");
+    };
+
     window.closeOrderActionModal = function (type) {
       if (type === "cancel") {
         closeModal("cancelOrderModal");
@@ -585,6 +695,12 @@
       if (type === "return") {
         closeModal("returnOrderModal");
         activeReturnForm = null;
+        return;
+      }
+
+      if (type === "receive") {
+        closeModal("receiveOrderModal");
+        activeReceiveForm = null;
       }
     };
 
@@ -647,6 +763,27 @@
       submitRealForm(activeReturnForm);
     };
 
+    window.submitReceiveOrderModal = function () {
+      if (!activeReceiveForm) return;
+
+      const note = normalizeText(byId("receiveNote").value);
+      const checked = byId("receivePolicyConfirm").checked;
+      const errorEl = byId("receiveOrderError");
+
+      if (!checked) {
+        errorEl.textContent = "Vui lòng xác nhận bạn đã nhận được đơn hàng trước khi tiếp tục.";
+        byId("receivePolicyConfirm").focus();
+        return;
+      }
+
+      if (note) {
+        activeReceiveForm.querySelector('input[name="note"]').value = note;
+      }
+
+      closeModal("receiveOrderModal");
+      submitRealForm(activeReceiveForm);
+    };
+
     document.addEventListener("input", function (event) {
       if (event.target && event.target.id === "cancelReasonNote") {
         updateCount("cancelReasonNote", "cancelReasonCount");
@@ -654,6 +791,10 @@
 
       if (event.target && event.target.id === "returnReasonNote") {
         updateCount("returnReasonNote", "returnReasonCount");
+      }
+
+      if (event.target && event.target.id === "receiveNote") {
+        updateCount("receiveNote", "receiveNoteCount");
       }
     });
 
@@ -667,6 +808,10 @@
         if (overlay.id === "returnOrderModal") {
           window.closeOrderActionModal("return");
         }
+
+        if (overlay.id === "receiveOrderModal") {
+          window.closeOrderActionModal("receive");
+        }
       }
     });
 
@@ -675,6 +820,7 @@
 
       window.closeOrderActionModal("cancel");
       window.closeOrderActionModal("return");
+      window.closeOrderActionModal("receive");
     });
   })();
 </script>
