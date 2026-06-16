@@ -1,305 +1,714 @@
-/* BRAND GRID CLEAN CSS - 20260615
-   Toàn bộ giao diện brand grid nằm trong file CSS này.
-   JSP chỉ còn markup + JS lọc chữ cái, không chứa CSS inline/style tag.
-*/
+/* =========================================================
+   Brand Grid - News/Event synchronized UI
+   Scope: /jsp/brand/brand_grid.jsp
+   Mục tiêu: đồng bộ với trang Tin tức, sự kiện và ưu đãi nổi bật
+========================================================= */
 
-.brand-hero-section {
-    padding: 44px 0 26px;
-    background: linear-gradient(180deg, rgba(255, 243, 247, .95) 0%, rgba(255, 248, 250, .78) 100%);
+:root {
+    --brand-news-primary: #e91e63;
+    --brand-news-primary-dark: #b80f43;
+    --brand-news-soft: #fff4f8;
+    --brand-news-ink: #172033;
+    --brand-news-muted: #667085;
+    --brand-news-line: rgba(233, 30, 99, 0.16);
+    --brand-news-shadow: 0 20px 48px rgba(184, 15, 67, 0.09);
 }
 
-.brand-hero-shell,
-.brand-directory-shell {
-    width: min(1200px, calc(100vw - 36px));
+html body .brand-page {
+    display: block;
+    min-height: 72vh;
+    padding: 16px 0 86px;
+    background:
+            radial-gradient(circle at 9% 4%, rgba(255, 211, 226, 0.50), transparent 25%),
+            radial-gradient(circle at 92% 8%, rgba(255, 230, 238, 0.75), transparent 24%),
+            linear-gradient(180deg, #fff9fb 0%, #ffffff 38%, #fff6fa 100%);
+    color: var(--brand-news-ink);
+}
+
+html body .brand-shell {
+    width: min(1220px, calc(100% - 34px));
     margin: 0 auto;
 }
 
-.brand-hero-shell {
+/* =========================
+   Hero giống trang Tin tức
+========================= */
+
+html body .brand-news-hero {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    min-height: 300px;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    margin: 0 auto 24px;
+    padding: 48px 56px;
+    border: 1px solid var(--brand-news-line);
+    border-radius: 34px;
+    background:
+            radial-gradient(circle at 50% 100%, rgba(255, 218, 231, 0.58), transparent 34%),
+            linear-gradient(180deg, rgba(255,255,255,.98), rgba(255,250,252,.96));
+    box-shadow: var(--brand-news-shadow);
     text-align: center;
 }
 
-.brand-hero-badge {
+html body .brand-news-kicker,
+html body .brand-section-label {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    width: fit-content;
     min-height: 34px;
     padding: 0 16px;
-    margin-bottom: 14px;
-    border: 1px solid rgba(212, 20, 79, .14);
+    border: 1px solid rgba(233, 30, 99, 0.16);
     border-radius: 999px;
-    background: #ffffff;
-    color: #d4144f;
+    background: #fff;
+    color: var(--brand-news-primary-dark);
     font-size: 12px;
-    font-weight: 900;
-    letter-spacing: .04em;
+    font-weight: 950;
+    line-height: 1;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
 }
 
-.brand-hero-title {
-    margin: 0 0 12px;
-    color: #1c2230;
-    font-size: clamp(32px, 3vw, 48px);
-    line-height: 1.08;
+html body .brand-news-hero h1 {
+    max-width: 900px;
+    margin: 18px auto 14px;
+    color: var(--brand-news-primary-dark);
+    font-family: 'Playfair Display', 'Be Vietnam Pro', serif;
+    font-size: clamp(42px, 5vw, 72px);
     font-weight: 950;
-    letter-spacing: -.03em;
+    line-height: 1.02;
+    letter-spacing: -0.055em;
 }
 
-.brand-hero-description {
-    width: min(780px, 100%);
+html body .brand-news-hero p {
+    width: min(760px, 100%);
     margin: 0 auto;
-    color: #657084;
-    font-size: 16px;
+    color: var(--brand-news-muted);
+    font-size: 15px;
+    font-weight: 650;
     line-height: 1.8;
 }
 
-.brand-directory-section {
-    padding: 10px 0 62px;
-    background: transparent;
+html body .brand-hero-shape {
+    position: absolute;
+    z-index: -1;
+    display: block;
+    width: 150px;
+    height: 118px;
+    border-radius: 26px;
+    opacity: .72;
+    transform: rotate(-13deg);
+    background:
+            linear-gradient(90deg,
+            rgba(233,30,99,.78) 0 28%,
+            rgba(255,255,255,.86) 28% 48%,
+            rgba(243,186,136,.70) 48% 67%,
+            rgba(255,213,227,.88) 67% 100%);
 }
 
-.brand-directory-toolbar {
-    display: flex;
-    align-items: end;
-    justify-content: space-between;
-    gap: 20px;
-    margin-bottom: 26px;
-    padding: 28px;
-    border: 1px solid rgba(15, 23, 42, .06);
-    border-radius: 28px;
-    background: linear-gradient(180deg, #ffffff 0%, #fff9fb 100%);
-    box-shadow: 0 18px 44px rgba(15, 23, 42, .05);
+html body .brand-hero-shape::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 38px;
+    height: 38px;
+    border-radius: 999px;
+    transform: translate(-50%, -50%);
+    background: rgba(255,255,255,.72);
 }
 
-.brand-directory-heading h3 {
-    margin: 0 0 8px;
-    color: #182132;
-    font-size: clamp(22px, 2vw, 30px);
-    font-weight: 900;
-    letter-spacing: -.02em;
+html body .brand-hero-shape--left {
+    left: 48px;
+    bottom: 38px;
 }
 
-.brand-directory-heading p {
-    margin: 0;
-    color: #6c7488;
-    font-size: 14px;
-    line-height: 1.7;
+html body .brand-hero-shape--right {
+    right: 54px;
+    bottom: 42px;
+    transform: rotate(14deg);
+    background:
+            linear-gradient(90deg,
+            rgba(255,220,232,.84) 0 30%,
+            rgba(255,255,255,.88) 30% 46%,
+            rgba(233,30,99,.86) 46% 72%,
+            rgba(255,147,184,.86) 72% 100%);
 }
 
-.brand-filter-wrap {
-    flex: 1;
-    display: flex;
-    justify-content: flex-end;
+html body .brand-hero-dots {
+    position: absolute;
+    left: 50%;
+    bottom: 38px;
+    width: 140px;
+    height: 10px;
+    transform: translateX(-50%);
 }
 
-.brand-filter-chips {
-    display: flex;
+html body .brand-hero-dots::before,
+html body .brand-hero-dots::after {
+    content: "";
+    position: absolute;
+    top: 3px;
+    width: 52px;
+    height: 7px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, rgba(233,30,99,.42), rgba(233,30,99,.76));
+}
+
+html body .brand-hero-dots::before {
+    left: 0;
+}
+
+html body .brand-hero-dots::after {
+    right: 0;
+}
+
+/* =========================
+   Toolbar: chip + search giống blog
+========================= */
+
+html body .brand-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+    gap: 16px;
     align-items: center;
-    justify-content: flex-end;
+    margin: 0 0 18px;
+}
+
+html body .brand-filter-chips {
+    display: flex;
     flex-wrap: wrap;
+    align-items: center;
     gap: 10px;
 }
 
-.brand-filter-chip {
+html body .brand-filter-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     min-height: 40px;
-    padding: 0 15px;
-    border: 1px solid rgba(15, 23, 42, .08);
+    min-width: 44px;
+    padding: 0 16px;
+    border: 1px solid var(--brand-news-line);
     border-radius: 999px;
-    background: #ffffff;
-    color: #465066;
+    background: rgba(255,255,255,.94);
+    color: var(--brand-news-primary-dark);
     font-size: 13px;
     font-weight: 900;
+    line-height: 1;
     cursor: pointer;
-    transition: .2s ease;
+    box-shadow: 0 10px 26px rgba(184, 15, 67, 0.04);
+    transition: transform .18s ease, background .18s ease, color .18s ease, border-color .18s ease;
 }
 
-.brand-filter-chip:hover {
-    border-color: rgba(212, 20, 79, .22);
-    background: #fff3f7;
-    color: #d4144f;
+html body .brand-filter-chip:hover,
+html body .brand-filter-chip.is-active {
+    border-color: transparent;
+    background: linear-gradient(135deg, #ff5d9f 0%, #e91e63 72%, #c40046 100%);
+    color: #fff;
     transform: translateY(-1px);
 }
 
-.brand-filter-chip.is-active {
-    border-color: transparent;
-    background: linear-gradient(135deg, #ff5f97 0%, #d4144f 60%, #980028 100%);
-    color: #ffffff;
-    box-shadow: 0 12px 26px rgba(212, 20, 79, .16);
+html body .brand-search-box {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    justify-self: end;
+    width: 100%;
+    padding: 8px;
+    border: 1px solid var(--brand-news-line);
+    border-radius: 26px;
+    background: rgba(255,255,255,.88);
+    box-shadow: 0 14px 32px rgba(184, 15, 67, 0.06);
 }
 
-.brand-grid {
+html body .brand-search-box input {
+    width: 100%;
+    height: 42px;
+    padding: 0 16px;
+    border: 1px solid #ead6df;
+    border-radius: 999px;
+    outline: none;
+    background: #fff;
+    color: var(--brand-news-ink);
+    font-size: 13px;
+    font-weight: 750;
+}
+
+html body .brand-search-box input:focus {
+    border-color: rgba(233,30,99,.36);
+    box-shadow: 0 0 0 4px rgba(233,30,99,.10);
+}
+
+html body .brand-search-box button,
+html body .brand-grid-empty button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 42px;
+    padding: 0 20px;
+    border: 0;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #ff5d9f 0%, #e91e63 60%, #b80f43 100%);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 900;
+    cursor: pointer;
+    box-shadow: 0 16px 28px rgba(184, 15, 67, 0.16);
+}
+
+/* =========================
+   Section head + grid
+========================= */
+
+html body .brand-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    margin: 18px 0;
+}
+
+html body .brand-section-head h2 {
+    margin: 10px 0 0;
+    color: var(--brand-news-ink);
+    font-size: clamp(30px, 3.4vw, 46px);
+    font-weight: 950;
+    line-height: 1.08;
+    letter-spacing: -0.04em;
+}
+
+html body .brand-section-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    padding: 0 16px;
+    border: 1px solid var(--brand-news-line);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--brand-news-primary-dark);
+    font-size: 13px;
+    font-weight: 950;
+    white-space: nowrap;
+}
+
+html body .brand-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 18px;
 }
 
-.brand-card {
+html body .brand-card {
     display: flex;
     flex-direction: column;
     min-height: 252px;
-    padding: 18px;
-    border: 1px solid rgba(15, 23, 42, .07);
-    border-radius: 24px;
-    background: linear-gradient(180deg, #ffffff 0%, #fffafb 100%);
-    box-shadow: 0 12px 30px rgba(15, 23, 42, .045);
+    overflow: hidden;
+    padding: 16px;
+    border: 1px solid var(--brand-news-line);
+    border-radius: 28px;
+    background: rgba(255,255,255,.96);
+    box-shadow: var(--brand-news-shadow);
+    text-align: center;
     text-decoration: none;
     transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
 }
 
-.brand-card:hover {
+html body .brand-card:hover {
     transform: translateY(-4px);
-    border-color: rgba(212, 20, 79, .18);
-    box-shadow: 0 18px 36px rgba(212, 20, 79, .09);
+    border-color: rgba(233,30,99,.28);
+    box-shadow: 0 24px 52px rgba(184, 15, 67, 0.12);
 }
 
-.brand-card-media {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 120px;
+html body .brand-card-media {
+    display: grid;
+    place-items: center;
+    height: 126px;
     margin-bottom: 16px;
-    border-radius: 18px;
-    background: #ffffff;
+    border-radius: 22px;
+    background:
+            radial-gradient(circle at center, rgba(255,244,248,.9), rgba(255,255,255,.98));
     overflow: hidden;
 }
 
-.brand-card-media img {
-    max-width: 100%;
-    max-height: 100%;
+html body .brand-card-media img {
+    display: block;
+    max-width: 92%;
+    max-height: 92%;
+    width: auto;
+    height: auto;
     object-fit: contain;
 }
 
-.brand-card-fallback {
-    width: 72px;
-    height: 72px;
+html body .brand-card-fallback {
+    width: 78px;
+    height: 78px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border-radius: 22px;
-    background: linear-gradient(135deg, #ffe8f0 0%, #fff6f9 100%);
-    color: #d4144f;
+    border-radius: 24px;
+    background: linear-gradient(135deg, #ff5d9f 0%, #e91e63 72%);
+    color: #fff;
     font-size: 30px;
     font-weight: 950;
-    border: 1px dashed rgba(212, 20, 79, .34);
+    box-shadow: 0 14px 30px rgba(184, 15, 67, 0.18);
 }
 
-.brand-card-body {
+html body .brand-card-body {
     display: flex;
+    flex: 1;
     flex-direction: column;
     align-items: center;
     gap: 8px;
-    margin-top: auto;
-    text-align: center;
 }
 
-.brand-card-letter {
-    min-height: 26px;
-    padding: 0 10px;
-    border-radius: 999px;
-    background: #fff1f5;
-    color: #d4144f;
-    font-size: 11px;
-    font-weight: 900;
-    line-height: 26px;
-}
-
-.brand-card-name {
-    margin: 0;
-    color: #162032;
-    font-size: 18px;
-    line-height: 1.35;
-    font-weight: 900;
-    letter-spacing: -.01em;
-}
-
-.brand-card-link {
-    min-height: 36px;
+html body .brand-card-letter {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 0 15px;
+    min-width: 26px;
+    min-height: 26px;
+    padding: 0 10px;
     border-radius: 999px;
-    background: #fff3f7;
-    color: #d4144f;
-    font-size: 12px;
+    background: var(--brand-news-soft);
+    color: var(--brand-news-primary);
+    font-size: 11px;
+    font-weight: 950;
+    line-height: 1;
+}
+
+html body .brand-card-name {
+    display: -webkit-box;
+    min-height: 48px;
+    margin: 0;
+    overflow: hidden;
+    color: var(--brand-news-ink);
+    font-size: 18px;
+    font-weight: 950;
+    line-height: 1.35;
+    letter-spacing: -0.02em;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+html body .brand-card-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 38px;
+    margin-top: auto;
+    padding: 0 16px;
+    border: 1px solid var(--brand-news-line);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--brand-news-primary-dark);
+    font-size: 13px;
     font-weight: 900;
-    transition: .2s ease;
+    transition: .18s ease;
 }
 
-.brand-card:hover .brand-card-link {
-    background: linear-gradient(135deg, #ff5f97 0%, #d4144f 60%, #980028 100%);
-    color: #ffffff;
+html body .brand-card:hover .brand-card-link {
+    border-color: transparent;
+    background: linear-gradient(135deg, #ff5d9f 0%, #e91e63 60%, #b80f43 100%);
+    color: #fff;
 }
 
-.brand-grid-empty {
+html body .brand-grid-empty {
+    grid-column: 1 / -1;
     display: grid;
-    place-items: center;
-    min-height: 140px;
+    justify-items: center;
+    gap: 10px;
+    min-height: 190px;
     margin-top: 18px;
-    padding: 18px;
-    border: 1px dashed rgba(15, 23, 42, .14);
-    border-radius: 22px;
-    background: #ffffff;
-    color: #697488;
-    font-size: 14px;
-    font-weight: 800;
+    padding: 42px 24px;
+    border: 1px dashed rgba(233, 30, 99, 0.24);
+    border-radius: 28px;
+    background: rgba(255,255,255,.90);
+    text-align: center;
 }
 
-.brand-grid-empty[hidden],
-.brand-card[hidden] {
+html body .brand-grid-empty[hidden],
+html body .brand-card[hidden] {
     display: none !important;
 }
 
-@media (max-width: 920px) {
-    .brand-directory-toolbar {
-        flex-direction: column;
-        align-items: stretch;
-    }
+html body .brand-grid-empty h3 {
+    margin: 0;
+    color: var(--brand-news-ink);
+    font-size: 24px;
+    font-weight: 950;
+}
 
-    .brand-filter-wrap,
-    .brand-filter-chips {
-        justify-content: flex-start;
+html body .brand-grid-empty p {
+    max-width: 620px;
+    margin: 0;
+    color: var(--brand-news-muted);
+    font-size: 14px;
+    font-weight: 650;
+    line-height: 1.7;
+}
+
+/* =========================
+   Responsive
+========================= */
+
+@media (max-width: 1120px) {
+    html body .brand-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
     }
 }
 
-@media (max-width: 640px) {
-    .brand-hero-section {
-        padding: 34px 0 22px;
+@media (max-width: 960px) {
+    html body .brand-news-hero {
+        min-height: 270px;
+        padding: 42px 28px;
     }
 
-    .brand-hero-title {
-        font-size: 30px;
+    html body .brand-hero-shape {
+        opacity: .42;
+        transform: scale(.82) rotate(-13deg);
     }
 
-    .brand-hero-description {
-        font-size: 14px;
+    html body .brand-hero-shape--right {
+        transform: scale(.82) rotate(14deg);
     }
 
-    .brand-directory-toolbar {
-        padding: 20px;
-        border-radius: 22px;
+    html body .brand-toolbar {
+        grid-template-columns: 1fr;
     }
 
-    .brand-grid {
+    html body .brand-search-box {
+        justify-self: stretch;
+    }
+
+    html body .brand-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 720px) {
+    html body .brand-page {
+        padding-bottom: 60px;
+    }
+
+    html body .brand-news-hero {
+        border-radius: 28px;
+        min-height: 250px;
+        padding: 38px 22px 48px;
+    }
+
+    html body .brand-news-hero h1 {
+        font-size: 40px;
+    }
+
+    html body .brand-hero-shape {
+        display: none;
+    }
+
+    html body .brand-section-head {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    html body .brand-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
     }
 
-    .brand-card {
+    html body .brand-card {
         min-height: 228px;
         padding: 14px;
-        border-radius: 20px;
+        border-radius: 24px;
     }
 
-    .brand-card-media {
-        height: 96px;
+    html body .brand-card-media {
+        height: 102px;
+        border-radius: 18px;
     }
 
-    .brand-card-name {
+    html body .brand-card-name {
         font-size: 16px;
     }
 }
 
-@media (max-width: 420px) {
-    .brand-grid {
+@media (max-width: 480px) {
+    html body .brand-shell {
+        width: min(100% - 22px, 1220px);
+    }
+
+    html body .brand-search-box {
         grid-template-columns: 1fr;
+        border-radius: 22px;
+    }
+
+    html body .brand-search-box button {
+        width: 100%;
+    }
+
+    html body .brand-filter-chip {
+        min-height: 38px;
+        padding: 0 13px;
+        font-size: 12px;
+    }
+
+    html body .brand-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* =========================================================
+   Brand Discovery Panel - compact sync with news page
+   Fix khu vực chip, tìm kiếm và tiêu đề Khám phá thương hiệu
+========================================================= */
+
+html body .brand-discovery-panel {
+    width: min(100%, 1060px);
+    margin: 0 auto 24px;
+    padding: 22px 24px 24px;
+    border: 1px solid var(--brand-news-line);
+    border-radius: 32px;
+    background:
+            radial-gradient(circle at 8% 0%, rgba(255, 232, 240, 0.85), transparent 34%),
+            linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(255, 247, 251, 0.78));
+    box-shadow: 0 18px 42px rgba(184, 15, 67, 0.055);
+}
+
+html body .brand-discovery-panel .brand-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
+    gap: 18px;
+    align-items: start;
+    margin: 0;
+}
+
+html body .brand-discovery-panel .brand-filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    max-width: 100%;
+}
+
+html body .brand-discovery-panel .brand-filter-chip {
+    min-height: 38px;
+    min-width: 42px;
+    padding: 0 15px;
+    font-size: 12px;
+    box-shadow: 0 8px 18px rgba(184, 15, 67, 0.04);
+}
+
+html body .brand-discovery-panel .brand-search-box {
+    align-self: start;
+    justify-self: end;
+    width: 100%;
+    max-width: 360px;
+    padding: 7px;
+    border-radius: 28px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 14px 30px rgba(184, 15, 67, 0.075);
+}
+
+html body .brand-discovery-panel .brand-search-box input {
+    height: 40px;
+    font-size: 12px;
+}
+
+html body .brand-discovery-panel .brand-search-box button {
+    height: 40px;
+    min-width: 66px;
+    padding: 0 18px;
+}
+
+html body .brand-discovery-panel .brand-section-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+    margin: 18px 0 0;
+    padding-top: 18px;
+    border-top: 1px solid rgba(233, 30, 99, 0.10);
+}
+
+html body .brand-section-title-block {
+    min-width: 0;
+}
+
+html body .brand-section-title-block .brand-section-label {
+    min-height: 30px;
+    padding: 0 14px;
+    background: rgba(255, 255, 255, 0.90);
+}
+
+html body .brand-discovery-panel .brand-section-head h2 {
+    margin: 10px 0 0;
+    font-size: clamp(30px, 3.1vw, 42px);
+    line-height: 1.04;
+}
+
+html body .brand-section-title-block p {
+    max-width: 680px;
+    margin: 8px 0 0;
+    color: var(--brand-news-muted);
+    font-size: 13px;
+    font-weight: 650;
+    line-height: 1.55;
+}
+
+html body .brand-discovery-panel .brand-section-count {
+    flex: 0 0 auto;
+    min-height: 38px;
+    padding: 0 16px;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 10px 22px rgba(184, 15, 67, 0.04);
+}
+
+html body .brand-grid {
+    width: min(100%, 1060px);
+    margin: 0 auto;
+}
+
+html body .brand-grid-empty {
+    width: min(100%, 1060px);
+    margin-left: auto;
+    margin-right: auto;
+}
+
+@media (max-width: 1040px) {
+    html body .brand-discovery-panel .brand-toolbar {
+        grid-template-columns: 1fr;
+    }
+
+    html body .brand-discovery-panel .brand-search-box {
+        justify-self: stretch;
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 720px) {
+    html body .brand-discovery-panel {
+        padding: 18px;
+        border-radius: 26px;
+    }
+
+    html body .brand-discovery-panel .brand-section-head {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    html body .brand-section-title-block p {
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 520px) {
+    html body .brand-discovery-panel .brand-search-box {
+        grid-template-columns: 1fr;
+    }
+
+    html body .brand-discovery-panel .brand-search-box button {
+        width: 100%;
     }
 }
