@@ -313,7 +313,7 @@ public class AdminPromotionManagementServlet extends HttpServlet {
                 coupon.setDiscountPercent(1);
                 coupon.setDiscountType(DiscountType.PERCENT);
                 coupon.setDiscountValue(BigDecimal.ONE);
-                coupon.setMaxUses(1);
+                coupon.setMaxUses(0);
                 coupon.setMinOrderAmount(BigDecimal.ZERO);
                 coupon.setMinRankCode(DEFAULT_RANK_CODE);
                 coupon.setApplyScope(COUPON_SCOPE_ALL);
@@ -709,7 +709,7 @@ public class AdminPromotionManagementServlet extends HttpServlet {
             coupon.setDiscountPercent(0);
         }
 
-        coupon.setMaxUses(safeInt(req.getParameter("maxUses"), 1));
+        coupon.setMaxUses(safeInt(req.getParameter("maxUses"), 0));
 
         coupon.setMinOrderAmount(parseBigDecimal(
                 req.getParameter("minOrderAmount"),
@@ -849,8 +849,18 @@ public class AdminPromotionManagementServlet extends HttpServlet {
             throw new IllegalArgumentException("Phần trăm giảm giá phải nằm trong khoảng 1 đến 100.");
         }
 
-        if (coupon.getMaxUses() < 1) {
-            throw new IllegalArgumentException("Số lượt dùng tối đa phải lớn hơn hoặc bằng 1.");
+        if (coupon.getMaxUses() < 0) {
+            throw new IllegalArgumentException("Số lượt dùng tối đa không được âm. Nhập 0 nếu muốn không giới hạn.");
+        }
+
+        if (isUpdate
+                && coupon.getMaxUses() > 0
+                && coupon.getUsedCount() > coupon.getMaxUses()) {
+            throw new IllegalArgumentException(
+                    "Số lượt dùng tối đa không được nhỏ hơn số lượt đã sử dụng hiện tại. "
+                            + "Đã dùng: " + coupon.getUsedCount()
+                            + ", giới hạn mới: " + coupon.getMaxUses()
+            );
         }
 
         validateNonNegative(coupon.getMinOrderAmount(), "Đơn tối thiểu không được âm.");
@@ -954,6 +964,11 @@ public class AdminPromotionManagementServlet extends HttpServlet {
 
         if (discountType == DiscountType.PERCENT && discountValue.compareTo(new BigDecimal("100")) > 0) {
             throw new IllegalArgumentException("Giảm theo phần trăm không được lớn hơn 100.");
+        }
+
+        if (discountType == DiscountType.FIXED
+                && discountValue.setScale(0, java.math.RoundingMode.HALF_UP).compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Giảm theo số tiền phải lớn hơn 0.");
         }
     }
 
