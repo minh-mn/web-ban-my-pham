@@ -1,6 +1,7 @@
 package com.webshop.app.utils;
 
 import java.net.URLEncoder;
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -52,15 +53,21 @@ public final class VNPayUtil {
     }
 
     /**
-     * Giữ đúng kiểu Java sample của VNPay: URLEncoder, khoảng trắng thành '+'.
-     * Không đổi '+' thành '%20'.
+     * Giữ đúng kiểu Java sample của VNPay:
+     * - URLEncoder.encode(..., US_ASCII)
+     * - khoảng trắng thành '+', không đổi thành '%20'
+     * - dữ liệu gửi sang VNPay nên là tiếng Việt không dấu/không ký tự đặc biệt
      */
     public static String encode(String value) {
         if (value == null) {
             return "";
         }
 
-        return URLEncoder.encode(value, StandardCharsets.UTF_8);
+        try {
+            return URLEncoder.encode(value, StandardCharsets.US_ASCII.toString());
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException("Không thể encode dữ liệu VNPay.", e);
+        }
     }
 
     /**
