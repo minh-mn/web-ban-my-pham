@@ -43,6 +43,13 @@ public class CsrfFilter implements Filter {
             session.setAttribute(CSRF_SESSION_KEY, sessionToken);
         }
 
+        /*
+         * Đồng bộ token ra request/session bằng nhiều alias đang được JSP sử dụng.
+         * Một số form cũ đọc ${csrfToken}, một số form đọc ${csrf_token},
+         * còn key chuẩn trong filter là CSRF_TOKEN.
+         */
+        exposeToken(req, session, sessionToken);
+
         String method = req.getMethod().toUpperCase();
 
         /*
@@ -80,6 +87,20 @@ public class CsrfFilter implements Filter {
         }
 
         chain.doFilter(request, response);
+    }
+
+    private void exposeToken(HttpServletRequest req, HttpSession session, String token) {
+        if (token == null || token.isBlank()) {
+            return;
+        }
+
+        req.setAttribute("csrfToken", token);
+        req.setAttribute("csrf_token", token);
+        req.setAttribute(CSRF_SESSION_KEY, token);
+
+        session.setAttribute(CSRF_SESSION_KEY, token);
+        session.setAttribute("csrfToken", token);
+        session.setAttribute("csrf_token", token);
     }
 
     /*
