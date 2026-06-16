@@ -121,22 +121,39 @@
                 </div>
               </div>
 
-              <div class="admin-field">
+              <div class="admin-field admin-product-status-control">
                 <label class="admin-label" for="productActive">
-                  Trạng thái
+                  Trạng thái hiển thị
                 </label>
 
-                <select id="productActive" class="admin-select" name="active">
-                  <option value="1" ${empty product || product.active ? "selected" : ""}>
-                    Đang hiển thị
-                  </option>
-                  <option value="0" ${not empty product && !product.active ? "selected" : ""}>
-                    Tạm ẩn
-                  </option>
-                </select>
+                <div class="admin-product-status-select-wrap">
+                  <select id="productActive" class="admin-select" name="active">
+                    <option value="1" ${empty product || product.active ? "selected" : ""}>
+                      Đang hiển thị
+                    </option>
+                    <option value="0" ${not empty product && !product.active ? "selected" : ""}>
+                      Tạm ẩn
+                    </option>
+                  </select>
 
-                <div class="admin-help">
-                  Tạm ẩn: không hiển thị ở trang người dùng, admin vẫn quản lý được.
+                  <c:choose>
+                    <c:when test="${empty product || product.active}">
+                      <span class="admin-product-status-badge admin-product-status-badge--active">
+                        Đang bán
+                      </span>
+                    </c:when>
+                    <c:otherwise>
+                      <span class="admin-product-status-badge admin-product-status-badge--hidden">
+                        Đang ẩn
+                      </span>
+                    </c:otherwise>
+                  </c:choose>
+                </div>
+
+                <div class="admin-product-status-note">
+                  <strong>Đồng bộ với danh sách sản phẩm:</strong>
+                  chọn <b>Tạm ẩn</b> để ẩn khỏi trang người dùng, chọn <b>Đang hiển thị</b> để mở khóa lại.
+                  Thao tác này chỉ cập nhật trạng thái, không xóa ảnh, media, đánh giá hoặc biến thể.
                 </div>
               </div>
 
@@ -228,10 +245,10 @@
               </div>
             </div>
 
-            <div class="admin-product-guide-note">
-              <strong>Lưu ý upload</strong>
+            <div class="admin-product-guide-note admin-product-guide-note--status">
+              <strong>Lưu ý trạng thái</strong>
               <span>
-                Khi sửa sản phẩm, nếu không chọn ảnh mới thì hệ thống giữ ảnh đại diện hiện tại.
+                Sản phẩm tạm ẩn vẫn có thể sửa, nhập kho, quản lý ảnh và mở khóa lại từ danh sách hoặc form.
               </span>
             </div>
           </div>
