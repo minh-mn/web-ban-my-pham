@@ -8,56 +8,54 @@
 <jsp:include page="/jsp/admin/layout/header.jsp"/>
 <jsp:include page="/jsp/admin/layout/sidebar.jsp"/>
 
-<c:set var="ctx" value="${pageContext.request.contextPath}" />
+<main class="admin-main">
+  <div class="admin-container">
 
-<main class="admin-main admin-promo-form-page">
-  <div class="admin-container admin-promo-form-container">
-
-    <section class="admin-promo-form-hero">
-      <div class="admin-promo-form-hero__content">
-        <span class="admin-promo-form-eyebrow">KHUYẾN MÃI &amp; TĂNG TRƯỞNG</span>
-        <h1 class="admin-promo-form-title">
+    <!-- TOPBAR -->
+    <div class="admin-topbar admin-promotion-topbar">
+      <div>
+        <h1 class="admin-h1">
           <c:choose>
             <c:when test="${mode == 'edit'}">Sửa khuyến mãi</c:when>
             <c:otherwise>Tạo khuyến mãi</c:otherwise>
           </c:choose>
         </h1>
-        <p class="admin-promo-form-subtitle">
+
+        <p class="admin-subtext">
           Quản lý tập trung mã giảm giá, giảm giá thương hiệu, giảm theo giá trị đơn hàng
-          và chương trình khuyến mãi cửa hàng trong cùng một giao diện.
+          và chương trình khuyến mãi cửa hàng.
         </p>
       </div>
 
-      <div class="admin-promo-form-hero__actions">
+      <div class="admin-promotion-create">
         <a class="admin-btn"
-           href="${ctx}/admin/promotions?type=${promotionType}">
+           href="${pageContext.request.contextPath}/admin/promotions?type=${promotionType}">
           ← Quay lại danh sách
         </a>
       </div>
-    </section>
-
+    </div>
 
     <!-- TYPE TABS -->
-    <div class="admin-card admin-promo-type-card admin-promo-form-type-card">
+    <div class="admin-card admin-promo-type-card">
       <div class="admin-card__body">
         <div class="admin-promo-tabs">
           <a class="admin-promo-tab ${promotionType == 'COUPON' ? 'is-active' : ''}"
-             href="${ctx}/admin/promotions?action=new&type=COUPON">
+             href="${pageContext.request.contextPath}/admin/promotions?action=new&type=COUPON">
             Mã giảm giá
           </a>
 
           <a class="admin-promo-tab ${promotionType == 'BRAND' ? 'is-active' : ''}"
-             href="${ctx}/admin/promotions?action=new&type=BRAND">
+             href="${pageContext.request.contextPath}/admin/promotions?action=new&type=BRAND">
             Giảm giá thương hiệu
           </a>
 
           <a class="admin-promo-tab ${promotionType == 'ORDER' ? 'is-active' : ''}"
-             href="${ctx}/admin/promotions?action=new&type=ORDER">
+             href="${pageContext.request.contextPath}/admin/promotions?action=new&type=ORDER">
             Giảm theo đơn hàng
           </a>
 
           <a class="admin-promo-tab ${promotionType == 'EVENT' ? 'is-active' : ''}"
-             href="${ctx}/admin/promotions?action=new&type=EVENT">
+             href="${pageContext.request.contextPath}/admin/promotions?action=new&type=EVENT">
             Chương trình khuyến mãi
           </a>
         </div>
@@ -93,11 +91,11 @@
     </c:if>
 
     <!-- FORM CARD -->
-    <div class="admin-card admin-promo-form-card">
+    <div class="admin-card">
       <div class="admin-card__body">
 
         <form method="post"
-              action="${ctx}/admin/promotions"
+              action="${pageContext.request.contextPath}/admin/promotions"
               class="admin-form admin-promo-form">
 
           <%@ include file="/jsp/common/csrf.jspf" %>
@@ -172,7 +170,7 @@
                   </select>
                 </label>
 
-                <label class="admin-field">
+                <label class="admin-field admin-coupon-value-field">
                   <span>Giá trị giảm <b>*</b></span>
                   <input class="admin-input"
                          type="number"
@@ -182,53 +180,97 @@
                          value="${coupon.discountValue}"
                          placeholder="VD: 10 hoặc 50000"
                          required>
+                  <small class="admin-field-hint">
+                    Nếu chọn PERCENT, nhập 1 - 100. Nếu chọn FIXED, nhập số tiền giảm theo VND.
+                  </small>
                 </label>
 
                 <!-- Giữ lại để tương thích code cũ nếu còn đọc discountPercent -->
                 <input type="hidden" name="discountPercent" value="${coupon.discountPercent}"/>
 
-                <label class="admin-field">
-                  <span>Số lượt dùng tối đa <b>*</b></span>
-                  <input class="admin-input"
-                         type="number"
-                         name="maxUses"
-                         min="1"
-                         value="${coupon.maxUses}"
-                         required>
-                </label>
+                <div class="admin-coupon-validity-panel admin-field--full">
+                  <div class="admin-coupon-validity-panel__head">
+                    <div>
+                      <h3>Kiểm tra tính hợp lệ voucher</h3>
+                      <p>Thiết lập rõ điều kiện được phép áp dụng trước khi khách hàng đặt hàng.</p>
+                    </div>
+                  </div>
 
-                <label class="admin-field">
-                  <span>Đơn tối thiểu</span>
-                  <input class="admin-input"
-                         type="number"
-                         name="minOrderAmount"
-                         min="0"
-                         step="1000"
-                         value="${coupon.minOrderAmount}"
-                         placeholder="VD: 300000">
-                </label>
+                  <div class="admin-coupon-validity-grid">
+                    <label class="admin-field">
+                      <span>Đơn tối thiểu</span>
+                      <input class="admin-input"
+                             type="number"
+                             name="minOrderAmount"
+                             min="0"
+                             step="1000"
+                             value="${coupon.minOrderAmount}"
+                             placeholder="VD: 300000">
+                      <small class="admin-field-hint">Nhập 0 nếu voucher áp dụng cho mọi giá trị đơn.</small>
+                    </label>
 
-                <label class="admin-field">
-                  <span>Giảm tối đa</span>
-                  <input class="admin-input"
-                         type="number"
-                         name="maxDiscountAmount"
-                         min="0"
-                         step="1000"
-                         value="${coupon.maxDiscountAmount}"
-                         placeholder="Để trống nếu không giới hạn">
-                </label>
+                    <label class="admin-field">
+                      <span>Giảm tối đa</span>
+                      <input class="admin-input"
+                             type="number"
+                             name="maxDiscountAmount"
+                             min="0"
+                             step="1000"
+                             value="${coupon.maxDiscountAmount}"
+                             placeholder="Để trống nếu không giới hạn">
+                      <small class="admin-field-hint">Nên dùng cho voucher theo phần trăm để tránh giảm vượt kiểm soát.</small>
+                    </label>
 
-                <label class="admin-field">
-                  <span>Rank tối thiểu</span>
-                  <select class="admin-select" name="minRankCode">
-                    <option value="MEMBER" ${coupon.minRankCode == 'MEMBER' ? 'selected' : ''}>MEMBER</option>
-                    <option value="SILVER" ${coupon.minRankCode == 'SILVER' ? 'selected' : ''}>SILVER</option>
-                    <option value="GOLD" ${coupon.minRankCode == 'GOLD' ? 'selected' : ''}>GOLD</option>
-                    <option value="DIAMOND" ${coupon.minRankCode == 'DIAMOND' ? 'selected' : ''}>DIAMOND</option>
-                    <option value="VIP" ${coupon.minRankCode == 'VIP' ? 'selected' : ''}>VIP</option>
-                  </select>
-                </label>
+                    <label class="admin-field">
+                      <span>Rank tối thiểu</span>
+                      <select class="admin-select" name="minRankCode">
+                        <option value="MEMBER" ${coupon.minRankCode == 'MEMBER' ? 'selected' : ''}>MEMBER - Tất cả khách hàng</option>
+                        <option value="SILVER" ${coupon.minRankCode == 'SILVER' ? 'selected' : ''}>SILVER</option>
+                        <option value="GOLD" ${coupon.minRankCode == 'GOLD' ? 'selected' : ''}>GOLD</option>
+                        <option value="DIAMOND" ${coupon.minRankCode == 'DIAMOND' ? 'selected' : ''}>DIAMOND</option>
+                        <option value="VIP" ${coupon.minRankCode == 'VIP' ? 'selected' : ''}>VIP</option>
+                      </select>
+                      <small class="admin-field-hint">Khách hàng phải đạt hạng này hoặc cao hơn mới dùng được mã.</small>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="admin-coupon-usage-panel admin-field--full">
+                  <div class="admin-coupon-usage-panel__main">
+                    <label class="admin-field">
+                      <span>Giới hạn số lần sử dụng voucher <b>*</b></span>
+                      <input class="admin-input"
+                             type="number"
+                             name="maxUses"
+                             min="0"
+                             value="${coupon.maxUses}"
+                             required>
+                      <small class="admin-field-hint">
+                        Nhập <b>0</b> để không giới hạn. Nếu nhập lớn hơn 0, hệ thống sẽ khóa khi số lượt đã dùng đạt giới hạn.
+                      </small>
+                    </label>
+
+                    <div class="admin-coupon-usage-summary">
+                      <div>
+                        <span>Đã dùng</span>
+                        <strong>${empty coupon.usedCount ? 0 : coupon.usedCount}</strong>
+                      </div>
+                      <div>
+                        <span>Còn lại</span>
+                        <strong>
+                          <c:choose>
+                            <c:when test="${empty coupon.maxUses or coupon.maxUses le 0}">
+                              Không giới hạn
+                            </c:when>
+                            <c:otherwise>
+                              ${coupon.maxUses - coupon.usedCount}
+                            </c:otherwise>
+                          </c:choose>
+                        </strong>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -665,7 +707,7 @@
           <!-- SUBMIT -->
           <div class="admin-form-actions admin-promo-form-actions">
             <a class="admin-btn"
-               href="${ctx}/admin/promotions?type=${promotionType}">
+               href="${pageContext.request.contextPath}/admin/promotions?type=${promotionType}">
               Hủy
             </a>
 
@@ -704,7 +746,7 @@
         return;
       }
 
-      element.classList.toggle("admin-promo-hidden", !visible);
+      element.style.display = visible ? "" : "none";
     }
 
     function updateCouponScope() {
@@ -784,7 +826,7 @@
 
       productCards.forEach(function (card) {
         const searchable = normalizeText(card.getAttribute("data-product-key"));
-        card.classList.toggle("admin-promo-hidden", !searchable.includes(keyword));
+        card.style.display = searchable.includes(keyword) ? "" : "none";
       });
     }
 
