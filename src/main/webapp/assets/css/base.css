@@ -6053,3 +6053,66 @@ html body .order-page {
     font-size: 10.5px !important;
   }
 }
+
+/* ===== FIX HEADER MENU ĐIỀU HƠN ===== */
+.category-nav-bar.art-nav-bar .menu-horizontal-list {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+
+  /* Căn đều trong thanh trắng */
+  justify-content: space-between !important;
+
+  gap: 8px !important;
+  min-height: 64px !important;
+  width: 100%;
+}
+
+.category-nav-bar.art-nav-bar .menu-horizontal-list > li {
+  /* Chia đều chiều ngang */
+  flex: 1 1 0 !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  min-width: 0;
+}
+
+.category-nav-bar.art-nav-bar .menu-horizontal-list > li > a {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  width: 100%;
+  height: 54px !important;
+
+  box-sizing: border-box !important;
+  white-space: nowrap !important;
+  line-height: 1 !important;
+}
+
+.category-nav-bar.art-nav-bar .art-menu-link {
+  min-height: 54px !important;
+
+  padding: 0 12px !important;
+
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  gap: 8px !important;
+
+  text-align: center;
+}
+
+.category-nav-bar.art-nav-bar .art-nav-container {
+  display: flex !important;
+  align-items: center !important;
+  width: 100%;
+}
+
+.category-nav-bar.art-nav-bar {
+  display: flex !important;
+  align-items: center !important;
+}
