@@ -43,12 +43,11 @@
                             </div>
 
                                 <%-- 3. Nút xóa dạng Trái Tim Nổi độc lập --%>
-                            <form method="post" action="${ctx}/wishlist/toggle" class="wishlist-form">
-                                <input type="hidden" name="productId" value="${p.id}">
-                                <button type="submit" class="wishlist-btn active" title="Xóa khỏi danh sách yêu thích">
-                                    <i class="fa-solid fa-heart"></i>
-                                </button>
-                            </form>
+                                    <form method="post" action="${ctx}/wishlist/toggle" class="wishlist-form">
+                                        <input type="hidden" name="productId" value="${p.id}">
+                                        <button type="submit" class="wishlist-btn" title="Yêu thích">
+                                            <i class="fa-solid fa-heart heart-icon active"></i>                                        </button>
+                                    </form>
                         </article>
                     </c:forEach>
                 </c:when>
@@ -73,40 +72,86 @@
 
 <%-- JS xử lý bất đồng bộ JSON để đổi màu / xóa trực tiếp card sản phẩm --%>
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        const wishlistForms = document.querySelectorAll(".wishlist-form");
+    document.addEventListener("DOMContentLoaded", function () {
 
-        wishlistForms.forEach(form => {
-            form.addEventListener("submit", function(e) {
+        document.querySelectorAll(".wishlist-form").forEach(form => {
+
+            form.addEventListener("submit", function (e) {
                 e.preventDefault();
+
+                const btn = this.querySelector(".wishlist-btn");
+                const icon = this.querySelector("i");
+
                 const formData = new URLSearchParams(new FormData(this));
                 const productId = formData.get("productId");
 
                 fetch(this.action, {
                     method: "POST",
-                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    },
                     body: formData
                 })
-                    .then(response => response.json())
+                    .then(async response => {
+                        const text = await response.text();
+
+                        try {
+                            return JSON.parse(text);
+                        } catch (e) {
+                            return { status: text };
+                        }
+                    })
                     .then(data => {
-                        if (data.wishlisted === false || data.status === "REMOVED") {
-                            const card = document.getElementById("wishlist-item-" + productId);
-                            if(card) {
-                                // Tạo hiệu ứng thu nhỏ và mờ dần biến mất
-                                card.style.opacity = '0';
-                                card.style.transform = 'scale(0.9) translateY(10px)';
-                                card.style.transition = 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)';
+
+                        const wishlisted =
+                            data.wishlisted === true ||
+                            data.status === "ADDED";
+
+                        /* Nếu đã xóa khỏi wishlist */
+                        if (!wishlisted) {
+
+                            const card = document.getElementById(
+                                "wishlist-item-" + productId
+                            );
+
+                            if (card) {
+                                card.style.transition =
+                                    "all 0.35s cubic-bezier(0.4,0,0.2,1)";
+                                card.style.opacity = "0";
+                                card.style.transform =
+                                    "scale(0.9) translateY(10px)";
 
                                 setTimeout(() => {
-                                    card.remove(); 
-                                    const remaining = document.querySelectorAll(".collection-card");
-                                    if(remaining.length === 0) window.location.reload();
+                                    card.remove();
+
+                                    /* Nếu không còn sản phẩm nào */
+                                    const remain =
+                                        document.querySelectorAll(
+                                            ".collection-card"
+                                        );
+
+                                    if (remain.length === 0) {
+                                        window.location.reload();
+                                    }
                                 }, 350);
+                            }
+
+                        } else {
+                            /* Trường hợp thêm lại */
+                            btn?.classList.add("active");
+
+                            if (icon) {
+                                icon.className =
+                                    "fa-solid fa-heart heart-icon active";
                             }
                         }
                     })
-                    .catch(err => console.error("Lỗi Wishlist:", err));
+                    .catch(err => {
+                        console.error("Lỗi Wishlist:", err);
+                    });
             });
+
         });
+
     });
 </script>
