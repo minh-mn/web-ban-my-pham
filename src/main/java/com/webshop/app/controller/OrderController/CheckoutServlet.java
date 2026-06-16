@@ -827,7 +827,7 @@ public class CheckoutServlet extends HttpServlet {
         }
 
         if (user != null && user.getId() > 0 && userCouponDAO.hasUserUsedCoupon(user.getId(), coupon.getId())) {
-            return "Bạn đã sử dụng mã khuyến mãi này rồi.";
+            return "Mã ưu đãi này đã hết lượt sử dụng. Vui lòng chọn mã khác.";
         }
 
         String userRankCode = getUserRankCode(user);
