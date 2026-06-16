@@ -436,7 +436,7 @@
 
                 <span class="delivery-info">
                   <strong>GHTK - Giao hàng tiết kiệm</strong>
-                  <small>GHTK · tính phí theo khu vực · dự kiến 3 - 5 ngày</small>
+                  <small>Giao hàng tiết kiệm · dự kiến 3 - 5 ngày</small>
                 </span>
 
                 <span class="delivery-fee">20.000đ</span>
@@ -452,7 +452,7 @@
 
                 <span class="delivery-info">
                   <strong>GHN - Giao hàng nhanh</strong>
-                  <small>GHN · tự tính phí theo địa chỉ phía trên</small>
+                  <small>Phí tính theo địa chỉ giao hàng</small>
                 </span>
 
                 <span class="delivery-fee">Chờ tính phí</span>
@@ -468,7 +468,7 @@
 
                 <span class="delivery-info">
                   <strong>MyCosmetic Express - Hỏa tốc</strong>
-                  <small>Đơn vị nội bộ · chỉ hỗ trợ TP.HCM · giao trong ngày</small>
+                  <small>Hỏa tốc trong ngày tại TP.HCM</small>
                 </span>
 
                 <span class="delivery-fee">50.000đ</span>
@@ -2874,7 +2874,7 @@
           providerLabel: "Giao Hàng Tiết Kiệm",
           fee: 20000,
           label: "20.000đ",
-          description: "GHTK · TP.HCM: 3 - 5 ngày",
+          description: "Giao hàng tiết kiệm · dự kiến 3 - 5 ngày",
           disabled: false
         },
         FAST: {
@@ -2882,7 +2882,7 @@
           providerLabel: "Giao Hàng Nhanh",
           fee: 0,
           label: "Chờ tính phí",
-          description: "GHN · tự tính phí theo địa chỉ phía trên",
+          description: "Phí tính theo địa chỉ giao hàng",
           disabled: true
         },
         EXPRESS: {
@@ -2890,7 +2890,7 @@
           providerLabel: "MyCosmetic Express",
           fee: 50000,
           label: "50.000đ",
-          description: "MyCosmetic Express · Hỏa tốc trong ngày",
+          description: "Hỏa tốc trong ngày tại TP.HCM",
           disabled: false
         }
       },
@@ -2900,7 +2900,7 @@
           providerLabel: "Giao Hàng Tiết Kiệm",
           fee: 35000,
           label: "35.000đ",
-          description: "GHTK · Tỉnh/thành khác: 3 - 5 ngày",
+          description: "Giao hàng tiết kiệm · dự kiến 3 - 5 ngày",
           disabled: false
         },
         FAST: {
@@ -2908,7 +2908,7 @@
           providerLabel: "Giao Hàng Nhanh",
           fee: 0,
           label: "Chờ tính phí",
-          description: "GHN · tự tính phí theo địa chỉ phía trên",
+          description: "Phí tính theo địa chỉ giao hàng",
           disabled: true
         },
         EXPRESS: {
@@ -2916,7 +2916,7 @@
           providerLabel: "MyCosmetic Express",
           fee: 0,
           label: "Không hỗ trợ",
-          description: "MyCosmetic Express chỉ hỗ trợ hỏa tốc tại TP.HCM",
+          description: "Chỉ hỗ trợ hỏa tốc trong nội thành TP.HCM",
           disabled: true
         }
       }
@@ -3047,7 +3047,7 @@
           label: "Chờ tính phí",
           description: ghnRealFeeMessage
                   ? "GHN · " + ghnRealFeeMessage
-                  : "GHN · tự tính phí theo địa chỉ phía trên",
+                  : "Phí tính theo địa chỉ giao hàng",
           disabled: true
         });
       }
