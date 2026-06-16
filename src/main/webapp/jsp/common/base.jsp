@@ -275,9 +275,19 @@
 							<strong>Thông báo mới nhận</strong>
 							<span>Theo dõi cập nhật đơn hàng và hoạt động mới nhất của bạn</span>
 						</div>
-						<c:if test="${unreadCount > 0}">
-							<span class="notif-dropdown__counter"><c:out value="${unreadCount > 99 ? '99+' : unreadCount}" /> mới</span>
-						</c:if>
+						<span class="notif-dropdown__counter ${unreadCount > 0 ? 'has-new' : 'is-empty'}">
+							<c:choose>
+								<c:when test="${unreadCount > 0}">
+									<span class="notif-dropdown__counter-number">
+										<c:out value="${unreadCount > 99 ? '99+' : unreadCount}" />
+									</span>
+									<span class="notif-dropdown__counter-text">thông báo mới</span>
+								</c:when>
+								<c:otherwise>
+									<span class="notif-dropdown__counter-text">Không có thông báo mới</span>
+								</c:otherwise>
+							</c:choose>
+						</span>
 					</div>
 
 					<div class="notif-dropdown__body">
