@@ -641,11 +641,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="mc-compact-actions">
-                                        <button type="button" class="mc-compact-btn is-primary" data-account-target="orders">Đơn mua</button>
-                                        <button type="button" class="mc-compact-btn" data-account-target="profile">Sửa hồ sơ</button>
-                                        <a href="${pageContext.request.contextPath}/account/change-password" class="mc-compact-btn">Đổi mật khẩu</a>
-                                    </div>
+                                    <!-- Đã bỏ cụm nút nhanh: Đơn mua / Sửa hồ sơ / Đổi mật khẩu ở phần đầu tài khoản -->
                                 </section>
 
                                 <!-- Layout menu + nội dung -->
