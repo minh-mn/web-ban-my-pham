@@ -42,6 +42,7 @@ public final class UploadConfig {
     // Issue 118: thư mục lưu logo thương hiệu
     public static final Path BRAND_DIR = BASE_DIR.resolve("brand");
 
+
     /*
      * =========================
      * PUBLIC URL PREFIX
@@ -62,6 +63,26 @@ public final class UploadConfig {
 
     // Issue 118: URL lưu vào database cho logo thương hiệu
     public static final String BRAND_URL_PREFIX = UPLOAD_URL_PREFIX + "/brand/";
+
+    public static final Path EVENT_DIR = BASE_DIR.resolve("event");
+    public static final String EVENT_URL_PREFIX = UPLOAD_URL_PREFIX + "/event/";
+
+    public static String toEventUrl(String fileName) {
+        return EVENT_URL_PREFIX + cleanFileName(fileName);
+    }
+
+    public static Path resolveEventFile(String fileName) {
+        return EVENT_DIR.resolve(cleanFileName(fileName)).normalize();
+    }
+
+    public static boolean deleteEventFile(String fileName) {
+        return deleteUploadFile(EVENT_DIR, fileName);
+    }
+
+    public static boolean deleteEventFileByUrl(String fileUrl) {
+        return deleteUploadFileByUrl(fileUrl, EVENT_URL_PREFIX, EVENT_DIR);
+    }
+    
 
     private UploadConfig() {
     }
@@ -179,6 +200,7 @@ public final class UploadConfig {
             Files.createDirectories(PRODUCT_MEDIA_DIR);
             Files.createDirectories(POLICY_DIR);
             Files.createDirectories(BRAND_DIR);
+            Files.createDirectories(EVENT_DIR);
 
             System.out.println("========== MyCosmetic Upload Path ==========");
             System.out.println("user.dir = " + System.getProperty("user.dir"));
@@ -190,6 +212,7 @@ public final class UploadConfig {
             System.out.println("PRODUCT_MEDIA_DIR = " + PRODUCT_MEDIA_DIR);
             System.out.println("POLICY_DIR = " + POLICY_DIR);
             System.out.println("BRAND_DIR = " + BRAND_DIR);
+            System.out.println("EVENT_DIR = " + EVENT_DIR);
             System.out.println("============================================");
         } catch (IOException e) {
             throw new RuntimeException("Cannot create upload directories at: " + BASE_DIR, e);
