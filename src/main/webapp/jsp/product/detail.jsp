@@ -700,16 +700,26 @@
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
           body: formData
         })
-                .then(response => {
+                .then(async response => {
                   if (response.status === 401) {
                     openModal();
                     throw new Error("LOGIN_REQUIRED");
                   }
-                  return response.json();
+                  // Đọc dữ liệu dưới dạng Text trước để tránh lỗi crash JSON giống list.jsp
+                  const text = await response.text();
+                  try {
+                    return JSON.parse(text);
+                  } catch (err) {
+                    return { status: text.trim() };
+                  }
                 })
                 .then(data => {
                   if (!btn) return;
-                  if (data.wishlisted === true) {
+
+                  // Đồng bộ điều kiện kiểm tra trạng thái tim giống hệt bên list.jsp
+                  const wishlisted = data.wishlisted === true || data.status === "ADDED";
+
+                  if (wishlisted) {
                     if(icon) icon.className = "fa-solid fa-heart";
                     btn.classList.add("active");
                   } else {
