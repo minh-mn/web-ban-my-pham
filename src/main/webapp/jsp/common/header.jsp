@@ -112,6 +112,13 @@
           <span>LIÊN HỆ</span>
         </a>
       </li>
+
+      <li>
+        <a href="${ctx}/wishlist" class="menu-link-item art-menu-link ${fn:contains(uri, '/wishlist') ? 'is-active' : ''}">
+          <span class="art-menu-icon">♡</span> <!-- Sử dụng icon trái tim -->
+          <span>YÊU THÍCH</span>
+        </a>
+      </li>
     </ul>
   </div>
 </nav>
