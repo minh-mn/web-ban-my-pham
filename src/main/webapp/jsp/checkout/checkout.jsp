@@ -3,7 +3,7 @@
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
-<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/checkout.css?v=20260616_map_modal_v32">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/checkout.css?v=20260616_map_modal_v33">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/theme-red-buttons.css?v=20260613_10">
 
 
@@ -282,6 +282,104 @@
     html body.address-map-open #addressMapModal.address-map-modal.show .address-map-dialog {
       width: calc(100vw - 16px) !important;
       max-height: calc(100vh - 20px) !important;
+    }
+
+    html body.address-map-open #addressMapModal.address-map-modal.show .address-map-canvas,
+    html body.address-map-open #addressMapModal.address-map-modal.show .address-map-frame,
+    html body.address-map-open #addressMapModal.address-map-modal.show iframe#addressMapFrame {
+      min-height: 340px !important;
+      height: 340px !important;
+    }
+  }
+</style>
+
+<style id="addressMapModalCenterAndLargeV33">
+  /*
+    V33: phóng to popup bản đồ và căn giữa thật sự trong màn hình.
+  */
+  html body.address-map-open #addressMapModal.address-map-modal.show {
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 24px !important;
+  }
+
+  html body.address-map-open #addressMapModal.address-map-modal.show .address-map-dialog {
+    width: min(1160px, calc(100vw - 48px)) !important;
+    max-width: 1160px !important;
+    max-height: calc(100vh - 48px) !important;
+    margin: auto !important;
+    border-radius: 26px !important;
+  }
+
+  html body.address-map-open #addressMapModal.address-map-modal.show .address-map-header {
+    padding: 22px 72px 16px 24px !important;
+  }
+
+  html body.address-map-open #addressMapModal.address-map-modal.show .address-map-header h3 {
+    font-size: 24px !important;
+  }
+
+  html body.address-map-open #addressMapModal.address-map-modal.show .address-map-body {
+    padding: 14px 18px 0 !important;
+  }
+
+  html body.address-map-open #addressMapModal.address-map-modal.show .address-map-layout {
+    grid-template-columns: minmax(0, 1.45fr) minmax(300px, 0.8fr) !important;
+    gap: 18px !important;
+    align-items: stretch !important;
+  }
+
+  html body.address-map-open #addressMapModal.address-map-modal.show .address-map-canvas,
+  html body.address-map-open #addressMapModal.address-map-modal.show .address-map-frame,
+  html body.address-map-open #addressMapModal.address-map-modal.show iframe#addressMapFrame {
+    min-height: 500px !important;
+    height: 500px !important;
+  }
+
+  html body.address-map-open #addressMapModal.address-map-modal.show .address-map-side {
+    gap: 14px !important;
+  }
+
+  html body.address-map-open #addressMapModal.address-map-modal.show .address-map-card {
+    padding: 16px !important;
+    border-radius: 20px !important;
+  }
+
+  html body.address-map-open #addressMapModal.address-map-modal.show .address-map-footer {
+    padding: 14px 18px 18px !important;
+  }
+
+  @media (max-width: 1024px) {
+    html body.address-map-open #addressMapModal.address-map-modal.show {
+      padding: 16px !important;
+    }
+
+    html body.address-map-open #addressMapModal.address-map-modal.show .address-map-dialog {
+      width: min(1040px, calc(100vw - 32px)) !important;
+      max-height: calc(100vh - 32px) !important;
+    }
+
+    html body.address-map-open #addressMapModal.address-map-modal.show .address-map-canvas,
+    html body.address-map-open #addressMapModal.address-map-modal.show .address-map-frame,
+    html body.address-map-open #addressMapModal.address-map-modal.show iframe#addressMapFrame {
+      min-height: 440px !important;
+      height: 440px !important;
+    }
+  }
+
+  @media (max-width: 768px) {
+    html body.address-map-open #addressMapModal.address-map-modal.show {
+      align-items: flex-start !important;
+      padding: 10px 8px !important;
+    }
+
+    html body.address-map-open #addressMapModal.address-map-modal.show .address-map-dialog {
+      width: calc(100vw - 16px) !important;
+      max-height: calc(100vh - 20px) !important;
+    }
+
+    html body.address-map-open #addressMapModal.address-map-modal.show .address-map-layout {
+      grid-template-columns: 1fr !important;
     }
 
     html body.address-map-open #addressMapModal.address-map-modal.show .address-map-canvas,
