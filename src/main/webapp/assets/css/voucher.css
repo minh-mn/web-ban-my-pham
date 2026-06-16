@@ -1110,3 +1110,28 @@
 .skin-eyebrow {
     color: var(--uv-red) !important;
 }
+
+/* =========================================================
+   FIX LỖI BO GÓC VOUCHER 
+   ========================================================= */
+.voucher-card-left,
+.skin-voucher-left {
+    border-radius: 24px 0 0 24px !important;
+}
+
+.voucher-card-body,
+.skin-voucher-content {
+    border-radius: 0 24px 24px 0 !important;
+}
+
+@media (max-width: 760px) {
+    .voucher-card-left,
+    .skin-voucher-left {
+        border-radius: 24px 24px 0 0 !important;
+    }
+
+    .voucher-card-body,
+    .skin-voucher-content {
+        border-radius: 0 0 24px 24px !important;
+    }
+}
